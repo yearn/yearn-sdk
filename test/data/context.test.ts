@@ -1,5 +1,3 @@
-import "dotenv/config";
-
 import { JsonRpcProvider } from "@ethersproject/providers";
 
 import { Context } from "../../src/data/context";

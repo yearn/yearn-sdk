@@ -11,10 +11,10 @@ describe("etherscan integration", () => {
     ctx = new Context({ etherscan: process.env.ETHERSCAN_KEY });
   });
 
-  it("should fetch tx list (network)", async () => {
+  it("should fetch tx list (network)", () => {
     const address = "0x0000000000000000000000000000000000000000";
-    const request = await fetchTransactionList({ address }, ctx);
-    return expect(request).toEqual(
+    const request = fetchTransactionList({ address }, ctx);
+    return expect(request).resolves.toEqual(
       expect.arrayContaining([
         expect.objectContaining({
           timeStamp: expect.any(Number),

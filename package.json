@@ -25,7 +25,8 @@
     "docs": "yarn typedoc --media media --out docs src/index.ts",
     "prebuild": "yarn abi",
     "prestart": "yarn abi",
-    "precommit": "yarn lint && yarn docs"
+    "precommit": "yarn lint && yarn docs",
+    "prepublish": "yearn build"
   },
   "husky": {
     "hooks": {

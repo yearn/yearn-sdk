@@ -1,3 +1,4 @@
+import * as assets from "./assets";
 import * as etherscan from "./etherscan";
 
-export { etherscan };
+export { assets, etherscan };
