@@ -26,7 +26,7 @@
     "prebuild": "yarn abi",
     "prestart": "yarn abi",
     "precommit": "yarn lint && yarn docs",
-    "prepublish": "yearn build"
+    "prepublishOnly": "yarn build"
   },
   "husky": {
     "hooks": {
