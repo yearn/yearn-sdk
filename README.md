@@ -1,5 +1,5 @@
 <span>
-    <img align="right" src="media/logo.png" height="150" />
+    <img align="right" src="https://raw.githubusercontent.com/nymmrx/yearn-sdk/main/media/logo.png" height="150" />
 </span>
 
 # Yearn SDK
