@@ -5,6 +5,11 @@ export interface Token {
   name: string;
 }
 
+export interface Strategy {
+  name: string;
+  address: string;
+}
+
 export interface VaultBase {
   name: string;
   address: string;
@@ -20,6 +25,7 @@ export interface VaultV1 extends VaultBase {
 export interface VaultV2 extends VaultBase {
   type: "v2";
   emergencyShutdown: boolean;
+  strategies: Strategy[];
 }
 
 export type Vault = VaultV1 | VaultV2;

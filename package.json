@@ -22,9 +22,9 @@
     "size": "size-limit",
     "analyze": "size-limit --why",
     "abi": "typechain --target ethers-v5 --outDir src/contracts \"abi/*.json\"",
+    "abi:dev": "typechain --target ethers-v5 --outDir src/contracts \"abifull/*.json\"",
     "docs": "yarn typedoc --media media --out docs src/index.ts",
     "prebuild": "yarn abi",
-    "prestart": "yarn abi",
     "precommit": "yarn lint && yarn docs",
     "prepublishOnly": "yarn build"
   },

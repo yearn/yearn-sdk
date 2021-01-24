@@ -18,8 +18,8 @@ describe("block estimation", () => {
   });
 
   it("loose estimation (network)", async () => {
-    const block = await provider.getBlockNumber();
-    const estimation = estimateBlock(Timestamp, block);
+    const currentBlock = await provider.getBlockNumber();
+    const estimation = estimateBlock(Timestamp, currentBlock);
     expect(estimation).toBeGreaterThanOrEqual(ActualBlock - 8000);
     return expect(estimation).toBeLessThanOrEqual(ActualBlock + 8000);
   });
@@ -27,8 +27,7 @@ describe("block estimation", () => {
   it(
     "precise estimation (network)",
     async () => {
-      const block = await provider.getBlockNumber();
-      const estimation = await estimateBlockPrecise(Timestamp, block, ctx);
+      const estimation = await estimateBlockPrecise(Timestamp, ctx);
       expect(estimation).toBeGreaterThanOrEqual(ActualBlock - 50);
       return expect(estimation).toBeLessThanOrEqual(ActualBlock + 50);
     },

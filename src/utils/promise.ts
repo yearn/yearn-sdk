@@ -11,3 +11,7 @@ export async function objectAll<T>(object: PromiseValues<T>): Promise<T> {
   );
   return (fromEntries(await Promise.all(promises)) as unknown) as T;
 }
+
+export function notEmpty<TValue>(value: TValue | null | undefined): value is TValue {
+  return value !== null && value !== undefined;
+}

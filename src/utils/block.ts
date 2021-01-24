@@ -1,15 +1,17 @@
 import { Context } from "../data/context";
 
+import { BlocksPerSecond } from "./constants";
 import { unix } from "./time";
-
-export const SecondsPerBlock = 13.25; // avg 2020
-export const BlocksPerSecond = 1 / SecondsPerBlock;
-export const BlocksPerDay = BlocksPerSecond * 60 * 60 * 24;
 
 const CloseEnoughBlocks = 600;
 const CloseEnoughSeconds = 600;
 const SearchRange = 10000;
 const MaxIterations = 50;
+
+export interface TimedBlock {
+  block: number;
+  timestamp: number;
+}
 
 function findLeftRight(id: number, ctx: Context): number[] | false {
   let min = 0;
@@ -28,9 +30,9 @@ function findLeftRight(id: number, ctx: Context): number[] | false {
   return [ctx.blocks.ids[max - 1], ctx.blocks.ids[min - 1]];
 }
 
-async function fetch(id: number, ctx: Context): Promise<number> {
-  const { timestamp } = await ctx.provider.getBlock(id);
-  ctx.blocks.cache[id] = timestamp;
+async function fetchBlockTimestamp(block: number, ctx: Context): Promise<number> {
+  const { timestamp } = await ctx.provider.getBlock(block);
+  ctx.blocks.cache[block] = timestamp;
   return timestamp;
 }
 
@@ -38,7 +40,7 @@ function linearInterpolation(v0: number, v1: number, t: number): number {
   return (1 - t) * v0 + t * v1;
 }
 
-async function wrap(id: number, ctx: Context): Promise<number> {
+async function estimateTimestamp(id: number, ctx: Context): Promise<number> {
   if (ctx.blocks.cache[id]) {
     return ctx.blocks.cache[id];
   } else if (ctx.blocks.ids.length >= 2) {
@@ -49,19 +51,19 @@ async function wrap(id: number, ctx: Context): Promise<number> {
       const vmax = ctx.blocks.cache[max];
       if (id < vmin) {
         ctx.blocks.ids.unshift(id);
-        return await fetch(id, ctx);
+        return await fetchBlockTimestamp(id, ctx);
       } else if (id > vmax) {
         ctx.blocks.ids.push(id);
-        return await fetch(id, ctx);
+        return await fetchBlockTimestamp(id, ctx);
       } else {
         // optimize estimations
         if (max - min <= CloseEnoughBlocks) {
-          fetch(id, ctx).then(() => ctx.blocks.ids.splice(min, 0, id));
+          fetchBlockTimestamp(id, ctx).then(() => ctx.blocks.ids.splice(min, 0, id));
           const time = (id - min) / (max - min);
           return linearInterpolation(vmin, vmax, time);
         } else {
           ctx.blocks.ids.splice(min, 0, id);
-          return await fetch(id, ctx);
+          return await fetchBlockTimestamp(id, ctx);
         }
       }
     }
@@ -69,11 +71,11 @@ async function wrap(id: number, ctx: Context): Promise<number> {
     const existing = ctx.blocks.ids[0];
     if (id > existing) ctx.blocks.ids.push(id);
     else ctx.blocks.ids.unshift(id);
-    return await fetch(id, ctx);
+    return await fetchBlockTimestamp(id, ctx);
   } else {
     ctx.blocks.ids.push(id);
   }
-  return await fetch(id, ctx);
+  return await fetchBlockTimestamp(id, ctx);
 }
 
 export function estimateBlock(timestamp: number, currentBlock: number): number {
@@ -83,14 +85,14 @@ export function estimateBlock(timestamp: number, currentBlock: number): number {
 
 export async function estimateBlockPrecise(
   timestamp: number,
-  currentBlock: number,
   ctx: Context
 ): Promise<number> {
-  let last = estimateBlock(timestamp, currentBlock);
+  const current = await ctx.provider.getBlockNumber();
+  let last = estimateBlock(timestamp, current);
   let high = last + SearchRange;
   let low = last - SearchRange;
   for (let i = 0; i < MaxIterations; i++) {
-    const block = await wrap(last, ctx);
+    const block = await estimateTimestamp(last, ctx);
     const diff = timestamp - block;
     if (Math.abs(diff) < CloseEnoughSeconds) {
       return last;
@@ -103,4 +105,12 @@ export async function estimateBlockPrecise(
     }
   }
   return last;
+}
+
+export async function createTimedBlock(
+  block: number,
+  ctx: Context
+): Promise<TimedBlock> {
+  const timestamp = await fetchBlockTimestamp(block, ctx);
+  return { block, timestamp };
 }

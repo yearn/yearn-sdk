@@ -18,14 +18,14 @@ describe("resolver", () => {
   it("should resolve a v1 vault (network)", async () => {
     const vault = resolveV1(vaults.v1.address, ctx);
     return expect(vault).resolves.toMatchObject(vaults.v1.object);
-  });
+  }, 1e4);
 
   it("should resolve a v2 vault (network)", () => {
     const vault = resolveV2(vaults.v2.address, ctx);
-    return expect(vault).resolves.toMatchObject(vaults.v2.object);
+    return expect(vault).resolves.toEqual(vaults.v2.object);
   });
 
   afterAll(() => {
     return provider.destroy();
-  });
+  }, 1e4);
 });

@@ -1,4 +1,4 @@
-import { Apy, calculateApy, fetchInceptionBlock } from "./apy";
+import { Apy, calculateApy, fetchInceptionBlock, fetchSortedHarvests } from "./apy";
 
 import {
   fetchV1Addresses,
@@ -6,7 +6,7 @@ import {
   fetchV2ExperimentalAddresses
 } from "./registry";
 
-import { resolveToken, resolveV1, resolveV2 } from "./resolver";
+import { resolveV1, resolveV2 } from "./resolver";
 import { Token, Vault, VaultBase, VaultV1, VaultV2 } from "./interfaces";
 
 export {
@@ -18,10 +18,10 @@ export {
   VaultV2,
   calculateApy,
   fetchInceptionBlock,
+  fetchSortedHarvests,
   fetchV1Addresses,
   fetchV2Addresses,
   fetchV2ExperimentalAddresses,
-  resolveToken,
   resolveV1,
   resolveV2
 };

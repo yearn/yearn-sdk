@@ -1,4 +1,4 @@
-import { unix } from "../../src/utils/time";
+import { seconds, unix } from "../../src/utils/time";
 
 describe("unix timestamp", () => {
   it("should return an integer", () => {
@@ -6,8 +6,7 @@ describe("unix timestamp", () => {
     return expect(unix()).toBe(1);
   });
   it("should return valid offsets", () => {
-    Date.now = () => 0;
-    expect(unix("-1 min")).toBe(-60);
-    return expect(unix("-1 weeks")).toBe(-(60 * 60 * 24 * 7));
+    expect(seconds("-1 min")).toBe(-60);
+    return expect(seconds("-1 weeks")).toBe(-(60 * 60 * 24 * 7));
   });
 });
