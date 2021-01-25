@@ -80,9 +80,7 @@ async function calculateApyPps<T extends ApyBlocks>(
   snapshotsBlocks: T,
   pricePerShare: (options?: CallOverrides) => Promise<ethers.BigNumber>
 ): Promise<Apy<T>> {
-  // snapshots sorted desc by block
   const snaps = Object.entries(snapshotsBlocks).sort((a, b) => b[1] - a[1]);
-
   if (snaps.length === 0) return {} as Apy<T>;
 
   const reference: Snapshot = {
