@@ -37,7 +37,7 @@ export async function fetchInceptionBlock(
   ctx: Context
 ): Promise<TimedBlock | null> {
   const txlist = await fetchTransactionList({ address: vault.address }, ctx);
-  if (txlist.length < 2) return null;
+  if (txlist.length < 3) return null;
   const inception = txlist[2]; // skip contract creation
   return { block: inception.blockNumber, timestamp: inception.timeStamp };
 }
