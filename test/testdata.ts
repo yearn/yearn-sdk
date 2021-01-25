@@ -16,7 +16,7 @@ export const vaults = {
       },
       type: "v1"
     } as Vault,
-    inception: 10599650
+    inception: 10599657
   },
   v2: {
     address: "0x33bd0f9618cf38fea8f7f01e1514ab63b9bde64b",
@@ -40,6 +40,6 @@ export const vaults = {
       ],
       type: "v2"
     } as Vault,
-    inception: 11421934
+    inception: 11421976
   }
 };
