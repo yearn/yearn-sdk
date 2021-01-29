@@ -1,8 +1,7 @@
 import "dotenv/config";
 
-import { fetchTransactionList } from "../../src/data/etherscan";
-
 import { Context } from "../../src/data/context";
+import { fetchTransactionList } from "../../src/data/etherscan";
 
 describe("etherscan integration", () => {
   let ctx: Context;

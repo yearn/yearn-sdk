@@ -1,5 +1,5 @@
-import fetch from "node-fetch";
 import fromEntries from "fromentries";
+import fetch from "node-fetch";
 
 const GhRawURL = "https://raw.githubusercontent.com";
 const GhApiURL = "https://api.github.com/repos";
