@@ -1,5 +1,4 @@
 import { Context } from "../data/context";
-
 import { BlocksPerSecond } from "./constants";
 import { unix } from "./time";
 
@@ -8,8 +7,9 @@ const CloseEnoughSeconds = 600;
 const SearchRange = 10000;
 const MaxIterations = 50;
 
+export type Block = number;
 export interface TimedBlock {
-  block: number;
+  block: Block;
   timestamp: number;
 }
 
@@ -78,7 +78,7 @@ async function estimateTimestamp(id: number, ctx: Context): Promise<number> {
   return await fetchBlockTimestamp(id, ctx);
 }
 
-export function estimateBlock(timestamp: number, currentBlock: number): number {
+export function estimateBlock(timestamp: number, currentBlock: Block): Block {
   const now = unix();
   return Math.floor(currentBlock - (now - timestamp) * BlocksPerSecond);
 }
@@ -86,7 +86,7 @@ export function estimateBlock(timestamp: number, currentBlock: number): number {
 export async function estimateBlockPrecise(
   timestamp: number,
   ctx: Context
-): Promise<number> {
+): Promise<Block> {
   const current = await ctx.provider.getBlockNumber();
   let last = estimateBlock(timestamp, current);
   let high = last + SearchRange;
@@ -113,4 +113,11 @@ export async function createTimedBlock(
 ): Promise<TimedBlock> {
   const timestamp = await fetchBlockTimestamp(block, ctx);
   return { block, timestamp };
+}
+
+export async function fetchLatestBlock(ctx: Context): Promise<TimedBlock> {
+  return {
+    block: await ctx.provider.getBlockNumber(),
+    timestamp: unix()
+  };
 }

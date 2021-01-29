@@ -1,9 +1,11 @@
 import { fetchAliases, fetchAssets } from "../../src/data/assets";
 
 describe("assets", () => {
-  it("fetch aliases", () => {
-    const aliases = fetchAliases();
-    return expect(aliases.then(Object.values)).resolves.toEqual(
+  it("fetch aliases", async () => {
+    const aliases = await fetchAliases();
+    // eslint-disable-next-line no-console
+    console.error(aliases);
+    return expect(Object.values(aliases)).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
           name: expect.any(String),
@@ -13,9 +15,11 @@ describe("assets", () => {
       ])
     );
   });
-  it("fetch assets", () => {
-    const aliases = fetchAssets();
-    return expect(aliases.then(Object.values)).resolves.toEqual(
+  it("fetch assets", async () => {
+    const assets = await fetchAssets();
+    // eslint-disable-next-line no-console
+    console.error(assets);
+    return expect(Object.values(assets)).toEqual(
       expect.arrayContaining([expect.any(String)])
     );
   });

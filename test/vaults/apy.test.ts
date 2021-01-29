@@ -4,12 +4,8 @@ import { WebSocketProvider } from "@ethersproject/providers";
 
 import { Context } from "../../src/data/context";
 import { BigNumber } from "../../src/utils/bn";
-import {
-  calculateApy,
-  calculateYearlyRoi,
-  fetchInceptionBlock
-} from "../../src/vault/apy";
-
+import { calculateApy } from "../../src/vault";
+import { calculateYearlyRoi } from "../../src/vault/apy";
 import { vaults } from "../testdata";
 
 describe("yearly roi", () => {
@@ -60,22 +56,6 @@ describe("vault apy", () => {
     provider = new WebSocketProvider(process.env.WEB3_PROVIDER ?? "");
     ctx = new Context({ provider, etherscan: process.env.ETHERSCAN_KEY });
   });
-
-  it("should find the correct inception block (network)", () => {
-    const inception = fetchInceptionBlock(vaults.v1.object, ctx);
-    return expect(inception).resolves.toEqual({
-      block: vaults.v1.inception,
-      timestamp: expect.any(Number)
-    });
-  }, 10000);
-
-  it("should find the correct inception block (network)", () => {
-    const inception = fetchInceptionBlock(vaults.v2.object, ctx);
-    return expect(inception).resolves.toEqual({
-      block: vaults.v2.inception,
-      timestamp: expect.any(Number)
-    });
-  }, 10000);
 
   it("calculate apy v1 (network)", () => {
     const inception = calculateApy(vaults.v1.object, ctx);
