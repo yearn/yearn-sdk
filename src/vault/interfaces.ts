@@ -8,6 +8,8 @@ export interface Token {
 export interface Strategy {
   name: string;
   address: string;
+  isActive: boolean;
+  delegatedAssets: number;
 }
 
 export interface VaultBase {

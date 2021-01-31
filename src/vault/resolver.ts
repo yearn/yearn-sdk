@@ -27,7 +27,9 @@ async function resolveToken(address: string, ctx: Context): Promise<Token> {
 async function resolveStrategy(address: string, ctx: Context): Promise<Strategy> {
   const strategy = StrategyContract__factory.connect(address, ctx.provider);
   const structure = {
-    name: strategy.name()
+    name: strategy.name(),
+    isActive: strategy.isActive(),
+    delegatedAssets: strategy.delegatedAssets()
   };
   const result = await objectAll(structure);
   return {

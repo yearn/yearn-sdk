@@ -35,7 +35,9 @@ export const vaults = {
       strategies: [
         {
           address: "0xc29CBe79F1a35a6AA00Df70851E36B14316Ab990",
-          name: "StrategyIdleUSDC_BY"
+          name: "StrategyIdleUSDC_BY",
+          isActive: true,
+          delegatedAssets: 0
         }
       ],
       type: "v2"
