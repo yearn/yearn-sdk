@@ -11,7 +11,7 @@ jobs:
         os: [ubuntu-latest, windows-latest, macOS-latest]
 
     env:
-      WEB3_PROVIDER: ${{ secrets.WEB3_PROVIDER }}
+      WEB3_PROVIDER_WSS: ${{ secrets.WEB3_PROVIDER_WSS }}
       ETHERSCAN_KEY: ${{ secrets.ETHERSCAN_KEY }}
 
     steps:
