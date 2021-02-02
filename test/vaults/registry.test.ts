@@ -14,7 +14,7 @@ describe("registry", () => {
   let ctx: Context;
 
   beforeAll(() => {
-    provider = new WebSocketProvider(process.env.WEB3_PROVIDER ?? "");
+    provider = new WebSocketProvider(process.env.WEB3_PROVIDER_WSS ?? "");
     ctx = new Context({ provider, etherscan: process.env.ETHERSCAN_KEY });
   });
 
