@@ -18,7 +18,9 @@ export class Context implements ContextConnectors {
   private etherscanKey?: string;
 
   constructor(connectors?: ContextConnectors) {
-    if (!connectors) return;
+    if (!connectors) {
+      return;
+    }
     const { provider, etherscan } = connectors;
     this.providerRef = provider;
     this.etherscanKey = etherscan;

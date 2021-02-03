@@ -55,22 +55,24 @@ async function estimateTimestamp(id: number, ctx: Context): Promise<number> {
       } else if (id > vmax) {
         ctx.blocks.ids.push(id);
         return await fetchBlockTimestamp(id, ctx);
-      } else {
-        // optimize estimations
-        if (max - min <= CloseEnoughBlocks) {
-          fetchBlockTimestamp(id, ctx).then(() => ctx.blocks.ids.splice(min, 0, id));
-          const time = (id - min) / (max - min);
-          return linearInterpolation(vmin, vmax, time);
-        } else {
-          ctx.blocks.ids.splice(min, 0, id);
-          return await fetchBlockTimestamp(id, ctx);
-        }
       }
+      // optimize estimations
+      if (max - min <= CloseEnoughBlocks) {
+        fetchBlockTimestamp(id, ctx).then(() => ctx.blocks.ids.splice(min, 0, id));
+        const time = (id - min) / (max - min);
+        return linearInterpolation(vmin, vmax, time);
+      }
+
+      ctx.blocks.ids.splice(min, 0, id);
+      return await fetchBlockTimestamp(id, ctx);
     }
   } else if (ctx.blocks.ids.length === 1) {
     const existing = ctx.blocks.ids[0];
-    if (id > existing) ctx.blocks.ids.push(id);
-    else ctx.blocks.ids.unshift(id);
+    if (id > existing) {
+      ctx.blocks.ids.push(id);
+    } else {
+      ctx.blocks.ids.unshift(id);
+    }
     return await fetchBlockTimestamp(id, ctx);
   } else {
     ctx.blocks.ids.push(id);

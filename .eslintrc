@@ -18,6 +18,8 @@
     "simple-import-sort/imports": "error",
     "simple-import-sort/exports": "error",
     "sort-imports": "off",
+    "no-else-return": "error",
+    "curly": ["error", "all"],
     "@typescript-eslint/camelcase": "off"
   }
 }
