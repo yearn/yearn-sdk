@@ -5,7 +5,7 @@ const { WebSocketProvider } = require("@ethersproject/providers");
 const yearn = require("..");
 const { tab } = require("./helpers");
 
-const provider = new WebSocketProvider(process.env.WEB3_PROVIDER);
+const provider = new WebSocketProvider(process.env.WEB3_PROVIDER_WSS);
 const etherscan = process.env.ETHERSCAN_KEY;
 
 const ctx = new yearn.Context({ provider, etherscan });
