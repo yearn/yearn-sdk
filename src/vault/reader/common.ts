@@ -7,11 +7,11 @@ export async function fetchInceptionBlock(
   vault: Vault,
   ctx: Context
 ): Promise<TimedBlock | null> {
-  const txlist = await fetchTransactionList(
+  const txList = await fetchTransactionList(
     { address: vault.address, page: 1, offset: 3 },
     ctx
   );
-  if (txlist.length < 3) return null;
-  const inception = txlist[2]; // skip contract creation
+  if (txList.length < 3) return null;
+  const inception = txList[2]; // skip contract creation
   return { block: inception.blockNumber, timestamp: inception.timeStamp };
 }
