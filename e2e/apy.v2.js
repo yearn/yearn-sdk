@@ -11,9 +11,9 @@ const etherscan = process.env.ETHERSCAN_KEY;
 const ctx = new yearn.Context({ provider, etherscan });
 
 async function main() {
-  const v1 = await yearn.vault.fetchV2Addresses(ctx);
-  console.log(`Fetching ${v1.length} v2 vaults`);
-  for (const address of v1) {
+  const v2 = await yearn.vault.fetchV2Addresses(ctx);
+  console.log(`Fetching ${v2.length} v2 vaults`);
+  for (const address of v2) {
     const vault = await yearn.vault.resolveV2(address, ctx);
     const apy = await yearn.vault.calculateApy(vault, ctx);
     const inception = `${(apy.inceptionSample * 100).toFixed(3)}%`;
