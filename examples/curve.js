@@ -22,6 +22,6 @@ async function main() {
   }
 
   await provider.destroy();
-}
+} 
 
 main();
