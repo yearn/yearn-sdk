@@ -102,9 +102,7 @@
   },
   {
     "constant": true,
-    "inputs": [
-      { "internalType": "address", "name": "account", "type": "address" }
-    ],
+    "inputs": [{ "internalType": "address", "name": "account", "type": "address" }],
     "name": "balanceOf",
     "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
     "payable": false,
@@ -147,9 +145,7 @@
   },
   {
     "constant": false,
-    "inputs": [
-      { "internalType": "uint256", "name": "_amount", "type": "uint256" }
-    ],
+    "inputs": [{ "internalType": "uint256", "name": "_amount", "type": "uint256" }],
     "name": "deposit",
     "outputs": [],
     "payable": false,
@@ -246,9 +242,7 @@
   },
   {
     "constant": false,
-    "inputs": [
-      { "internalType": "uint256", "name": "_min", "type": "uint256" }
-    ],
+    "inputs": [{ "internalType": "uint256", "name": "_min", "type": "uint256" }],
     "name": "setMin",
     "outputs": [],
     "payable": false,
@@ -311,9 +305,7 @@
   },
   {
     "constant": false,
-    "inputs": [
-      { "internalType": "uint256", "name": "_shares", "type": "uint256" }
-    ],
+    "inputs": [{ "internalType": "uint256", "name": "_shares", "type": "uint256" }],
     "name": "withdraw",
     "outputs": [],
     "payable": false,

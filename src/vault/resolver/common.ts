@@ -3,7 +3,7 @@ import { Context } from "../../data/context";
 import { objectAll } from "../../utils/promise";
 import { Token, VaultBase } from "../interfaces";
 
-async function resolveToken(address: string, ctx: Context): Promise<Token> {
+export async function resolveToken(address: string, ctx: Context): Promise<Token> {
   const token = Erc20Contract__factory.connect(address, ctx.provider);
   const structure = {
     name: token.name(),

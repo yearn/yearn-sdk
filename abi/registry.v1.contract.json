@@ -5,5 +5,18 @@
     "outputs": [{ "internalType": "address[]", "name": "", "type": "address[]" }],
     "stateMutability": "view",
     "type": "function"
+  },
+  {
+    "inputs": [{ "internalType": "address", "name": "_vault", "type": "address" }],
+    "name": "getVaultInfo",
+    "outputs": [
+      { "internalType": "address", "name": "controller", "type": "address" },
+      { "internalType": "address", "name": "token", "type": "address" },
+      { "internalType": "address", "name": "strategy", "type": "address" },
+      { "internalType": "bool", "name": "isWrapped", "type": "bool" },
+      { "internalType": "bool", "name": "isDelegated", "type": "bool" }
+    ],
+    "stateMutability": "view",
+    "type": "function"
   }
 ]

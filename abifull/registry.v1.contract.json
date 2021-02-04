@@ -14,27 +14,21 @@
     "type": "function"
   },
   {
-    "inputs": [
-      { "internalType": "address", "name": "_vault", "type": "address" }
-    ],
+    "inputs": [{ "internalType": "address", "name": "_vault", "type": "address" }],
     "name": "addDelegatedVault",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
   },
   {
-    "inputs": [
-      { "internalType": "address", "name": "_vault", "type": "address" }
-    ],
+    "inputs": [{ "internalType": "address", "name": "_vault", "type": "address" }],
     "name": "addVault",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
   },
   {
-    "inputs": [
-      { "internalType": "address", "name": "_vault", "type": "address" }
-    ],
+    "inputs": [{ "internalType": "address", "name": "_vault", "type": "address" }],
     "name": "addWrappedVault",
     "outputs": [],
     "stateMutability": "nonpayable",
@@ -48,20 +42,14 @@
     "type": "function"
   },
   {
-    "inputs": [
-      { "internalType": "uint256", "name": "index", "type": "uint256" }
-    ],
+    "inputs": [{ "internalType": "uint256", "name": "index", "type": "uint256" }],
     "name": "getVault",
-    "outputs": [
-      { "internalType": "address", "name": "vault", "type": "address" }
-    ],
+    "outputs": [{ "internalType": "address", "name": "vault", "type": "address" }],
     "stateMutability": "view",
     "type": "function"
   },
   {
-    "inputs": [
-      { "internalType": "address", "name": "_vault", "type": "address" }
-    ],
+    "inputs": [{ "internalType": "address", "name": "_vault", "type": "address" }],
     "name": "getVaultInfo",
     "outputs": [
       { "internalType": "address", "name": "controller", "type": "address" },
@@ -76,9 +64,7 @@
   {
     "inputs": [],
     "name": "getVaults",
-    "outputs": [
-      { "internalType": "address[]", "name": "", "type": "address[]" }
-    ],
+    "outputs": [{ "internalType": "address[]", "name": "", "type": "address[]" }],
     "stateMutability": "view",
     "type": "function"
   },

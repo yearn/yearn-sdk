@@ -14,5 +14,8 @@ export async function fetchV2ExperimentalAddresses(ctx: Context): Promise<string
   const registry = RegistryV2Contract__factory.connect(RegistryV2, ctx.provider);
   const testFilter = registry.filters.NewExperimentalVault(null, null, null, null);
   const test = await registry.queryFilter(testFilter);
-  return test.map(event => event.args && event.args.vault);
+  const prod = await fetchV2Addresses(ctx);
+  return test
+    .map(event => event.args && event.args.vault)
+    .filter(address => !prod.includes(address));
 }

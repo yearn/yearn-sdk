@@ -1,4 +1,4 @@
-import { StrategyContract__factory } from "../../contracts";
+import { StrategyV2Contract__factory } from "../../contracts";
 import { Context } from "../../data/context";
 import { Block } from "../../utils/block";
 import { VaultV2 } from "../interfaces";
@@ -10,7 +10,7 @@ export async function fetchHarvestCalls(
   if (vault.strategies.length === 0) return [];
   const all = await Promise.all(
     vault.strategies.map(async ({ address }) => {
-      const strategy = StrategyContract__factory.connect(address, ctx.provider);
+      const strategy = StrategyV2Contract__factory.connect(address, ctx.provider);
       const filter = strategy.filters.Harvested(null, null, null, null);
       const events = await strategy.queryFilter(filter);
       return events.map(event => event.blockNumber);

@@ -42,23 +42,34 @@
     "outputs": [{ "type": "uint256", "name": "" }],
     "inputs": [],
     "stateMutability": "view",
-    "type": "function",
-    "gas": "12412"
+    "type": "function"
   },
   {
     "name": "emergencyShutdown",
     "outputs": [{ "type": "bool", "name": "" }],
     "inputs": [],
     "stateMutability": "view",
-    "type": "function",
-    "gas": "31000"
+    "type": "function"
   },
   {
     "name": "withdrawalQueue",
     "outputs": [{ "type": "address", "name": "" }],
     "inputs": [{ "type": "uint256", "name": "arg0" }],
     "stateMutability": "view",
-    "type": "function",
-    "gas": "31000"
+    "type": "function"
+  },
+  {
+    "name": "managementFee",
+    "outputs": [{ "type": "uint256", "name": "" }],
+    "inputs": [],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "name": "performanceFee",
+    "outputs": [{ "type": "uint256", "name": "" }],
+    "inputs": [],
+    "stateMutability": "view",
+    "type": "function"
   }
 ]

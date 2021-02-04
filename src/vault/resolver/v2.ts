@@ -1,5 +1,6 @@
 import {
-  StrategyContract__factory,
+  RegistryV2Contract__factory,
+  StrategyV2Contract__factory,
   VaultV2Contract__factory
 } from "../../contracts";
 import { Context } from "../../data/context";
@@ -8,8 +9,11 @@ import { objectAll } from "../../utils/promise";
 import { Strategy, VaultV2 } from "../interfaces";
 import { resolveBasic } from "./common";
 
-async function resolveStrategy(address: string, ctx: Context): Promise<Strategy> {
-  const strategy = StrategyContract__factory.connect(address, ctx.provider);
+export async function resolveStrategyV2(
+  address: string,
+  ctx: Context
+): Promise<Strategy> {
+  const strategy = StrategyV2Contract__factory.connect(address, ctx.provider);
   const structure = {
     name: strategy.name()
   };
@@ -18,6 +22,15 @@ async function resolveStrategy(address: string, ctx: Context): Promise<Strategy>
     ...result,
     address
   };
+}
+
+export async function fetchTagsV2(address: string, ctx: Context): Promise<string[]> {
+  const registry = RegistryV2Contract__factory.connect(address, ctx.provider);
+  const tagFilter = registry.filters.VaultTagged(null, null);
+  const tags = await registry.queryFilter(tagFilter);
+  return tags
+    .filter(event => event.args && event.args.vault === address)
+    .map(event => event.args && event.args.tag);
 }
 
 export async function resolveV2(address: string, ctx: Context): Promise<VaultV2> {
@@ -39,9 +52,21 @@ export async function resolveV2(address: string, ctx: Context): Promise<VaultV2>
 
   strategyAddresses.pop(); // Remove NullAddresses
 
+  const tags = await fetchTagsV2(address, ctx);
   const strategies = await Promise.all(
-    strategyAddresses.map(address => resolveStrategy(address, ctx))
+    strategyAddresses.map(address => resolveStrategyV2(address, ctx))
   );
 
-  return { ...basic, ...specific, strategies, type: "v2" };
+  const performanceFee = await vault.performanceFee().then(val => val.toNumber());
+  const managementFee = await vault.managementFee().then(val => val.toNumber());
+
+  return {
+    ...basic,
+    ...specific,
+    performanceFee,
+    managementFee,
+    strategies,
+    tags,
+    type: "v2"
+  };
 }

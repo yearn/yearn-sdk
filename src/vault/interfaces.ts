@@ -20,12 +20,18 @@ export interface VaultBase {
 
 export interface VaultV1 extends VaultBase {
   type: "v1";
+  strategies: Strategy[];
+  performanceFee?: number;
+  withdrawalFee?: number;
 }
 
 export interface VaultV2 extends VaultBase {
   type: "v2";
   emergencyShutdown: boolean;
   strategies: Strategy[];
+  tags: string[];
+  performanceFee?: number;
+  managementFee?: number;
 }
 
 export type Vault = VaultV1 | VaultV2;

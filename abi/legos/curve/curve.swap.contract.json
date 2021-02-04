@@ -1,0 +1,10 @@
+[
+  {
+    "name": "get_virtual_price",
+    "outputs": [{ "type": "uint256", "name": "out" }],
+    "inputs": [],
+    "constant": true,
+    "payable": false,
+    "type": "function"
+  }
+]

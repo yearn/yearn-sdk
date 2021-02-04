@@ -52,5 +52,34 @@
     ],
     "name": "NewExperimentalVault",
     "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "name": "governance",
+        "type": "address"
+      }
+    ],
+    "name": "NewGovernance",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "name": "vault",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "name": "tag",
+        "type": "string"
+      }
+    ],
+    "name": "VaultTagged",
+    "type": "event"
   }
 ]
