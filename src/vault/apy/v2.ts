@@ -18,7 +18,9 @@ export async function calculateVaultV2Apy(
 ): Promise<VaultApy> {
   const contract = VaultV2Contract__factory.connect(vault.address, ctx.provider);
   const harvests = await fetchHarvestCalls(vault, ctx);
-  if (harvests.length < 2) return { oneMonthSample: null, inceptionSample: null };
+  if (harvests.length < 2) {
+    return { oneMonthSample: null, inceptionSample: null };
+  }
   const latest = await createTimedBlock(harvests[harvests.length - 1], ctx);
   const inception = await createTimedBlock(harvests[0], ctx);
   const oneMonth = await estimateBlockPrecise(

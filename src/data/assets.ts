@@ -4,7 +4,7 @@ import fetch from "node-fetch";
 const GhRawURL = "https://raw.githubusercontent.com";
 const GhApiURL = "https://api.github.com/repos";
 
-const YearnAliasesURL = `${GhRawURL}/tokens/token.aliases.json`;
+const YearnAliasesURL = `${GhRawURL}/iearn-finance/yearn-assets/master/icons/aliases.json`;
 
 const YearnAssetsDirURL = `${GhApiURL}/iearn-finance/yearn-assets/contents/icons/tokens`;
 const YearnAssetsURL = `${GhRawURL}/iearn-finance/yearn-assets/master/icons/tokens/`;

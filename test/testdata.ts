@@ -2,21 +2,21 @@ import { Vault } from "../src/vault/interfaces";
 
 export const vaults = {
   v1: {
-    address: "0x29E240CFD7946BA20895a7a02eDb25C210f9f324",
+    address: "0x5dbcF33D8c2E976c6b560249878e6F1491Bca25c",
     object: {
-      address: "0x29E240CFD7946BA20895a7a02eDb25C210f9f324",
-      name: "yearn Aave Interest bearing LINK",
-      symbol: "yaLINK",
+      address: "0x5dbcF33D8c2E976c6b560249878e6F1491Bca25c",
+      name: "yearn Curve.fi yDAI/yUSDC/yUSDT/yTUSD",
+      symbol: "yyDAI+yUSDC+yUSDT+yTUSD",
       decimals: 18,
       token: {
-        name: "Aave Interest bearing LINK",
-        symbol: "aLINK",
-        address: "0xA64BD6C70Cb9051F6A9ba1F163Fdc07E0DfB5F84",
+        name: "Curve.fi yDAI/yUSDC/yUSDT/yTUSD",
+        symbol: "yDAI+yUSDC+yUSDT+yTUSD",
+        address: "0xdF5e0e81Dff6FAF3A7e52BA697820c5e32D806A8",
         decimals: 18
       },
       type: "v1"
     } as Vault,
-    inception: 10599657
+    inception: 10559471
   },
   v2: {
     address: "0x33bd0f9618cf38fea8f7f01e1514ab63b9bde64b",
@@ -26,6 +26,7 @@ export const vaults = {
       symbol: "yUSDCIdleTest",
       emergencyShutdown: false,
       decimals: 6,
+      tags: [],
       token: {
         name: "USD Coin",
         symbol: "USDC",

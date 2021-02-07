@@ -7,7 +7,9 @@ export async function fetchHarvestCalls(
   vault: VaultV2,
   ctx: Context
 ): Promise<Block[]> {
-  if (vault.strategies.length === 0) return [];
+  if (vault.strategies.length === 0) {
+    return [];
+  }
   const all = await Promise.all(
     vault.strategies.map(async ({ address }) => {
       const strategy = StrategyV2Contract__factory.connect(address, ctx.provider);

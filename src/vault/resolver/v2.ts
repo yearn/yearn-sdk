@@ -52,21 +52,11 @@ export async function resolveV2(address: string, ctx: Context): Promise<VaultV2>
 
   strategyAddresses.pop(); // Remove NullAddresses
 
-  const tags = await fetchTagsV2(address, ctx);
   const strategies = await Promise.all(
     strategyAddresses.map(address => resolveStrategyV2(address, ctx))
   );
 
-  const performanceFee = await vault.performanceFee().then(val => val.toNumber());
-  const managementFee = await vault.managementFee().then(val => val.toNumber());
+  const tags = await fetchTagsV2(address, ctx);
 
-  return {
-    ...basic,
-    ...specific,
-    performanceFee,
-    managementFee,
-    strategies,
-    tags,
-    type: "v2"
-  };
+  return { ...basic, ...specific, strategies, tags, type: "v2" };
 }

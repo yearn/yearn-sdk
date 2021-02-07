@@ -12,7 +12,9 @@ export async function calculateVaultV1Apy(
 ): Promise<VaultApy> {
   const contract = VaultV1Contract__factory.connect(vault.address, ctx.provider);
   const inception = await fetchInceptionBlock(vault, ctx);
-  if (!inception) return { oneMonthSample: null, inceptionSample: null };
+  if (!inception) {
+    return { oneMonthSample: null, inceptionSample: null };
+  }
   const latest = await fetchLatestBlock(ctx);
   const oneMonth = await estimateBlockPrecise(
     latest.timestamp - seconds("4 weeks"),
