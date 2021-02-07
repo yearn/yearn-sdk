@@ -17,11 +17,15 @@ describe("block estimation", () => {
     ctx = new Context({ provider, etherscan: process.env.ETHERSCAN_KEY });
   });
 
-  it("loose estimation (network)", async () => {
-    const currentBlock = await provider.getBlockNumber();
-    const estimation = estimateBlock(Timestamp, currentBlock);
-    expect(estimation).toStrictEqual(expect.any(Number));
-  });
+  it(
+    "loose estimation (network)",
+    async () => {
+      const currentBlock = await provider.getBlockNumber();
+      const estimation = estimateBlock(Timestamp, currentBlock);
+      expect(estimation).toStrictEqual(expect.any(Number));
+    },
+    60 * 1000
+  );
 
   it(
     "precise estimation (network)",
