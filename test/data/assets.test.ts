@@ -1,8 +1,8 @@
-import { fetchAliases, fetchAssets } from "../../src/data/assets";
+import { assets } from "../../src/data";
 
 describe("assets", () => {
   it("fetch aliases (network)", async () => {
-    const aliases = await fetchAliases();
+    const aliases = await assets.fetchAliases();
     return expect(Object.values(aliases)).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
@@ -14,8 +14,8 @@ describe("assets", () => {
     );
   });
   it("fetch assets (network)", async () => {
-    const assets = await fetchAssets();
-    return expect(Object.values(assets)).toEqual(
+    const files = await assets.fetchAssets();
+    return expect(Object.values(files)).toEqual(
       expect.arrayContaining([expect.any(String)])
     );
   });
