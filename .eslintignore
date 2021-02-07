@@ -3,3 +3,7 @@ jest.config.js
 tsdx.config.js
 examples
 tools
+abi
+abifull
+coverage
+dist

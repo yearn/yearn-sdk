@@ -12,7 +12,7 @@ function findNearestBlock(needle: Block, haystack: Block[]) {
   );
 }
 
-export async function calculateVaultV2Apy(
+export async function calculateV2Apy(
   vault: VaultV2,
   ctx: Context
 ): Promise<VaultApy> {

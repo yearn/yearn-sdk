@@ -6,7 +6,7 @@ import { VaultV1 } from "../interfaces";
 import { fetchInceptionBlock } from "../reader";
 import { calculateApyPps, VaultApy } from "./common";
 
-export async function calculateVaultV1Apy(
+export async function calculateV1Apy(
   vault: VaultV1,
   ctx: Context
 ): Promise<VaultApy> {

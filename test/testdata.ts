@@ -1,4 +1,4 @@
-import { Vault } from "../src/vault/interfaces";
+import { VaultV1, VaultV2 } from "../src/vault/interfaces";
 
 export const vaults = {
   v1: {
@@ -15,7 +15,7 @@ export const vaults = {
         decimals: 18
       },
       type: "v1"
-    } as Vault,
+    } as VaultV1,
     inception: 10559471
   },
   v2: {
@@ -40,7 +40,7 @@ export const vaults = {
         }
       ],
       type: "v2"
-    } as Vault,
+    } as VaultV2,
     inception: 11421976
   }
 };
