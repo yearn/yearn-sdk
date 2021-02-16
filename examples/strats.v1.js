@@ -8,7 +8,7 @@ const yearn = sdk.protocols.yearn;
 const provider = new WebSocketProvider(process.env.WEB3_PROVIDER_WSS);
 const etherscan = process.env.ETHERSCAN_KEY;
 
-const ctx = new yearn.Context({ provider, etherscan });
+const ctx = new sdk.Context({ provider, etherscan });
 
 async function main() {
   const v1 = await yearn.vault.fetchV1Addresses(ctx);

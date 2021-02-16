@@ -4,8 +4,6 @@ const { WebSocketProvider } = require("@ethersproject/providers");
 
 const sdk = require("..");
 
-// import * as sdk from "../src/index.js";
-
 const provider = new WebSocketProvider(process.env.WEB3_PROVIDER_WSS);
 const etherscan = process.env.ETHERSCAN_KEY;
 
