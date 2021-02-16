@@ -156,7 +156,7 @@ export async function calculateApy(lpToken: string, ctx: Context): Promise<Apy> 
     recommended: aggregateApy.toNumber(),
     type: "curve",
     composite: true,
-    description: "APY mirrors Curve calculations",
+    description: "Pool APY + Boosted CRV APY",
     data
   };
 }
