@@ -2,10 +2,10 @@ import "dotenv/config";
 
 import { WebSocketProvider } from "@ethersproject/providers";
 
-// import { Context } from "../../../../../data/context";
-import { BigNumber } from "../../../../../utils/bn";
 // import { calculateApy } from "../";
-import { calculateYearlyRoi } from "../apy";
+import { calculateYearlyRoi } from "../../../src/protocols/yearn/assets/vault/apy";
+// import { Context } from "../../../../../data/context";
+import { BigNumber } from "../../../src/utils/bn";
 // import { vaults } from "./testdata";
 
 describe("yearly roi", () => {

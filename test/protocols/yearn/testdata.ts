@@ -1,4 +1,4 @@
-import { VaultV1, VaultV2 } from "../interfaces";
+import { VaultV1, VaultV2 } from "../../../src/protocols/yearn/assets/vault";
 
 export const vaults = {
   v1: {

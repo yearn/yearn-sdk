@@ -2,8 +2,8 @@ import "dotenv/config";
 
 import { WebSocketProvider } from "@ethersproject/providers";
 
-import { Context } from "../../../../../data/context";
-import { fetchInceptionBlock } from "../";
+import { Context } from "../../../src/data/context";
+import { fetchInceptionBlock } from "../../../src/protocols/yearn/assets/vault";
 import { vaults } from "./testdata";
 
 describe("", () => {

@@ -2,8 +2,8 @@ import "dotenv/config";
 
 import { WebSocketProvider } from "@ethersproject/providers";
 
-import { Context } from "../../../../../data/context";
-import { resolveV1, resolveV2 } from "../";
+import { Context } from "../../../src/data/context";
+import { resolveV1, resolveV2 } from "../../../src/protocols/yearn/assets/vault";
 import { vaults } from "./testdata";
 
 describe("resolver", () => {
