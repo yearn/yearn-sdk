@@ -1,1 +1,37 @@
-[]
+[
+  {
+    "name": "controller",
+    "outputs": [{ "type": "address", "name": "" }],
+    "inputs": [],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "name": "inflation_rate",
+    "outputs": [{ "type": "uint256", "name": "" }],
+    "inputs": [],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "name": "working_balances",
+    "outputs": [{ "type": "uint256", "name": "" }],
+    "inputs": [{ "type": "address", "name": "arg0" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "name": "working_supply",
+    "outputs": [{ "type": "uint256", "name": "" }],
+    "inputs": [],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "name": "balanceOf",
+    "outputs": [{ "type": "uint256", "name": "" }],
+    "inputs": [{ "type": "address", "name": "arg0" }],
+    "stateMutability": "view",
+    "type": "function"
+  }
+]

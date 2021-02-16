@@ -3,6 +3,7 @@ module.exports = {
     "src/**/*.{ts,tsx,js,jsx}",
     "!**/node_modules/**",
     "!**/contracts/**",
-    "!**/dist/**",
+    "!**/dist/**"
   ],
+  moduleDirectories: ["node_modules", "src"]
 };

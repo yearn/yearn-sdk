@@ -3,6 +3,10 @@
   "compilerOptions": {
     "target": "es2018",
     "module": "esnext",
+    "baseUrl": ".",
+    "paths": {
+      "*": ["./src/*"]
+    },
     "importHelpers": true,
     "declaration": true,
     "sourceMap": true,

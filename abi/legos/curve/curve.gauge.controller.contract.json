@@ -1,0 +1,9 @@
+[
+  {
+    "name": "gauge_relative_weight",
+    "outputs": [{ "type": "uint256", "name": "" }],
+    "inputs": [{ "type": "address", "name": "addr" }],
+    "stateMutability": "view",
+    "type": "function"
+  }
+]

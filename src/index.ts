@@ -1,7 +1,6 @@
 import * as contracts from "./contracts";
 import * as data from "./data";
-import * as legos from "./legos";
-import * as vault from "./vault";
+import * as protocols from "./protocols";
 
 export { Context } from "./data/context";
-export { contracts, data, legos, vault };
+export { contracts, data, protocols };

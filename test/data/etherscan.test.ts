@@ -21,5 +21,5 @@ describe("etherscan integration", () => {
         })
       ])
     );
-  }, 10000);
+  }, 15000);
 });

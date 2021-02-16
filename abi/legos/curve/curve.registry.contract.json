@@ -13,5 +13,43 @@
     "inputs": [{ "type": "address", "name": "arg0" }],
     "stateMutability": "view",
     "type": "function"
+  },
+  {
+    "name": "get_gauges",
+    "outputs": [
+      {
+        "type": "address[10]",
+        "name": ""
+      },
+      {
+        "type": "int128[10]",
+        "name": ""
+      }
+    ],
+    "inputs": [
+      {
+        "type": "address",
+        "name": "_pool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "name": "get_underlying_coins",
+    "outputs": [
+      {
+        "type": "address[8]",
+        "name": ""
+      }
+    ],
+    "inputs": [
+      {
+        "type": "address",
+        "name": "_pool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
   }
 ]
