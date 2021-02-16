@@ -2,7 +2,7 @@
   "name": "@yfi/sdk",
   "author": "yearn.finance",
   "description": "SDK for the yearn.finance platform",
-  "version": "0.0.10",
+  "version": "0.0.11",
   "license": "MIT",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
