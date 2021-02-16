@@ -1,7 +1,7 @@
 {
   "include": ["src", "types"],
   "compilerOptions": {
-    "target": "es2018",
+    "target": "ES2019",
     "module": "esnext",
     "baseUrl": ".",
     "paths": {

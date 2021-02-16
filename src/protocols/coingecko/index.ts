@@ -1,2 +1,3 @@
-import { getPrice, getPrices } from "./utils";
-export { getPrice, getPrices };
+import { getPrice } from "./price";
+
+export { getPrice };

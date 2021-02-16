@@ -3,7 +3,7 @@ import "dotenv/config";
 import { WebSocketProvider } from "@ethersproject/providers";
 
 import { Context } from "../../../src/data/context";
-import { calculateTvlV2 } from "../../../src/protocols/yearn/assets/vault";
+import { calculateTvlV2 } from "../../../src/protocols/yearn/vault";
 import { vaults } from "./testdata";
 
 describe("tvl", () => {

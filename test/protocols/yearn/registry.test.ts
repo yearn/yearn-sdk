@@ -7,7 +7,7 @@ import {
   fetchV1Addresses,
   fetchV2Addresses,
   fetchV2ExperimentalAddresses
-} from "../../../src/protocols/yearn/assets/vault";
+} from "../../../src/protocols/yearn/vault";
 
 describe("registry", () => {
   let provider: WebSocketProvider;

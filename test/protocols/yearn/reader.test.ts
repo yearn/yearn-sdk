@@ -3,10 +3,10 @@ import "dotenv/config";
 import { WebSocketProvider } from "@ethersproject/providers";
 
 import { Context } from "../../../src/data/context";
-import { fetchInceptionBlock } from "../../../src/protocols/yearn/assets/vault";
+import { fetchInceptionBlock } from "../../../src/protocols/yearn/vault";
 import { vaults } from "./testdata";
 
-describe("", () => {
+describe("yearn read vaults", () => {
   let provider: WebSocketProvider;
   let ctx: Context;
 

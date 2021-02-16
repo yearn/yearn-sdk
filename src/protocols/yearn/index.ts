@@ -1,8 +1,7 @@
 import { Context } from "../../data/context";
 import { sumTvl } from "../common";
 import { Assets, Metadata, Project, Summary } from "../interfaces";
-// import { Vault } from "./assets/vault/interfaces";
-import utils from "./utils";
+import * as vaults from "./vaults";
 
 const metadata: Metadata = {
   name: "yearn.finance",
@@ -25,8 +24,7 @@ export async function summary(ctx: Context): Promise<Summary> {
 }
 
 export async function assets(ctx: Context): Promise<Assets> {
-  const vaults = await utils.vaults.fetchAll(ctx);
-  return vaults;
+  return await vaults.fetchAll(ctx);
 }
 
 const project: Project = {
