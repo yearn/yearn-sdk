@@ -1,4 +1,4 @@
-import { assets } from "../../src/data";
+import { assets } from "@data/index";
 
 describe("assets", () => {
   it("fetch aliases (network)", async () => {

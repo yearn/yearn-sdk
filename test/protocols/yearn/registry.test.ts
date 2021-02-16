@@ -1,13 +1,12 @@
 import "dotenv/config";
 
+import { Context } from "@data/context";
 import { WebSocketProvider } from "@ethersproject/providers";
-
-import { Context } from "../../../src/data/context";
 import {
   fetchV1Addresses,
   fetchV2Addresses,
   fetchV2ExperimentalAddresses
-} from "../../../src/protocols/yearn/vault";
+} from "@protocols/yearn/vault";
 
 describe("registry", () => {
   let provider: WebSocketProvider;

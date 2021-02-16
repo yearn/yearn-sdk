@@ -1,4 +1,5 @@
-import { Context } from "../data/context";
+import { Context } from "@data/context";
+
 import { BlocksPerSecond } from "./constants";
 import { unix } from "./time";
 

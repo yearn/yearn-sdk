@@ -1,8 +1,7 @@
+import { Context } from "@data/context";
+import { handleHTTPError } from "@utils/fetch";
 import fetch from "node-fetch";
 import throttle from "p-throttle";
-import { handleHTTPError } from "utils/fetch";
-
-import { Context } from "../../data/context";
 
 const EtherscanEndpoint = "https://api.etherscan.io";
 

@@ -1,9 +1,10 @@
 require("dotenv/config");
 
 const { WebSocketProvider } = require("@ethersproject/providers");
-
-const yearn = require("..");
 const { tab } = require("./helpers");
+
+const sdk = require("..");
+const yearn = sdk.protocols.yearn;
 
 const provider = new WebSocketProvider(process.env.WEB3_PROVIDER_WSS);
 const etherscan = process.env.ETHERSCAN_KEY;

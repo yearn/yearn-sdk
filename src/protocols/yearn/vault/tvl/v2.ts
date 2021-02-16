@@ -1,6 +1,7 @@
-import { VaultV2Contract__factory } from "../../../../contracts";
-import { Context } from "../../../../data/context";
-import { toBigNumber } from "../../../../utils/bn";
+import { VaultV2Contract__factory } from "@contracts/index";
+import { Context } from "@data/context";
+import { toBigNumber } from "@utils/bignumber";
+
 import { VaultV2 } from "../interfaces";
 
 export async function calculateTvlV2(vault: VaultV2, ctx: Context): Promise<number> {

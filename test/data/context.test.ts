@@ -1,6 +1,5 @@
+import { Context } from "@data/context";
 import { JsonRpcProvider } from "@ethersproject/providers";
-
-import { Context } from "../../src/data/context";
 
 describe("context", () => {
   it("should throw if no provider key is provided but requested", () => {

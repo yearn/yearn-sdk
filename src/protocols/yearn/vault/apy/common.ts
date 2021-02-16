@@ -1,9 +1,8 @@
+import { BigNumber, toBigNumber } from "@utils/bignumber";
+import { Block } from "@utils/block";
+import { BlocksPerDay } from "@utils/constants";
 import { CallOverrides, ethers } from "ethers";
 import fromEntries from "fromentries";
-
-import { Block } from "../../../../utils/block";
-import { BigNumber, toBigNumber } from "../../../../utils/bn";
-import { BlocksPerDay } from "../../../../utils/constants";
 
 export interface Snapshot {
   value: BigNumber;

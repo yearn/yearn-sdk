@@ -1,8 +1,9 @@
 import {
   RegistryV1Contract__factory,
   StrategyV1Contract__factory
-} from "../../../../contracts";
-import { Context } from "../../../../data/context";
+} from "@contracts/index";
+import { Context } from "@data/context";
+
 import { Strategy, VaultV1 } from "../interfaces";
 import { RegistryV1 } from "../registry/v1";
 import { resolveBasic } from "./common";

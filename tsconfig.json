@@ -1,16 +1,19 @@
 {
-  "include": ["src", "types"],
+  "include": ["src", "types", "test"],
   "compilerOptions": {
-    "target": "ES2019",
+    "target": "ES2018",
     "module": "esnext",
     "baseUrl": ".",
     "paths": {
-      "*": ["./src/*"]
+      "@contracts/*": ["src/contracts/*"],
+      "@data/*": ["src/data/*"],
+      "@protocols/*": ["src/protocols/*"],
+      "@utils/*": ["src/utils/*"]
     },
     "importHelpers": true,
     "declaration": true,
     "sourceMap": true,
-    "rootDir": "./src",
+    "rootDir": ".",
     "strict": true,
     "noImplicitAny": true,
     "strictNullChecks": true,

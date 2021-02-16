@@ -1,4 +1,4 @@
-import { Context } from "../data/context";
+import { Context } from "@data/context";
 
 export interface Summary extends Metadata {
   tvl?: number;

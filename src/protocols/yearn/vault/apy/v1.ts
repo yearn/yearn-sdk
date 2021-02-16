@@ -1,8 +1,9 @@
-import { VaultV1Contract__factory } from "../../../../contracts";
-import { Context } from "../../../../data/context";
-import { estimateBlockPrecise, fetchLatestBlock } from "../../../../utils/block";
-import { seconds } from "../../../../utils/time";
-import { Apy } from "../../../interfaces";
+import { VaultV1Contract__factory } from "@contracts/index";
+import { Context } from "@data/context";
+import { Apy } from "@protocols/interfaces";
+import { estimateBlockPrecise, fetchLatestBlock } from "@utils/block";
+import { seconds } from "@utils/time";
+
 import { VaultV1 } from "../interfaces";
 import { fetchInceptionBlock } from "../reader";
 import { calculateApyPps } from "./common";

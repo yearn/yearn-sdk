@@ -1,6 +1,7 @@
-import { Context } from "../../../../data/context";
-import * as curve from "../../../curve";
-import { Apy } from "../../../interfaces";
+import { Context } from "@data/context";
+import * as curve from "@protocols/curve";
+import { Apy } from "@protocols/interfaces";
+
 import { Vault } from "../interfaces";
 import { calculateApyPps, calculateYearlyRoi } from "./common";
 import { calculateV1Apy } from "./v1";

@@ -1,12 +1,9 @@
-import { VaultV2Contract__factory } from "../../../../contracts";
-import { Context } from "../../../../data/context";
-import {
-  Block,
-  createTimedBlock,
-  estimateBlockPrecise
-} from "../../../../utils/block";
-import { seconds } from "../../../../utils/time";
-import { Apy } from "../../../interfaces";
+import { VaultV2Contract__factory } from "@contracts/index";
+import { Context } from "@data/context";
+import { Apy } from "@protocols/interfaces";
+import { Block, createTimedBlock, estimateBlockPrecise } from "@utils/block";
+import { seconds } from "@utils/time";
+
 import { VaultV2 } from "../interfaces";
 import { fetchHarvestCalls } from "../reader";
 import { calculateApyPps } from "./common";

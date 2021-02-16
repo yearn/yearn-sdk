@@ -1,6 +1,6 @@
+import { handleHTTPError } from "@utils/fetch";
 import fromEntries from "fromentries";
 import fetch from "node-fetch";
-import { handleHTTPError } from "utils/fetch";
 
 export type Price<T extends string> = { [K in T]: number };
 export type PriceMap<A extends string, T extends string> = { [K in A]: Price<T> };

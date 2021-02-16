@@ -1,7 +1,7 @@
 import "dotenv/config";
 
-import { etherscan } from "../../src/data";
-import { Context } from "../../src/data/context";
+import { Context } from "@data/context";
+import { fetchTransactionList } from "@protocols/etherscan";
 
 describe("etherscan integration", () => {
   let ctx: Context;
@@ -12,7 +12,7 @@ describe("etherscan integration", () => {
 
   it("should fetch tx list (network)", () => {
     const address = "0x0000000000000000000000000000000000000000";
-    const request = etherscan.fetchTransactionList({ address }, ctx);
+    const request = fetchTransactionList({ address }, ctx);
     return expect(request).resolves.toEqual(
       expect.arrayContaining([
         expect.objectContaining({

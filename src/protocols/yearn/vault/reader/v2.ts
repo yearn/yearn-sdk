@@ -1,6 +1,7 @@
-import { StrategyV2Contract__factory } from "../../../../contracts";
-import { Context } from "../../../../data/context";
-import { Block } from "../../../../utils/block";
+import { StrategyV2Contract__factory } from "@contracts/index";
+import { Context } from "@data/context";
+import { Block } from "@utils/block";
+
 import { VaultV2 } from "../interfaces";
 
 export async function fetchHarvestCalls(

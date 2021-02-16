@@ -1,9 +1,7 @@
-import {
-  Erc20Contract__factory,
-  VaultV1Contract__factory
-} from "../../../../contracts";
-import { Context } from "../../../../data/context";
-import { objectAll } from "../../../../utils/promise";
+import { Erc20Contract__factory, VaultV1Contract__factory } from "@contracts/index";
+import { Context } from "@data/context";
+import { objectAll } from "@utils/promise";
+
 import { Token, VaultBase } from "../interfaces";
 
 export async function resolveToken(address: string, ctx: Context): Promise<Token> {

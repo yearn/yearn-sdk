@@ -2,10 +2,11 @@ import {
   RegistryV2Contract__factory,
   StrategyV2Contract__factory,
   VaultV2Contract__factory
-} from "../../../../contracts";
-import { Context } from "../../../../data/context";
-import { NullAddress } from "../../../../utils/constants";
-import { objectAll } from "../../../../utils/promise";
+} from "@contracts/index";
+import { Context } from "@data/context";
+import { NullAddress } from "@utils/constants";
+import { objectAll } from "@utils/promise";
+
 import { Strategy, VaultV2 } from "../interfaces";
 import { resolveBasic } from "./common";
 

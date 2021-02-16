@@ -1,9 +1,9 @@
 import "dotenv/config";
 
+import { Context } from "@data/context";
 import { WebSocketProvider } from "@ethersproject/providers";
+import { calculateTvlV2 } from "@protocols/yearn/vault";
 
-import { Context } from "../../../src/data/context";
-import { calculateTvlV2 } from "../../../src/protocols/yearn/vault";
 import { vaults } from "./testdata";
 
 describe("tvl", () => {

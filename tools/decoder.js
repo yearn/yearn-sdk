@@ -2,7 +2,9 @@ const decoder = require("abi-decoder");
 const path = require("path");
 const fs = require("fs");
 
-const [exe, file, ...rest] = process.argv;
+const abidir = "abifull";
+
+const [_, __, ...rest] = process.argv;
 
 if (rest.length !== 1) {
   console.log("[!] please provide data");
@@ -10,8 +12,6 @@ if (rest.length !== 1) {
 }
 
 const data = rest[0];
-
-const abidir = "abifull";
 
 function loadAbis(dir) {
   fs.readdirSync(dir).forEach((file) => {

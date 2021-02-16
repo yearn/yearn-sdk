@@ -1,4 +1,4 @@
-import { seconds, unix } from "../../src/utils/time";
+import { seconds, unix } from "@utils/time";
 
 describe("unix timestamp", () => {
   it("should return an integer", () => {

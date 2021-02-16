@@ -1,5 +1,5 @@
-import { RegistryV2Contract__factory } from "../../../../contracts";
-import { Context } from "../../../../data/context";
+import { RegistryV2Contract__factory } from "@contracts/index";
+import { Context } from "@data/context";
 
 const RegistryV2 = "v2.registry.ychad.eth";
 

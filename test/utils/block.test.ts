@@ -1,9 +1,8 @@
 import "dotenv/config";
 
+import { Context } from "@data/context";
 import { WebSocketProvider } from "@ethersproject/providers";
-
-import { Context } from "../../src/data/context";
-import { estimateBlock, estimateBlockPrecise } from "../../src/utils/block";
+import { estimateBlock, estimateBlockPrecise } from "@utils/block";
 
 const Timestamp = 1592179200;
 const ActualBlock = 10267003;

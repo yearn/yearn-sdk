@@ -1,9 +1,8 @@
 import "dotenv/config";
 
+import { Context } from "@data/context";
 import { WebSocketProvider } from "@ethersproject/providers";
-
-import { Context } from "../../../src/data/context";
-import { calculateApy } from "../../../src/protocols/curve";
+import { calculateApy } from "@protocols/curve";
 
 const CurveVault = "0xFd2a8fA60Abd58Efe3EeE34dd494cD491dC14900";
 

@@ -1,9 +1,9 @@
 import "dotenv/config";
 
+import { Context } from "@data/context";
 import { WebSocketProvider } from "@ethersproject/providers";
+import { fetchInceptionBlock } from "@protocols/yearn/vault";
 
-import { Context } from "../../../src/data/context";
-import { fetchInceptionBlock } from "../../../src/protocols/yearn/vault";
 import { vaults } from "./testdata";
 
 describe("yearn read vaults", () => {

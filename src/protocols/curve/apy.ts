@@ -2,12 +2,13 @@ import {
   CurveGaugeContract__factory,
   CurveGaugeControllerContract__factory,
   CurveRegistryContract__factory
-} from "../../contracts";
-import { Context } from "../../data/context";
-import { estimateBlockPrecise, fetchLatestBlock } from "../../utils/block";
-import { BigNumber, toBigNumber } from "../../utils/bn";
-import { seconds } from "../../utils/time";
-import { getPrice } from "../coingecko";
+} from "@contracts/index";
+import { Context } from "@data/context";
+import { getPrice } from "@protocols/coingecko";
+import { BigNumber, toBigNumber } from "@utils/bignumber";
+import { estimateBlockPrecise, fetchLatestBlock } from "@utils/block";
+import { seconds } from "@utils/time";
+
 import { Apy } from "../interfaces";
 import { Apy as VaultApy, calculateApyPps } from "../yearn/vault/apy/common";
 import { getPoolFromLpToken } from "./registry";

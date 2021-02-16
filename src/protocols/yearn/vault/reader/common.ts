@@ -1,6 +1,7 @@
-import { Context } from "../../../../data/context";
-import { fetchTransactionList } from "../../../../data/etherscan";
-import { TimedBlock } from "../../../../utils/block";
+import { Context } from "@data/context";
+import { fetchTransactionList } from "@protocols/etherscan";
+import { TimedBlock } from "@utils/block";
+
 import { Vault } from "../interfaces";
 
 export async function fetchInceptionBlock(
