@@ -1,7 +1,17 @@
 {
   "extends": "./tsconfig",
   "compilerOptions": {
-    "rootDir": "./src"
+    "rootDir": "./src",
+    "plugins": [
+      {
+        "transform": "@zerollup/ts-transform-paths",
+        "exclude": [
+          "*"
+        ]
+      }
+    ]
   },
-  "exclude": ["test"]
+  "exclude": [
+    "test"
+  ]
 }
