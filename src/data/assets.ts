@@ -1,7 +1,7 @@
 import fromEntries from "fromentries";
 import fetch from "node-fetch";
 
-const GhRawURL = "https://raw.githubusercontent.com";
+const GhRawURL = "https://rawcdn.githack.com";
 const GhApiURL = "https://api.github.com/repos";
 
 const YearnAliasesURL = `${GhRawURL}/iearn-finance/yearn-assets/master/icons/aliases.json`;
