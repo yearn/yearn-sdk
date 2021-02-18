@@ -1,5 +1,5 @@
 import { Context } from "@data/context";
-import { Apy } from "@protocols/interfaces";
+import { Apy } from "@protocols/common/apy";
 
 import { VaultV2 } from "../../interfaces";
 import { calculateAveraged, shouldBeAveraged } from "./averaged";

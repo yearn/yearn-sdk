@@ -2,7 +2,8 @@ import "dotenv/config";
 
 import { Context } from "@data/context";
 import { WebSocketProvider } from "@ethersproject/providers";
-import { calculate, calculateYearlyRoi } from "@protocols/yearn/vault/apy";
+import { calculateYearlyRoi } from "@protocols/common/apy";
+import { calculate } from "@protocols/yearn/vault/apy";
 import { BigNumber } from "@utils/bignumber";
 
 import { vaults } from "./testdata";

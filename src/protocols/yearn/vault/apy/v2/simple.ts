@@ -1,12 +1,11 @@
 import { VaultV2Contract__factory } from "@contracts/index";
 import { Context } from "@data/context";
-import { Apy } from "@protocols/interfaces";
+import { Apy, calculateFromPps } from "@protocols/common/apy";
 import { Block, createTimedBlock, estimateBlockPrecise } from "@utils/block";
 import { seconds } from "@utils/time";
 
 import { VaultV2 } from "../../interfaces";
 import { fetchHarvestCalls } from "../../reader";
-import { calculateFromPps } from "../common";
 
 function findNearestBlock(needle: Block, haystack: Block[]) {
   return haystack.reduce((a, b) =>

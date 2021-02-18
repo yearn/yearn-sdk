@@ -5,12 +5,11 @@ import {
 } from "@contracts/index";
 import { Context } from "@data/context";
 import { getPrice } from "@protocols/coingecko";
+import { Apy, calculateFromPps } from "@protocols/common/apy";
 import { BigNumber, toBigNumber } from "@utils/bignumber";
 import { estimateBlockPrecise, fetchLatestBlock } from "@utils/block";
 import { seconds } from "@utils/time";
 
-import { Apy } from "../interfaces";
-import { calculateFromPps } from "../yearn/vault/apy/common";
 import { getPoolFromLpToken } from "./registry";
 
 const CurveRegistryAddress = "0x7D86446dDb609eD0F5f8684AcF30380a356b2B4c";

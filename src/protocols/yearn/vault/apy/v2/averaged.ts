@@ -1,6 +1,6 @@
 import { VaultV2Contract__factory } from "@contracts/index";
 import { Context } from "@data/context";
-import { Apy } from "@protocols/interfaces";
+import { Apy, calculateFromPps } from "@protocols/common/apy";
 import {
   createTimedBlock,
   estimateBlockPrecise,
@@ -11,7 +11,6 @@ import semver from "semver";
 
 import { VaultV2 } from "../../interfaces";
 import { fetchHarvestCalls } from "../../reader";
-import { calculateFromPps } from "../common";
 
 const AveragedFromVersion = "0.3.2";
 
@@ -41,7 +40,7 @@ export async function calculateAveraged(vault: VaultV2, ctx: Context): Promise<A
     latest.block,
     inception.block,
     { oneMonthSample: oneMonth, inceptionSample: inception.block },
-    contract.getPricePerFullShare
+    contract.pricePerShare
   );
   const apy = {
     recommended: data.oneMonthSample || 0,

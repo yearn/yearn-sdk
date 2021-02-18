@@ -1,12 +1,11 @@
 import { VaultV1Contract__factory } from "@contracts/index";
 import { Context } from "@data/context";
-import { Apy } from "@protocols/interfaces";
+import { Apy, calculateFromPps } from "@protocols/common/apy";
 import { estimateBlockPrecise, fetchLatestBlock } from "@utils/block";
 import { seconds } from "@utils/time";
 
 import { VaultV1 } from "../../interfaces";
 import { fetchInceptionBlock } from "../../reader";
-import { calculateFromPps } from "../common";
 
 export async function calculateSimple(vault: VaultV1, ctx: Context): Promise<Apy> {
   const contract = VaultV1Contract__factory.connect(vault.address, ctx.provider);

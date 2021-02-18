@@ -4,6 +4,14 @@ import { BlocksPerDay } from "@utils/constants";
 import { CallOverrides, ethers } from "ethers";
 import fromEntries from "fromentries";
 
+export interface Apy {
+  recommended: number;
+  composite: boolean;
+  type: string;
+  description: string;
+  data?: Record<string, unknown>;
+}
+
 export interface Snapshot {
   value: BigNumber;
   block: Block;
@@ -13,14 +21,9 @@ export type ApyBlocks = {
   [name: string]: Block; // block #
 };
 
-export type Apy<T extends ApyBlocks> = {
+export type ApyValues<T extends ApyBlocks> = {
   [A in keyof T]: number | null; // apy (0-1 : 0-100%), or null
 };
-
-export type VaultApy = Apy<{
-  inceptionSample: number;
-  oneMonthSample: number;
-}>;
 
 export type ApyType = {
   type: string;
@@ -45,10 +48,10 @@ export async function calculateFromPps<T extends ApyBlocks>(
   inceptionBlock: number,
   snapshotsBlocks: T,
   pricePerShare: (options?: CallOverrides) => Promise<ethers.BigNumber>
-): Promise<Apy<T>> {
+): Promise<ApyValues<T>> {
   const snaps = Object.entries(snapshotsBlocks).sort((a, b) => b[1] - a[1]);
   if (snaps.length === 0) {
-    return {} as Apy<T>;
+    return {} as ApyValues<T>;
   }
 
   const reference: Snapshot = {
@@ -74,5 +77,5 @@ export async function calculateFromPps<T extends ApyBlocks>(
     })
     .reduce((promise, fn) => promise.then(fn), Promise.resolve<ApyEntry[]>([]));
 
-  return fromEntries(calculated) as Apy<T>;
+  return fromEntries(calculated) as ApyValues<T>;
 }
