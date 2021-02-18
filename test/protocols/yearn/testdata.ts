@@ -39,6 +39,7 @@ export const vaults = {
           name: "StrategyIdleUSDC_BY"
         }
       ],
+      apiVersion: "0.2.2",
       type: "v2"
     } as VaultV2,
     inception: 11421976
