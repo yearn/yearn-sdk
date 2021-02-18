@@ -4,9 +4,9 @@ import { Apy } from "@protocols/interfaces";
 import { Block, createTimedBlock, estimateBlockPrecise } from "@utils/block";
 import { seconds } from "@utils/time";
 
-import { VaultV2 } from "../interfaces";
-import { fetchHarvestCalls } from "../reader";
-import { calculateApyPps } from "./common";
+import { VaultV2 } from "../../interfaces";
+import { fetchHarvestCalls } from "../../reader";
+import { calculateFromPps } from "../common";
 
 function findNearestBlock(needle: Block, haystack: Block[]) {
   return haystack.reduce((a, b) =>
@@ -14,7 +14,7 @@ function findNearestBlock(needle: Block, haystack: Block[]) {
   );
 }
 
-export async function calculateV2Apy(vault: VaultV2, ctx: Context): Promise<Apy> {
+export async function calculateSimple(vault: VaultV2, ctx: Context): Promise<Apy> {
   const contract = VaultV2Contract__factory.connect(vault.address, ctx.provider);
   const harvests = await fetchHarvestCalls(vault, ctx);
   if (harvests.length < 2) {
@@ -33,7 +33,7 @@ export async function calculateV2Apy(vault: VaultV2, ctx: Context): Promise<Apy>
     ctx
   );
   const oneMonthHarvest = findNearestBlock(oneMonth, harvests);
-  const data = await calculateApyPps(
+  const data = await calculateFromPps(
     latest.block,
     inception.block,
     { oneMonthSample: oneMonthHarvest, inceptionSample: inception.block },

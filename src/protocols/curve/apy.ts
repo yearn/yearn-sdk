@@ -10,7 +10,7 @@ import { estimateBlockPrecise, fetchLatestBlock } from "@utils/block";
 import { seconds } from "@utils/time";
 
 import { Apy } from "../interfaces";
-import { Apy as VaultApy, calculateApyPps } from "../yearn/vault/apy/common";
+import { calculateFromPps } from "../yearn/vault/apy/common";
 import { getPoolFromLpToken } from "./registry";
 
 const CurveRegistryAddress = "0x7D86446dDb609eD0F5f8684AcF30380a356b2B4c";
@@ -25,9 +25,7 @@ const StEthAddress = "0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84";
 const WethAddress = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2";
 const YearnVeCrvvoterAddress = "0xF147b8125d2ef93FB6965Db97D6746952a133934";
 
-export type CurvePoolApy = VaultApy<{
-  oneMonthSample: number;
-}>;
+const MaxBoost = 2.5;
 
 export async function calculatePoolApr(
   lpToken: string,
@@ -43,7 +41,7 @@ export async function calculatePoolApr(
     ctx
   );
 
-  const poolAprSamples = await calculateApyPps(
+  const poolAprSamples = await calculateFromPps(
     latest.block,
     oneMonth,
     { oneMonthSample: oneMonth },
@@ -87,13 +85,10 @@ export async function calculateApy(lpToken: string, ctx: Context): Promise<Apy> 
 
   let btcMatch = false;
   let ethMatch = false;
-  underlyingCoins.every((tokenAddress: string) => {
+  underlyingCoins.every(tokenAddress => {
     btcMatch = btcLikeAddresses.includes(tokenAddress);
     ethMatch = ethLikeAddresses.includes(tokenAddress);
-    if (btcMatch || ethMatch) {
-      return false;
-    }
-    return true;
+    return !(btcMatch || ethMatch);
   });
 
   let priceOfBaseAsset;
@@ -116,8 +111,7 @@ export async function calculateApy(lpToken: string, ctx: Context): Promise<Apy> 
   );
 
   const secondsInYear = new BigNumber(seconds("1 year"));
-  const maxBoost = 2.5;
-  const inverseMaxBoost = new BigNumber(1 / maxBoost);
+  const inverseMaxBoost = new BigNumber(1 / MaxBoost);
 
   const baseApy = gaugeInflationRate
     .times(gaugeRelativeWeight)
@@ -130,12 +124,11 @@ export async function calculateApy(lpToken: string, ctx: Context): Promise<Apy> 
 
   if (yearnGaugeBalance.isGreaterThan(0)) {
     currentBoost = yearnWorkingBalance.div(inverseMaxBoost.times(yearnGaugeBalance));
-
     if (currentBoost.isNaN()) {
       currentBoost = new BigNumber(1);
     }
   } else {
-    currentBoost = new BigNumber(2.5);
+    currentBoost = new BigNumber(MaxBoost);
   }
 
   const boostedApy = baseApy.times(currentBoost);

@@ -52,6 +52,14 @@
     "type": "function"
   },
   {
+    "name": "apiVersion",
+    "outputs": [{ "type": "string", "name": "" }],
+    "inputs": [],
+    "stateMutability": "pure",
+    "type": "function",
+    "gas": "4519"
+  },
+  {
     "name": "withdrawalQueue",
     "outputs": [{ "type": "address", "name": "" }],
     "inputs": [{ "type": "uint256", "name": "arg0" }],

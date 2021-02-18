@@ -1,4 +1,4 @@
-import { calculateApy, calculateV1Apy, calculateV2Apy } from "./apy";
+import * as apy from "./apy";
 import { Token, Vault, VaultBase, VaultV1, VaultV2 } from "./interfaces";
 import { fetchHarvestCalls, fetchInceptionBlock } from "./reader";
 import {
@@ -10,10 +10,8 @@ import { resolveV1, resolveV2 } from "./resolver";
 import { calculateTvlV2 } from "./tvl";
 
 export {
-  calculateApy,
+  apy,
   calculateTvlV2,
-  calculateV1Apy,
-  calculateV2Apy,
   fetchHarvestCalls,
   fetchInceptionBlock,
   fetchV1Addresses,

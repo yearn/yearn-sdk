@@ -4,11 +4,11 @@ import { Apy } from "@protocols/interfaces";
 import { estimateBlockPrecise, fetchLatestBlock } from "@utils/block";
 import { seconds } from "@utils/time";
 
-import { VaultV1 } from "../interfaces";
-import { fetchInceptionBlock } from "../reader";
-import { calculateApyPps } from "./common";
+import { VaultV1 } from "../../interfaces";
+import { fetchInceptionBlock } from "../../reader";
+import { calculateFromPps } from "../common";
 
-export async function calculateV1Apy(vault: VaultV1, ctx: Context): Promise<Apy> {
+export async function calculateSimple(vault: VaultV1, ctx: Context): Promise<Apy> {
   const contract = VaultV1Contract__factory.connect(vault.address, ctx.provider);
   const inception = await fetchInceptionBlock(vault, ctx);
   if (!inception) {
@@ -25,7 +25,7 @@ export async function calculateV1Apy(vault: VaultV1, ctx: Context): Promise<Apy>
     latest.timestamp - seconds("4 weeks"),
     ctx
   );
-  const data = await calculateApyPps(
+  const data = await calculateFromPps(
     latest.block,
     inception.block,
     { oneMonthSample: oneMonth, inceptionSample: inception.block },

@@ -38,7 +38,8 @@ export async function resolveV2(address: string, ctx: Context): Promise<VaultV2>
   const basic = await resolveBasic(address, ctx);
   const vault = VaultV2Contract__factory.connect(address, ctx.provider);
   const structure = {
-    emergencyShutdown: vault.emergencyShutdown()
+    emergencyShutdown: vault.emergencyShutdown(),
+    apiVersion: vault.apiVersion()
   };
   const specific = await objectAll(structure);
 

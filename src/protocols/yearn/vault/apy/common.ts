@@ -40,7 +40,7 @@ export function calculateYearlyRoi(
   return derivative.toNumber() * blocksPerDay * 365;
 }
 
-export async function calculateApyPps<T extends ApyBlocks>(
+export async function calculateFromPps<T extends ApyBlocks>(
   referenceBlock: number,
   inceptionBlock: number,
   snapshotsBlocks: T,

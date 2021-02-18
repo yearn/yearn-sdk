@@ -28,6 +28,7 @@ export interface VaultV1 extends VaultBase {
 export interface VaultV2 extends VaultBase {
   type: "v2";
   emergencyShutdown: boolean;
+  apiVersion: string;
   strategies: Strategy[];
   tags: string[];
   performanceFee?: number;

@@ -2,7 +2,7 @@ import "dotenv/config";
 
 import { Context } from "@data/context";
 import { WebSocketProvider } from "@ethersproject/providers";
-import { calculateApy, calculateYearlyRoi } from "@protocols/yearn/vault/apy";
+import { calculate, calculateYearlyRoi } from "@protocols/yearn/vault/apy";
 import { BigNumber } from "@utils/bignumber";
 
 import { vaults } from "./testdata";
@@ -57,7 +57,7 @@ describe("vault apy", () => {
   });
 
   it("calculate apy v1 (network)", () => {
-    const inception = calculateApy(vaults.v1.object, ctx);
+    const inception = calculate(vaults.v1.object, ctx);
     return expect(inception).resolves.toEqual({
       composite: expect.any(Boolean),
       data: {
@@ -74,7 +74,7 @@ describe("vault apy", () => {
   }, 15000);
 
   it("calculate apy v2 (network)", () => {
-    const inception = calculateApy(vaults.v2.object, ctx);
+    const inception = calculate(vaults.v2.object, ctx);
     return expect(inception).resolves.toEqual({
       composite: expect.any(Boolean),
       data: {

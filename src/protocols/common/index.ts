@@ -1,4 +1,4 @@
-import { Assets } from "./interfaces";
+import { Assets } from "../interfaces";
 
 export function sumTvl(assetList: Assets): number {
   const tvl = assetList.reduce((acc, asset) => {
