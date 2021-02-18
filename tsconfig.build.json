@@ -5,13 +5,9 @@
     "plugins": [
       {
         "transform": "@zerollup/ts-transform-paths",
-        "exclude": [
-          "*"
-        ]
+        "exclude": ["*"]
       }
     ]
   },
-  "exclude": [
-    "test"
-  ]
+  "exclude": ["test"]
 }
