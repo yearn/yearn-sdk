@@ -72,7 +72,7 @@ describe("vault apy", () => {
       recommended: expect.any(Number),
       type: expect.any(String)
     });
-  }, 15000);
+  }, 20000);
 
   it("calculate apy v2 (network)", () => {
     const inception = calculate(vaults.v2.object, ctx);
@@ -86,7 +86,7 @@ describe("vault apy", () => {
       recommended: expect.any(Number),
       type: expect.any(String)
     });
-  }, 15000);
+  }, 20000);
 
   afterAll(() => {
     return provider.destroy();

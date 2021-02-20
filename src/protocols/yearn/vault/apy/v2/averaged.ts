@@ -21,7 +21,7 @@ export function shouldBeAveraged(vault: VaultV2): boolean {
 export async function calculateAveraged(vault: VaultV2, ctx: Context): Promise<Apy> {
   const contract = VaultV2Contract__factory.connect(vault.address, ctx.provider);
   const harvests = await fetchHarvestCalls(vault, ctx);
-  if (harvests.length < 2) {
+  if (harvests.length < 4) {
     return {
       recommended: 0,
       composite: false,
@@ -31,7 +31,7 @@ export async function calculateAveraged(vault: VaultV2, ctx: Context): Promise<A
     };
   }
   const latest = await fetchLatestBlock(ctx);
-  const inception = await createTimedBlock(harvests[0], ctx);
+  const inception = await createTimedBlock(harvests[2], ctx);
   const oneMonth = await estimateBlockPrecise(
     latest.timestamp - seconds("4 weeks"),
     ctx
