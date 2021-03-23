@@ -30,12 +30,13 @@
   },
   "devDependencies": {
     "@ethersproject/bignumber": "^5.0.15",
+    "@ethersproject/contracts": "^5.0.12",
+    "@ethersproject/providers": "^5.0.24",
     "@size-limit/preset-small-lib": "^4.10.1",
     "size-limit": "^4.10.1",
     "tsdx": "^0.14.1"
   },
   "dependencies": {
-    "@ethersproject/contracts": "^5.0.12",
-    "@ethersproject/providers": "^5.0.24"
+    "@solidity-parser/parser": "^0.12.0"
   }
 }

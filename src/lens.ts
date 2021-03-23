@@ -2,21 +2,23 @@ import { BigNumber } from "@ethersproject/bignumber";
 import { Contract } from "@ethersproject/contracts";
 import { Provider } from "@ethersproject/providers";
 
+import { Address } from "./common";
+
 export const LensAddress = "0xFa58130BE296EDFA23C42a1d15549fA91449F979";
 export const LensAbi = [
   "function getRegistries() external view returns (address[] memory)",
   "function getAssets() external view returns (tuple(string name, address id, string version)[] memory)",
-  "function getPositionsOf(address account) external view returns (tuple(address assetId, uint256 depositedBalance, uint256 tokenBalance, uint256 tokenAllowance)[] memory)",
+  "function getPositionsOf(address) external view returns (tuple(address assetId, uint256 depositedBalance, uint256 tokenBalance, uint256 tokenAllowance)[] memory)"
 ];
 
 export interface Asset {
   name: string;
-  id: string;
+  id: Address;
   version: string;
 }
 
 export interface Position {
-  assetId: String;
+  assetId: Address;
   depositedBalance: BigNumber;
   tokenBalance: BigNumber;
   tokenAllowance: BigNumber;
