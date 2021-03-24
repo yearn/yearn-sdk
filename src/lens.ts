@@ -35,9 +35,7 @@ export class Lens extends Addressable {
       case 250:
         return "0xFa58130BE296EDFA23C42a1d15549fA91449F979";
     }
-    throw new TypeError(
-      `Lens does not have an address for chainId ${chainId}`
-    );
+    throw new TypeError(`Lens does not have an address for chainId ${chainId}`);
   }
 
   async getRegistries(): Promise<string[]> {

@@ -16,7 +16,7 @@
 
 • **id**: *string*
 
-Defined in: [lens.ts:8](https://github.com/yearn/yearn-sdk/blob/bb487b1/src/lens.ts#L8)
+Defined in: [lens.ts:8](https://github.com/yearn/yearn-sdk/blob/d93eb22/src/lens.ts#L8)
 
 ___
 
@@ -24,7 +24,7 @@ ___
 
 • **name**: *string*
 
-Defined in: [lens.ts:7](https://github.com/yearn/yearn-sdk/blob/bb487b1/src/lens.ts#L7)
+Defined in: [lens.ts:7](https://github.com/yearn/yearn-sdk/blob/d93eb22/src/lens.ts#L7)
 
 ___
 
@@ -32,4 +32,4 @@ ___
 
 • **version**: *string*
 
-Defined in: [lens.ts:9](https://github.com/yearn/yearn-sdk/blob/bb487b1/src/lens.ts#L9)
+Defined in: [lens.ts:9](https://github.com/yearn/yearn-sdk/blob/d93eb22/src/lens.ts#L9)

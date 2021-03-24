@@ -28,7 +28,7 @@ Name | Type |
 
 **Returns:** [*Yearn*](yearn.md)
 
-Defined in: [index.ts:28](https://github.com/yearn/yearn-sdk/blob/bb487b1/src/index.ts#L28)
+Defined in: [index.ts:28](https://github.com/yearn/yearn-sdk/blob/d93eb22/src/index.ts#L28)
 
 ## Properties
 
@@ -36,7 +36,7 @@ Defined in: [index.ts:28](https://github.com/yearn/yearn-sdk/blob/bb487b1/src/in
 
 • **lens**: [*Lens*](lens.md)
 
-Defined in: [index.ts:27](https://github.com/yearn/yearn-sdk/blob/bb487b1/src/index.ts#L27)
+Defined in: [index.ts:27](https://github.com/yearn/yearn-sdk/blob/d93eb22/src/index.ts#L27)
 
 ___
 
@@ -44,4 +44,4 @@ ___
 
 • **oracle**: [*Oracle*](oracle.md)
 
-Defined in: [index.ts:28](https://github.com/yearn/yearn-sdk/blob/bb487b1/src/index.ts#L28)
+Defined in: [index.ts:28](https://github.com/yearn/yearn-sdk/blob/d93eb22/src/index.ts#L28)

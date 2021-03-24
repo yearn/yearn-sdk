@@ -64,7 +64,7 @@ Name | Type |
 
 Inherited from: void
 
-Defined in: [common.ts:27](https://github.com/yearn/yearn-sdk/blob/bb487b1/src/common.ts#L27)
+Defined in: [common.ts:27](https://github.com/yearn/yearn-sdk/blob/d93eb22/src/common.ts#L27)
 
 ## Properties
 
@@ -74,7 +74,7 @@ Defined in: [common.ts:27](https://github.com/yearn/yearn-sdk/blob/bb487b1/src/c
 
 Inherited from: void
 
-Defined in: [common.ts:23](https://github.com/yearn/yearn-sdk/blob/bb487b1/src/common.ts#L23)
+Defined in: [common.ts:23](https://github.com/yearn/yearn-sdk/blob/d93eb22/src/common.ts#L23)
 
 ___
 
@@ -84,7 +84,7 @@ ___
 
 Inherited from: void
 
-Defined in: [common.ts:24](https://github.com/yearn/yearn-sdk/blob/bb487b1/src/common.ts#L24)
+Defined in: [common.ts:24](https://github.com/yearn/yearn-sdk/blob/d93eb22/src/common.ts#L24)
 
 ___
 
@@ -94,7 +94,7 @@ ___
 
 Inherited from: void
 
-Defined in: [common.ts:27](https://github.com/yearn/yearn-sdk/blob/bb487b1/src/common.ts#L27)
+Defined in: [common.ts:27](https://github.com/yearn/yearn-sdk/blob/d93eb22/src/common.ts#L27)
 
 ___
 
@@ -104,7 +104,7 @@ ___
 
 Inherited from: void
 
-Defined in: [common.ts:25](https://github.com/yearn/yearn-sdk/blob/bb487b1/src/common.ts#L25)
+Defined in: [common.ts:25](https://github.com/yearn/yearn-sdk/blob/d93eb22/src/common.ts#L25)
 
 ___
 
@@ -114,7 +114,7 @@ ___
 
 Overrides: void
 
-Defined in: [oracle.ts:36](https://github.com/yearn/yearn-sdk/blob/bb487b1/src/oracle.ts#L36)
+Defined in: [oracle.ts:36](https://github.com/yearn/yearn-sdk/blob/d93eb22/src/oracle.ts#L36)
 
 ## Methods
 
@@ -130,7 +130,7 @@ Name | Type |
 
 **Returns:** *Promise*<BigNumber\>
 
-Defined in: [oracle.ts:78](https://github.com/yearn/yearn-sdk/blob/bb487b1/src/oracle.ts#L78)
+Defined in: [oracle.ts:78](https://github.com/yearn/yearn-sdk/blob/d93eb22/src/oracle.ts#L78)
 
 ___
 
@@ -140,7 +140,7 @@ ___
 
 **Returns:** *Promise*<string[]\>
 
-Defined in: [oracle.ts:50](https://github.com/yearn/yearn-sdk/blob/bb487b1/src/oracle.ts#L50)
+Defined in: [oracle.ts:50](https://github.com/yearn/yearn-sdk/blob/d93eb22/src/oracle.ts#L50)
 
 ___
 
@@ -156,7 +156,7 @@ Name | Type |
 
 **Returns:** *Promise*<BigNumber\>
 
-Defined in: [oracle.ts:74](https://github.com/yearn/yearn-sdk/blob/bb487b1/src/oracle.ts#L74)
+Defined in: [oracle.ts:74](https://github.com/yearn/yearn-sdk/blob/d93eb22/src/oracle.ts#L74)
 
 ___
 
@@ -166,7 +166,7 @@ ___
 
 **Returns:** *Promise*<BigNumber\>
 
-Defined in: [oracle.ts:90](https://github.com/yearn/yearn-sdk/blob/bb487b1/src/oracle.ts#L90)
+Defined in: [oracle.ts:90](https://github.com/yearn/yearn-sdk/blob/d93eb22/src/oracle.ts#L90)
 
 ___
 
@@ -182,7 +182,7 @@ Name | Type |
 
 **Returns:** *Promise*<string\>
 
-Defined in: [oracle.ts:86](https://github.com/yearn/yearn-sdk/blob/bb487b1/src/oracle.ts#L86)
+Defined in: [oracle.ts:86](https://github.com/yearn/yearn-sdk/blob/d93eb22/src/oracle.ts#L86)
 
 ___
 
@@ -198,7 +198,7 @@ Name | Type |
 
 **Returns:** *Promise*<BigNumber\>
 
-Defined in: [oracle.ts:103](https://github.com/yearn/yearn-sdk/blob/bb487b1/src/oracle.ts#L103)
+Defined in: [oracle.ts:103](https://github.com/yearn/yearn-sdk/blob/d93eb22/src/oracle.ts#L103)
 
 ___
 
@@ -208,7 +208,7 @@ ___
 
 **Returns:** *Promise*<string[]\>
 
-Defined in: [oracle.ts:107](https://github.com/yearn/yearn-sdk/blob/bb487b1/src/oracle.ts#L107)
+Defined in: [oracle.ts:107](https://github.com/yearn/yearn-sdk/blob/d93eb22/src/oracle.ts#L107)
 
 ___
 
@@ -224,7 +224,7 @@ Name | Type |
 
 **Returns:** *Promise*<BigNumber\>
 
-Defined in: [oracle.ts:137](https://github.com/yearn/yearn-sdk/blob/bb487b1/src/oracle.ts#L137)
+Defined in: [oracle.ts:137](https://github.com/yearn/yearn-sdk/blob/d93eb22/src/oracle.ts#L137)
 
 ___
 
@@ -240,7 +240,7 @@ Name | Type |
 
 **Returns:** *Promise*<BigNumber\>
 
-Defined in: [oracle.ts:133](https://github.com/yearn/yearn-sdk/blob/bb487b1/src/oracle.ts#L133)
+Defined in: [oracle.ts:133](https://github.com/yearn/yearn-sdk/blob/d93eb22/src/oracle.ts#L133)
 
 ___
 
@@ -257,7 +257,7 @@ Name | Type |
 
 **Returns:** *Promise*<BigNumber\>
 
-Defined in: [oracle.ts:122](https://github.com/yearn/yearn-sdk/blob/bb487b1/src/oracle.ts#L122)
+Defined in: [oracle.ts:122](https://github.com/yearn/yearn-sdk/blob/d93eb22/src/oracle.ts#L122)
 
 ___
 
@@ -273,7 +273,7 @@ Name | Type |
 
 **Returns:** *Promise*<BigNumber\>
 
-Defined in: [oracle.ts:129](https://github.com/yearn/yearn-sdk/blob/bb487b1/src/oracle.ts#L129)
+Defined in: [oracle.ts:129](https://github.com/yearn/yearn-sdk/blob/d93eb22/src/oracle.ts#L129)
 
 ___
 
@@ -289,7 +289,7 @@ Name | Type |
 
 **Returns:** *Promise*<BigNumber\>
 
-Defined in: [oracle.ts:54](https://github.com/yearn/yearn-sdk/blob/bb487b1/src/oracle.ts#L54)
+Defined in: [oracle.ts:54](https://github.com/yearn/yearn-sdk/blob/d93eb22/src/oracle.ts#L54)
 
 ___
 
@@ -299,7 +299,7 @@ ___
 
 **Returns:** *Promise*<BigNumber\>
 
-Defined in: [oracle.ts:58](https://github.com/yearn/yearn-sdk/blob/bb487b1/src/oracle.ts#L58)
+Defined in: [oracle.ts:58](https://github.com/yearn/yearn-sdk/blob/d93eb22/src/oracle.ts#L58)
 
 ___
 
@@ -315,7 +315,7 @@ Name | Type |
 
 **Returns:** *Promise*<BigNumber\>
 
-Defined in: [oracle.ts:82](https://github.com/yearn/yearn-sdk/blob/bb487b1/src/oracle.ts#L82)
+Defined in: [oracle.ts:82](https://github.com/yearn/yearn-sdk/blob/d93eb22/src/oracle.ts#L82)
 
 ___
 
@@ -331,7 +331,7 @@ Name | Type |
 
 **Returns:** *Promise*<boolean\>
 
-Defined in: [oracle.ts:70](https://github.com/yearn/yearn-sdk/blob/bb487b1/src/oracle.ts#L70)
+Defined in: [oracle.ts:70](https://github.com/yearn/yearn-sdk/blob/d93eb22/src/oracle.ts#L70)
 
 ___
 
@@ -347,7 +347,7 @@ Name | Type |
 
 **Returns:** *Promise*<boolean\>
 
-Defined in: [oracle.ts:99](https://github.com/yearn/yearn-sdk/blob/bb487b1/src/oracle.ts#L99)
+Defined in: [oracle.ts:99](https://github.com/yearn/yearn-sdk/blob/d93eb22/src/oracle.ts#L99)
 
 ___
 
@@ -363,7 +363,7 @@ Name | Type |
 
 **Returns:** *Promise*<boolean\>
 
-Defined in: [oracle.ts:118](https://github.com/yearn/yearn-sdk/blob/bb487b1/src/oracle.ts#L118)
+Defined in: [oracle.ts:118](https://github.com/yearn/yearn-sdk/blob/d93eb22/src/oracle.ts#L118)
 
 ___
 
@@ -381,4 +381,4 @@ Name | Type |
 
 Overrides: void
 
-Defined in: [oracle.ts:38](https://github.com/yearn/yearn-sdk/blob/bb487b1/src/oracle.ts#L38)
+Defined in: [oracle.ts:38](https://github.com/yearn/yearn-sdk/blob/d93eb22/src/oracle.ts#L38)

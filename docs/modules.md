@@ -39,4 +39,4 @@ SDK requires several dependencies from the ethers.js project.
 
 Ƭ **ChainId**: keyof *typeof* Chains
 
-Defined in: [chain.ts:6](https://github.com/yearn/yearn-sdk/blob/bb487b1/src/chain.ts#L6)
+Defined in: [chain.ts:6](https://github.com/yearn/yearn-sdk/blob/d93eb22/src/chain.ts#L6)

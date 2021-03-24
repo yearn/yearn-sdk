@@ -17,7 +17,7 @@
 
 • **assetId**: *string*
 
-Defined in: [lens.ts:13](https://github.com/yearn/yearn-sdk/blob/bb487b1/src/lens.ts#L13)
+Defined in: [lens.ts:13](https://github.com/yearn/yearn-sdk/blob/d93eb22/src/lens.ts#L13)
 
 ___
 
@@ -25,7 +25,7 @@ ___
 
 • **depositedBalance**: *BigNumber*
 
-Defined in: [lens.ts:14](https://github.com/yearn/yearn-sdk/blob/bb487b1/src/lens.ts#L14)
+Defined in: [lens.ts:14](https://github.com/yearn/yearn-sdk/blob/d93eb22/src/lens.ts#L14)
 
 ___
 
@@ -33,7 +33,7 @@ ___
 
 • **tokenAllowance**: *BigNumber*
 
-Defined in: [lens.ts:16](https://github.com/yearn/yearn-sdk/blob/bb487b1/src/lens.ts#L16)
+Defined in: [lens.ts:16](https://github.com/yearn/yearn-sdk/blob/d93eb22/src/lens.ts#L16)
 
 ___
 
@@ -41,4 +41,4 @@ ___
 
 • **tokenBalance**: *BigNumber*
 
-Defined in: [lens.ts:15](https://github.com/yearn/yearn-sdk/blob/bb487b1/src/lens.ts#L15)
+Defined in: [lens.ts:15](https://github.com/yearn/yearn-sdk/blob/d93eb22/src/lens.ts#L15)

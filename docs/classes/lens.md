@@ -50,7 +50,7 @@ Name | Type |
 
 Inherited from: void
 
-Defined in: [common.ts:27](https://github.com/yearn/yearn-sdk/blob/bb487b1/src/common.ts#L27)
+Defined in: [common.ts:27](https://github.com/yearn/yearn-sdk/blob/d93eb22/src/common.ts#L27)
 
 ## Properties
 
@@ -60,7 +60,7 @@ Defined in: [common.ts:27](https://github.com/yearn/yearn-sdk/blob/bb487b1/src/c
 
 Inherited from: void
 
-Defined in: [common.ts:23](https://github.com/yearn/yearn-sdk/blob/bb487b1/src/common.ts#L23)
+Defined in: [common.ts:23](https://github.com/yearn/yearn-sdk/blob/d93eb22/src/common.ts#L23)
 
 ___
 
@@ -70,7 +70,7 @@ ___
 
 Inherited from: void
 
-Defined in: [common.ts:24](https://github.com/yearn/yearn-sdk/blob/bb487b1/src/common.ts#L24)
+Defined in: [common.ts:24](https://github.com/yearn/yearn-sdk/blob/d93eb22/src/common.ts#L24)
 
 ___
 
@@ -80,7 +80,7 @@ ___
 
 Inherited from: void
 
-Defined in: [common.ts:27](https://github.com/yearn/yearn-sdk/blob/bb487b1/src/common.ts#L27)
+Defined in: [common.ts:27](https://github.com/yearn/yearn-sdk/blob/d93eb22/src/common.ts#L27)
 
 ___
 
@@ -90,7 +90,7 @@ ___
 
 Inherited from: void
 
-Defined in: [common.ts:25](https://github.com/yearn/yearn-sdk/blob/bb487b1/src/common.ts#L25)
+Defined in: [common.ts:25](https://github.com/yearn/yearn-sdk/blob/d93eb22/src/common.ts#L25)
 
 ___
 
@@ -100,7 +100,7 @@ ___
 
 Overrides: void
 
-Defined in: [lens.ts:31](https://github.com/yearn/yearn-sdk/blob/bb487b1/src/lens.ts#L31)
+Defined in: [lens.ts:31](https://github.com/yearn/yearn-sdk/blob/d93eb22/src/lens.ts#L31)
 
 ## Methods
 
@@ -110,7 +110,7 @@ Defined in: [lens.ts:31](https://github.com/yearn/yearn-sdk/blob/bb487b1/src/len
 
 **Returns:** *Promise*<[*Asset*](../interfaces/asset.md)[]\>
 
-Defined in: [lens.ts:47](https://github.com/yearn/yearn-sdk/blob/bb487b1/src/lens.ts#L47)
+Defined in: [lens.ts:45](https://github.com/yearn/yearn-sdk/blob/d93eb22/src/lens.ts#L45)
 
 ___
 
@@ -126,7 +126,7 @@ Name | Type |
 
 **Returns:** *Promise*<[*Position*](../interfaces/position.md)[]\>
 
-Defined in: [lens.ts:51](https://github.com/yearn/yearn-sdk/blob/bb487b1/src/lens.ts#L51)
+Defined in: [lens.ts:49](https://github.com/yearn/yearn-sdk/blob/d93eb22/src/lens.ts#L49)
 
 ___
 
@@ -136,7 +136,7 @@ ___
 
 **Returns:** *Promise*<string[]\>
 
-Defined in: [lens.ts:43](https://github.com/yearn/yearn-sdk/blob/bb487b1/src/lens.ts#L43)
+Defined in: [lens.ts:41](https://github.com/yearn/yearn-sdk/blob/d93eb22/src/lens.ts#L41)
 
 ___
 
@@ -154,4 +154,4 @@ Name | Type |
 
 Overrides: void
 
-Defined in: [lens.ts:33](https://github.com/yearn/yearn-sdk/blob/bb487b1/src/lens.ts#L33)
+Defined in: [lens.ts:33](https://github.com/yearn/yearn-sdk/blob/d93eb22/src/lens.ts#L33)
