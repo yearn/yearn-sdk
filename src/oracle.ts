@@ -1,11 +1,9 @@
 import { BigNumber } from "@ethersproject/bignumber";
-import { Contract } from "@ethersproject/contracts";
-import { Provider } from "@ethersproject/providers";
 
-import { Address } from "./common";
+import { Address, Addressable } from "./common";
+import { ChainId } from "./chain";
 
-export const OracleAddress = "0x9b8b9F6146B29CC32208f42b995E70F0Eb2807F3";
-export const OracleAbi = [
+const OracleAbi = [
   // Oracle general
   "function calculations() external view returns (address[] memory)",
   "function getPriceUsdcRecommended(address) public view returns (uint256)",
@@ -29,151 +27,114 @@ export const OracleAbi = [
   "function getLpTokenPriceUsdc(address) public view returns (uint256)"
 ];
 
-export async function getCalculations(provider: Provider): Promise<Address[]> {
-  const oracle = new Contract(OracleAddress, OracleAbi, provider);
-  return await oracle.calculations();
-}
+/**
+ * Oracle is the main pricing engine, used by all price calculations.
+ * It's implemented in the form of a contract that lives on all networks
+ * supported by yearn.
+ */
+export class Oracle extends Addressable {
+  static abi = OracleAbi;
 
-export async function getPriceUsdcRecommended(
-  token: Address,
-  provider: Provider
-): Promise<BigNumber> {
-  const oracle = new Contract(OracleAddress, OracleAbi, provider);
-  return await oracle.getPriceUsdcRecommended(token);
-}
+  static addressByChain(chainId: ChainId): string {
+    switch (chainId) {
+      case 1:
+        return "0x9b8b9F6146B29CC32208f42b995E70F0Eb2807F3";
+      case 250:
+        return "0x9b8b9F6146B29CC32208f42b995E70F0Eb2807F3";
+    }
+    throw new TypeError(
+      `Oracle does not have an address for chainId ${chainId}`
+    );
+  }
 
-export async function getUsdcAddress(provider: Provider): Promise<BigNumber> {
-  const oracle = new Contract(OracleAddress, OracleAbi, provider);
-  return await oracle.usdcAddress();
-}
+  async getCalculations(): Promise<Address[]> {
+    return await this.contract.calculations();
+  }
 
-// Calculations Curve
-// function isCurveLpToken(address) public view returns (bool)
-// function getCurvePriceUsdc(address) public view returns (uint256)
-// function getBasePrice(address) public view returns (uint256)
-// function getVirtualPrice(address) public view returns (uint256)
-// function getFirstUnderlyingCoinFromPool(address) public view returns (address)
-// function curveRegistryAddress() public view returns (address)
+  async getPriceUsdcRecommended(token: Address): Promise<BigNumber> {
+    return await this.contract.getPriceUsdcRecommended(token);
+  }
 
-export async function isCurveLpToken(
-  lpToken: Address,
-  provider: Provider
-): Promise<boolean> {
-  const oracle = new Contract(OracleAddress, OracleAbi, provider);
-  return await oracle.isCurveLpToken(lpToken);
-}
+  async getUsdcAddress(): Promise<BigNumber> {
+    return await this.contract.usdcAddress();
+  }
 
-export async function getCurvePriceUsdc(
-  lpToken: Address,
-  provider: Provider
-): Promise<BigNumber> {
-  const oracle = new Contract(OracleAddress, OracleAbi, provider);
-  return await oracle.getCurvePriceUsdc(lpToken);
-}
+  // Calculations Curve
+  // function isCurveLpToken(address) public view returns (bool)
+  // function getCurvePriceUsdc(address) public view returns (uint256)
+  // function getBasePrice(address) public view returns (uint256)
+  // function getVirtualPrice(address) public view returns (uint256)
+  // function getFirstUnderlyingCoinFromPool(address) public view returns (address)
+  // function curveRegistryAddress() public view returns (address)
 
-export async function getBasePrice(
-  lpToken: Address,
-  provider: Provider
-): Promise<BigNumber> {
-  const oracle = new Contract(OracleAddress, OracleAbi, provider);
-  return await oracle.getBasePrice(lpToken);
-}
+  async isCurveLpToken(lpToken: Address): Promise<boolean> {
+    return await this.contract.isCurveLpToken(lpToken);
+  }
 
-export async function getVirtualPrice(
-  lpToken: Address,
-  provider: Provider
-): Promise<BigNumber> {
-  const oracle = new Contract(OracleAddress, OracleAbi, provider);
-  return await oracle.getVirtualPrice(lpToken);
-}
+  async getCurvePriceUsdc(lpToken: Address): Promise<BigNumber> {
+    return await this.contract.getCurvePriceUsdc(lpToken);
+  }
 
-export async function getFirstUnderlyingCoinFromPool(
-  pool: Address,
-  provider: Provider
-): Promise<Address> {
-  const oracle = new Contract(OracleAddress, OracleAbi, provider);
-  return await oracle.getFirstUnderlyingCoinFromPool(pool);
-}
+  async getBasePrice(lpToken: Address): Promise<BigNumber> {
+    return await this.contract.getBasePrice(lpToken);
+  }
 
-export async function getCurveRegistryAddress(
-  provider: Provider
-): Promise<BigNumber> {
-  const oracle = new Contract(OracleAddress, OracleAbi, provider);
-  return await oracle.usdcAddress();
-}
+  async getVirtualPrice(lpToken: Address): Promise<BigNumber> {
+    return await this.contract.getVirtualPrice(lpToken);
+  }
 
-// Calculations Iron Bank
-// function isIronBankMarket(address) public view returns (bool)
-// function getIronBankMarketPriceUsdc(address) public view returns (uint256)
-// function getIronBankMarkets() public view returns (address[] memory)
+  async getFirstUnderlyingCoinFromPool(pool: Address): Promise<Address> {
+    return await this.contract.getFirstUnderlyingCoinFromPool(pool);
+  }
 
-export async function isIronBankMarket(
-  token: Address,
-  provider: Provider
-): Promise<boolean> {
-  const oracle = new Contract(OracleAddress, OracleAbi, provider);
-  return await oracle.isIronBankMarket(token);
-}
+  async getCurveRegistryAddress(): Promise<BigNumber> {
+    return await this.contract.usdcAddress();
+  }
 
-export async function getIronBankMarketPriceUsdc(
-  token: Address,
-  provider: Provider
-): Promise<BigNumber> {
-  const oracle = new Contract(OracleAddress, OracleAbi, provider);
-  return await oracle.getIronBankMarketPriceUsdc(token);
-}
+  // Calculations Iron Bank
+  // function isIronBankMarket(address) public view returns (bool)
+  // function getIronBankMarketPriceUsdc(address) public view returns (uint256)
+  // function getIronBankMarkets() public view returns (address[] memory)
 
-export async function getIronBankMarkets(
-  provider: Provider
-): Promise<Address[]> {
-  const oracle = new Contract(OracleAddress, OracleAbi, provider);
-  return await oracle.getIronBankMarkets();
-}
+  async isIronBankMarket(token: Address): Promise<boolean> {
+    return await this.contract.isIronBankMarket(token);
+  }
 
-// Calculations Sushiswap
-// function isLpToken(address) public view returns (bool)
-// function getPriceFromRouter(address, address) public view returns (uint256)
-// function getPriceFromRouterUsdc(address) public view returns (uint256)
-// function getLpTokenTotalLiquidityUsdc(address) public view returns (uint256)
-// function getLpTokenPriceUsdc(address) public view returns (uint256)
+  async getIronBankMarketPriceUsdc(token: Address): Promise<BigNumber> {
+    return await this.contract.getIronBankMarketPriceUsdc(token);
+  }
 
-export async function isLpToken(
-  token: Address,
-  provider: Provider
-): Promise<boolean> {
-  const oracle = new Contract(OracleAddress, OracleAbi, provider);
-  return await oracle.isLpToken(token);
-}
+  async getIronBankMarkets(): Promise<Address[]> {
+    return await this.contract.getIronBankMarkets();
+  }
 
-export async function getPriceFromRouter(
-  token0: Address,
-  token1: Address,
-  provider: Provider
-): Promise<BigNumber> {
-  const oracle = new Contract(OracleAddress, OracleAbi, provider);
-  return await oracle.getPriceFromRouter(token0, token1);
-}
+  // Calculations Sushiswap
+  // function isLpToken(address) public view returns (bool)
+  // function getPriceFromRouter(address, address) public view returns (uint256)
+  // function getPriceFromRouterUsdc(address) public view returns (uint256)
+  // function getLpTokenTotalLiquidityUsdc(address) public view returns (uint256)
+  // function getLpTokenPriceUsdc(address) public view returns (uint256)
 
-export async function getPriceFromRouterUsdc(
-  token0: Address,
-  provider: Provider
-): Promise<BigNumber> {
-  const oracle = new Contract(OracleAddress, OracleAbi, provider);
-  return await oracle.getPriceFromRouterUsdc(token0);
-}
+  async isLpToken(token: Address): Promise<boolean> {
+    return await this.contract.isLpToken(token);
+  }
 
-export async function getLpTokenTotalLiquidityUsdc(
-  token: Address,
-  provider: Provider
-): Promise<BigNumber> {
-  const oracle = new Contract(OracleAddress, OracleAbi, provider);
-  return await oracle.getLpTokenTotalLiquidityUsdc(token);
-}
+  async getPriceFromRouter(
+    token0: Address,
+    token1: Address
+  ): Promise<BigNumber> {
+    return await this.contract.getPriceFromRouter(token0, token1);
+  }
 
-export async function getLpTokenPriceUsdc(
-  token: Address,
-  provider: Provider
-): Promise<BigNumber> {
-  const oracle = new Contract(OracleAddress, OracleAbi, provider);
-  return await oracle.getLpTokenPriceUsdc(token);
+  async getPriceFromRouterUsdc(token: Address): Promise<BigNumber> {
+    return await this.contract.getPriceFromRouterUsdc(token);
+  }
+
+  async getLpTokenTotalLiquidityUsdc(token: Address): Promise<BigNumber> {
+    return await this.contract.getLpTokenTotalLiquidityUsdc(token);
+  }
+
+  async getLpTokenPriceUsdc(token: Address): Promise<BigNumber> {
+    return await this.contract.getLpTokenPriceUsdc(token);
+  }
 }

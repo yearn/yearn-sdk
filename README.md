@@ -9,7 +9,7 @@
 
 ## Documentation
 
-Documentation can be found in the [docs](/docs) folder.
+Documentation can be found in the [docs](/docs/modules.md) folder.
 
 ## Helpful links
 

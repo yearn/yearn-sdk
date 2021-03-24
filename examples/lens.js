@@ -1,18 +1,19 @@
 const { JsonRpcProvider } = require("@ethersproject/providers");
 
-const yearn = require("..");
+const { Yearn } = require("..");
 
 const provider = new JsonRpcProvider("https://rpcapi.fantom.network");
+const yearn = new Yearn(250, provider);
 
 async function main() {
-  const registries = await yearn.lens.getRegistries(provider);
+  const registries = await yearn.lens.getRegistries();
 
   console.log(`Loaded ${registries.length} registries`);
 
-  const assets = await yearn.lens.getAssets(provider);
+  const assets = await yearn.lens.getAssets();
 
   const ape = "0xe120be880d79aded4cdbf6f2f9ef880987c82dc8";
-  const positions = await yearn.lens.getPositions(ape, provider);
+  const positions = await yearn.lens.getPositions(ape);
 
   console.log(`Position of ${ape}:`);
 
