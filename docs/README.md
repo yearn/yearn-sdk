@@ -1,3 +1,5 @@
+@yfi/sdk / [Exports](modules.md)
+
 <span>
     <img align="right" src="https://raw.githubusercontent.com/yearn/yearn-sdk/master/.github/media/sdk.png" height="150" />
 </span>

@@ -1,6 +1,6 @@
 {
   "name": "@yfi/sdk",
-  "version": "0.0.17",
+  "version": "0.0.18",
   "description": "Interaction framework for the yearn protocol",
   "author": "nymmrx <nymmrx@protonmail.com>",
   "keywords": [
@@ -34,6 +34,7 @@
     "build": "tsdx build",
     "test": "tsdx test",
     "lint": "tsdx lint src test",
+    "docs": "typedoc --out docs src/index.ts",
     "size": "size-limit",
     "analyze": "size-limit --why"
   },
@@ -50,6 +51,8 @@
     "@solidity-parser/parser": "^0.12.0",
     "np": "^7.4.0",
     "size-limit": "^4.10.1",
-    "tsdx": "^0.14.1"
+    "tsdx": "^0.14.1",
+    "typedoc": "^0.20.33",
+    "typedoc-plugin-markdown": "^3.6.0"
   }
 }
