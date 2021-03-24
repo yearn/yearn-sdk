@@ -1,8 +1,14 @@
 {
   "name": "@yfi/sdk",
-  "version": "0.1.0",
+  "version": "0.0.17",
   "description": "Interaction framework for the yearn protocol",
   "author": "nymmrx <nymmrx@protonmail.com>",
+  "keywords": [
+    "yearn",
+    "crypto",
+    "sdk",
+    "typescript"
+  ],
   "license": "MIT",
   "main": "dist/index.js",
   "module": "dist/core.esm.js",
@@ -20,6 +26,9 @@
       "limit": "5 KB"
     }
   ],
+  "prettier": {
+    "endOfLine": "auto"
+  },
   "scripts": {
     "start": "tsdx watch",
     "build": "tsdx build",
@@ -28,15 +37,19 @@
     "size": "size-limit",
     "analyze": "size-limit --why"
   },
+  "peerDependencies": {
+    "@ethersproject/bignumber": "^5.0.15",
+    "@ethersproject/contracts": "^5.0.12",
+    "@ethersproject/providers": "^5.0.24"
+  },
   "devDependencies": {
     "@ethersproject/bignumber": "^5.0.15",
     "@ethersproject/contracts": "^5.0.12",
     "@ethersproject/providers": "^5.0.24",
     "@size-limit/preset-small-lib": "^4.10.1",
+    "@solidity-parser/parser": "^0.12.0",
+    "np": "^7.4.0",
     "size-limit": "^4.10.1",
     "tsdx": "^0.14.1"
-  },
-  "dependencies": {
-    "@solidity-parser/parser": "^0.12.0"
   }
 }
