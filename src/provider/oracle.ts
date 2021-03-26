@@ -1,7 +1,7 @@
 import { BigNumber } from "@ethersproject/bignumber";
 
-import { Address, Addressable } from "./common";
-import { ChainId } from "./chain";
+import { Address, Addressable } from "../common";
+import { ChainId } from "../chain";
 
 const OracleAbi = [
   // Oracle general

@@ -1,7 +1,8 @@
 import { BigNumber } from "@ethersproject/bignumber";
 
-import { Address, Addressable } from "./common";
-import { ChainId } from "./chain";
+import { Address, Addressable } from "../common";
+import { ChainId } from "../chain";
+import { structArray } from "../struct";
 
 export interface Asset {
   name: string;
@@ -10,7 +11,7 @@ export interface Asset {
 }
 
 export interface Position {
-  assetId: Address;
+  asset: Address;
   depositedBalance: BigNumber;
   tokenBalance: BigNumber;
   tokenAllowance: BigNumber;
@@ -19,7 +20,8 @@ export interface Position {
 const LensAbi = [
   "function getRegistries() external view returns (address[] memory)",
   "function getAssets() external view returns (tuple(string name, address id, string version)[] memory)",
-  "function getPositionsOf(address) external view returns (tuple(address assetId, uint256 depositedBalance, uint256 tokenBalance, uint256 tokenAllowance)[] memory)"
+  "function getAssetsFromAdapter(address) external view returns (tuple(string name, address id, string version)[] memory)",
+  "function getPositionsOf(address) external view returns (tuple(address asset, uint256 depositedBalance, uint256 tokenBalance, uint256 tokenAllowance)[] memory)"
 ];
 
 /**
@@ -43,10 +45,14 @@ export class Lens extends Addressable {
   }
 
   async getAssets(): Promise<Asset[]> {
-    return await this.contract.getAssets();
+    return await this.contract.getAssets().then(structArray);
+  }
+
+  async getAssetsFromAdapter(adapter: Address): Promise<Asset[]> {
+    return await this.contract.getAssetsFromAdapter(adapter).then(structArray);
   }
 
   async getPositions(address: string): Promise<Position[]> {
-    return await this.contract.getPositionsOf(address);
+    return await this.contract.getPositionsOf(address).then(structArray);
   }
 }

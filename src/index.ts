@@ -16,21 +16,11 @@
  * @module
  */
 
-import { Provider } from "@ethersproject/providers";
+export { Lens, Asset, Position } from "./provider/lens";
+export { Oracle } from "./provider/oracle";
 
-import { Lens, Asset, Position } from "./lens";
-import { Oracle } from "./oracle";
+export { VaultInterface, Vault } from "./interface/vault";
 
-import { ChainId } from "./chain";
+export { Yearn } from "./yearn";
 
-export class Yearn {
-  lens: Lens;
-  oracle: Oracle;
-
-  constructor(chainId: ChainId, provider: Provider) {
-    this.lens = new Lens(chainId, provider);
-    this.oracle = new Oracle(chainId, provider);
-  }
-}
-
-export { Lens, Asset, Position, Oracle, ChainId };
+export { ChainId } from "./chain";

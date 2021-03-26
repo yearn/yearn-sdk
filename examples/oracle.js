@@ -5,7 +5,7 @@ const { Oracle } = require("..");
 const provider = new InfuraProvider();
 const oracle = new Oracle(1, provider);
 
-const dai = "0x6B175474E89094C44Da98b954EedeAC495271d0F";
+const dai = "0x6B175474E89094C44Da98b954EedeAC495271d4F";
 
 async function main() {
   const price = await oracle.getPriceUsdcRecommended(dai);

@@ -6,4 +6,3 @@ dist
 .env
 out
 .vscode/
-lens/

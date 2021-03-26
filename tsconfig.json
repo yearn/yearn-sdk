@@ -1,9 +1,13 @@
 {
-  "include": ["src"],
+  "include": [
+    "src"
+  ],
   "compilerOptions": {
     "target": "es5",
     "module": "esnext",
-    "lib": ["esnext"],
+    "lib": [
+      "esnext"
+    ],
     "importHelpers": true,
     "declaration": true,
     "sourceMap": true,
@@ -22,8 +26,5 @@
     "esModuleInterop": true,
     "rootDir": "./src",
     "baseUrl": "./",
-    "paths": {
-      "*": ["src/*", "node_modules/*"]
-    }
   }
 }

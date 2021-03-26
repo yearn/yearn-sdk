@@ -52,7 +52,12 @@
     "np": "^7.4.0",
     "size-limit": "^4.10.1",
     "tsdx": "^0.14.1",
+    "tslib": "^2.1.0",
     "typedoc": "^0.20.33",
     "typedoc-plugin-markdown": "^3.6.0"
+  },
+  "dependencies": {
+    "events": "^3.3.0",
+    "fetch": "^1.1.0"
   }
 }
