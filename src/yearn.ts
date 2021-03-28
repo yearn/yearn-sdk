@@ -1,24 +1,24 @@
 import { Provider } from "@ethersproject/providers";
 
 import { ChainId } from "./chain";
-import { VaultInterface } from "./interface/vault";
-import { Lens } from "./provider/lens";
-import { Oracle } from "./provider/oracle";
+import { VaultReader } from "./readers/vault";
+import { LensProvider } from "./providers/lens";
+import { OracleProvider } from "./providers/oracle";
 
-export class Yearn {
+export class Yearn<T extends ChainId> {
   providers: {
-    lens: Lens;
-    oracle: Oracle;
+    lens: LensProvider<T>;
+    oracle: OracleProvider<T>;
   };
 
-  vaults: VaultInterface;
+  vaults: VaultReader<T>;
 
-  constructor(chainId: ChainId, provider: Provider) {
+  constructor(chainId: T, provider: Provider) {
     this.providers = {
-      lens: new Lens(chainId, provider),
-      oracle: new Oracle(chainId, provider)
+      lens: new LensProvider(chainId, provider),
+      oracle: new OracleProvider(chainId, provider)
     };
 
-    this.vaults = new VaultInterface(this, chainId, provider);
+    this.vaults = new VaultReader(this, chainId, provider);
   }
 }

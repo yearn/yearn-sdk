@@ -6,4 +6,7 @@ export const Chains = {
   250: "FTM Mainnet"
 };
 
+export type EthMain = 1;
+export type FtmMain = 250;
+
 export type ChainId = keyof typeof Chains;

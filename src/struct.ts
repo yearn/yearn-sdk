@@ -1,10 +1,24 @@
-export function struct<G>(tuple: Record<string, unknown>): G {
-  const properties = Object.keys(tuple).filter(key => isNaN(Number(key)));
+import { isBigNumberish } from "@ethersproject/bignumber/lib/bignumber";
+
+export function struct(tuple: any): any {
+  if (typeof tuple !== "object") return tuple;
+  const keys = Object.keys(tuple);
+  const properties = keys.filter(key => isNaN(Number(key)));
+  if (keys.length === properties.length) return tuple;
   const copy: Record<string, unknown> = {};
-  properties.forEach((property: string) => (copy[property] = tuple[property]));
-  return (copy as unknown) as G;
+
+  properties.forEach((property: string) => {
+    const value = tuple[property];
+    if (typeof value === "object" && !isBigNumberish(value)) {
+      copy[property] = struct(value);
+    } else {
+      copy[property] = value;
+    }
+  });
+
+  return copy;
 }
 
-export function structArray<G>(tuples: Record<string, unknown>[]): G[] {
-  return tuples.map(tuple => struct<G>(tuple));
+export function structArray(tuples: any[]): any[] {
+  return tuples.map(tuple => struct(tuple));
 }

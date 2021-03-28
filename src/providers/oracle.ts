@@ -1,7 +1,8 @@
 import { BigNumber } from "@ethersproject/bignumber";
 
-import { Address, Addressable } from "../common";
+import { Address, ContractProvider } from "../common";
 import { ChainId } from "../chain";
+import { Provider } from "@ethersproject/providers";
 
 const OracleAbi = [
   // Oracle general
@@ -32,8 +33,12 @@ const OracleAbi = [
  * It's implemented in the form of a contract that lives on all networks
  * supported by yearn.
  */
-export class Oracle extends Addressable {
+export class OracleProvider<T extends ChainId> extends ContractProvider {
   static abi = OracleAbi;
+
+  constructor(chainId: T, provider: Provider) {
+    super(OracleProvider.addressByChain(chainId), chainId, provider);
+  }
 
   static addressByChain(chainId: ChainId): string {
     switch (chainId) {
@@ -42,9 +47,6 @@ export class Oracle extends Addressable {
       case 250:
         return "0x9b8b9F6146B29CC32208f42b995E70F0Eb2807F3";
     }
-    throw new TypeError(
-      `Oracle does not have an address for chainId ${chainId}`
-    );
   }
 
   async getCalculations(): Promise<Address[]> {

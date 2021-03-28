@@ -9,8 +9,8 @@ Welcome to the Yearn SDK documentation.
 SDK is divided in modules representing the different services offered by
 yearn and the access method used to read / write from them.
 
-- [Lens](classes/lens.md) provides access to yearn's assets and user position.
-- [Oracle](classes/oracle.md) is the main pricing engine used for all calculations.
+- [LensProvider](classes/lensprovider.md) provides access to yearn's assets and user position.
+- [OracleProvider](classes/oracleprovider.md) is the main pricing engine used for all calculations.
 
 ## Peer dependencies
 
@@ -20,14 +20,10 @@ SDK requires several dependencies from the ethers.js project.
 
 ### Classes
 
-- [Lens](classes/lens.md)
-- [Oracle](classes/oracle.md)
+- [LensProvider](classes/lensprovider.md)
+- [OracleProvider](classes/oracleprovider.md)
+- [VaultReader](classes/vaultreader.md)
 - [Yearn](classes/yearn.md)
-
-### Interfaces
-
-- [Asset](interfaces/asset.md)
-- [Position](interfaces/position.md)
 
 ### Type aliases
 
@@ -39,4 +35,4 @@ SDK requires several dependencies from the ethers.js project.
 
 Ƭ **ChainId**: keyof *typeof* Chains
 
-Defined in: [chain.ts:6](https://github.com/yearn/yearn-sdk/blob/d93eb22/src/chain.ts#L6)
+Defined in: [chain.ts:12](https://github.com/yearn/yearn-sdk/blob/922cc91/src/chain.ts#L12)

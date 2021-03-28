@@ -21,14 +21,24 @@ export type Value =
 
 export type Struct = { [key: string]: Value };
 
-export class Service extends EventEmitter {
-  provider: Provider;
-  chainId: number;
+export interface Position {
+  asset: Address;
+  depositedBalance: BigNumber;
+  tokenBalance: BigNumber;
+  tokenAllowance: BigNumber;
+}
 
-  constructor(chainId: number, provider: Provider) {
-    super();
+export class Service {
+  provider: Provider;
+  chainId: ChainId;
+
+  events: EventEmitter;
+
+  constructor(chainId: ChainId, provider: Provider) {
     this.chainId = chainId;
     this.provider = provider;
+
+    this.events = new EventEmitter();
 
     // Error handling + update events via proxy / reflection
     const methods = Object.getOwnPropertyNames(Object.getPrototypeOf(this));
@@ -41,18 +51,24 @@ export class Service extends EventEmitter {
         property,
         new Proxy(method, {
           apply: (target, thisArg, argArray) => {
-            const res = target.apply(thisArg, argArray);
-            if (res && res instanceof Promise) {
-              res
-                .then(result => {
-                  this.emit(method.name, result);
-                  return result;
-                })
-                .catch(error => {
-                  throw new SdkError(`${path}: ${error.message}`);
-                });
+            try {
+              const res = target.apply(thisArg, argArray);
+              if (res && res instanceof Promise) {
+                res
+                  .then(result => {
+                    this.events.emit(method.name, result);
+                    return result;
+                  })
+                  .catch(error => {
+                    throw new SdkError(`${path}: ${error.message}`);
+                  });
+              } else {
+                this.events.emit(method.name, res);
+              }
+              return res;
+            } catch (error) {
+              throw new SdkError(`${path}: ${error.message}`);
             }
-            return res;
           }
         })
       );
@@ -60,34 +76,27 @@ export class Service extends EventEmitter {
   }
 }
 
-export class Interface extends Service {
-  yearn: Yearn;
+export class Reader<T extends ChainId> extends Service {
+  protected yearn: Yearn<T>;
 
-  constructor(yearn: Yearn, chainId: number, provider: Provider) {
+  constructor(yearn: Yearn<T>, chainId: T, provider: Provider) {
     super(chainId, provider);
     this.yearn = yearn;
   }
 }
 
-export class Addressable extends Service {
+export class ContractProvider extends Service {
   static abi: string[] = [];
+
   address: string;
 
   contract: Contract;
 
-  constructor(chainId: number, provider: Provider) {
+  constructor(address: Address, chainId: ChainId, provider: Provider) {
     super(chainId, provider);
-
-    // @ts-ignore
-    this.address = this.constructor.addressByChain(chainId);
+    this.address = address;
 
     // @ts-ignore
     this.contract = new Contract(this.address, this.constructor.abi, provider);
-  }
-
-  static addressByChain(chainId: ChainId): string {
-    throw new TypeError(
-      `Addressable does not have an address for chainId ${chainId}`
-    );
   }
 }

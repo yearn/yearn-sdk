@@ -1,6 +1,12 @@
 [@yfi/sdk](../README.md) / [Exports](../modules.md) / Yearn
 
-# Class: Yearn
+# Class: Yearn<T\>
+
+## Type parameters
+
+Name | Type |
+:------ | :------ |
+`T` | [*ChainId*](../modules.md#chainid) |
 
 ## Table of contents
 
@@ -10,38 +16,51 @@
 
 ### Properties
 
-- [lens](yearn.md#lens)
-- [oracle](yearn.md#oracle)
+- [providers](yearn.md#providers)
+- [vaults](yearn.md#vaults)
 
 ## Constructors
 
 ### constructor
 
-\+ **new Yearn**(`chainId`: *1* \| *250*, `provider`: *Provider*): [*Yearn*](yearn.md)
+\+ **new Yearn**<T\>(`chainId`: T, `provider`: *Provider*): [*Yearn*](yearn.md)<T\>
+
+#### Type parameters:
+
+Name | Type |
+:------ | :------ |
+`T` | *1* \| *250* |
 
 #### Parameters:
 
 Name | Type |
 :------ | :------ |
-`chainId` | *1* \| *250* |
+`chainId` | T |
 `provider` | *Provider* |
 
-**Returns:** [*Yearn*](yearn.md)
+**Returns:** [*Yearn*](yearn.md)<T\>
 
-Defined in: [index.ts:28](https://github.com/yearn/yearn-sdk/blob/d93eb22/src/index.ts#L28)
+Defined in: [yearn.ts:14](https://github.com/yearn/yearn-sdk/blob/922cc91/src/yearn.ts#L14)
 
 ## Properties
 
-### lens
+### providers
 
-• **lens**: [*Lens*](lens.md)
+• **providers**: *object*
 
-Defined in: [index.ts:27](https://github.com/yearn/yearn-sdk/blob/d93eb22/src/index.ts#L27)
+#### Type declaration:
+
+Name | Type |
+:------ | :------ |
+`lens` | [*LensProvider*](lensprovider.md)<T\> |
+`oracle` | [*OracleProvider*](oracleprovider.md)<T\> |
+
+Defined in: [yearn.ts:9](https://github.com/yearn/yearn-sdk/blob/922cc91/src/yearn.ts#L9)
 
 ___
 
-### oracle
+### vaults
 
-• **oracle**: [*Oracle*](oracle.md)
+• **vaults**: [*VaultReader*](vaultreader.md)<T\>
 
-Defined in: [index.ts:28](https://github.com/yearn/yearn-sdk/blob/d93eb22/src/index.ts#L28)
+Defined in: [yearn.ts:14](https://github.com/yearn/yearn-sdk/blob/922cc91/src/yearn.ts#L14)
