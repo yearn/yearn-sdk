@@ -57,7 +57,7 @@ Name | Type |
 
 Inherited from: void
 
-Defined in: [common.ts:73](https://github.com/yearn/yearn-sdk/blob/e3d9954/src/common.ts#L73)
+Defined in: [common.ts:73](https://github.com/yearn/yearn-sdk/blob/b50bc5d/src/common.ts#L73)
 
 ## Properties
 
@@ -67,7 +67,7 @@ Defined in: [common.ts:73](https://github.com/yearn/yearn-sdk/blob/e3d9954/src/c
 
 Inherited from: void
 
-Defined in: [common.ts:26](https://github.com/yearn/yearn-sdk/blob/e3d9954/src/common.ts#L26)
+Defined in: [common.ts:26](https://github.com/yearn/yearn-sdk/blob/b50bc5d/src/common.ts#L26)
 
 ___
 
@@ -77,7 +77,7 @@ ___
 
 Inherited from: void
 
-Defined in: [common.ts:28](https://github.com/yearn/yearn-sdk/blob/e3d9954/src/common.ts#L28)
+Defined in: [common.ts:28](https://github.com/yearn/yearn-sdk/blob/b50bc5d/src/common.ts#L28)
 
 ___
 
@@ -87,7 +87,7 @@ ___
 
 Inherited from: void
 
-Defined in: [common.ts:25](https://github.com/yearn/yearn-sdk/blob/e3d9954/src/common.ts#L25)
+Defined in: [common.ts:25](https://github.com/yearn/yearn-sdk/blob/b50bc5d/src/common.ts#L25)
 
 ___
 
@@ -97,23 +97,23 @@ ___
 
 Inherited from: void
 
-Defined in: [common.ts:73](https://github.com/yearn/yearn-sdk/blob/e3d9954/src/common.ts#L73)
+Defined in: [common.ts:73](https://github.com/yearn/yearn-sdk/blob/b50bc5d/src/common.ts#L73)
 
 ## Methods
 
 ### get
 
-▸ **get**(): *Promise*<Asset[]\>
+▸ **get**(): *Promise*<[*Asset*](../modules.md#asset)[]\>
 
-**Returns:** *Promise*<Asset[]\>
+**Returns:** *Promise*<[*Asset*](../modules.md#asset)[]\>
 
-Defined in: [readers/vault.ts:6](https://github.com/yearn/yearn-sdk/blob/e3d9954/src/readers/vault.ts#L6)
+Defined in: [readers/vault.ts:6](https://github.com/yearn/yearn-sdk/blob/b50bc5d/src/readers/vault.ts#L6)
 
 ___
 
 ### getPositionsOf
 
-▸ **getPositionsOf**(`address`: *string*): *Promise*<Position[]\>
+▸ **getPositionsOf**(`address`: *string*): *Promise*<[*Position*](../interfaces/position.md)[]\>
 
 #### Parameters:
 
@@ -121,16 +121,16 @@ Name | Type |
 :------ | :------ |
 `address` | *string* |
 
-**Returns:** *Promise*<Position[]\>
+**Returns:** *Promise*<[*Position*](../interfaces/position.md)[]\>
 
-Defined in: [readers/vault.ts:24](https://github.com/yearn/yearn-sdk/blob/e3d9954/src/readers/vault.ts#L24)
+Defined in: [readers/vault.ts:24](https://github.com/yearn/yearn-sdk/blob/b50bc5d/src/readers/vault.ts#L24)
 
 ___
 
 ### getTokens
 
-▸ **getTokens**(): *Promise*<Token[]\>
+▸ **getTokens**(): *Promise*<[*Token*](../interfaces/token.md)[]\>
 
-**Returns:** *Promise*<Token[]\>
+**Returns:** *Promise*<[*Token*](../interfaces/token.md)[]\>
 
-Defined in: [readers/vault.ts:15](https://github.com/yearn/yearn-sdk/blob/e3d9954/src/readers/vault.ts#L15)
+Defined in: [readers/vault.ts:15](https://github.com/yearn/yearn-sdk/blob/b50bc5d/src/readers/vault.ts#L15)

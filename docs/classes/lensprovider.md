@@ -68,7 +68,7 @@ Name | Type |
 
 Overrides: void
 
-Defined in: [providers/lens.ts:36](https://github.com/yearn/yearn-sdk/blob/e3d9954/src/providers/lens.ts#L36)
+Defined in: [providers/lens.ts:36](https://github.com/yearn/yearn-sdk/blob/b50bc5d/src/providers/lens.ts#L36)
 
 ## Properties
 
@@ -78,7 +78,7 @@ Defined in: [providers/lens.ts:36](https://github.com/yearn/yearn-sdk/blob/e3d99
 
 Inherited from: void
 
-Defined in: [common.ts:84](https://github.com/yearn/yearn-sdk/blob/e3d9954/src/common.ts#L84)
+Defined in: [common.ts:84](https://github.com/yearn/yearn-sdk/blob/b50bc5d/src/common.ts#L84)
 
 ___
 
@@ -88,7 +88,7 @@ ___
 
 Inherited from: void
 
-Defined in: [common.ts:26](https://github.com/yearn/yearn-sdk/blob/e3d9954/src/common.ts#L26)
+Defined in: [common.ts:26](https://github.com/yearn/yearn-sdk/blob/b50bc5d/src/common.ts#L26)
 
 ___
 
@@ -98,7 +98,7 @@ ___
 
 Inherited from: void
 
-Defined in: [common.ts:86](https://github.com/yearn/yearn-sdk/blob/e3d9954/src/common.ts#L86)
+Defined in: [common.ts:86](https://github.com/yearn/yearn-sdk/blob/b50bc5d/src/common.ts#L86)
 
 ___
 
@@ -108,7 +108,7 @@ ___
 
 Inherited from: void
 
-Defined in: [common.ts:28](https://github.com/yearn/yearn-sdk/blob/e3d9954/src/common.ts#L28)
+Defined in: [common.ts:28](https://github.com/yearn/yearn-sdk/blob/b50bc5d/src/common.ts#L28)
 
 ___
 
@@ -118,7 +118,7 @@ ___
 
 Inherited from: void
 
-Defined in: [common.ts:25](https://github.com/yearn/yearn-sdk/blob/e3d9954/src/common.ts#L25)
+Defined in: [common.ts:25](https://github.com/yearn/yearn-sdk/blob/b50bc5d/src/common.ts#L25)
 
 ___
 
@@ -128,7 +128,7 @@ ___
 
 Overrides: void
 
-Defined in: [providers/lens.ts:36](https://github.com/yearn/yearn-sdk/blob/e3d9954/src/providers/lens.ts#L36)
+Defined in: [providers/lens.ts:36](https://github.com/yearn/yearn-sdk/blob/b50bc5d/src/providers/lens.ts#L36)
 
 ## Accessors
 
@@ -138,23 +138,23 @@ Defined in: [providers/lens.ts:36](https://github.com/yearn/yearn-sdk/blob/e3d99
 
 **Returns:** *Adapters*<T\>
 
-Defined in: [providers/lens.ts:42](https://github.com/yearn/yearn-sdk/blob/e3d9954/src/providers/lens.ts#L42)
+Defined in: [providers/lens.ts:42](https://github.com/yearn/yearn-sdk/blob/b50bc5d/src/providers/lens.ts#L42)
 
 ## Methods
 
 ### getAssets
 
-▸ **getAssets**(): *Promise*<Asset[]\>
+▸ **getAssets**(): *Promise*<[*Asset*](../modules.md#asset)[]\>
 
-**Returns:** *Promise*<Asset[]\>
+**Returns:** *Promise*<[*Asset*](../modules.md#asset)[]\>
 
-Defined in: [providers/lens.ts:72](https://github.com/yearn/yearn-sdk/blob/e3d9954/src/providers/lens.ts#L72)
+Defined in: [providers/lens.ts:72](https://github.com/yearn/yearn-sdk/blob/b50bc5d/src/providers/lens.ts#L72)
 
 ___
 
 ### getAssetsFromAdapter
 
-▸ **getAssetsFromAdapter**(`adapter`: *string*): *Promise*<Asset[]\>
+▸ **getAssetsFromAdapter**(`adapter`: *string*): *Promise*<[*Asset*](../modules.md#asset)[]\>
 
 #### Parameters:
 
@@ -162,15 +162,15 @@ Name | Type |
 :------ | :------ |
 `adapter` | *string* |
 
-**Returns:** *Promise*<Asset[]\>
+**Returns:** *Promise*<[*Asset*](../modules.md#asset)[]\>
 
-Defined in: [providers/lens.ts:76](https://github.com/yearn/yearn-sdk/blob/e3d9954/src/providers/lens.ts#L76)
+Defined in: [providers/lens.ts:76](https://github.com/yearn/yearn-sdk/blob/b50bc5d/src/providers/lens.ts#L76)
 
 ___
 
 ### getPositions
 
-▸ **getPositions**(`address`: *string*): *Promise*<Position[]\>
+▸ **getPositions**(`address`: *string*): *Promise*<[*Position*](../interfaces/position.md)[]\>
 
 #### Parameters:
 
@@ -178,9 +178,9 @@ Name | Type |
 :------ | :------ |
 `address` | *string* |
 
-**Returns:** *Promise*<Position[]\>
+**Returns:** *Promise*<[*Position*](../interfaces/position.md)[]\>
 
-Defined in: [providers/lens.ts:80](https://github.com/yearn/yearn-sdk/blob/e3d9954/src/providers/lens.ts#L80)
+Defined in: [providers/lens.ts:80](https://github.com/yearn/yearn-sdk/blob/b50bc5d/src/providers/lens.ts#L80)
 
 ___
 
@@ -190,7 +190,7 @@ ___
 
 **Returns:** *Promise*<string[]\>
 
-Defined in: [providers/lens.ts:68](https://github.com/yearn/yearn-sdk/blob/e3d9954/src/providers/lens.ts#L68)
+Defined in: [providers/lens.ts:68](https://github.com/yearn/yearn-sdk/blob/b50bc5d/src/providers/lens.ts#L68)
 
 ___
 
@@ -206,4 +206,4 @@ Name | Type |
 
 **Returns:** *string*
 
-Defined in: [providers/lens.ts:60](https://github.com/yearn/yearn-sdk/blob/e3d9954/src/providers/lens.ts#L60)
+Defined in: [providers/lens.ts:60](https://github.com/yearn/yearn-sdk/blob/b50bc5d/src/providers/lens.ts#L60)

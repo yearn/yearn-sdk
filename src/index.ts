@@ -24,3 +24,4 @@ export { VaultReader } from "./readers/vault";
 export { Yearn } from "./yearn";
 
 export { ChainId } from "./chain";
+export * from "./asset";
