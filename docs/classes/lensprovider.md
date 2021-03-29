@@ -68,7 +68,7 @@ Name | Type |
 
 Overrides: void
 
-Defined in: [providers/lens.ts:36](https://github.com/yearn/yearn-sdk/blob/922cc91/src/providers/lens.ts#L36)
+Defined in: [providers/lens.ts:36](https://github.com/yearn/yearn-sdk/blob/e3d9954/src/providers/lens.ts#L36)
 
 ## Properties
 
@@ -78,7 +78,7 @@ Defined in: [providers/lens.ts:36](https://github.com/yearn/yearn-sdk/blob/922cc
 
 Inherited from: void
 
-Defined in: [common.ts:91](https://github.com/yearn/yearn-sdk/blob/922cc91/src/common.ts#L91)
+Defined in: [common.ts:84](https://github.com/yearn/yearn-sdk/blob/e3d9954/src/common.ts#L84)
 
 ___
 
@@ -88,7 +88,7 @@ ___
 
 Inherited from: void
 
-Defined in: [common.ts:33](https://github.com/yearn/yearn-sdk/blob/922cc91/src/common.ts#L33)
+Defined in: [common.ts:26](https://github.com/yearn/yearn-sdk/blob/e3d9954/src/common.ts#L26)
 
 ___
 
@@ -98,7 +98,7 @@ ___
 
 Inherited from: void
 
-Defined in: [common.ts:93](https://github.com/yearn/yearn-sdk/blob/922cc91/src/common.ts#L93)
+Defined in: [common.ts:86](https://github.com/yearn/yearn-sdk/blob/e3d9954/src/common.ts#L86)
 
 ___
 
@@ -108,7 +108,7 @@ ___
 
 Inherited from: void
 
-Defined in: [common.ts:35](https://github.com/yearn/yearn-sdk/blob/922cc91/src/common.ts#L35)
+Defined in: [common.ts:28](https://github.com/yearn/yearn-sdk/blob/e3d9954/src/common.ts#L28)
 
 ___
 
@@ -118,7 +118,7 @@ ___
 
 Inherited from: void
 
-Defined in: [common.ts:32](https://github.com/yearn/yearn-sdk/blob/922cc91/src/common.ts#L32)
+Defined in: [common.ts:25](https://github.com/yearn/yearn-sdk/blob/e3d9954/src/common.ts#L25)
 
 ___
 
@@ -128,7 +128,7 @@ ___
 
 Overrides: void
 
-Defined in: [providers/lens.ts:36](https://github.com/yearn/yearn-sdk/blob/922cc91/src/providers/lens.ts#L36)
+Defined in: [providers/lens.ts:36](https://github.com/yearn/yearn-sdk/blob/e3d9954/src/providers/lens.ts#L36)
 
 ## Accessors
 
@@ -138,7 +138,7 @@ Defined in: [providers/lens.ts:36](https://github.com/yearn/yearn-sdk/blob/922cc
 
 **Returns:** *Adapters*<T\>
 
-Defined in: [providers/lens.ts:42](https://github.com/yearn/yearn-sdk/blob/922cc91/src/providers/lens.ts#L42)
+Defined in: [providers/lens.ts:42](https://github.com/yearn/yearn-sdk/blob/e3d9954/src/providers/lens.ts#L42)
 
 ## Methods
 
@@ -148,7 +148,7 @@ Defined in: [providers/lens.ts:42](https://github.com/yearn/yearn-sdk/blob/922cc
 
 **Returns:** *Promise*<Asset[]\>
 
-Defined in: [providers/lens.ts:72](https://github.com/yearn/yearn-sdk/blob/922cc91/src/providers/lens.ts#L72)
+Defined in: [providers/lens.ts:72](https://github.com/yearn/yearn-sdk/blob/e3d9954/src/providers/lens.ts#L72)
 
 ___
 
@@ -164,7 +164,7 @@ Name | Type |
 
 **Returns:** *Promise*<Asset[]\>
 
-Defined in: [providers/lens.ts:76](https://github.com/yearn/yearn-sdk/blob/922cc91/src/providers/lens.ts#L76)
+Defined in: [providers/lens.ts:76](https://github.com/yearn/yearn-sdk/blob/e3d9954/src/providers/lens.ts#L76)
 
 ___
 
@@ -180,7 +180,7 @@ Name | Type |
 
 **Returns:** *Promise*<Position[]\>
 
-Defined in: [providers/lens.ts:80](https://github.com/yearn/yearn-sdk/blob/922cc91/src/providers/lens.ts#L80)
+Defined in: [providers/lens.ts:80](https://github.com/yearn/yearn-sdk/blob/e3d9954/src/providers/lens.ts#L80)
 
 ___
 
@@ -190,7 +190,7 @@ ___
 
 **Returns:** *Promise*<string[]\>
 
-Defined in: [providers/lens.ts:68](https://github.com/yearn/yearn-sdk/blob/922cc91/src/providers/lens.ts#L68)
+Defined in: [providers/lens.ts:68](https://github.com/yearn/yearn-sdk/blob/e3d9954/src/providers/lens.ts#L68)
 
 ___
 
@@ -206,4 +206,4 @@ Name | Type |
 
 **Returns:** *string*
 
-Defined in: [providers/lens.ts:60](https://github.com/yearn/yearn-sdk/blob/922cc91/src/providers/lens.ts#L60)
+Defined in: [providers/lens.ts:60](https://github.com/yearn/yearn-sdk/blob/e3d9954/src/providers/lens.ts#L60)

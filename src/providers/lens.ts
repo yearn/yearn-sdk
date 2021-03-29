@@ -1,7 +1,7 @@
 import { Provider } from "@ethersproject/providers";
 
-import { Asset } from "../asset";
-import { Address, Position, ContractProvider } from "../common";
+import { Asset, Position } from "../asset";
+import { Address, ContractProvider } from "../common";
 import { ChainId, EthMain } from "../chain";
 import { structArray } from "../struct";
 import { IRegistryAdapter, RegistryV2Adapter } from "./adapters/registry";
@@ -47,7 +47,7 @@ export class LensProvider<T extends ChainId> extends ContractProvider {
         return {
           vaults: {
             v2: new RegistryV2Adapter(
-              "0xCA99cf4Dd1C8Bcb896d33f4aBCa6220A93557587",
+              "0x437758D475F70249e03EDa6bE23684aD1FC375F0",
               this.chainId,
               this.provider
             )

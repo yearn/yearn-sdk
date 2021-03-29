@@ -19,8 +19,29 @@ export type Metadata = {
   };
 };
 
+export interface Position {
+  assetId: Address;
+  balance: BigNumber;
+  balanceUsdc: BigNumber;
+  tokenPosition: TokenPosition;
+}
+
+export interface TokenPosition {
+  tokenId: Address;
+  balance: BigNumber;
+  balanceUsdc: BigNumber;
+  allowances: Allowance[];
+}
+
+export interface Allowance {
+  owner: Address;
+  spender: Address;
+  allowance: BigNumber;
+}
+
 export type SpecificAsset<T extends keyof Metadata> = {
   id: Address;
+  typeId: string;
   name: string;
   version: string;
   balance: BigNumber;

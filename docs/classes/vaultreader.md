@@ -29,8 +29,9 @@ Name | Type |
 
 ### Methods
 
-- [getVaultTokens](vaultreader.md#getvaulttokens)
-- [getVaults](vaultreader.md#getvaults)
+- [get](vaultreader.md#get)
+- [getPositionsOf](vaultreader.md#getpositionsof)
+- [getTokens](vaultreader.md#gettokens)
 
 ## Constructors
 
@@ -56,7 +57,7 @@ Name | Type |
 
 Inherited from: void
 
-Defined in: [common.ts:80](https://github.com/yearn/yearn-sdk/blob/922cc91/src/common.ts#L80)
+Defined in: [common.ts:73](https://github.com/yearn/yearn-sdk/blob/e3d9954/src/common.ts#L73)
 
 ## Properties
 
@@ -66,7 +67,7 @@ Defined in: [common.ts:80](https://github.com/yearn/yearn-sdk/blob/922cc91/src/c
 
 Inherited from: void
 
-Defined in: [common.ts:33](https://github.com/yearn/yearn-sdk/blob/922cc91/src/common.ts#L33)
+Defined in: [common.ts:26](https://github.com/yearn/yearn-sdk/blob/e3d9954/src/common.ts#L26)
 
 ___
 
@@ -76,7 +77,7 @@ ___
 
 Inherited from: void
 
-Defined in: [common.ts:35](https://github.com/yearn/yearn-sdk/blob/922cc91/src/common.ts#L35)
+Defined in: [common.ts:28](https://github.com/yearn/yearn-sdk/blob/e3d9954/src/common.ts#L28)
 
 ___
 
@@ -86,7 +87,7 @@ ___
 
 Inherited from: void
 
-Defined in: [common.ts:32](https://github.com/yearn/yearn-sdk/blob/922cc91/src/common.ts#L32)
+Defined in: [common.ts:25](https://github.com/yearn/yearn-sdk/blob/e3d9954/src/common.ts#L25)
 
 ___
 
@@ -96,24 +97,40 @@ ___
 
 Inherited from: void
 
-Defined in: [common.ts:80](https://github.com/yearn/yearn-sdk/blob/922cc91/src/common.ts#L80)
+Defined in: [common.ts:73](https://github.com/yearn/yearn-sdk/blob/e3d9954/src/common.ts#L73)
 
 ## Methods
 
-### getVaultTokens
+### get
 
-▸ **getVaultTokens**(): *Promise*<Token[]\>
-
-**Returns:** *Promise*<Token[]\>
-
-Defined in: [readers/vault.ts:15](https://github.com/yearn/yearn-sdk/blob/922cc91/src/readers/vault.ts#L15)
-
-___
-
-### getVaults
-
-▸ **getVaults**(): *Promise*<Asset[]\>
+▸ **get**(): *Promise*<Asset[]\>
 
 **Returns:** *Promise*<Asset[]\>
 
-Defined in: [readers/vault.ts:6](https://github.com/yearn/yearn-sdk/blob/922cc91/src/readers/vault.ts#L6)
+Defined in: [readers/vault.ts:6](https://github.com/yearn/yearn-sdk/blob/e3d9954/src/readers/vault.ts#L6)
+
+___
+
+### getPositionsOf
+
+▸ **getPositionsOf**(`address`: *string*): *Promise*<Position[]\>
+
+#### Parameters:
+
+Name | Type |
+:------ | :------ |
+`address` | *string* |
+
+**Returns:** *Promise*<Position[]\>
+
+Defined in: [readers/vault.ts:24](https://github.com/yearn/yearn-sdk/blob/e3d9954/src/readers/vault.ts#L24)
+
+___
+
+### getTokens
+
+▸ **getTokens**(): *Promise*<Token[]\>
+
+**Returns:** *Promise*<Token[]\>
+
+Defined in: [readers/vault.ts:15](https://github.com/yearn/yearn-sdk/blob/e3d9954/src/readers/vault.ts#L15)

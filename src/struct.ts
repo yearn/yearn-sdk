@@ -4,7 +4,7 @@ export function struct(tuple: any): any {
   if (typeof tuple !== "object") return tuple;
   const keys = Object.keys(tuple);
   const properties = keys.filter(key => isNaN(Number(key)));
-  if (keys.length === properties.length) return tuple;
+  if (properties.length === 0) return structArray(tuple);
   const copy: Record<string, unknown> = {};
 
   properties.forEach((property: string) => {

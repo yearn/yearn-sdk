@@ -40,7 +40,7 @@ Name | Type |
 
 **Returns:** [*Yearn*](yearn.md)<T\>
 
-Defined in: [yearn.ts:14](https://github.com/yearn/yearn-sdk/blob/922cc91/src/yearn.ts#L14)
+Defined in: [yearn.ts:14](https://github.com/yearn/yearn-sdk/blob/e3d9954/src/yearn.ts#L14)
 
 ## Properties
 
@@ -55,7 +55,7 @@ Name | Type |
 `lens` | [*LensProvider*](lensprovider.md)<T\> |
 `oracle` | [*OracleProvider*](oracleprovider.md)<T\> |
 
-Defined in: [yearn.ts:9](https://github.com/yearn/yearn-sdk/blob/922cc91/src/yearn.ts#L9)
+Defined in: [yearn.ts:9](https://github.com/yearn/yearn-sdk/blob/e3d9954/src/yearn.ts#L9)
 
 ___
 
@@ -63,4 +63,4 @@ ___
 
 • **vaults**: [*VaultReader*](vaultreader.md)<T\>
 
-Defined in: [yearn.ts:14](https://github.com/yearn/yearn-sdk/blob/922cc91/src/yearn.ts#L14)
+Defined in: [yearn.ts:14](https://github.com/yearn/yearn-sdk/blob/e3d9954/src/yearn.ts#L14)

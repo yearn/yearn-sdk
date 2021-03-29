@@ -1,9 +1,9 @@
-import { Asset, Token } from "../asset";
+import { Asset, Position, Token } from "../asset";
 import { ChainId } from "../chain";
-import { Reader } from "../common";
+import { Address, Reader } from "../common";
 
 export class VaultReader<T extends ChainId> extends Reader<T> {
-  async getVaults(): Promise<Asset[]> {
+  async get(): Promise<Asset[]> {
     const adapters = Object.values(this.yearn.providers.lens.adapters.vaults);
     return await Promise.all(
       adapters.map(adapter => {
@@ -12,11 +12,20 @@ export class VaultReader<T extends ChainId> extends Reader<T> {
     ).then(arr => arr.flat());
   }
 
-  async getVaultTokens(): Promise<Token[]> {
+  async getTokens(): Promise<Token[]> {
     const adapters = Object.values(this.yearn.providers.lens.adapters.vaults);
     return await Promise.all(
       adapters.map(adapter => {
         return adapter.tokens();
+      })
+    ).then(arr => arr.flat());
+  }
+
+  async getPositionsOf(address: Address): Promise<Position[]> {
+    const adapters = Object.values(this.yearn.providers.lens.adapters.vaults);
+    return await Promise.all(
+      adapters.map(adapter => {
+        return adapter.positionsOf(address);
       })
     ).then(arr => arr.flat());
   }

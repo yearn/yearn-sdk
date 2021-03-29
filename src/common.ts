@@ -21,13 +21,6 @@ export type Value =
 
 export type Struct = { [key: string]: Value };
 
-export interface Position {
-  asset: Address;
-  depositedBalance: BigNumber;
-  tokenBalance: BigNumber;
-  tokenAllowance: BigNumber;
-}
-
 export class Service {
   provider: Provider;
   chainId: ChainId;
