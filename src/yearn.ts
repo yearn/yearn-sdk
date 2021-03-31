@@ -1,5 +1,6 @@
 import { ChainId } from "./chain";
 import { Context, ContextValue } from "./context";
+import { TokenReader } from "./readers/token";
 import { VaultReader } from "./readers/vault";
 import { LensService } from "./services/lens";
 import { OracleService } from "./services/oracle";
@@ -13,6 +14,7 @@ export class Yearn<T extends ChainId> {
   };
 
   vaults: VaultReader<T>;
+  tokens: TokenReader<T>;
 
   constructor(chainId: T, context: Context | ContextValue) {
     // typescript at its best :/
@@ -27,5 +29,6 @@ export class Yearn<T extends ChainId> {
     };
 
     this.vaults = new VaultReader(this, chainId, ctx);
+    this.tokens = new TokenReader(this, chainId, ctx);
   }
 }

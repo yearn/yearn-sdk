@@ -1,4 +1,4 @@
-import { Asset, Position, Token } from "../asset";
+import { Asset, Position, Token } from "../assets";
 import { ChainId } from "../chain";
 import { Address, Reader } from "../common";
 

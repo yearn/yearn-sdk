@@ -1,4 +1,4 @@
-import { Asset, Position } from "../asset";
+import { Asset, Position } from "../assets";
 import { Address, ContractService } from "../common";
 import { ChainId, EthMain } from "../chain";
 import { structArray } from "../struct";

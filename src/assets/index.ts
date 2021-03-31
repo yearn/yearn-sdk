@@ -1,6 +1,6 @@
 import { BigNumber } from "@ethersproject/bignumber";
 
-import { Address } from "./common";
+import { Address } from "../common";
 
 export type Metadata = {
   VAULT_V2: {

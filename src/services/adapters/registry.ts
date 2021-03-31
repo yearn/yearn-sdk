@@ -1,4 +1,4 @@
-import { Position, SpecificAsset, Token } from "../../asset";
+import { Position, SpecificAsset, Token } from "../../assets";
 import { Address, ContractService } from "../../common";
 import { structArray } from "../../struct";
 

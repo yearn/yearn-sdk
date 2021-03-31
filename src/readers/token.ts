@@ -3,7 +3,7 @@ import { BigNumber } from "@ethersproject/bignumber";
 import { Address, Reader } from "../common";
 
 import { ChainId } from "../chain";
-import { Token } from "../asset";
+import { Token } from "../assets";
 import { Balance, Balances } from "../services/zapper";
 
 export class TokenReader<C extends ChainId> extends Reader<C> {
@@ -27,7 +27,7 @@ export class TokenReader<C extends ChainId> extends Reader<C> {
     return this.yearn.services.zapper.balances<T>(addresses);
   }
 
-  async zapTokens(): Promise<Token[]> {
+  async supported(): Promise<Token[]> {
     return this.yearn.services.zapper.supportedTokens();
   }
 }
