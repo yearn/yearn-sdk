@@ -1,5 +1,5 @@
 import { Position, SpecificAsset, Token } from "../../asset";
-import { Address, ContractProvider } from "../../common";
+import { Address, ContractService } from "../../common";
 import { structArray } from "../../struct";
 
 export interface IRegistryAdapter {
@@ -21,7 +21,7 @@ export const RegistryV2AdapterAbi = [
     )`
 ];
 
-export class RegistryV2Adapter extends ContractProvider
+export class RegistryV2Adapter extends ContractService
   implements IRegistryAdapter {
   static abi = RegistryV2AdapterAbi;
 

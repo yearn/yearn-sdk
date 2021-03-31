@@ -6,8 +6,8 @@
  * SDK is divided in modules representing the different services offered by
  * yearn and the access method used to read / write from them.
  *
- * - [[LensProvider]] provides access to yearn's assets and user position.
- * - [[OracleProvider]] is the main pricing engine used for all calculations.
+ * - [[LensService]] provides access to yearn's assets and user position.
+ * - [[OracleService]] is the main pricing engine used for all calculations.
  *
  * ## Peer dependencies
  *
@@ -16,8 +16,10 @@
  * @module
  */
 
-export { LensProvider } from "./providers/lens";
-export { OracleProvider } from "./providers/oracle";
+import "cross-fetch/polyfill";
+
+export { LensService } from "./services/lens";
+export { OracleService } from "./services/oracle";
 
 export { VaultReader } from "./readers/vault";
 

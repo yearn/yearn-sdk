@@ -4,7 +4,7 @@ import { Address, Reader } from "../common";
 
 export class VaultReader<T extends ChainId> extends Reader<T> {
   async get(): Promise<Asset[]> {
-    const adapters = Object.values(this.yearn.providers.lens.adapters.vaults);
+    const adapters = Object.values(this.yearn.services.lens.adapters.vaults);
     return await Promise.all(
       adapters.map(adapter => {
         return adapter.assets();
@@ -13,7 +13,7 @@ export class VaultReader<T extends ChainId> extends Reader<T> {
   }
 
   async getTokens(): Promise<Token[]> {
-    const adapters = Object.values(this.yearn.providers.lens.adapters.vaults);
+    const adapters = Object.values(this.yearn.services.lens.adapters.vaults);
     return await Promise.all(
       adapters.map(adapter => {
         return adapter.tokens();
@@ -22,7 +22,7 @@ export class VaultReader<T extends ChainId> extends Reader<T> {
   }
 
   async getPositionsOf(address: Address): Promise<Position[]> {
-    const adapters = Object.values(this.yearn.providers.lens.adapters.vaults);
+    const adapters = Object.values(this.yearn.services.lens.adapters.vaults);
     return await Promise.all(
       adapters.map(adapter => {
         return adapter.positionsOf(address);

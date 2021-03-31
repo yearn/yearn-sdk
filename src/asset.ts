@@ -58,4 +58,8 @@ export interface Token {
   decimals: BigNumber;
 }
 
+export interface TokenPriced extends Token {
+  price: BigNumber;
+}
+
 export type Asset = SpecificAsset<"VAULT_V1"> | SpecificAsset<"VAULT_V2">;

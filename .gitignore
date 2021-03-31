@@ -6,3 +6,4 @@ dist
 .env
 out
 .vscode/
+yarn-error.log

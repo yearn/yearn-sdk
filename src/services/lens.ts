@@ -1,9 +1,8 @@
-import { Provider } from "@ethersproject/providers";
-
 import { Asset, Position } from "../asset";
-import { Address, ContractProvider } from "../common";
+import { Address, ContractService } from "../common";
 import { ChainId, EthMain } from "../chain";
 import { structArray } from "../struct";
+import { Context } from "../context";
 import { IRegistryAdapter, RegistryV2Adapter } from "./adapters/registry";
 
 export const LensAbi = [
@@ -32,11 +31,11 @@ export type Adapters<T extends ChainId> = T extends EthMain
  * It's implemented in the form of a contract that lives on all networks
  * supported by yearn.
  */
-export class LensProvider<T extends ChainId> extends ContractProvider {
+export class LensService<T extends ChainId> extends ContractService {
   static abi = LensAbi;
 
-  constructor(chainId: T, provider: Provider) {
-    super(LensProvider.addressByChain(chainId), chainId, provider);
+  constructor(chainId: T, ctx: Context) {
+    super(LensService.addressByChain(chainId), chainId, ctx);
   }
 
   get adapters(): Adapters<T> {
@@ -49,7 +48,7 @@ export class LensProvider<T extends ChainId> extends ContractProvider {
             v2: new RegistryV2Adapter(
               "0x437758D475F70249e03EDa6bE23684aD1FC375F0",
               this.chainId,
-              this.provider
+              this.ctx
             )
           }
         } as Adapters<T>;

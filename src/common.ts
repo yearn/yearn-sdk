@@ -1,35 +1,28 @@
 import EventEmitter from "events";
-import { Provider } from "@ethersproject/providers";
-import { BigNumber } from "@ethersproject/bignumber";
 import { Contract } from "@ethersproject/contracts";
 
 import { ChainId } from "./chain";
-import { SdkError } from "./error";
 import { Yearn } from "./yearn";
+import { Context } from "./context";
+
+/**
+ * Generic SDK error, likely caused by internal method calls.
+ *
+ * TODO: setup error codes
+ */
+export class SdkError extends Error {}
 
 export type Address = string;
 
-export type Value =
-  | string
-  | string[]
-  | Address
-  | Address[]
-  | BigNumber
-  | BigNumber[]
-  | Struct
-  | Struct[];
-
-export type Struct = { [key: string]: Value };
-
 export class Service {
-  provider: Provider;
+  ctx: Context;
   chainId: ChainId;
 
   events: EventEmitter;
 
-  constructor(chainId: ChainId, provider: Provider) {
+  constructor(chainId: ChainId, ctx: Context) {
     this.chainId = chainId;
-    this.provider = provider;
+    this.ctx = ctx;
 
     this.events = new EventEmitter();
 
@@ -72,24 +65,28 @@ export class Service {
 export class Reader<T extends ChainId> extends Service {
   protected yearn: Yearn<T>;
 
-  constructor(yearn: Yearn<T>, chainId: T, provider: Provider) {
-    super(chainId, provider);
+  constructor(yearn: Yearn<T>, chainId: T, ctx: Context) {
+    super(chainId, ctx);
     this.yearn = yearn;
   }
 }
 
-export class ContractProvider extends Service {
+export class ContractService extends Service {
   static abi: string[] = [];
 
   address: string;
 
   contract: Contract;
 
-  constructor(address: Address, chainId: ChainId, provider: Provider) {
-    super(chainId, provider);
+  constructor(address: Address, chainId: ChainId, ctx: Context) {
+    super(chainId, ctx);
     this.address = address;
 
-    // @ts-ignore
-    this.contract = new Contract(this.address, this.constructor.abi, provider);
+    this.contract = new Contract(
+      this.address,
+      // @ts-ignore
+      this.constructor.abi,
+      ctx.provider
+    );
   }
 }

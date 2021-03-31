@@ -1,8 +1,8 @@
 import { BigNumber } from "@ethersproject/bignumber";
 
-import { Address, ContractProvider } from "../common";
+import { Address, ContractService } from "../common";
 import { ChainId } from "../chain";
-import { Provider } from "@ethersproject/providers";
+import { Context } from "../context";
 
 const OracleAbi = [
   // Oracle general
@@ -33,11 +33,11 @@ const OracleAbi = [
  * It's implemented in the form of a contract that lives on all networks
  * supported by yearn.
  */
-export class OracleProvider<T extends ChainId> extends ContractProvider {
+export class OracleService<T extends ChainId> extends ContractService {
   static abi = OracleAbi;
 
-  constructor(chainId: T, provider: Provider) {
-    super(OracleProvider.addressByChain(chainId), chainId, provider);
+  constructor(chainId: T, ctx: Context) {
+    super(OracleService.addressByChain(chainId), chainId, ctx);
   }
 
   static addressByChain(chainId: ChainId): string {
