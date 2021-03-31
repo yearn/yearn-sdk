@@ -2,6 +2,12 @@
 
 # Interface: Token
 
+## Hierarchy
+
+* **Token**
+
+  ↳ [*TokenPriced*](tokenpriced.md)
+
 ## Table of contents
 
 ### Properties
@@ -17,7 +23,7 @@
 
 • **decimals**: *BigNumber*
 
-Defined in: [asset.ts:58](https://github.com/yearn/yearn-sdk/blob/b50bc5d/src/asset.ts#L58)
+Defined in: [asset.ts:58](https://github.com/yearn/yearn-sdk/blob/92195f7/src/asset.ts#L58)
 
 ___
 
@@ -25,7 +31,7 @@ ___
 
 • **id**: *string*
 
-Defined in: [asset.ts:55](https://github.com/yearn/yearn-sdk/blob/b50bc5d/src/asset.ts#L55)
+Defined in: [asset.ts:55](https://github.com/yearn/yearn-sdk/blob/92195f7/src/asset.ts#L55)
 
 ___
 
@@ -33,7 +39,7 @@ ___
 
 • **name**: *string*
 
-Defined in: [asset.ts:56](https://github.com/yearn/yearn-sdk/blob/b50bc5d/src/asset.ts#L56)
+Defined in: [asset.ts:56](https://github.com/yearn/yearn-sdk/blob/92195f7/src/asset.ts#L56)
 
 ___
 
@@ -41,4 +47,4 @@ ___
 
 • **symbol**: *string*
 
-Defined in: [asset.ts:57](https://github.com/yearn/yearn-sdk/blob/b50bc5d/src/asset.ts#L57)
+Defined in: [asset.ts:57](https://github.com/yearn/yearn-sdk/blob/92195f7/src/asset.ts#L57)

@@ -9,8 +9,8 @@ Welcome to the Yearn SDK documentation.
 SDK is divided in modules representing the different services offered by
 yearn and the access method used to read / write from them.
 
-- [LensProvider](classes/lensprovider.md) provides access to yearn's assets and user position.
-- [OracleProvider](classes/oracleprovider.md) is the main pricing engine used for all calculations.
+- [LensService](classes/lensservice.md) provides access to yearn's assets and user position.
+- [OracleService](classes/oracleservice.md) is the main pricing engine used for all calculations.
 
 ## Peer dependencies
 
@@ -20,8 +20,8 @@ SDK requires several dependencies from the ethers.js project.
 
 ### Classes
 
-- [LensProvider](classes/lensprovider.md)
-- [OracleProvider](classes/oracleprovider.md)
+- [LensService](classes/lensservice.md)
+- [OracleService](classes/oracleservice.md)
 - [VaultReader](classes/vaultreader.md)
 - [Yearn](classes/yearn.md)
 
@@ -31,6 +31,7 @@ SDK requires several dependencies from the ethers.js project.
 - [Position](interfaces/position.md)
 - [Token](interfaces/token.md)
 - [TokenPosition](interfaces/tokenposition.md)
+- [TokenPriced](interfaces/tokenpriced.md)
 
 ### Type aliases
 
@@ -45,7 +46,7 @@ SDK requires several dependencies from the ethers.js project.
 
 Ƭ **Asset**: [*SpecificAsset*](modules.md#specificasset)<*VAULT_V1*\> \| [*SpecificAsset*](modules.md#specificasset)<*VAULT_V2*\>
 
-Defined in: [asset.ts:61](https://github.com/yearn/yearn-sdk/blob/b50bc5d/src/asset.ts#L61)
+Defined in: [asset.ts:65](https://github.com/yearn/yearn-sdk/blob/92195f7/src/asset.ts#L65)
 
 ___
 
@@ -53,7 +54,7 @@ ___
 
 Ƭ **ChainId**: keyof *typeof* Chains
 
-Defined in: [chain.ts:12](https://github.com/yearn/yearn-sdk/blob/b50bc5d/src/chain.ts#L12)
+Defined in: [chain.ts:12](https://github.com/yearn/yearn-sdk/blob/92195f7/src/chain.ts#L12)
 
 ___
 
@@ -78,7 +79,7 @@ Name | Type |
 `VAULT_V2.pricePerShare` | BigNumber |
 `VAULT_V2.symbol` | *string* |
 
-Defined in: [asset.ts:5](https://github.com/yearn/yearn-sdk/blob/b50bc5d/src/asset.ts#L5)
+Defined in: [asset.ts:5](https://github.com/yearn/yearn-sdk/blob/92195f7/src/asset.ts#L5)
 
 ___
 
@@ -106,4 +107,4 @@ Name | Type |
 `typeId` | *string* |
 `version` | *string* |
 
-Defined in: [asset.ts:42](https://github.com/yearn/yearn-sdk/blob/b50bc5d/src/asset.ts#L42)
+Defined in: [asset.ts:42](https://github.com/yearn/yearn-sdk/blob/92195f7/src/asset.ts#L42)

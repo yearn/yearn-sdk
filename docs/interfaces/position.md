@@ -17,7 +17,7 @@
 
 • **assetId**: *string*
 
-Defined in: [asset.ts:23](https://github.com/yearn/yearn-sdk/blob/b50bc5d/src/asset.ts#L23)
+Defined in: [asset.ts:23](https://github.com/yearn/yearn-sdk/blob/92195f7/src/asset.ts#L23)
 
 ___
 
@@ -25,7 +25,7 @@ ___
 
 • **balance**: *BigNumber*
 
-Defined in: [asset.ts:24](https://github.com/yearn/yearn-sdk/blob/b50bc5d/src/asset.ts#L24)
+Defined in: [asset.ts:24](https://github.com/yearn/yearn-sdk/blob/92195f7/src/asset.ts#L24)
 
 ___
 
@@ -33,7 +33,7 @@ ___
 
 • **balanceUsdc**: *BigNumber*
 
-Defined in: [asset.ts:25](https://github.com/yearn/yearn-sdk/blob/b50bc5d/src/asset.ts#L25)
+Defined in: [asset.ts:25](https://github.com/yearn/yearn-sdk/blob/92195f7/src/asset.ts#L25)
 
 ___
 
@@ -41,4 +41,4 @@ ___
 
 • **tokenPosition**: [*TokenPosition*](tokenposition.md)
 
-Defined in: [asset.ts:26](https://github.com/yearn/yearn-sdk/blob/b50bc5d/src/asset.ts#L26)
+Defined in: [asset.ts:26](https://github.com/yearn/yearn-sdk/blob/92195f7/src/asset.ts#L26)

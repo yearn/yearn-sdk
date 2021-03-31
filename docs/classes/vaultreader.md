@@ -23,8 +23,8 @@ Name | Type |
 ### Properties
 
 - [chainId](vaultreader.md#chainid)
+- [ctx](vaultreader.md#ctx)
 - [events](vaultreader.md#events)
-- [provider](vaultreader.md#provider)
 - [yearn](vaultreader.md#yearn)
 
 ### Methods
@@ -37,7 +37,7 @@ Name | Type |
 
 ### constructor
 
-\+ **new VaultReader**<T\>(`yearn`: [*Yearn*](yearn.md)<T\>, `chainId`: T, `provider`: *Provider*): [*VaultReader*](vaultreader.md)<T\>
+\+ **new VaultReader**<T\>(`yearn`: [*Yearn*](yearn.md)<T\>, `chainId`: T, `ctx`: *Context*): [*VaultReader*](vaultreader.md)<T\>
 
 #### Type parameters:
 
@@ -51,13 +51,13 @@ Name | Type |
 :------ | :------ |
 `yearn` | [*Yearn*](yearn.md)<T\> |
 `chainId` | T |
-`provider` | *Provider* |
+`ctx` | *Context* |
 
 **Returns:** [*VaultReader*](vaultreader.md)<T\>
 
 Inherited from: void
 
-Defined in: [common.ts:73](https://github.com/yearn/yearn-sdk/blob/b50bc5d/src/common.ts#L73)
+Defined in: [common.ts:66](https://github.com/yearn/yearn-sdk/blob/92195f7/src/common.ts#L66)
 
 ## Properties
 
@@ -67,7 +67,17 @@ Defined in: [common.ts:73](https://github.com/yearn/yearn-sdk/blob/b50bc5d/src/c
 
 Inherited from: void
 
-Defined in: [common.ts:26](https://github.com/yearn/yearn-sdk/blob/b50bc5d/src/common.ts#L26)
+Defined in: [common.ts:19](https://github.com/yearn/yearn-sdk/blob/92195f7/src/common.ts#L19)
+
+___
+
+### ctx
+
+• **ctx**: *Context*
+
+Inherited from: void
+
+Defined in: [common.ts:18](https://github.com/yearn/yearn-sdk/blob/92195f7/src/common.ts#L18)
 
 ___
 
@@ -77,17 +87,7 @@ ___
 
 Inherited from: void
 
-Defined in: [common.ts:28](https://github.com/yearn/yearn-sdk/blob/b50bc5d/src/common.ts#L28)
-
-___
-
-### provider
-
-• **provider**: *Provider*
-
-Inherited from: void
-
-Defined in: [common.ts:25](https://github.com/yearn/yearn-sdk/blob/b50bc5d/src/common.ts#L25)
+Defined in: [common.ts:21](https://github.com/yearn/yearn-sdk/blob/92195f7/src/common.ts#L21)
 
 ___
 
@@ -97,7 +97,7 @@ ___
 
 Inherited from: void
 
-Defined in: [common.ts:73](https://github.com/yearn/yearn-sdk/blob/b50bc5d/src/common.ts#L73)
+Defined in: [common.ts:66](https://github.com/yearn/yearn-sdk/blob/92195f7/src/common.ts#L66)
 
 ## Methods
 
@@ -107,7 +107,7 @@ Defined in: [common.ts:73](https://github.com/yearn/yearn-sdk/blob/b50bc5d/src/c
 
 **Returns:** *Promise*<[*Asset*](../modules.md#asset)[]\>
 
-Defined in: [readers/vault.ts:6](https://github.com/yearn/yearn-sdk/blob/b50bc5d/src/readers/vault.ts#L6)
+Defined in: [readers/vault.ts:6](https://github.com/yearn/yearn-sdk/blob/92195f7/src/readers/vault.ts#L6)
 
 ___
 
@@ -123,7 +123,7 @@ Name | Type |
 
 **Returns:** *Promise*<[*Position*](../interfaces/position.md)[]\>
 
-Defined in: [readers/vault.ts:24](https://github.com/yearn/yearn-sdk/blob/b50bc5d/src/readers/vault.ts#L24)
+Defined in: [readers/vault.ts:24](https://github.com/yearn/yearn-sdk/blob/92195f7/src/readers/vault.ts#L24)
 
 ___
 
@@ -133,4 +133,4 @@ ___
 
 **Returns:** *Promise*<[*Token*](../interfaces/token.md)[]\>
 
-Defined in: [readers/vault.ts:15](https://github.com/yearn/yearn-sdk/blob/b50bc5d/src/readers/vault.ts#L15)
+Defined in: [readers/vault.ts:15](https://github.com/yearn/yearn-sdk/blob/92195f7/src/readers/vault.ts#L15)

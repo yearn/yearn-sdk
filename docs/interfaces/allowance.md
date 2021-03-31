@@ -16,7 +16,7 @@
 
 • **allowance**: *BigNumber*
 
-Defined in: [asset.ts:39](https://github.com/yearn/yearn-sdk/blob/b50bc5d/src/asset.ts#L39)
+Defined in: [asset.ts:39](https://github.com/yearn/yearn-sdk/blob/92195f7/src/asset.ts#L39)
 
 ___
 
@@ -24,7 +24,7 @@ ___
 
 • **owner**: *string*
 
-Defined in: [asset.ts:37](https://github.com/yearn/yearn-sdk/blob/b50bc5d/src/asset.ts#L37)
+Defined in: [asset.ts:37](https://github.com/yearn/yearn-sdk/blob/92195f7/src/asset.ts#L37)
 
 ___
 
@@ -32,4 +32,4 @@ ___
 
 • **spender**: *string*
 
-Defined in: [asset.ts:38](https://github.com/yearn/yearn-sdk/blob/b50bc5d/src/asset.ts#L38)
+Defined in: [asset.ts:38](https://github.com/yearn/yearn-sdk/blob/92195f7/src/asset.ts#L38)
