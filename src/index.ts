@@ -20,7 +20,13 @@ import "cross-fetch/polyfill";
 
 export { LensService } from "./services/lens";
 export { OracleService } from "./services/oracle";
-export { ZapperService } from "./services/zapper";
+export {
+  ZapperService,
+  Balance,
+  BalancesMap,
+  GasPrice
+} from "./services/zapper";
+export { ApyService, Apy } from "./services/apy";
 
 export { VaultReader } from "./readers/vault";
 export { TokenReader } from "./readers/token";

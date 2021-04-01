@@ -20,10 +20,10 @@ export interface Balance {
   price: BigNumber;
 }
 
-export type Balances<T extends Address> = { [K in T]: Balance[] };
+export type BalancesMap<T extends Address> = { [K in T]: Balance[] };
 
 /**
- * Zapper modules interacts with the zapper api to gather more insight for
+ * [[ZapperService]] interacts with the zapper api to gather more insight for
  * tokens and user positions.
  */
 export class ZapperService extends Service {
@@ -43,14 +43,14 @@ export class ZapperService extends Service {
   }
 
   async balances<T extends Address>(address: T): Promise<Balance[]>;
-  async balances<T extends Address>(addresses: T[]): Promise<Balances<T>>;
+  async balances<T extends Address>(addresses: T[]): Promise<BalancesMap<T>>;
   async balances<T extends Address>(
     addresses: T[] | T
-  ): Promise<Balances<T> | Balance[]>;
+  ): Promise<BalancesMap<T> | Balance[]>;
 
   async balances<T extends Address>(
     addresses: T[] | T
-  ): Promise<Balances<T> | Balance[]> {
+  ): Promise<BalancesMap<T> | Balance[]> {
     const url = "//api.zapper.fi/v1/balances/tokens";
     const params = new URLSearchParams({
       "addresses[]": Array.isArray(addresses) ? addresses.join() : addresses,

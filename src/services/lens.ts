@@ -27,7 +27,7 @@ export type Adapters<T extends ChainId> = T extends EthMain
     };
 
 /**
- * Lens module provides access to all yearn's assets and user positions.
+ * [[LensService]] provides access to all yearn's assets and user positions.
  * It's implemented in the form of a contract that lives on all networks
  * supported by yearn.
  */

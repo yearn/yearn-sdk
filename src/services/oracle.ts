@@ -4,7 +4,7 @@ import { Address, ContractService } from "../common";
 import { ChainId } from "../chain";
 import { Context } from "../context";
 
-const OracleAbi = [
+export const OracleAbi = [
   // Oracle general
   "function calculations() external view returns (address[] memory)",
   "function getPriceUsdcRecommended(address) public view returns (uint256)",
@@ -29,7 +29,7 @@ const OracleAbi = [
 ];
 
 /**
- * Oracle is the main pricing engine, used by all price calculations.
+ * [[OracleService]] is the main pricing engine, used by all price calculations.
  * It's implemented in the form of a contract that lives on all networks
  * supported by yearn.
  */
