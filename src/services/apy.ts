@@ -10,7 +10,7 @@ export interface Apy {
 }
 
 /**
- * // TODO: 
+ * // TODO:
  * - refactor Apy interface
  * - apy API with option to address single vault
  */
