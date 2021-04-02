@@ -17,7 +17,8 @@ export const RegistryV2AdapterAbi = [
     )`,
   `function positionsOf(address) public view returns (\
     tuple(address assetId, uint256 balance, uint256 balanceUsdc, \
-      tuple(address tokenId, uint256 balance, uint256 balanceUsdc, tuple(address owner, address spender, uint256 allowance)[] allowances) tokenPosition)[] memory \
+      tuple(address tokenId, uint256 balance, uint256 balanceUsdc, tuple(address owner, address spender, uint256 allowance)[] allowances) tokenPosition, \
+      tuple(address owner, address spender, uint256 allowance)[] allowances)[] memory \
     )`
 ];
 

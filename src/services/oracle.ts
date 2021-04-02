@@ -45,7 +45,7 @@ export class OracleService<T extends ChainId> extends ContractService {
       case 1:
         return "0x9b8b9F6146B29CC32208f42b995E70F0Eb2807F3";
       case 250:
-        return "0x9b8b9F6146B29CC32208f42b995E70F0Eb2807F3";
+        return "0xae813841436fe29b95a14AC701AFb1502C4CB789";
     }
   }
 

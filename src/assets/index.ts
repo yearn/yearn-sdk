@@ -7,6 +7,7 @@ export interface Position {
   balance: BigNumber;
   balanceUsdc: BigNumber;
   tokenPosition: TokenPosition;
+  allowances: Allowance[];
 }
 
 export interface TokenPosition {

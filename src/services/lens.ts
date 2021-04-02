@@ -46,7 +46,7 @@ export class LensService<T extends ChainId> extends ContractService {
         return {
           vaults: {
             v2: new RegistryV2Adapter(
-              "0x437758D475F70249e03EDa6bE23684aD1FC375F0",
+              "0x83d95e0d5f402511db06817aff3f9ea88224b030",
               this.chainId,
               this.ctx
             )

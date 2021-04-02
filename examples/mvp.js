@@ -20,20 +20,20 @@ async function main() {
   );
   console.log(positions);
 
-  // ONLY ETH
+  // // ONLY ETH
 
-  // Get all tokens supported by zapper
-  const supported = await yearn.services.zapper.supportedTokens();
-  console.log(supported.find(token => token.name === "YFI"));
+  // // Get all tokens supported by zapper
+  // const supported = await yearn.services.zapper.supportedTokens();
+  // console.log(supported.find(token => token.name === "YFI"));
 
-  // Get gas prices by zapper
-  const gas = await yearn.services.zapper.gas();
-  console.log(gas);
+  // // Get gas prices by zapper
+  // const gas = await yearn.services.zapper.gas();
+  // console.log(gas);
 
-  // Get token balances for common coins in ETH mainnet
-  const user = "0xFEB4acf3df3cDEA7399794D0869ef76A6EfAff52";
-  const balances = await yearn.services.zapper.balances(user);
-  console.log(balances);
+  // // Get token balances for common coins in ETH mainnet
+  // const user = "0xFEB4acf3df3cDEA7399794D0869ef76A6EfAff52";
+  // const balances = await yearn.services.zapper.balances(user);
+  // console.log(balances);
 }
 
 main();
