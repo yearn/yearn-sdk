@@ -23,7 +23,7 @@ type ApiVault = Record<string, unknown>;
  */
 export class ApyService extends Service {
   async get(address: Address): Promise<Apy | undefined> {
-    const url = "//vaults.finance/all";
+    const url = "https://vaults.finance/all";
     const vaults = await fetch(url)
       .then(handleHttpError)
       .then(res => res.json());

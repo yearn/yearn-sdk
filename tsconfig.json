@@ -25,7 +25,5 @@
     "noFallthroughCasesInSwitch": true,
     "moduleResolution": "node",
     "esModuleInterop": true,
-    "rootDir": "./src",
-    "baseUrl": "./",
   }
 }

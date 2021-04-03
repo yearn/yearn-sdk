@@ -1,4 +1,4 @@
-import { Apy } from "src/services/apy";
+import { Apy } from "../services/apy";
 import { Asset, Position, Token } from "../assets";
 import { ChainId } from "../chain";
 import { Address, Reader } from "../common";

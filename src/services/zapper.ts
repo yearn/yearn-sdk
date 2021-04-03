@@ -28,7 +28,7 @@ export type BalancesMap<T extends Address> = { [K in T]: Balance[] };
  */
 export class ZapperService extends Service {
   async supportedTokens(): Promise<TokenPriced[]> {
-    const url = "//api.zapper.fi/v1/prices";
+    const url = "https://api.zapper.fi/v1/prices";
     const params = new URLSearchParams({ api_key: this.ctx.zapper });
     const tokens = await fetch(`${url}?${params}`)
       .then(handleHttpError)
@@ -51,7 +51,7 @@ export class ZapperService extends Service {
   async balances<T extends Address>(
     addresses: T[] | T
   ): Promise<BalancesMap<T> | Balance[]> {
-    const url = "//api.zapper.fi/v1/balances/tokens";
+    const url = "https://api.zapper.fi/v1/balances/tokens";
     const params = new URLSearchParams({
       "addresses[]": Array.isArray(addresses) ? addresses.join() : addresses,
       api_key: this.ctx.zapper
