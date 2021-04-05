@@ -4,7 +4,7 @@ import overrides from "./overrides.json";
 
 // Crawl up the constructor chain to find a static method
 // Taken directly from ethers.js
-export function getStatic<T>(ctor: any, key: string): T {
+function getStatic<T>(ctor: any, key: string): T {
   for (let i = 0; i < 32; i++) {
     if (ctor[key]) {
       return ctor[key];
@@ -17,7 +17,11 @@ export function getStatic<T>(ctor: any, key: string): T {
   throw new Error();
 }
 
-export function inject(provider: JsonRpcProvider) {
+// Inject a custom `prepareRequest` function to the JsonRpcProvider, to allow
+// eth_call overrides parameters.
+export function inject(provider: JsonRpcProvider & { _sdkPatched?: boolean }) {
+  if (provider._sdkPatched) return;
+
   const backup = provider.prepareRequest.bind(provider);
 
   function call(params: any): [string, Array<any>] {
@@ -45,6 +49,12 @@ export function inject(provider: JsonRpcProvider) {
   Object.defineProperty(provider, "prepareRequest", {
     enumerable: true,
     value: prepareRequest.bind(provider),
+    writable: false
+  });
+
+  Object.defineProperty(provider, "_sdkPatched", {
+    enumerable: true,
+    value: true,
     writable: false
   });
 }

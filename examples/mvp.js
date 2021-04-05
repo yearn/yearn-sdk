@@ -6,7 +6,10 @@ const id = process.env.WEB3_ALCHEMY_PROJECT_ID;
 const provider = new JsonRpcProvider(
   `https://eth-mainnet.alchemyapi.io/v2/${id}`
 );
+
 const yearn = new Yearn(1, { provider });
+
+const yearn2 = new Yearn(1, { provider });
 
 async function main() {
   // Get all vaults in the current network
