@@ -41,8 +41,7 @@ export class LensService<T extends ChainId> extends ContractService {
   get adapters(): Adapters<T> {
     switch (this.chainId) {
       case 1:
-        throw new Error();
-      case 250: // FTM
+      case 250:
         return {
           vaults: {
             v2: new RegistryV2Adapter(
@@ -58,6 +57,7 @@ export class LensService<T extends ChainId> extends ContractService {
 
   static addressByChain(chainId: ChainId): string {
     switch (chainId) {
+      case 1:
       case 250:
         return "0xFa58130BE296EDFA23C42a1d15549fA91449F979";
     }

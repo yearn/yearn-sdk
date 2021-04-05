@@ -2,13 +2,18 @@ const { JsonRpcProvider } = require("@ethersproject/providers");
 
 const { Yearn } = require("../dist");
 
-const provider = new JsonRpcProvider("https://rpcapi.fantom.network");
-const yearn = new Yearn(250, { provider });
+const id = process.env.WEB3_ALCHEMY_PROJECT_ID;
+const provider = new JsonRpcProvider(
+  `https://eth-mainnet.alchemyapi.io/v2/${id}`
+);
+const yearn = new Yearn(1, { provider });
 
 async function main() {
   // Get all vaults in the current network
   const vaults = await yearn.vaults.get();
   console.log(vaults);
+  console.log(`Found ${vaults.length} v2 production vault`);
+
   // Get all underlying tokens in the current network
   const tokens = await yearn.vaults.tokens();
   console.log(tokens);
@@ -21,10 +26,9 @@ async function main() {
   // ONLY ETH
 
   // Get all tokens supported by zapper
-  const usdcVault = "0x5f18C75AbDAe578b483E5F43f12a39cF75b973a9";
+  const usdcVault = vaults[0].id;
   const apy = await yearn.vaults.apy(usdcVault);
   console.log(apy);
-
 
   // Get all tokens supported by zapper
   const supported = await yearn.services.zapper.supportedTokens();
