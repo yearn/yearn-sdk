@@ -1,21 +1,35 @@
 import { JsonRpcProvider, Provider } from "@ethersproject/providers";
 
-import { SdkError } from "./common";
+import { Address, SdkError } from "./common";
 import { inject } from "./override/injector";
 
-interface IContext {
-  provider: Provider;
-  zapper: string;
-  etherscan: string;
+export interface AddressesOverride {
+  lens?: Address;
+  oracle?: Address;
+  registryV2Adapter?: Address;
 }
 
-export type ContextValue = Partial<IContext>;
+export interface ContextValue {
+  provider?: Provider;
+  zapper?: string;
+  etherscan?: string;
+  addresses?: AddressesOverride;
+}
 
-export class Context implements IContext {
+export interface ContextOptions {
+  overrides: boolean;
+}
+
+export class Context implements Required<ContextValue> {
   private ctx: ContextValue;
 
-  constructor(ctx: ContextValue) {
-    if (ctx.provider && ctx.provider instanceof JsonRpcProvider) {
+  constructor(ctx: ContextValue, options?: ContextOptions) {
+    if (
+      options &&
+      options.overrides &&
+      ctx.provider &&
+      ctx.provider instanceof JsonRpcProvider
+    ) {
       inject(ctx.provider);
     }
     this.ctx = Object.assign({}, ctx, {
@@ -41,7 +55,16 @@ export class Context implements IContext {
   get etherscan(): string {
     if (this.ctx.etherscan) return this.ctx.etherscan;
     throw new SdkError(
-      "zapper must not be undefined in Context for this feature to work."
+      "etherscan must not be undefined in Context for this feature to work."
     );
+  }
+
+  get addresses(): AddressesOverride {
+    if (this.ctx.addresses) return this.ctx.addresses;
+    return {};
+  }
+
+  address(service: keyof AddressesOverride): Address | undefined {
+    return this.addresses[service];
   }
 }

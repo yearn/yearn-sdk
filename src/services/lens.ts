@@ -17,12 +17,12 @@ export type Adapters<T extends ChainId> = T extends EthMain
   ? {
       vaults: {
         v1: IRegistryAdapter;
-        v2: RegistryV2Adapter;
+        v2: RegistryV2Adapter<T>;
       };
     }
   : {
       vaults: {
-        v2: RegistryV2Adapter;
+        v2: RegistryV2Adapter<T>;
       };
     };
 
@@ -35,7 +35,11 @@ export class LensService<T extends ChainId> extends ContractService {
   static abi = LensAbi;
 
   constructor(chainId: T, ctx: Context) {
-    super(LensService.addressByChain(chainId), chainId, ctx);
+    super(
+      ctx.address("lens") ?? LensService.addressByChain(chainId),
+      chainId,
+      ctx
+    );
   }
 
   get adapters(): Adapters<T> {
@@ -44,11 +48,7 @@ export class LensService<T extends ChainId> extends ContractService {
       case 250:
         return {
           vaults: {
-            v2: new RegistryV2Adapter(
-              "0x83d95e0d5f402511db06817aff3f9ea88224b030",
-              this.chainId,
-              this.ctx
-            )
+            v2: new RegistryV2Adapter(this.chainId, this.ctx)
           }
         } as Adapters<T>;
     }

@@ -57,7 +57,7 @@ export type SpecificAsset<T extends keyof Metadata> = {
   name: string;
   version: string;
   balance: BigNumber;
-  balanceUsdc: BigNumber;
+  balanceUsd: BigNumber;
   token: Token;
   type: T;
   metadata: Metadata[T];

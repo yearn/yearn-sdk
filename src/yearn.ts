@@ -1,5 +1,5 @@
 import { ChainId } from "./chain";
-import { Context, ContextValue } from "./context";
+import { Context, ContextOptions, ContextValue } from "./context";
 import { TokenReader } from "./readers/token";
 import { VaultReader } from "./readers/vault";
 import { ApyService } from "./services/apy";
@@ -18,11 +18,8 @@ export class Yearn<T extends ChainId> {
   vaults: VaultReader<T>;
   tokens: TokenReader<T>;
 
-  constructor(chainId: T, context: Context | ContextValue) {
-    // typescript at its best :/
-    let ctx;
-    if (!(context instanceof Context)) ctx = new Context(context);
-    else ctx = context;
+  constructor(chainId: T, context: ContextValue, options?: ContextOptions) {
+    const ctx = new Context(context, options);
 
     this.services = {
       lens: new LensService(chainId, ctx),

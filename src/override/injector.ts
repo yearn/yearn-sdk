@@ -46,6 +46,8 @@ export function inject(provider: JsonRpcProvider & { _sdkPatched?: boolean }) {
     return backup(method, params);
   }
 
+  console.debug("[SDK] Injecting overrides into providers");
+
   Object.defineProperty(provider, "prepareRequest", {
     enumerable: true,
     value: prepareRequest.bind(provider),

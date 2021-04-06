@@ -75,7 +75,7 @@ export class ZapperService extends Service {
               decimals: BigNumber.from(balance.decimals)
             },
             balance: BigNumber.from(balance.balanceRaw),
-            balanceUSD: Usdc(balance.balanceUSD),
+            balanceUsdc: Usdc(balance.balanceUSD),
             price: Usdc(balance.price)
           };
         }

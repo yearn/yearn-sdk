@@ -1,5 +1,7 @@
 import { Position, SpecificAsset, Token } from "../../assets";
+import { ChainId } from "../../chain";
 import { Address, ContractService } from "../../common";
+import { Context } from "../../context";
 import { structArray } from "../../struct";
 
 export interface IRegistryAdapter {
@@ -22,9 +24,29 @@ export const RegistryV2AdapterAbi = [
     )`
 ];
 
-export class RegistryV2Adapter extends ContractService
+export class RegistryV2Adapter<T extends ChainId> extends ContractService
   implements IRegistryAdapter {
   static abi = RegistryV2AdapterAbi;
+
+  constructor(chainId: T, ctx: Context) {
+    super(
+      ctx.address("registryV2Adapter") ??
+        RegistryV2Adapter.addressByChain(chainId),
+      chainId,
+      ctx
+    );
+  }
+
+  static addressByChain(chainId: ChainId): string {
+    switch (chainId) {
+      case 1:
+      case 250:
+        return "0x83d95e0d5f402511db06817aff3f9ea88224b030";
+    }
+    throw new TypeError(
+      `RegistryV2Adapter does not have an address for chainId ${chainId}`
+    );
+  }
 
   async tokens(): Promise<Token[]> {
     return this.contract.tokens().then(structArray);

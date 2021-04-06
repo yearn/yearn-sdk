@@ -37,7 +37,11 @@ export class OracleService<T extends ChainId> extends ContractService {
   static abi = OracleAbi;
 
   constructor(chainId: T, ctx: Context) {
-    super(OracleService.addressByChain(chainId), chainId, ctx);
+    super(
+      ctx.address("oracle") ?? OracleService.addressByChain(chainId),
+      chainId,
+      ctx
+    );
   }
 
   static addressByChain(chainId: ChainId): string {
