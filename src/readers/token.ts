@@ -3,7 +3,7 @@ import { BigNumber } from "@ethersproject/bignumber";
 import { Balance, BalancesMap } from "../services/zapper";
 import { Address, Reader } from "../common";
 import { ChainId } from "../chain";
-import { Token } from "../assets";
+import { Token } from "../types";
 
 export class TokenReader<C extends ChainId> extends Reader<C> {
   async priceUsdc(token: Address): Promise<BigNumber> {

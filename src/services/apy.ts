@@ -9,12 +9,6 @@ export interface Apy {
   data?: Record<string, unknown>;
 }
 
-/**
- * // TODO:
- * - refactor Apy interface
- * - apy API with option to address single vault
- */
-
 type ApiVault = Record<string, unknown>;
 
 /**

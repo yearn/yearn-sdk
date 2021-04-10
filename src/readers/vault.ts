@@ -1,23 +1,24 @@
 import { Apy } from "../services/apy";
-import { Asset, Position, Token } from "../assets";
+import { Position, Vault } from "../types";
 import { ChainId } from "../chain";
-import { Address, Reader } from "../common";
+import { Address, Reader, SdkError } from "../common";
 
 export class VaultReader<T extends ChainId> extends Reader<T> {
-  async get(): Promise<Asset[]> {
+  async get(): Promise<Vault[]> {
     const adapters = Object.values(this.yearn.services.lens.adapters.vaults);
     return await Promise.all(
-      adapters.map(adapter => {
-        return adapter.assets();
-      })
-    ).then(arr => arr.flat());
-  }
-
-  async tokens(): Promise<Token[]> {
-    const adapters = Object.values(this.yearn.services.lens.adapters.vaults);
-    return await Promise.all(
-      adapters.map(adapter => {
-        return adapter.tokens();
+      adapters.map(async adapter => {
+        const assetsStatic = await adapter.assetsStatic();
+        const assetsDynamic = await adapter.assetsDynamic();
+        const assets = new Array<Vault>();
+        for (const asset of assetsStatic) {
+          const dynamic = assetsDynamic.find(({ id }) => asset.id === id);
+          if (!dynamic) {
+            throw new SdkError(`Dynamic asset does not exist for ${asset.id}`);
+          }
+          assets.push({ ...asset, ...dynamic });
+        }
+        return assets;
       })
     ).then(arr => arr.flat());
   }

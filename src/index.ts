@@ -34,4 +34,5 @@ export { TokenReader } from "./readers/token";
 export { Yearn } from "./yearn";
 
 export { ChainId } from "./chain";
-export * from "./assets";
+
+export * from "./types";

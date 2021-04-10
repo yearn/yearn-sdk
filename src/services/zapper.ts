@@ -1,7 +1,7 @@
 import { BigNumber } from "@ethersproject/bignumber";
 
 import { Address, Service } from "../common";
-import { Token, TokenPriced } from "../assets";
+import { Token, TokenPriced } from "../types";
 import { EthAddress, handleHttpError, Usdc, ZeroAddress } from "../helpers";
 import { getAddress } from "@ethersproject/address";
 

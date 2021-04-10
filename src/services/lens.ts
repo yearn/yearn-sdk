@@ -1,6 +1,6 @@
-import { Asset, Position } from "../assets";
+import { GenericAsset, Position } from "../types";
 import { Address, ContractService } from "../common";
-import { ChainId, EthMain } from "../chain";
+import { ChainId, EthMain, EthLocal } from "../chain";
 import { structArray } from "../struct";
 import { Context } from "../context";
 import { IRegistryAdapter, RegistryV2Adapter } from "./adapters/registry";
@@ -13,7 +13,7 @@ export const LensAbi = [
   "function getPositionsOf(address, address) external view returns (tuple(address asset, uint256 depositedBalance, uint256 tokenBalance, uint256 tokenAllowance)[] memory)"
 ];
 
-export type Adapters<T extends ChainId> = T extends EthMain
+export type Adapters<T extends ChainId> = T extends EthMain | EthLocal
   ? {
       vaults: {
         v1: IRegistryAdapter;
@@ -57,7 +57,7 @@ export class LensService<T extends ChainId> extends ContractService {
 
   static addressByChain(chainId: ChainId): string {
     switch (chainId) {
-      case 1:
+      case 1: // FIXME: doesn't actually exist
       case 250:
         return "0xFa58130BE296EDFA23C42a1d15549fA91449F979";
     }
@@ -68,11 +68,11 @@ export class LensService<T extends ChainId> extends ContractService {
     return await this.contract.getRegistries();
   }
 
-  async getAssets(): Promise<Asset[]> {
+  async getAssets(): Promise<GenericAsset[]> {
     return await this.contract.getAssets().then(structArray);
   }
 
-  async getAssetsFromAdapter(adapter: Address): Promise<Asset[]> {
+  async getAssetsFromAdapter(adapter: Address): Promise<GenericAsset[]> {
     return await this.contract.getAssetsFromAdapter(adapter).then(structArray);
   }
 
