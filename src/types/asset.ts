@@ -47,10 +47,11 @@ export interface AssetStatic<T extends TypeId> {
 }
 
 export interface AssetDynamic<T extends TypeId> {
-  id: Address; // FIXME: assume feedback is implemented
+  id: Address;
+  typeId: T;
   tokenId: Address;
-  typeId: T; // FIXME: assume feedback is implemented
   underlyingTokenBalance: TokenAmount;
+  delegatedBalance: TokenAmount;
   metadata: Metadata[T];
 }
 

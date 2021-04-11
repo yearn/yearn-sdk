@@ -1,7 +1,6 @@
-import { JsonRpcProvider, Provider } from "@ethersproject/providers";
+import { Provider } from "@ethersproject/providers";
 
 import { Address, SdkError } from "./common";
-import { inject } from "./override/injector";
 
 export interface AddressesOverride {
   lens?: Address;
@@ -16,22 +15,10 @@ export interface ContextValue {
   addresses?: AddressesOverride;
 }
 
-export interface ContextOptions {
-  overrides: boolean;
-}
-
 export class Context implements Required<ContextValue> {
   private ctx: ContextValue;
 
-  constructor(ctx: ContextValue, options?: ContextOptions) {
-    if (
-      options &&
-      options.overrides &&
-      ctx.provider &&
-      ctx.provider instanceof JsonRpcProvider
-    ) {
-      inject(ctx.provider);
-    }
+  constructor(ctx: ContextValue) {
     this.ctx = Object.assign({}, ctx, {
       // https://docs.zapper.fi/build/zapper-api#authentication
       zapper: "96e0cc51-a62e-42ca-acee-910ea7d2a241"

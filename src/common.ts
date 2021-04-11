@@ -8,7 +8,7 @@ import { Context } from "./context";
 /**
  * Generic SDK error, likely caused by internal method calls.
  *
- * TODO: setup error codes
+ * // TODO: setup error codes
  */
 export class SdkError extends Error {}
 
