@@ -4,12 +4,12 @@ import { ChainId } from "../chain";
 import { Address, Reader, SdkError } from "../common";
 
 export class VaultReader<T extends ChainId> extends Reader<T> {
-  async get(): Promise<Vault[]> {
+  async get(addresses?: Address[]): Promise<Vault[]> {
     const adapters = Object.values(this.yearn.services.lens.adapters.vaults);
     return await Promise.all(
       adapters.map(async adapter => {
-        const assetsStatic = await adapter.assetsStatic();
-        const assetsDynamic = await adapter.assetsDynamic();
+        const assetsStatic = await adapter.assetsStatic(addresses);
+        const assetsDynamic = await adapter.assetsDynamic(addresses);
         const assets = new Array<Vault>();
         for (const asset of assetsStatic) {
           const dynamic = assetsDynamic.find(({ id }) => asset.id === id);

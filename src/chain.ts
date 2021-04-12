@@ -4,7 +4,7 @@
 export const Chains = {
   1: "ETH Mainnet",
   250: "FTM Mainnet",
-  1337: "ETH Localnet"
+  1337: "ETH Local"
 };
 
 export type EthMain = 1;

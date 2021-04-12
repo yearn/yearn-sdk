@@ -86,8 +86,11 @@ export class ZapperService extends Service {
   }
 
   async gas(): Promise<TokenPriced[]> {
-    const url = "//api.zapper.fi/v1/gas-price";
-    const gas = await fetch(url)
+    const url = "https://api.zapper.fi/v1/gas-price";
+    const params = new URLSearchParams({
+      api_key: this.ctx.zapper
+    });
+    const gas = await fetch(`${url}?${params}`)
       .then(handleHttpError)
       .then(res => res.json());
     return gas;

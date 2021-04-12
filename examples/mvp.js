@@ -7,17 +7,13 @@ const provider = new JsonRpcProvider(
   `https://eth-mainnet.alchemyapi.io/v2/${id}`
 );
 
-const yearn = new Yearn(1, { provider }, { overrides: true });
+const yearn = new Yearn(1, { provider });
 
 async function main() {
   // Get all vaults in the current network
   const vaults = await yearn.vaults.get();
   console.log(vaults);
   console.log(`Found ${vaults.length} v2 production vault`);
-
-  // Get all underlying tokens in the current network
-  const tokens = await yearn.vaults.tokens();
-  console.log(tokens);
 
   // Get position of user for all the assets in this network
   const user = "0x8aB0fE3d61E372A0cAa2b2AcF6D1ffDeFD1c645A";
