@@ -46,6 +46,7 @@ export class LensService<T extends ChainId> extends ContractService {
     switch (this.chainId) {
       case 1:
       case 250:
+      case 1337:
         return {
           vaults: {
             v2: new RegistryV2Adapter(this.chainId, this.ctx)
