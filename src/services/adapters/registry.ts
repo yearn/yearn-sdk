@@ -22,20 +22,18 @@ export const RegistryV2AdapterAbi = [
     "tuple(address id, string typeId, string name, string version," +
     "tuple(address id, string name, string symbol, uint256 decimals) token" +
     ")[] memory)",
-  "function assetsDynamic() public view returns (" +
-    "tuple(address id, address typeId, address tokenId," +
-    "tuple(uint256 amount, uint256 amountUsdc) underlyingTokenBalance," +
-    "tuple(uint256 amount, uint256 amountUsdc) delegatedBalance," +
-    "tuple(string symbol, uint256 pricePerShare, bool migrationAvailable, address latestVaultAddress, uint256 depositLimit, bool emergencyShutdown) metadata" +
-    ")[] memory)",
   "function assetsStatic(address[] memory) public view returns (" +
     "tuple(address id, string typeId, string name, string version," +
     "tuple(address id, string name, string symbol, uint256 decimals) token" +
     ")[] memory)",
+  "function assetsDynamic() public view returns (" +
+    "tuple(address id, address typeId, address tokenId," +
+    "tuple(uint256 amount, uint256 amountUsdc) underlyingTokenBalance," +
+    "tuple(string symbol, uint256 pricePerShare, bool migrationAvailable, address latestVaultAddress, uint256 depositLimit, bool emergencyShutdown) metadata" +
+    ")[] memory)",
   "function assetsDynamic(address[] memory) public view returns (" +
     "tuple(address id, address typeId, address tokenId," +
     "tuple(uint256 amount, uint256 amountUsdc) underlyingTokenBalance," +
-    "tuple(uint256 amount, uint256 amountUsdc) delegatedBalance," +
     "tuple(string symbol, uint256 pricePerShare, bool migrationAvailable, address latestVaultAddress, uint256 depositLimit, bool emergencyShutdown) metadata" +
     ")[] memory)",
   "function positionsOf(address) public view returns (" +

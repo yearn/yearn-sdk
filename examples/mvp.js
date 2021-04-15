@@ -2,12 +2,13 @@ const { JsonRpcProvider } = require("@ethersproject/providers");
 
 const { Yearn } = require("../dist");
 
-const id = process.env.WEB3_ALCHEMY_PROJECT_ID;
-const provider = new JsonRpcProvider(
-  `https://eth-mainnet.alchemyapi.io/v2/${id}`
-);
+const provider = new JsonRpcProvider("http://localhost:8545");
 
-const yearn = new Yearn(1, { provider });
+const yearn = new Yearn(1337, { provider, addresses: {
+  lens: "0xE7eD6747FaC5360f88a2EFC03E00d25789F69291", // not actually here
+  oracle: "0xd3ca98d986be88b72ff95fc2ec976a5e6339150d",
+  registryV2Adapter: "0xE7eD6747FaC5360f88a2EFC03E00d25789F69291"
+} });
 
 async function main() {
   // Get all vaults in the current network

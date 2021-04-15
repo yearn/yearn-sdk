@@ -51,7 +51,6 @@ export interface AssetDynamic<T extends TypeId> {
   typeId: T;
   tokenId: Address;
   underlyingTokenBalance: TokenAmount;
-  delegatedBalance: TokenAmount;
   metadata: Metadata[T];
 }
 
