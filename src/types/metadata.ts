@@ -19,8 +19,8 @@ export interface VaultV1Metadata {
 }
 
 export type Metadata = {
-  v2Vault: VaultV2Metadata;
-  v1Vault: VaultV1Metadata;
+  VAULT_V2: VaultV2Metadata;
+  VAULT_V1: VaultV1Metadata;
 };
 
 export type TypeId = keyof Metadata;

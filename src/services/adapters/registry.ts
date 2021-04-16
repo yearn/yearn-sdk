@@ -27,12 +27,12 @@ export const RegistryV2AdapterAbi = [
     "tuple(address id, string name, string symbol, uint256 decimals) token" +
     ")[] memory)",
   "function assetsDynamic() public view returns (" +
-    "tuple(address id, address typeId, address tokenId," +
+    "tuple(address id, string typeId, address tokenId," +
     "tuple(uint256 amount, uint256 amountUsdc) underlyingTokenBalance," +
     "tuple(string symbol, uint256 pricePerShare, bool migrationAvailable, address latestVaultAddress, uint256 depositLimit, bool emergencyShutdown) metadata" +
     ")[] memory)",
   "function assetsDynamic(address[] memory) public view returns (" +
-    "tuple(address id, address typeId, address tokenId," +
+    "tuple(address id, string typeId, address tokenId," +
     "tuple(uint256 amount, uint256 amountUsdc) underlyingTokenBalance," +
     "tuple(string symbol, uint256 pricePerShare, bool migrationAvailable, address latestVaultAddress, uint256 depositLimit, bool emergencyShutdown) metadata" +
     ")[] memory)",
