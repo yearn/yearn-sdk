@@ -68,6 +68,39 @@ export class Reader<T extends ChainId> extends Service {
   constructor(yearn: Yearn<T>, chainId: T, ctx: Context) {
     super(chainId, ctx);
     this.yearn = yearn;
+
+    // Error handling + update events via proxy / reflection
+    const methods = Object.getOwnPropertyNames(Object.getPrototypeOf(this));
+
+    for (const property of methods) {
+      const method = Reflect.get(this, property);
+      const path = [this.constructor.name, method.name].join(".");
+      Reflect.set(
+        this,
+        property,
+        new Proxy(method, {
+          apply: (target, thisArg, argArray) => {
+            const cached = this.ctx.cache.get(path, ...argArray);
+            if (cached) {
+              console.debug(`[SDK] Cache hit ${path}`);
+              return cached;
+            } else {
+              console.debug(`[SDK] Cache miss ${path}`);
+            }
+            const res = target.apply(thisArg, argArray);
+            if (res && res instanceof Promise) {
+              res.then(result => {
+                this.ctx.cache.set(result, path, ...argArray);
+                return result;
+              });
+            } else {
+              this.ctx.cache.set(res, path, ...argArray);
+            }
+            return res;
+          }
+        })
+      );
+    }
   }
 }
 

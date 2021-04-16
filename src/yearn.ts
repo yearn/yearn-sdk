@@ -1,4 +1,5 @@
 import { ChainId } from "./chain";
+import { Cache } from "./cache";
 import { Context, ContextValue } from "./context";
 import { TokenReader } from "./readers/token";
 import { VaultReader } from "./readers/vault";
@@ -18,8 +19,8 @@ export class Yearn<T extends ChainId> {
   vaults: VaultReader<T>;
   tokens: TokenReader<T>;
 
-  constructor(chainId: T, context: ContextValue) {
-    const ctx = new Context(context);
+  constructor(chainId: T, context: ContextValue, cache?: Cache) {
+    const ctx = new Context(context, cache);
 
     this.services = {
       lens: new LensService(chainId, ctx),

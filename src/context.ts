@@ -1,4 +1,5 @@
 import { Provider } from "@ethersproject/providers";
+import { CacheManager, Cache } from "./cache";
 
 import { Address, SdkError } from "./common";
 
@@ -17,12 +18,14 @@ export interface ContextValue {
 
 export class Context implements Required<ContextValue> {
   private ctx: ContextValue;
+  cache: CacheManager;
 
-  constructor(ctx: ContextValue) {
+  constructor(ctx: ContextValue, cache?: Cache) {
     this.ctx = Object.assign({}, ctx, {
       // https://docs.zapper.fi/build/zapper-api#authentication
       zapper: "96e0cc51-a62e-42ca-acee-910ea7d2a241"
     });
+    this.cache = new CacheManager(cache);
   }
 
   get provider(): Provider {
