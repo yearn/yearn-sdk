@@ -65,7 +65,9 @@ export class ZapperService extends Service {
       balances[getAddress(address)] = copy.map(
         (balance: Record<string, unknown>) => {
           const address =
-            balance.address === ZeroAddress ? EthAddress : balance.address;
+            balance.address === ZeroAddress
+              ? EthAddress
+              : getAddress(String(balance.address));
           return {
             address,
             token: {
