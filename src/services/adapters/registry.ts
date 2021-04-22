@@ -8,13 +8,15 @@ import {
   VaultStatic,
   VaultDynamic,
   VaultV2Static,
-  VaultV2Dynamic
+  VaultV2Dynamic,
+  Token
 } from "../../types";
 
 export interface IRegistryAdapter {
   assetsStatic(): Promise<VaultStatic[]>;
   assetsDynamic(): Promise<VaultDynamic[]>;
   positionsOf(address: Address, addresses?: Address[]): Promise<Position[]>;
+  tokens(): Promise<Token[]>;
 }
 
 export const RegistryV2AdapterAbi = [
@@ -49,7 +51,10 @@ export const RegistryV2AdapterAbi = [
     "tuple(uint256 amount, uint256 amountUsdc) underlyingTokenBalance," +
     "tuple(address owner, address spender, uint256 amount)[] assetAllowances," +
     "tuple(address owner, address spender, uint256 amount)[] allowances" +
-    ")[] memory)"
+    ")[] memory)",
+  "function tokens() public view returns (" +
+    "tuple(address id, string name, string symbol, uint256 decimals)" +
+    "[] memory)"
 ];
 
 export class RegistryV2Adapter<T extends ChainId> extends ContractService
@@ -108,5 +113,9 @@ export class RegistryV2Adapter<T extends ChainId> extends ContractService
     return await this.contract["positionsOf(address)"](address).then(
       structArray
     );
+  }
+
+  async tokens(): Promise<Token[]> {
+    return await this.contract.tokens().then(structArray);
   }
 }

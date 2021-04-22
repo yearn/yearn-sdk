@@ -27,6 +27,27 @@ export class TokenReader<C extends ChainId> extends Reader<C> {
   }
 
   async supported(): Promise<TokenPriced[]> {
-    return this.yearn.services.zapper.supportedTokens();
+    const tokens = [];
+    if (this.chainId === 1 || this.chainId === 1337) {
+      // only ETH Main is supported
+      const zapper = await this.yearn.services.zapper.supportedTokens();
+      tokens.push(...zapper);
+    }
+    const adapters = Object.values(this.yearn.services.lens.adapters.vaults);
+    const vaults = await Promise.all(
+      adapters.map(async adapter => {
+        const tokens = await adapter.tokens();
+        return Promise.all(
+          tokens.map(async token => ({
+            ...token,
+            price: await this.yearn.services.oracle.getPriceUsdcRecommended(
+              token.id
+            )
+          }))
+        );
+      })
+    ).then(arr => arr.flat());
+    tokens.push(...vaults);
+    return tokens;
   }
 }
