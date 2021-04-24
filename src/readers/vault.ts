@@ -1,5 +1,4 @@
-import { Apy } from "../services/apy";
-import { Position, Vault } from "../types";
+import { Position, Vault, Apy } from "../types";
 import { ChainId } from "../chain";
 import { Address, Reader, SdkError } from "../common";
 

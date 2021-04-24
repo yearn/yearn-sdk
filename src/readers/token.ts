@@ -1,9 +1,8 @@
 import { BigNumber } from "@ethersproject/bignumber";
 
-import { Balance, BalancesMap } from "../services/zapper";
 import { Address, Reader } from "../common";
 import { ChainId } from "../chain";
-import { TokenPriced } from "../types";
+import { TokenPriced, Balance, BalancesMap, IconMap, Icon } from "../types";
 
 export class TokenReader<C extends ChainId> extends Reader<C> {
   async priceUsdc(token: Address): Promise<BigNumber> {
@@ -14,11 +13,14 @@ export class TokenReader<C extends ChainId> extends Reader<C> {
     return this.yearn.services.oracle.getPriceFromRouter(from, to);
   }
 
+  async icon<T extends Address>(address: T): Promise<Icon>;
+  async icon<T extends Address>(addresses: T[]): Promise<IconMap<T>>;
+  async icon<T extends Address>(address: T | T[]): Promise<IconMap<T> | Icon> {
+    return this.yearn.services.icons.get(address);
+  }
+
   async balances<T extends Address>(address: T): Promise<Balance[]>;
   async balances<T extends Address>(addresses: T[]): Promise<BalancesMap<T>>;
-  async balances<T extends Address>(
-    addresses: T[] | T
-  ): Promise<BalancesMap<T> | Balance[]>;
 
   async balances<T extends Address>(
     addresses: T[] | T

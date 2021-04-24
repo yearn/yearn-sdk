@@ -36,6 +36,9 @@ export interface TokenPriced extends Token {
   price: BigNumber;
 }
 
+export type Icon = string | undefined;
+export type IconMap<T extends Address> = { [K in T]: Icon };
+
 /// Assets
 
 export interface AssetStatic<T extends TypeId> {

@@ -1,0 +1,62 @@
+import { ChainId } from "../chain";
+import { Address, Service } from "../common";
+import { Context } from "../context";
+import { handleHttpError } from "../helpers";
+import { Icon, IconMap } from "../types";
+
+const YearnAssets =
+  "https://api.github.com/repos/yearn/yearn-assets/contents/icons/tokens";
+const TrustAssets =
+  "https://raw.githack.com/trustwallet/assets/master/blockchains/ethereum/tokenlist.json";
+
+const YearnAsset = (address: Address) =>
+  `https://raw.githack.com/yearn/yearn-assets/master/icons/tokens/${address}/logo-128.png`;
+const TrustAsset = (address: Address) =>
+  `https://raw.githack.com/trustwallet/assets/master/blockchains/ethereum/assets/${address}/logo.png`;
+
+/**
+ * [[IconsService]] fetches correct icons related to eth addresses
+ * from trusted asset sources
+ */
+export class IconsService extends Service {
+  private ready: Promise<void>;
+  supported: Map<Address, string>;
+
+  constructor(chainId: ChainId, ctx: Context) {
+    super(chainId, ctx);
+    this.supported = new Map();
+    this.ready = this.initialize();
+  }
+
+  private async initialize(): Promise<void> {
+    const yearn = await fetch(YearnAssets)
+      .then(handleHttpError)
+      .then(res => res.json());
+    const trust = await fetch(TrustAssets)
+      .then(handleHttpError)
+      .then(res => res.json())
+      .then(res => res.tokens);
+
+    this.supported = new Map();
+    for (const token of trust) {
+      this.supported.set(token.address, TrustAsset(token.address));
+    }
+
+    for (const token of yearn) {
+      this.supported.set(token.address, YearnAsset(token.address));
+    }
+  }
+
+  async get<T extends Address>(address: T): Promise<Icon>;
+  async get<T extends Address>(addresses: T[]): Promise<IconMap<T>>;
+  async get<T extends Address>(address: T | T[]): Promise<IconMap<T> | Icon>;
+  async get<T extends Address>(address: T | T[]): Promise<IconMap<T> | Icon> {
+    await this.ready;
+    if (!Array.isArray(address)) {
+      return this.supported.get(address);
+    }
+    return Object.fromEntries(
+      address.map(address => [address, this.supported.get(address)])
+    ) as IconMap<T>;
+  }
+}

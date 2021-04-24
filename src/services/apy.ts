@@ -1,13 +1,6 @@
 import { handleHttpError } from "../helpers";
 import { Address, Service } from "../common";
-
-export interface Apy {
-  recommended: number;
-  composite: boolean;
-  type: string;
-  description: string;
-  data?: Record<string, unknown>;
-}
+import { Apy } from "../types";
 
 type ApiVault = Record<string, unknown>;
 

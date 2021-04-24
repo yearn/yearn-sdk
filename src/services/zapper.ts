@@ -1,26 +1,9 @@
 import { BigNumber } from "@ethersproject/bignumber";
-
-import { Address, Service } from "../common";
-import { Token, TokenPriced } from "../types";
-import { EthAddress, handleHttpError, Usdc, ZeroAddress } from "../helpers";
 import { getAddress } from "@ethersproject/address";
 
-export interface GasPrice {
-  standard: number;
-  instant: number;
-  fast: number;
-}
-
-export interface Balance {
-  address: Address;
-  token: Token;
-  symbol: string;
-  balance: BigNumber;
-  balanceUSD: BigNumber;
-  price: BigNumber;
-}
-
-export type BalancesMap<T extends Address> = { [K in T]: Balance[] };
+import { Address, Service } from "../common";
+import { Balance, BalancesMap, GasPrice, TokenPriced } from "../types";
+import { EthAddress, handleHttpError, Usdc, ZeroAddress } from "../helpers";
 
 /**
  * [[ZapperService]] interacts with the zapper api to gather more insight for
@@ -87,7 +70,7 @@ export class ZapperService extends Service {
     return balances;
   }
 
-  async gas(): Promise<TokenPriced[]> {
+  async gas(): Promise<GasPrice[]> {
     const url = "https://api.zapper.fi/v1/gas-price";
     const params = new URLSearchParams({
       api_key: this.ctx.zapper
