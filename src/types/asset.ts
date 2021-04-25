@@ -8,7 +8,6 @@ export interface Position {
   tokenId: Address;
   typeId: string;
   balance: BigNumber;
-  accountTokenBalance: TokenAmount;
   underlyingTokenBalance: TokenAmount;
   assetAllowances: Allowance[];
   tokenAllowances: Allowance[];

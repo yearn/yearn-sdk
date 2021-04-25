@@ -24,14 +24,14 @@ export class VaultReader<T extends ChainId> extends Reader<T> {
     ).then(arr => arr.flat());
   }
 
-  async positionsOf(
+  async assetsPositionsOf(
     address: Address,
     addresses?: Address[]
   ): Promise<Position[]> {
     const adapters = Object.values(this.yearn.services.lens.adapters.vaults);
     return await Promise.all(
       adapters.map(adapter => {
-        return adapter.positionsOf(address, addresses);
+        return adapter.assetsPositionsOf(address, addresses);
       })
     ).then(arr => arr.flat());
   }

@@ -15,7 +15,10 @@ import {
 export interface IRegistryAdapter {
   assetsStatic(): Promise<VaultStatic[]>;
   assetsDynamic(): Promise<VaultDynamic[]>;
-  positionsOf(address: Address, addresses?: Address[]): Promise<Position[]>;
+  assetsPositionsOf(
+    address: Address,
+    addresses?: Address[]
+  ): Promise<Position[]>;
   tokens(): Promise<Token[]>;
 }
 
@@ -38,19 +41,17 @@ export const RegistryV2AdapterAbi = [
     "tuple(uint256 amount, uint256 amountUsdc) underlyingTokenBalance," +
     "tuple(string symbol, uint256 pricePerShare, bool migrationAvailable, address latestVaultAddress, uint256 depositLimit, bool emergencyShutdown) metadata" +
     ")[] memory)",
-  "function positionsOf(address) public view returns (" +
+  "function assetsPositionsOf(address) public view returns (" +
     "tuple(address assetId, address tokenId, string typeId, uint256 balance," +
-    "tuple(uint256 amount, uint256 amountUsdc) accountTokenBalance," +
     "tuple(uint256 amount, uint256 amountUsdc) underlyingTokenBalance," +
-    "tuple(address owner, address spender, uint256 amount)[] assetAllowances," +
-    "tuple(address owner, address spender, uint256 amount)[] allowances" +
+    "tuple(address owner, address spender, uint256 amount)[] tokenAllowances," +
+    "tuple(address owner, address spender, uint256 amount)[] assetAllowances" +
     ")[] memory)",
-  "function positionsOf(address, address[] memory) public view returns (" +
+  "function assetsPositionsOf(address, address[] memory) public view returns (" +
     "tuple(address assetId, address tokenId, string typeId, uint256 balance," +
-    "tuple(uint256 amount, uint256 amountUsdc) accountTokenBalance," +
     "tuple(uint256 amount, uint256 amountUsdc) underlyingTokenBalance," +
-    "tuple(address owner, address spender, uint256 amount)[] assetAllowances," +
-    "tuple(address owner, address spender, uint256 amount)[] allowances" +
+    "tuple(address owner, address spender, uint256 amount)[] tokenAllowances," +
+    "tuple(address owner, address spender, uint256 amount)[] assetAllowances" +
     ")[] memory)",
   "function tokens() public view returns (" +
     "tuple(address id, string name, string symbol, uint256 decimals)" +
@@ -100,17 +101,17 @@ export class RegistryV2Adapter<T extends ChainId> extends ContractService
     return await this.contract["assetsDynamic()"]().then(structArray);
   }
 
-  async positionsOf(
+  async assetsPositionsOf(
     address: Address,
     addresses?: Address[]
   ): Promise<Position[]> {
     if (addresses) {
-      return await this.contract["positionsOf(address,address[])"](
+      return await this.contract["assetsPositionsOf(address,address[])"](
         address,
         addresses
       ).then(structArray);
     }
-    return await this.contract["positionsOf(address)"](address).then(
+    return await this.contract["assetsPositionsOf(address)"](address).then(
       structArray
     );
   }
