@@ -11,9 +11,9 @@ const yearn = new Yearn(
   {
     provider,
     addresses: {
-      lens: "0x6951b5Bd815043E3F842c1b026b0Fa888Cc2DD85", // not actually here
+      lens: "0xE7eD6747FaC5360f88a2EFC03E00d25789F69291", // not actually here
       oracle: "0xd3ca98d986be88b72ff95fc2ec976a5e6339150d",
-      registryV2Adapter: "0x6951b5Bd815043E3F842c1b026b0Fa888Cc2DD85"
+      registryV2Adapter: "0xE7eD6747FaC5360f88a2EFC03E00d25789F69291"
     }
   },
   { get: (id) => map.get(id), set: (id, val) => map.set(id, val) }

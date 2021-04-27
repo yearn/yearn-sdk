@@ -2,8 +2,6 @@ import { Position, Vault, Apy } from "../types";
 import { ChainId } from "../chain";
 import { Address, Reader, SdkError } from "../common";
 
-// TODO: add apy to vault
-
 export class VaultReader<T extends ChainId> extends Reader<T> {
   async get(addresses?: Address[]): Promise<Vault[]> {
     const adapters = Object.values(this.yearn.services.lens.adapters.vaults);
@@ -24,14 +22,14 @@ export class VaultReader<T extends ChainId> extends Reader<T> {
     ).then(arr => arr.flat());
   }
 
-  async assetsPositionsOf(
+  async positionsOf(
     address: Address,
     addresses?: Address[]
   ): Promise<Position[]> {
     const adapters = Object.values(this.yearn.services.lens.adapters.vaults);
     return await Promise.all(
       adapters.map(adapter => {
-        return adapter.assetsPositionsOf(address, addresses);
+        return adapter.positionsOf(address, addresses);
       })
     ).then(arr => arr.flat());
   }

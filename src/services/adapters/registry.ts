@@ -15,7 +15,7 @@ import {
 export interface IRegistryAdapter {
   assetsStatic(): Promise<VaultStatic[]>;
   assetsDynamic(): Promise<VaultDynamic[]>;
-  assetsPositionsOf(
+  positionsOf(
     address: Address,
     addresses?: Address[]
   ): Promise<Position[]>;
@@ -74,9 +74,9 @@ export class RegistryV2Adapter<T extends ChainId> extends ContractService
   static addressByChain(chainId: ChainId): string {
     switch (chainId) {
       case 1:
-        return "0x071B848B34586d0dC0009a3C0e6240B123C57186";
+        return "0xE75E51566C5761896528B4698a88C92A54B3C954";
       case 250:
-        return "0xce29d34C8e88A2E1eDde10AD4eEE4f3e379fc041";
+        return "0xE75E51566C5761896528B4698a88C92A54B3C954";
     }
     throw new TypeError(
       `RegistryV2Adapter does not have an address for chainId ${chainId}`
@@ -101,7 +101,7 @@ export class RegistryV2Adapter<T extends ChainId> extends ContractService
     return await this.contract["assetsDynamic()"]().then(structArray);
   }
 
-  async assetsPositionsOf(
+  async positionsOf(
     address: Address,
     addresses?: Address[]
   ): Promise<Position[]> {

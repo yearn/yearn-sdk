@@ -1147,10 +1147,10 @@ var RegistryV2Adapter = /*#__PURE__*/function (_ContractService) {
   RegistryV2Adapter.addressByChain = function addressByChain(chainId) {
     switch (chainId) {
       case 1:
-        return "0x071B848B34586d0dC0009a3C0e6240B123C57186";
+        return "0xE75E51566C5761896528B4698a88C92A54B3C954";
 
       case 250:
-        return "0xce29d34C8e88A2E1eDde10AD4eEE4f3e379fc041";
+        return "0xE75E51566C5761896528B4698a88C92A54B3C954";
     }
 
     throw new TypeError("RegistryV2Adapter does not have an address for chainId " + chainId);
@@ -1236,8 +1236,8 @@ var RegistryV2Adapter = /*#__PURE__*/function (_ContractService) {
     return assetsDynamic;
   }();
 
-  _proto.assetsPositionsOf = /*#__PURE__*/function () {
-    var _assetsPositionsOf = /*#__PURE__*/_asyncToGenerator( /*#__PURE__*/runtime_1.mark(function _callee3(address, addresses) {
+  _proto.positionsOf = /*#__PURE__*/function () {
+    var _positionsOf = /*#__PURE__*/_asyncToGenerator( /*#__PURE__*/runtime_1.mark(function _callee3(address, addresses) {
       return runtime_1.wrap(function _callee3$(_context3) {
         while (1) {
           switch (_context3.prev = _context3.next) {
@@ -1268,11 +1268,11 @@ var RegistryV2Adapter = /*#__PURE__*/function (_ContractService) {
       }, _callee3, this);
     }));
 
-    function assetsPositionsOf(_x3, _x4) {
-      return _assetsPositionsOf.apply(this, arguments);
+    function positionsOf(_x3, _x4) {
+      return _positionsOf.apply(this, arguments);
     }
 
-    return assetsPositionsOf;
+    return positionsOf;
   }();
 
   _proto.tokens = /*#__PURE__*/function () {
@@ -2321,8 +2321,8 @@ var VaultReader = /*#__PURE__*/function (_Reader) {
     return get;
   }();
 
-  _proto.assetsPositionsOf = /*#__PURE__*/function () {
-    var _assetsPositionsOf = /*#__PURE__*/_asyncToGenerator( /*#__PURE__*/runtime_1.mark(function _callee3(address, addresses) {
+  _proto.positionsOf = /*#__PURE__*/function () {
+    var _positionsOf = /*#__PURE__*/_asyncToGenerator( /*#__PURE__*/runtime_1.mark(function _callee3(address, addresses) {
       var adapters;
       return runtime_1.wrap(function _callee3$(_context3) {
         while (1) {
@@ -2331,7 +2331,7 @@ var VaultReader = /*#__PURE__*/function (_Reader) {
               adapters = Object.values(this.yearn.services.lens.adapters.vaults);
               _context3.next = 3;
               return Promise.all(adapters.map(function (adapter) {
-                return adapter.assetsPositionsOf(address, addresses);
+                return adapter.positionsOf(address, addresses);
               })).then(function (arr) {
                 return arr.flat();
               });
@@ -2347,11 +2347,11 @@ var VaultReader = /*#__PURE__*/function (_Reader) {
       }, _callee3, this);
     }));
 
-    function assetsPositionsOf(_x3, _x4) {
-      return _assetsPositionsOf.apply(this, arguments);
+    function positionsOf(_x3, _x4) {
+      return _positionsOf.apply(this, arguments);
     }
 
-    return assetsPositionsOf;
+    return positionsOf;
   }();
 
   _proto.apy = /*#__PURE__*/function () {

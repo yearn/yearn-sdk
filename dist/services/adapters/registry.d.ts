@@ -5,7 +5,7 @@ import { Position, VaultStatic, VaultDynamic, VaultV2Static, VaultV2Dynamic, ERC
 export interface IRegistryAdapter {
     assetsStatic(): Promise<VaultStatic[]>;
     assetsDynamic(): Promise<VaultDynamic[]>;
-    assetsPositionsOf(address: Address, addresses?: Address[]): Promise<Position[]>;
+    positionsOf(address: Address, addresses?: Address[]): Promise<Position[]>;
     tokens(): Promise<ERC20[]>;
 }
 export declare const RegistryV2AdapterAbi: string[];
@@ -15,6 +15,6 @@ export declare class RegistryV2Adapter<T extends ChainId> extends ContractServic
     static addressByChain(chainId: ChainId): string;
     assetsStatic(addresses?: Address[]): Promise<VaultV2Static[]>;
     assetsDynamic(addresses?: Address[]): Promise<VaultV2Dynamic[]>;
-    assetsPositionsOf(address: Address, addresses?: Address[]): Promise<Position[]>;
+    positionsOf(address: Address, addresses?: Address[]): Promise<Position[]>;
     tokens(): Promise<ERC20[]>;
 }
