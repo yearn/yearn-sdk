@@ -2,21 +2,15 @@ import { BigNumber } from "@ethersproject/bignumber";
 
 import { Address, Reader } from "../common";
 import { ChainId } from "../chain";
-import { TokenPriced, Balance, BalancesMap, IconMap, Icon } from "../types";
+import { Token, Balance, BalancesMap, IconMap, Icon } from "../types";
 
 export class TokenReader<C extends ChainId> extends Reader<C> {
   async priceUsdc(token: Address): Promise<BigNumber> {
-    return this.yearn.services.oracle.getPriceUsdcRecommended(token);
+    return this.yearn.services.oracle.getPriceUsdc(token);
   }
 
   async price(from: Address, to: Address): Promise<BigNumber> {
     return this.yearn.services.oracle.getPriceFromRouter(from, to);
-  }
-
-  async icon<T extends Address>(address: T): Promise<Icon>;
-  async icon<T extends Address>(addresses: T[]): Promise<IconMap<T>>;
-  async icon<T extends Address>(address: T | T[]): Promise<IconMap<T> | Icon> {
-    return this.yearn.services.icons.get(address);
   }
 
   async balances<T extends Address>(address: T): Promise<Balance[]>;
@@ -28,7 +22,7 @@ export class TokenReader<C extends ChainId> extends Reader<C> {
     return this.yearn.services.zapper.balances<T>(addresses);
   }
 
-  async supported(): Promise<TokenPriced[]> {
+  async supported(): Promise<Token[]> {
     const tokens = [];
     if (this.chainId === 1 || this.chainId === 1337) {
       // only ETH Main is supported
@@ -42,14 +36,19 @@ export class TokenReader<C extends ChainId> extends Reader<C> {
         return Promise.all(
           tokens.map(async token => ({
             ...token,
-            price: await this.yearn.services.oracle.getPriceUsdcRecommended(
-              token.id
-            )
+            supported: {},
+            price: await this.yearn.services.oracle.getPriceUsdc(token.id)
           }))
         );
       })
     ).then(arr => arr.flat());
     tokens.push(...vaults);
     return tokens;
+  }
+
+  icon<T extends Address>(address: T): Icon;
+  icon<T extends Address>(addresses: T[]): IconMap<T>;
+  icon<T extends Address>(address: T | T[]): IconMap<T> | Icon {
+    return this.yearn.services.icons.get(address);
   }
 }

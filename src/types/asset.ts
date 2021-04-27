@@ -19,7 +19,7 @@ export interface Allowance {
   amount: BigNumber;
 }
 
-export interface Token {
+export interface ERC20 {
   id: Address;
   name: string;
   symbol: string;
@@ -31,8 +31,11 @@ export interface TokenAmount {
   amountUsdc: BigNumber;
 }
 
-export interface TokenPriced extends Token {
+export interface Token extends ERC20 {
   price: BigNumber;
+  supported: {
+    zapper?: boolean;
+  };
 }
 
 export type Icon = string | undefined;
@@ -45,7 +48,7 @@ export interface AssetStatic<T extends TypeId> {
   typeId: T;
   name: string;
   version: string;
-  token: Token;
+  token: ERC20;
 }
 
 export interface AssetDynamic<T extends TypeId> {

@@ -60,7 +60,7 @@ export class OracleService<T extends ChainId> extends ContractService {
     return await this.contract.calculations();
   }
 
-  async getPriceUsdcRecommended(token: Address): Promise<BigNumber> {
+  async getPriceUsdc(token: Address): Promise<BigNumber> {
     return await this.contract.getPriceUsdcRecommended(token);
   }
 
@@ -69,12 +69,6 @@ export class OracleService<T extends ChainId> extends ContractService {
   }
 
   // Calculations Curve
-  // function isCurveLpToken(address) public view returns (bool)
-  // function getCurvePriceUsdc(address) public view returns (uint256)
-  // function getBasePrice(address) public view returns (uint256)
-  // function getVirtualPrice(address) public view returns (uint256)
-  // function getFirstUnderlyingCoinFromPool(address) public view returns (address)
-  // function curveRegistryAddress() public view returns (address)
 
   async isCurveLpToken(lpToken: Address): Promise<boolean> {
     return await this.contract.isCurveLpToken(lpToken);
@@ -100,10 +94,7 @@ export class OracleService<T extends ChainId> extends ContractService {
     return await this.contract.usdcAddress();
   }
 
-  // Calculations Iron Bank
-  // function isIronBankMarket(address) public view returns (bool)
-  // function getIronBankMarketPriceUsdc(address) public view returns (uint256)
-  // function getIronBankMarkets() public view returns (address[] memory)
+  // Calculations: Iron Bank
 
   async isIronBankMarket(token: Address): Promise<boolean> {
     return await this.contract.isIronBankMarket(token);
@@ -117,12 +108,7 @@ export class OracleService<T extends ChainId> extends ContractService {
     return await this.contract.getIronBankMarkets();
   }
 
-  // Calculations Sushiswap
-  // function isLpToken(address) public view returns (bool)
-  // function getPriceFromRouter(address, address) public view returns (uint256)
-  // function getPriceFromRouterUsdc(address) public view returns (uint256)
-  // function getLpTokenTotalLiquidityUsdc(address) public view returns (uint256)
-  // function getLpTokenPriceUsdc(address) public view returns (uint256)
+  // Calculations: Sushiswap
 
   async isLpToken(token: Address): Promise<boolean> {
     return await this.contract.isLpToken(token);

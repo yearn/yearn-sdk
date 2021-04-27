@@ -2,7 +2,7 @@ import { BigNumber } from "@ethersproject/bignumber";
 import { getAddress } from "@ethersproject/address";
 
 import { Address, Service } from "../common";
-import { Balance, BalancesMap, GasPrice, TokenPriced } from "../types";
+import { Balance, BalancesMap, GasPrice, Token } from "../types";
 import { EthAddress, handleHttpError, Usdc, ZeroAddress } from "../helpers";
 
 /**
@@ -10,19 +10,22 @@ import { EthAddress, handleHttpError, Usdc, ZeroAddress } from "../helpers";
  * tokens and user positions.
  */
 export class ZapperService extends Service {
-  async supportedTokens(): Promise<TokenPriced[]> {
+  async supportedTokens(): Promise<Token[]> {
     const url = "https://api.zapper.fi/v1/prices";
     const params = new URLSearchParams({ api_key: this.ctx.zapper });
     const tokens = await fetch(`${url}?${params}`)
       .then(handleHttpError)
       .then(res => res.json());
-    return tokens.map((token: Record<string, unknown>) => ({
-      id: token.address,
-      name: token.symbol,
-      symbol: token.symbol,
-      decimals: BigNumber.from(token.decimals),
-      price: Usdc(token.price)
-    }));
+    return tokens.map(
+      (token: Record<string, string>): Token => ({
+        id: token.address,
+        name: token.symbol,
+        symbol: token.symbol,
+        decimals: BigNumber.from(token.decimals),
+        price: Usdc(token.price),
+        supported: { zapper: true }
+      })
+    );
   }
 
   async balances<T extends Address>(address: T): Promise<Balance[]>;

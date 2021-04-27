@@ -1,7 +1,7 @@
 import { BigNumber } from "@ethersproject/bignumber";
 
 import { Address } from "../common";
-import { Token } from "./asset";
+import { ERC20 } from "./asset";
 
 export interface GasPrice {
   standard: number;
@@ -11,7 +11,7 @@ export interface GasPrice {
 
 export interface Balance {
   address: Address;
-  token: Token;
+  token: ERC20;
   symbol: string;
   balance: BigNumber;
   balanceUSD: BigNumber;

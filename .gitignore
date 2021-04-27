@@ -7,6 +7,8 @@ yarn-error.log
 .vscode/
 out/
 docs/
-dist/
 ignore/
 node_modules/
+
+# FIXME: remove
+# dist/

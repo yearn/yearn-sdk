@@ -9,7 +9,7 @@ import {
   VaultDynamic,
   VaultV2Static,
   VaultV2Dynamic,
-  Token
+  ERC20
 } from "../../types";
 
 export interface IRegistryAdapter {
@@ -19,7 +19,7 @@ export interface IRegistryAdapter {
     address: Address,
     addresses?: Address[]
   ): Promise<Position[]>;
-  tokens(): Promise<Token[]>;
+  tokens(): Promise<ERC20[]>;
 }
 
 export const RegistryV2AdapterAbi = [
@@ -116,7 +116,7 @@ export class RegistryV2Adapter<T extends ChainId> extends ContractService
     );
   }
 
-  async tokens(): Promise<Token[]> {
+  async tokens(): Promise<ERC20[]> {
     return await this.contract.tokens().then(structArray);
   }
 }

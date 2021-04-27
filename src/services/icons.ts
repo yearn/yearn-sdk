@@ -19,7 +19,7 @@ const TrustAsset = (address: Address) =>
  * from trusted asset sources
  */
 export class IconsService extends Service {
-  private ready: Promise<void>;
+  ready: Promise<void>;
   supported: Map<Address, string>;
 
   constructor(chainId: ChainId, ctx: Context) {
@@ -47,11 +47,10 @@ export class IconsService extends Service {
     }
   }
 
-  async get<T extends Address>(address: T): Promise<Icon>;
-  async get<T extends Address>(addresses: T[]): Promise<IconMap<T>>;
-  async get<T extends Address>(address: T | T[]): Promise<IconMap<T> | Icon>;
-  async get<T extends Address>(address: T | T[]): Promise<IconMap<T> | Icon> {
-    await this.ready;
+  get<T extends Address>(address: T): Icon;
+  get<T extends Address>(addresses: T[]): IconMap<T>;
+  get<T extends Address>(address: T | T[]): IconMap<T> | Icon;
+  get<T extends Address>(address: T | T[]): IconMap<T> | Icon {
     if (!Array.isArray(address)) {
       return this.supported.get(address);
     }
