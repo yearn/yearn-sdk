@@ -8,6 +8,7 @@ import { LensService } from "./services/lens";
 import { OracleService } from "./services/oracle";
 import { ZapperService } from "./services/zapper";
 import { IconsService } from "./services/icons";
+import { SubgraphService } from "./services/subgraph";
 export declare class Yearn<T extends ChainId> {
     services: {
         lens: LensService<T>;
@@ -15,6 +16,7 @@ export declare class Yearn<T extends ChainId> {
         zapper: ZapperService;
         icons: IconsService;
         apy: ApyService;
+        subgraph: SubgraphService;
     };
     vaults: VaultReader<T>;
     tokens: TokenReader<T>;
