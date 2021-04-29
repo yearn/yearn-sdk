@@ -2778,6 +2778,53 @@ var IconsService = /*#__PURE__*/function (_Service) {
   return IconsService;
 }(Service);
 
+var subgraphUrl = "https://api.thegraph.com/subgraphs/name/salazarguille/yearn-vaults-v2-subgraph-mainnet";
+var SubgraphService = /*#__PURE__*/function (_Service) {
+  _inheritsLoose(SubgraphService, _Service);
+
+  function SubgraphService() {
+    return _Service.apply(this, arguments) || this;
+  }
+
+  var _proto = SubgraphService.prototype;
+
+  _proto.performQuery = /*#__PURE__*/function () {
+    var _performQuery = /*#__PURE__*/_asyncToGenerator( /*#__PURE__*/runtime_1.mark(function _callee(query) {
+      var response;
+      return runtime_1.wrap(function _callee$(_context) {
+        while (1) {
+          switch (_context.prev = _context.next) {
+            case 0:
+              _context.next = 2;
+              return fetch(subgraphUrl, {
+                method: "POST",
+                body: JSON.stringify({
+                  query: query
+                })
+              });
+
+            case 2:
+              response = _context.sent;
+              return _context.abrupt("return", response.json());
+
+            case 4:
+            case "end":
+              return _context.stop();
+          }
+        }
+      }, _callee);
+    }));
+
+    function performQuery(_x) {
+      return _performQuery.apply(this, arguments);
+    }
+
+    return performQuery;
+  }();
+
+  return SubgraphService;
+}(Service);
+
 var Yearn = function Yearn(chainId, context, cache) {
   var ctx = new Context(context, cache);
   this.services = {
@@ -2785,7 +2832,8 @@ var Yearn = function Yearn(chainId, context, cache) {
     oracle: new OracleService(chainId, ctx),
     zapper: new ZapperService(chainId, ctx),
     icons: new IconsService(chainId, ctx),
-    apy: new ApyService(chainId, ctx)
+    apy: new ApyService(chainId, ctx),
+    subgraph: new SubgraphService(chainId, ctx)
   };
   this.vaults = new VaultReader(this, chainId, ctx);
   this.tokens = new TokenReader(this, chainId, ctx);
