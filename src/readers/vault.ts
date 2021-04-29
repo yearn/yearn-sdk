@@ -11,9 +11,13 @@ export class VaultReader<T extends ChainId> extends Reader<T> {
         const assetsDynamic = await adapter.assetsDynamic(addresses);
         const assets = new Array<Vault>();
         for (const asset of assetsStatic) {
-          const dynamic = assetsDynamic.find(({ id }) => asset.id === id);
+          const dynamic = assetsDynamic.find(
+            ({ address }) => asset.address === address
+          );
           if (!dynamic) {
-            throw new SdkError(`Dynamic asset does not exist for ${asset.id}`);
+            throw new SdkError(
+              `Dynamic asset does not exist for ${asset.address}`
+            );
           }
           assets.push({ ...asset, ...dynamic });
         }

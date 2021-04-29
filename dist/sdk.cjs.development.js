@@ -1122,6 +1122,8 @@ function struct(tuple) {
 
     if (typeof value === "object" && !bignumber.isBigNumberish(value)) {
       copy[property] = struct(value);
+    } else if (bignumber.isBigNumberish(value)) {
+      copy[property] = value.toString();
     } else {
       copy[property] = value;
     }
@@ -1134,7 +1136,7 @@ function structArray(tuples) {
   });
 }
 
-var RegistryV2AdapterAbi = ["function assetsStatic() public view returns (" + "tuple(address id, string typeId, string name, string version," + "tuple(address id, string name, string symbol, uint256 decimals) token" + ")[] memory)", "function assetsStatic(address[] memory) public view returns (" + "tuple(address id, string typeId, string name, string version," + "tuple(address id, string name, string symbol, uint256 decimals) token" + ")[] memory)", "function assetsDynamic() public view returns (" + "tuple(address id, string typeId, address tokenId," + "tuple(uint256 amount, uint256 amountUsdc) underlyingTokenBalance," + "tuple(string symbol, uint256 pricePerShare, bool migrationAvailable, address latestVaultAddress, uint256 depositLimit, bool emergencyShutdown) metadata" + ")[] memory)", "function assetsDynamic(address[] memory) public view returns (" + "tuple(address id, string typeId, address tokenId," + "tuple(uint256 amount, uint256 amountUsdc) underlyingTokenBalance," + "tuple(string symbol, uint256 pricePerShare, bool migrationAvailable, address latestVaultAddress, uint256 depositLimit, bool emergencyShutdown) metadata" + ")[] memory)", "function assetsPositionsOf(address) public view returns (" + "tuple(address assetId, address tokenId, string typeId, uint256 balance," + "tuple(uint256 amount, uint256 amountUsdc) underlyingTokenBalance," + "tuple(address owner, address spender, uint256 amount)[] tokenAllowances," + "tuple(address owner, address spender, uint256 amount)[] assetAllowances" + ")[] memory)", "function assetsPositionsOf(address, address[] memory) public view returns (" + "tuple(address assetId, address tokenId, string typeId, uint256 balance," + "tuple(uint256 amount, uint256 amountUsdc) underlyingTokenBalance," + "tuple(address owner, address spender, uint256 amount)[] tokenAllowances," + "tuple(address owner, address spender, uint256 amount)[] assetAllowances" + ")[] memory)", "function tokens() public view returns (" + "tuple(address id, string name, string symbol, uint256 decimals)" + "[] memory)"];
+var RegistryV2AdapterAbi = ["function assetsStatic() public view returns (" + "tuple(address address, string typeId, string name, string version," + "tuple(address address, string name, string symbol, uint256 decimals) token" + ")[] memory)", "function assetsStatic(address[] memory) public view returns (" + "tuple(address address, string typeId, string name, string version," + "tuple(address address, string name, string symbol, uint256 decimals) token" + ")[] memory)", "function assetsDynamic() public view returns (" + "tuple(address address, string typeId, address tokenId," + "tuple(uint256 amount, uint256 amountUsdc) underlyingTokenBalance," + "tuple(string symbol, uint256 pricePerShare, bool migrationAvailable, address latestVaultAddress, uint256 depositLimit, bool emergencyShutdown) metadata" + ")[] memory)", "function assetsDynamic(address[] memory) public view returns (" + "tuple(address address, string typeId, address tokenId," + "tuple(uint256 amount, uint256 amountUsdc) underlyingTokenBalance," + "tuple(string symbol, uint256 pricePerShare, bool migrationAvailable, address latestVaultAddress, uint256 depositLimit, bool emergencyShutdown) metadata" + ")[] memory)", "function assetsPositionsOf(address) public view returns (" + "tuple(address assetId, address tokenId, string typeId, uint256 balance," + "tuple(uint256 amount, uint256 amountUsdc) underlyingTokenBalance," + "tuple(address owner, address spender, uint256 amount)[] tokenAllowances," + "tuple(address owner, address spender, uint256 amount)[] assetAllowances" + ")[] memory)", "function assetsPositionsOf(address, address[] memory) public view returns (" + "tuple(address assetId, address tokenId, string typeId, uint256 balance," + "tuple(uint256 amount, uint256 amountUsdc) underlyingTokenBalance," + "tuple(address owner, address spender, uint256 amount)[] tokenAllowances," + "tuple(address owner, address spender, uint256 amount)[] assetAllowances" + ")[] memory)", "function tokens() public view returns (" + "tuple(address address, string name, string symbol, uint256 decimals)" + "[] memory)"];
 var RegistryV2Adapter = /*#__PURE__*/function (_ContractService) {
   _inheritsLoose(RegistryV2Adapter, _ContractService);
 
@@ -1306,7 +1308,7 @@ var RegistryV2Adapter = /*#__PURE__*/function (_ContractService) {
 }(ContractService);
 RegistryV2Adapter.abi = RegistryV2AdapterAbi;
 
-var LensAbi = ["function getRegistries() external view returns (address[] memory)", "function getAssets() external view returns (tuple(string name, address id, string version)[] memory)", "function getAssetsFromAdapter(address) external view returns (tuple(string name, address id, string version)[] memory)", "function getPositionsOf(address) external view returns (tuple(address asset, uint256 depositedBalance, uint256 tokenBalance, uint256 tokenAllowance)[] memory)", "function getPositionsOf(address, address) external view returns (tuple(address asset, uint256 depositedBalance, uint256 tokenBalance, uint256 tokenAllowance)[] memory)"];
+var LensAbi = ["function getRegistries() external view returns (address[] memory)", "function getAssets() external view returns (" + "tuple(string name, address address, string version)[] memory" + ")", "function getAssetsFromAdapter(address) external view returns (" + "tuple(string name, address address, string version)[] memory" + ")", "function getPositionsOf(address) external view returns (" + "tuple(address asset, uint256 depositedBalance, uint256 tokenBalance, uint256 tokenAllowance)[] memory" + ")", "function getPositionsOf(address, address) external view returns (" + "tuple(address asset, uint256 depositedBalance, uint256 tokenBalance, uint256 tokenAllowance)[] memory" + ")"];
 /**
  * [[LensService]] provides access to all yearn's assets and user positions.
  * It's implemented in the form of a contract that lives on all networks
@@ -1465,6 +1467,46 @@ var LensService = /*#__PURE__*/function (_ContractService) {
 }(ContractService);
 LensService.abi = LensAbi;
 
+var ZeroAddress = "0x0000000000000000000000000000000000000000";
+var EthAddress = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";
+function handleHttpError(_x) {
+  return _handleHttpError.apply(this, arguments);
+}
+
+function _handleHttpError() {
+  _handleHttpError = _asyncToGenerator( /*#__PURE__*/runtime_1.mark(function _callee(response) {
+    return runtime_1.wrap(function _callee$(_context) {
+      while (1) {
+        switch (_context.prev = _context.next) {
+          case 0:
+            if (!(response.status !== 200)) {
+              _context.next = 2;
+              break;
+            }
+
+            throw new SdkError("HTTP to " + response.url + " request failed (status " + response.status + " " + response.statusText + ")");
+
+          case 2:
+            return _context.abrupt("return", response);
+
+          case 3:
+          case "end":
+            return _context.stop();
+        }
+      }
+    }, _callee);
+  }));
+  return _handleHttpError.apply(this, arguments);
+}
+
+function usdc(value) {
+  return bignumber$1.BigNumber.from(Math.floor(Number(value) * 1e6)).toString();
+}
+
+function _int(value) {
+  return value.toString();
+}
+
 var OracleAbi = [// Oracle general
 "function calculations() external view returns (address[] memory)", "function getPriceUsdcRecommended(address) public view returns (uint256)", "function usdcAddress() public view returns (address)", // Calculations Curve
 "function isCurveLpToken(address) public view returns (bool)", "function getCurvePriceUsdc(address) public view returns (uint256)", "function getBasePrice(address) public view returns (uint256)", "function getVirtualPrice(address) public view returns (uint256)", "function getFirstUnderlyingCoinFromPool(address) public view returns (address)", "function curveRegistryAddress() public view returns (address)", // Calculations Iron Bank
@@ -1533,7 +1575,7 @@ var OracleService = /*#__PURE__*/function (_ContractService) {
           switch (_context2.prev = _context2.next) {
             case 0:
               _context2.next = 2;
-              return this.contract.getPriceUsdcRecommended(token);
+              return this.contract.getPriceUsdcRecommended(token).then(_int);
 
             case 2:
               return _context2.abrupt("return", _context2.sent);
@@ -1560,7 +1602,7 @@ var OracleService = /*#__PURE__*/function (_ContractService) {
           switch (_context3.prev = _context3.next) {
             case 0:
               _context3.next = 2;
-              return this.contract.usdcAddress();
+              return this.contract.usdcAddress().then(_int);
 
             case 2:
               return _context3.abrupt("return", _context3.sent);
@@ -1617,7 +1659,7 @@ var OracleService = /*#__PURE__*/function (_ContractService) {
           switch (_context5.prev = _context5.next) {
             case 0:
               _context5.next = 2;
-              return this.contract.getCurvePriceUsdc(lpToken);
+              return this.contract.getCurvePriceUsdc(lpToken).then(_int);
 
             case 2:
               return _context5.abrupt("return", _context5.sent);
@@ -1644,7 +1686,7 @@ var OracleService = /*#__PURE__*/function (_ContractService) {
           switch (_context6.prev = _context6.next) {
             case 0:
               _context6.next = 2;
-              return this.contract.getBasePrice(lpToken);
+              return this.contract.getBasePrice(lpToken).then(_int);
 
             case 2:
               return _context6.abrupt("return", _context6.sent);
@@ -1671,7 +1713,7 @@ var OracleService = /*#__PURE__*/function (_ContractService) {
           switch (_context7.prev = _context7.next) {
             case 0:
               _context7.next = 2;
-              return this.contract.getVirtualPrice(lpToken);
+              return this.contract.getVirtualPrice(lpToken).then(_int);
 
             case 2:
               return _context7.abrupt("return", _context7.sent);
@@ -1725,7 +1767,7 @@ var OracleService = /*#__PURE__*/function (_ContractService) {
           switch (_context9.prev = _context9.next) {
             case 0:
               _context9.next = 2;
-              return this.contract.usdcAddress();
+              return this.contract.usdcAddress().then(_int);
 
             case 2:
               return _context9.abrupt("return", _context9.sent);
@@ -1782,7 +1824,7 @@ var OracleService = /*#__PURE__*/function (_ContractService) {
           switch (_context11.prev = _context11.next) {
             case 0:
               _context11.next = 2;
-              return this.contract.getIronBankMarketPriceUsdc(token);
+              return this.contract.getIronBankMarketPriceUsdc(token).then(_int);
 
             case 2:
               return _context11.abrupt("return", _context11.sent);
@@ -1866,7 +1908,7 @@ var OracleService = /*#__PURE__*/function (_ContractService) {
           switch (_context14.prev = _context14.next) {
             case 0:
               _context14.next = 2;
-              return this.contract.getPriceFromRouter(token0, token1);
+              return this.contract.getPriceFromRouter(token0, token1).then(_int);
 
             case 2:
               return _context14.abrupt("return", _context14.sent);
@@ -1893,7 +1935,7 @@ var OracleService = /*#__PURE__*/function (_ContractService) {
           switch (_context15.prev = _context15.next) {
             case 0:
               _context15.next = 2;
-              return this.contract.getPriceFromRouterUsdc(token);
+              return this.contract.getPriceFromRouterUsdc(token).then(_int);
 
             case 2:
               return _context15.abrupt("return", _context15.sent);
@@ -1920,7 +1962,7 @@ var OracleService = /*#__PURE__*/function (_ContractService) {
           switch (_context16.prev = _context16.next) {
             case 0:
               _context16.next = 2;
-              return this.contract.getLpTokenTotalLiquidityUsdc(token);
+              return this.contract.getLpTokenTotalLiquidityUsdc(token).then(_int);
 
             case 2:
               return _context16.abrupt("return", _context16.sent);
@@ -1947,7 +1989,7 @@ var OracleService = /*#__PURE__*/function (_ContractService) {
           switch (_context17.prev = _context17.next) {
             case 0:
               _context17.next = 2;
-              return this.contract.getLpTokenPriceUsdc(token);
+              return this.contract.getLpTokenPriceUsdc(token).then(_int);
 
             case 2:
               return _context17.abrupt("return", _context17.sent);
@@ -1970,42 +2012,6 @@ var OracleService = /*#__PURE__*/function (_ContractService) {
   return OracleService;
 }(ContractService);
 OracleService.abi = OracleAbi;
-
-var ZeroAddress = "0x0000000000000000000000000000000000000000";
-var EthAddress = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";
-function handleHttpError(_x) {
-  return _handleHttpError.apply(this, arguments);
-}
-
-function _handleHttpError() {
-  _handleHttpError = _asyncToGenerator( /*#__PURE__*/runtime_1.mark(function _callee(response) {
-    return runtime_1.wrap(function _callee$(_context) {
-      while (1) {
-        switch (_context.prev = _context.next) {
-          case 0:
-            if (!(response.status !== 200)) {
-              _context.next = 2;
-              break;
-            }
-
-            throw new SdkError("HTTP to " + response.url + " request failed (status " + response.status + " " + response.statusText + ")");
-
-          case 2:
-            return _context.abrupt("return", response);
-
-          case 3:
-          case "end":
-            return _context.stop();
-        }
-      }
-    }, _callee);
-  }));
-  return _handleHttpError.apply(this, arguments);
-}
-
-function Usdc(value) {
-  return bignumber$1.BigNumber.from(Math.floor(Number(value) * 1e6));
-}
 
 /**
  * [[ZapperService]] interacts with the zapper api to gather more insight for
@@ -2041,11 +2047,12 @@ var ZapperService = /*#__PURE__*/function (_Service) {
               tokens = _context.sent;
               return _context.abrupt("return", tokens.map(function (token) {
                 return {
-                  id: token.address,
+                  address: token.address,
                   name: token.symbol,
                   symbol: token.symbol,
-                  decimals: bignumber$1.BigNumber.from(token.decimals),
-                  price: Usdc(token.price),
+                  icon: "https://zapper.fi/icons/" + token.symbol + "-icon.png",
+                  decimals: token.decimals,
+                  price: usdc(token.price),
                   supported: {
                     zapper: true
                   }
@@ -2094,14 +2101,14 @@ var ZapperService = /*#__PURE__*/function (_Service) {
                   return {
                     address: address$1,
                     token: {
-                      id: address$1,
+                      address: address$1,
                       name: balance.symbol,
                       symbol: balance.symbol,
-                      decimals: bignumber$1.BigNumber.from(balance.decimals)
+                      decimals: balance.decimals
                     },
-                    balance: bignumber$1.BigNumber.from(balance.balanceRaw),
-                    balanceUsdc: Usdc(balance.balanceUSD),
-                    price: Usdc(balance.price)
+                    balance: balance.balanceRaw,
+                    balanceUsdc: usdc(balance.balanceUSD),
+                    price: usdc(balance.price)
                   };
                 });
               });
@@ -2271,12 +2278,12 @@ var VaultReader = /*#__PURE__*/function (_Reader) {
                           _loop = function _loop() {
                             var asset = _step.value;
                             var dynamic = assetsDynamic.find(function (_ref2) {
-                              var id = _ref2.id;
-                              return asset.id === id;
+                              var address = _ref2.address;
+                              return asset.address === address;
                             });
 
                             if (!dynamic) {
-                              throw new SdkError("Dynamic asset does not exist for " + asset.id);
+                              throw new SdkError("Dynamic asset does not exist for " + asset.address);
                             }
 
                             assets.push(_extends({}, asset, dynamic));
@@ -2486,7 +2493,7 @@ var TokenReader = /*#__PURE__*/function (_Reader) {
               _context6.next = 9;
               return Promise.all(adapters.map( /*#__PURE__*/function () {
                 var _ref = _asyncToGenerator( /*#__PURE__*/runtime_1.mark(function _callee5(adapter) {
-                  var tokens;
+                  var tokens, icons;
                   return runtime_1.wrap(function _callee5$(_context5) {
                     while (1) {
                       switch (_context5.prev = _context5.next) {
@@ -2496,8 +2503,12 @@ var TokenReader = /*#__PURE__*/function (_Reader) {
 
                         case 2:
                           tokens = _context5.sent;
+                          icons = _this.yearn.services.icons.get(tokens.map(function (_ref2) {
+                            var address = _ref2.address;
+                            return address;
+                          }));
                           return _context5.abrupt("return", Promise.all(tokens.map( /*#__PURE__*/function () {
-                            var _ref2 = _asyncToGenerator( /*#__PURE__*/runtime_1.mark(function _callee4(token) {
+                            var _ref3 = _asyncToGenerator( /*#__PURE__*/runtime_1.mark(function _callee4(token) {
                               return runtime_1.wrap(function _callee4$(_context4) {
                                 while (1) {
                                   switch (_context4.prev = _context4.next) {
@@ -2505,19 +2516,21 @@ var TokenReader = /*#__PURE__*/function (_Reader) {
                                       _context4.t0 = _extends;
                                       _context4.t1 = {};
                                       _context4.t2 = token;
-                                      _context4.t3 = {};
-                                      _context4.next = 6;
-                                      return _this.yearn.services.oracle.getPriceUsdc(token.id);
+                                      _context4.t3 = icons[token.address];
+                                      _context4.t4 = {};
+                                      _context4.next = 7;
+                                      return _this.yearn.services.oracle.getPriceUsdc(token.address);
 
-                                    case 6:
-                                      _context4.t4 = _context4.sent;
-                                      _context4.t5 = {
-                                        supported: _context4.t3,
-                                        price: _context4.t4
+                                    case 7:
+                                      _context4.t5 = _context4.sent;
+                                      _context4.t6 = {
+                                        icon: _context4.t3,
+                                        supported: _context4.t4,
+                                        price: _context4.t5
                                       };
-                                      return _context4.abrupt("return", (0, _context4.t0)(_context4.t1, _context4.t2, _context4.t5));
+                                      return _context4.abrupt("return", (0, _context4.t0)(_context4.t1, _context4.t2, _context4.t6));
 
-                                    case 9:
+                                    case 10:
                                     case "end":
                                       return _context4.stop();
                                   }
@@ -2526,11 +2539,11 @@ var TokenReader = /*#__PURE__*/function (_Reader) {
                             }));
 
                             return function (_x6) {
-                              return _ref2.apply(this, arguments);
+                              return _ref3.apply(this, arguments);
                             };
                           }())));
 
-                        case 4:
+                        case 5:
                         case "end":
                           return _context5.stop();
                       }
@@ -2776,6 +2789,7 @@ var Yearn = function Yearn(chainId, context, cache) {
   };
   this.vaults = new VaultReader(this, chainId, ctx);
   this.tokens = new TokenReader(this, chainId, ctx);
+  this.ready = Promise.all([this.services.icons.ready]);
 };
 
 exports.ApyService = ApyService;

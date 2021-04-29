@@ -1,5 +1,4 @@
-import { BigNumber } from "@ethersproject/bignumber";
-import { Address, ContractService } from "../common";
+import { Address, Integer, ContractService } from "../common";
 import { ChainId } from "../chain";
 import { Context } from "../context";
 export declare const OracleAbi: string[];
@@ -13,20 +12,20 @@ export declare class OracleService<T extends ChainId> extends ContractService {
     constructor(chainId: T, ctx: Context);
     static addressByChain(chainId: ChainId): string;
     getCalculations(): Promise<Address[]>;
-    getPriceUsdc(token: Address): Promise<BigNumber>;
-    getUsdcAddress(): Promise<BigNumber>;
+    getPriceUsdc(token: Address): Promise<Integer>;
+    getUsdcAddress(): Promise<Integer>;
     isCurveLpToken(lpToken: Address): Promise<boolean>;
-    getCurvePriceUsdc(lpToken: Address): Promise<BigNumber>;
-    getBasePrice(lpToken: Address): Promise<BigNumber>;
-    getVirtualPrice(lpToken: Address): Promise<BigNumber>;
+    getCurvePriceUsdc(lpToken: Address): Promise<Integer>;
+    getBasePrice(lpToken: Address): Promise<Integer>;
+    getVirtualPrice(lpToken: Address): Promise<Integer>;
     getFirstUnderlyingCoinFromPool(pool: Address): Promise<Address>;
-    getCurveRegistryAddress(): Promise<BigNumber>;
+    getCurveRegistryAddress(): Promise<Integer>;
     isIronBankMarket(token: Address): Promise<boolean>;
-    getIronBankMarketPriceUsdc(token: Address): Promise<BigNumber>;
+    getIronBankMarketPriceUsdc(token: Address): Promise<Integer>;
     getIronBankMarkets(): Promise<Address[]>;
     isLpToken(token: Address): Promise<boolean>;
-    getPriceFromRouter(token0: Address, token1: Address): Promise<BigNumber>;
-    getPriceFromRouterUsdc(token: Address): Promise<BigNumber>;
-    getLpTokenTotalLiquidityUsdc(token: Address): Promise<BigNumber>;
-    getLpTokenPriceUsdc(token: Address): Promise<BigNumber>;
+    getPriceFromRouter(token0: Address, token1: Address): Promise<Integer>;
+    getPriceFromRouterUsdc(token: Address): Promise<Integer>;
+    getLpTokenTotalLiquidityUsdc(token: Address): Promise<Integer>;
+    getLpTokenPriceUsdc(token: Address): Promise<Integer>;
 }

@@ -18,5 +18,6 @@ export declare class Yearn<T extends ChainId> {
     };
     vaults: VaultReader<T>;
     tokens: TokenReader<T>;
+    ready: Promise<void[]>;
     constructor(chainId: T, context: ContextValue, cache?: Cache);
 }

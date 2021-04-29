@@ -1,9 +1,8 @@
-import { BigNumber } from "@ethersproject/bignumber";
 import { getAddress } from "@ethersproject/address";
 
 import { Address, Service } from "../common";
 import { Balance, BalancesMap, GasPrice, Token } from "../types";
-import { EthAddress, handleHttpError, Usdc, ZeroAddress } from "../helpers";
+import { EthAddress, handleHttpError, ZeroAddress, usdc } from "../helpers";
 
 /**
  * [[ZapperService]] interacts with the zapper api to gather more insight for
@@ -18,11 +17,12 @@ export class ZapperService extends Service {
       .then(res => res.json());
     return tokens.map(
       (token: Record<string, string>): Token => ({
-        id: token.address,
+        address: token.address,
         name: token.symbol,
         symbol: token.symbol,
-        decimals: BigNumber.from(token.decimals),
-        price: Usdc(token.price),
+        icon: `https://zapper.fi/icons/${token.symbol}-icon.png`,
+        decimals: token.decimals,
+        price: usdc(token.price),
         supported: { zapper: true }
       })
     );
@@ -49,7 +49,7 @@ export class ZapperService extends Service {
       const copy = balances[address];
       delete balances[address];
       balances[getAddress(address)] = copy.map(
-        (balance: Record<string, unknown>) => {
+        (balance: Record<string, string>): Balance => {
           const address =
             balance.address === ZeroAddress
               ? EthAddress
@@ -57,14 +57,14 @@ export class ZapperService extends Service {
           return {
             address,
             token: {
-              id: address,
+              address: address,
               name: balance.symbol,
               symbol: balance.symbol,
-              decimals: BigNumber.from(balance.decimals)
+              decimals: balance.decimals
             },
-            balance: BigNumber.from(balance.balanceRaw),
-            balanceUsdc: Usdc(balance.balanceUSD),
-            price: Usdc(balance.price)
+            balance: balance.balanceRaw,
+            balanceUsdc: usdc(balance.balanceUSD),
+            price: usdc(balance.price)
           };
         }
       );

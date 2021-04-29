@@ -1,21 +1,19 @@
-import { BigNumber } from "@ethersproject/bignumber";
-
-import { Address } from "../common";
+import { Address, Integer } from "../common";
 
 export interface VaultV2Metadata {
   symbol: string;
-  pricePerShare: BigNumber;
+  pricePerShare: Integer;
   migrationAvailable: boolean;
   latestVaultAddress: Address;
-  depositLimit: BigNumber;
+  depositLimit: Integer;
   emergencyShutdown: boolean;
 }
 
 export interface VaultV1Metadata {
   controller: Address;
-  totalAssets: BigNumber;
-  totalSupply: BigNumber;
-  pricePerShare: BigNumber;
+  totalAssets: Integer;
+  totalSupply: Integer;
+  pricePerShare: Integer;
 }
 
 export type Metadata = {

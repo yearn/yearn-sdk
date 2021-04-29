@@ -12,6 +12,8 @@ import { Context } from "./context";
 export declare class SdkError extends Error {
 }
 export declare type Address = string;
+export declare type Integer = string;
+export declare type Usdc = string;
 export declare class Service {
     ctx: Context;
     chainId: ChainId;

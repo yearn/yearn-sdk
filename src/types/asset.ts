@@ -1,13 +1,11 @@
-import { BigNumber } from "@ethersproject/bignumber";
-
-import { Address } from "../common";
+import { Address, Integer, Usdc } from "../common";
 import { Metadata, TypeId } from "./metadata";
 
 export interface Position {
   assetId: Address;
   tokenId: Address;
   typeId: string;
-  balance: BigNumber;
+  balance: Integer;
   underlyingTokenBalance: TokenAmount;
   assetAllowances: Allowance[];
   tokenAllowances: Allowance[];
@@ -16,23 +14,24 @@ export interface Position {
 export interface Allowance {
   owner: Address;
   spender: Address;
-  amount: BigNumber;
+  amount: Integer;
 }
 
 export interface ERC20 {
-  id: Address;
+  address: Address;
   name: string;
   symbol: string;
-  decimals: BigNumber;
+  decimals: Integer;
 }
 
 export interface TokenAmount {
-  amount: BigNumber;
-  amountUsdc: BigNumber;
+  amount: Integer;
+  amountUsdc: Usdc;
 }
 
 export interface Token extends ERC20 {
-  price: BigNumber;
+  icon?: string;
+  price: Integer;
   supported: {
     zapper?: boolean;
   };
@@ -44,7 +43,7 @@ export type IconMap<T extends Address> = { [K in T]: Icon };
 /// Assets
 
 export interface AssetStatic<T extends TypeId> {
-  id: Address;
+  address: Address;
   typeId: T;
   name: string;
   version: string;
@@ -52,7 +51,7 @@ export interface AssetStatic<T extends TypeId> {
 }
 
 export interface AssetDynamic<T extends TypeId> {
-  id: Address;
+  address: Address;
   typeId: T;
   tokenId: Address;
   underlyingTokenBalance: TokenAmount;

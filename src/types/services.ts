@@ -1,6 +1,4 @@
-import { BigNumber } from "@ethersproject/bignumber";
-
-import { Address } from "../common";
+import { Address, Integer, Usdc } from "../common";
 import { ERC20 } from "./asset";
 
 export interface GasPrice {
@@ -12,10 +10,9 @@ export interface GasPrice {
 export interface Balance {
   address: Address;
   token: ERC20;
-  symbol: string;
-  balance: BigNumber;
-  balanceUSD: BigNumber;
-  price: BigNumber;
+  balance: Integer;
+  balanceUsdc: Usdc;
+  price: Integer;
 }
 
 export type BalancesMap<T extends Address> = { [K in T]: Balance[] };

@@ -1,15 +1,13 @@
-import { BigNumber } from "@ethersproject/bignumber";
-
-import { Address, Reader } from "../common";
+import { Address, Integer, Reader } from "../common";
 import { ChainId } from "../chain";
 import { Token, Balance, BalancesMap, IconMap, Icon } from "../types";
 
 export class TokenReader<C extends ChainId> extends Reader<C> {
-  async priceUsdc(token: Address): Promise<BigNumber> {
+  async priceUsdc(token: Address): Promise<Integer> {
     return this.yearn.services.oracle.getPriceUsdc(token);
   }
 
-  async price(from: Address, to: Address): Promise<BigNumber> {
+  async price(from: Address, to: Address): Promise<Integer> {
     return this.yearn.services.oracle.getPriceFromRouter(from, to);
   }
 
@@ -33,11 +31,15 @@ export class TokenReader<C extends ChainId> extends Reader<C> {
     const vaults = await Promise.all(
       adapters.map(async adapter => {
         const tokens = await adapter.tokens();
+        const icons = this.yearn.services.icons.get(
+          tokens.map(({ address }) => address)
+        );
         return Promise.all(
           tokens.map(async token => ({
             ...token,
+            icon: icons[token.address],
             supported: {},
-            price: await this.yearn.services.oracle.getPriceUsdc(token.id)
+            price: await this.yearn.services.oracle.getPriceUsdc(token.address)
           }))
         );
       })

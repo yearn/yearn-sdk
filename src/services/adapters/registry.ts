@@ -15,29 +15,26 @@ import {
 export interface IRegistryAdapter {
   assetsStatic(): Promise<VaultStatic[]>;
   assetsDynamic(): Promise<VaultDynamic[]>;
-  positionsOf(
-    address: Address,
-    addresses?: Address[]
-  ): Promise<Position[]>;
+  positionsOf(address: Address, addresses?: Address[]): Promise<Position[]>;
   tokens(): Promise<ERC20[]>;
 }
 
 export const RegistryV2AdapterAbi = [
   "function assetsStatic() public view returns (" +
-    "tuple(address id, string typeId, string name, string version," +
-    "tuple(address id, string name, string symbol, uint256 decimals) token" +
+    "tuple(address address, string typeId, string name, string version," +
+    "tuple(address address, string name, string symbol, uint256 decimals) token" +
     ")[] memory)",
   "function assetsStatic(address[] memory) public view returns (" +
-    "tuple(address id, string typeId, string name, string version," +
-    "tuple(address id, string name, string symbol, uint256 decimals) token" +
+    "tuple(address address, string typeId, string name, string version," +
+    "tuple(address address, string name, string symbol, uint256 decimals) token" +
     ")[] memory)",
   "function assetsDynamic() public view returns (" +
-    "tuple(address id, string typeId, address tokenId," +
+    "tuple(address address, string typeId, address tokenId," +
     "tuple(uint256 amount, uint256 amountUsdc) underlyingTokenBalance," +
     "tuple(string symbol, uint256 pricePerShare, bool migrationAvailable, address latestVaultAddress, uint256 depositLimit, bool emergencyShutdown) metadata" +
     ")[] memory)",
   "function assetsDynamic(address[] memory) public view returns (" +
-    "tuple(address id, string typeId, address tokenId," +
+    "tuple(address address, string typeId, address tokenId," +
     "tuple(uint256 amount, uint256 amountUsdc) underlyingTokenBalance," +
     "tuple(string symbol, uint256 pricePerShare, bool migrationAvailable, address latestVaultAddress, uint256 depositLimit, bool emergencyShutdown) metadata" +
     ")[] memory)",
@@ -54,7 +51,7 @@ export const RegistryV2AdapterAbi = [
     "tuple(address owner, address spender, uint256 amount)[] assetAllowances" +
     ")[] memory)",
   "function tokens() public view returns (" +
-    "tuple(address id, string name, string symbol, uint256 decimals)" +
+    "tuple(address address, string name, string symbol, uint256 decimals)" +
     "[] memory)"
 ];
 

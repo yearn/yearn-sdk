@@ -21,6 +21,8 @@ export class Yearn<T extends ChainId> {
   vaults: VaultReader<T>;
   tokens: TokenReader<T>;
 
+  ready: Promise<void[]>;
+
   constructor(chainId: T, context: ContextValue, cache?: Cache) {
     const ctx = new Context(context, cache);
 
@@ -34,5 +36,7 @@ export class Yearn<T extends ChainId> {
 
     this.vaults = new VaultReader(this, chainId, ctx);
     this.tokens = new TokenReader(this, chainId, ctx);
+
+    this.ready = Promise.all([this.services.icons.ready]);
   }
 }

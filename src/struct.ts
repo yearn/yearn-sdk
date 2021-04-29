@@ -11,6 +11,8 @@ export function struct(tuple: any): any {
     const value = tuple[property];
     if (typeof value === "object" && !isBigNumberish(value)) {
       copy[property] = struct(value);
+    } else if (isBigNumberish(value)) {
+      copy[property] = value.toString();
     } else {
       copy[property] = value;
     }

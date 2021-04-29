@@ -7,10 +7,18 @@ import { IRegistryAdapter, RegistryV2Adapter } from "./adapters/registry";
 
 export const LensAbi = [
   "function getRegistries() external view returns (address[] memory)",
-  "function getAssets() external view returns (tuple(string name, address id, string version)[] memory)",
-  "function getAssetsFromAdapter(address) external view returns (tuple(string name, address id, string version)[] memory)",
-  "function getPositionsOf(address) external view returns (tuple(address asset, uint256 depositedBalance, uint256 tokenBalance, uint256 tokenAllowance)[] memory)",
-  "function getPositionsOf(address, address) external view returns (tuple(address asset, uint256 depositedBalance, uint256 tokenBalance, uint256 tokenAllowance)[] memory)"
+  "function getAssets() external view returns (" +
+    "tuple(string name, address address, string version)[] memory" +
+    ")",
+  "function getAssetsFromAdapter(address) external view returns (" +
+    "tuple(string name, address address, string version)[] memory" +
+    ")",
+  "function getPositionsOf(address) external view returns (" +
+    "tuple(address asset, uint256 depositedBalance, uint256 tokenBalance, uint256 tokenAllowance)[] memory" +
+    ")",
+  "function getPositionsOf(address, address) external view returns (" +
+    "tuple(address asset, uint256 depositedBalance, uint256 tokenBalance, uint256 tokenAllowance)[] memory" +
+    ")"
 ];
 
 export type Adapters<T extends ChainId> = T extends EthMain | EthLocal

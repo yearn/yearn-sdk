@@ -1,8 +1,7 @@
-import { BigNumber } from "@ethersproject/bignumber";
-
-import { Address, ContractService } from "../common";
+import { Address, Integer, ContractService } from "../common";
 import { ChainId } from "../chain";
 import { Context } from "../context";
+import { int } from "../helpers";
 
 export const OracleAbi = [
   // Oracle general
@@ -60,12 +59,12 @@ export class OracleService<T extends ChainId> extends ContractService {
     return await this.contract.calculations();
   }
 
-  async getPriceUsdc(token: Address): Promise<BigNumber> {
-    return await this.contract.getPriceUsdcRecommended(token);
+  async getPriceUsdc(token: Address): Promise<Integer> {
+    return await this.contract.getPriceUsdcRecommended(token).then(int);
   }
 
-  async getUsdcAddress(): Promise<BigNumber> {
-    return await this.contract.usdcAddress();
+  async getUsdcAddress(): Promise<Integer> {
+    return await this.contract.usdcAddress().then(int);
   }
 
   // Calculations Curve
@@ -74,24 +73,24 @@ export class OracleService<T extends ChainId> extends ContractService {
     return await this.contract.isCurveLpToken(lpToken);
   }
 
-  async getCurvePriceUsdc(lpToken: Address): Promise<BigNumber> {
-    return await this.contract.getCurvePriceUsdc(lpToken);
+  async getCurvePriceUsdc(lpToken: Address): Promise<Integer> {
+    return await this.contract.getCurvePriceUsdc(lpToken).then(int);
   }
 
-  async getBasePrice(lpToken: Address): Promise<BigNumber> {
-    return await this.contract.getBasePrice(lpToken);
+  async getBasePrice(lpToken: Address): Promise<Integer> {
+    return await this.contract.getBasePrice(lpToken).then(int);
   }
 
-  async getVirtualPrice(lpToken: Address): Promise<BigNumber> {
-    return await this.contract.getVirtualPrice(lpToken);
+  async getVirtualPrice(lpToken: Address): Promise<Integer> {
+    return await this.contract.getVirtualPrice(lpToken).then(int);
   }
 
   async getFirstUnderlyingCoinFromPool(pool: Address): Promise<Address> {
     return await this.contract.getFirstUnderlyingCoinFromPool(pool);
   }
 
-  async getCurveRegistryAddress(): Promise<BigNumber> {
-    return await this.contract.usdcAddress();
+  async getCurveRegistryAddress(): Promise<Integer> {
+    return await this.contract.usdcAddress().then(int);
   }
 
   // Calculations: Iron Bank
@@ -100,8 +99,8 @@ export class OracleService<T extends ChainId> extends ContractService {
     return await this.contract.isIronBankMarket(token);
   }
 
-  async getIronBankMarketPriceUsdc(token: Address): Promise<BigNumber> {
-    return await this.contract.getIronBankMarketPriceUsdc(token);
+  async getIronBankMarketPriceUsdc(token: Address): Promise<Integer> {
+    return await this.contract.getIronBankMarketPriceUsdc(token).then(int);
   }
 
   async getIronBankMarkets(): Promise<Address[]> {
@@ -114,22 +113,19 @@ export class OracleService<T extends ChainId> extends ContractService {
     return await this.contract.isLpToken(token);
   }
 
-  async getPriceFromRouter(
-    token0: Address,
-    token1: Address
-  ): Promise<BigNumber> {
-    return await this.contract.getPriceFromRouter(token0, token1);
+  async getPriceFromRouter(token0: Address, token1: Address): Promise<Integer> {
+    return await this.contract.getPriceFromRouter(token0, token1).then(int);
   }
 
-  async getPriceFromRouterUsdc(token: Address): Promise<BigNumber> {
-    return await this.contract.getPriceFromRouterUsdc(token);
+  async getPriceFromRouterUsdc(token: Address): Promise<Integer> {
+    return await this.contract.getPriceFromRouterUsdc(token).then(int);
   }
 
-  async getLpTokenTotalLiquidityUsdc(token: Address): Promise<BigNumber> {
-    return await this.contract.getLpTokenTotalLiquidityUsdc(token);
+  async getLpTokenTotalLiquidityUsdc(token: Address): Promise<Integer> {
+    return await this.contract.getLpTokenTotalLiquidityUsdc(token).then(int);
   }
 
-  async getLpTokenPriceUsdc(token: Address): Promise<BigNumber> {
-    return await this.contract.getLpTokenPriceUsdc(token);
+  async getLpTokenPriceUsdc(token: Address): Promise<Integer> {
+    return await this.contract.getLpTokenPriceUsdc(token).then(int);
   }
 }
