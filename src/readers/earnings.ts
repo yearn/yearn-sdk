@@ -66,7 +66,7 @@ export class EarningsReader<C extends ChainId> extends Reader<C> {
       }
     }
 
-    return result.toString();
+    return result.toFixed(0);
   }
 
   async assetEarnings(vaultAddress: Address): Promise<AssetEarnings> {
@@ -99,8 +99,8 @@ export class EarningsReader<C extends ChainId> extends Reader<C> {
     const earningsUsdc = await this.tokensValueInUsdc(earnings, vault.token);
     const result: AssetEarnings = {
       assetId: vaultAddress,
-      amount: earnings.toString(),
-      amountUsdc: earningsUsdc.toString(),
+      amount: earnings.toFixed(0),
+      amountUsdc: earningsUsdc.toFixed(0),
       tokenId: vault.token.id
     };
     return result;
