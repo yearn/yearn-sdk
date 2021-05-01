@@ -9,6 +9,7 @@ import { OracleService } from "./services/oracle";
 import { ZapperService } from "./services/zapper";
 import { IconsService } from "./services/icons";
 import { SubgraphService } from "./services/subgraph";
+import { EarningsReader } from "./readers/earnings";
 
 export class Yearn<T extends ChainId> {
   services: {
@@ -22,7 +23,7 @@ export class Yearn<T extends ChainId> {
 
   vaults: VaultReader<T>;
   tokens: TokenReader<T>;
-
+  earnings: EarningsReader<T>;
   ready: Promise<void[]>;
 
   constructor(chainId: T, context: ContextValue, cache?: Cache) {
@@ -39,6 +40,7 @@ export class Yearn<T extends ChainId> {
 
     this.vaults = new VaultReader(this, chainId, ctx);
     this.tokens = new TokenReader(this, chainId, ctx);
+    this.earnings = new EarningsReader(this, chainId, ctx);
 
     this.ready = Promise.all([this.services.icons.ready]);
   }

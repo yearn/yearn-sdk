@@ -193,28 +193,24 @@ function _arrayLikeToArray(arr, len) {
 }
 
 function _createForOfIteratorHelperLoose(o, allowArrayLike) {
-  var it;
+  var it = typeof Symbol !== "undefined" && o[Symbol.iterator] || o["@@iterator"];
+  if (it) return (it = it.call(o)).next.bind(it);
 
-  if (typeof Symbol === "undefined" || o[Symbol.iterator] == null) {
-    if (Array.isArray(o) || (it = _unsupportedIterableToArray(o)) || allowArrayLike && o && typeof o.length === "number") {
-      if (it) o = it;
-      var i = 0;
-      return function () {
-        if (i >= o.length) return {
-          done: true
-        };
-        return {
-          done: false,
-          value: o[i++]
-        };
+  if (Array.isArray(o) || (it = _unsupportedIterableToArray(o)) || allowArrayLike && o && typeof o.length === "number") {
+    if (it) o = it;
+    var i = 0;
+    return function () {
+      if (i >= o.length) return {
+        done: true
       };
-    }
-
-    throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
+      return {
+        done: false,
+        value: o[i++]
+      };
+    };
   }
 
-  it = o[Symbol.iterator]();
-  return it.next.bind(it);
+  throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
 }
 
 function createCommonjsModule(fn, module) {
@@ -2784,7 +2780,7 @@ var SubgraphService = /*#__PURE__*/function (_Service) {
 
   _proto.performQuery = /*#__PURE__*/function () {
     var _performQuery = /*#__PURE__*/_asyncToGenerator( /*#__PURE__*/runtime_1.mark(function _callee(query) {
-      var response;
+      var response, result;
       return runtime_1.wrap(function _callee$(_context) {
         while (1) {
           switch (_context.prev = _context.next) {
@@ -2799,9 +2795,14 @@ var SubgraphService = /*#__PURE__*/function (_Service) {
 
             case 2:
               response = _context.sent;
-              return _context.abrupt("return", response.json());
+              _context.next = 5;
+              return response.json();
 
-            case 4:
+            case 5:
+              result = _context.sent;
+              return _context.abrupt("return", result.data);
+
+            case 7:
             case "end":
               return _context.stop();
           }
@@ -2819,6 +2820,159 @@ var SubgraphService = /*#__PURE__*/function (_Service) {
   return SubgraphService;
 }(Service);
 
+var EarningsReader = /*#__PURE__*/function (_Reader) {
+  _inheritsLoose(EarningsReader, _Reader);
+
+  function EarningsReader() {
+    return _Reader.apply(this, arguments) || this;
+  }
+
+  var _proto = EarningsReader.prototype;
+
+  // note - the subgraph only has information about V2 vaults
+  _proto.protocolEarnings =
+  /*#__PURE__*/
+  function () {
+    var _protocolEarnings = /*#__PURE__*/_asyncToGenerator( /*#__PURE__*/runtime_1.mark(function _callee() {
+      var query, response, result, _iterator, _step, vault, earnings, earningsUsdc;
+
+      return runtime_1.wrap(function _callee$(_context) {
+        while (1) {
+          switch (_context.prev = _context.next) {
+            case 0:
+              query = "\n    {\n      vaults(where:{balanceTokens_gt:0}) {\n        id\n        balanceTokens\n        token {\n          symbol\n          id\n          decimals\n        }\n        latestUpdate {\n          pricePerShare\n        }\n        sharesSupply\n      }\n    }\n    ";
+              _context.next = 3;
+              return this.yearn.services.subgraph.performQuery(query);
+
+            case 3:
+              response = _context.sent;
+              result = 0;
+              _iterator = _createForOfIteratorHelperLoose(response.vaults);
+
+            case 6:
+              if ((_step = _iterator()).done) {
+                _context.next = 15;
+                break;
+              }
+
+              vault = _step.value;
+              earnings = calculateEarningsForVault(vault);
+              _context.next = 11;
+              return this.tokensValueInUsdc(earnings, vault.token);
+
+            case 11:
+              earningsUsdc = _context.sent;
+
+              // TODO - some results are negative, and some are too large to be realistically possible. This is due to problems with the subgraph and should be fixed there
+              if (earningsUsdc > 0 && earningsUsdc < 1000000000) {
+                result += earningsUsdc;
+              }
+
+            case 13:
+              _context.next = 6;
+              break;
+
+            case 15:
+              return _context.abrupt("return", result.toString());
+
+            case 16:
+            case "end":
+              return _context.stop();
+          }
+        }
+      }, _callee, this);
+    }));
+
+    function protocolEarnings() {
+      return _protocolEarnings.apply(this, arguments);
+    }
+
+    return protocolEarnings;
+  }();
+
+  _proto.assetEarnings = /*#__PURE__*/function () {
+    var _assetEarnings = /*#__PURE__*/_asyncToGenerator( /*#__PURE__*/runtime_1.mark(function _callee2(vaultAddress) {
+      var query, response, vault, earnings, earningsUsdc, result;
+      return runtime_1.wrap(function _callee2$(_context2) {
+        while (1) {
+          switch (_context2.prev = _context2.next) {
+            case 0:
+              query = "\n    {\n      vault(id: \"" + vaultAddress + "\") {\n        id\n        balanceTokens\n        token {\n          symbol\n          id\n          decimals\n        }\n        latestUpdate {\n          pricePerShare\n        }\n        sharesSupply\n      }\n    }\n    ";
+              _context2.next = 3;
+              return this.yearn.services.subgraph.performQuery(query);
+
+            case 3:
+              response = _context2.sent;
+              vault = response.vault;
+              earnings = calculateEarningsForVault(vault);
+              _context2.next = 8;
+              return this.tokensValueInUsdc(earnings, vault.token);
+
+            case 8:
+              earningsUsdc = _context2.sent;
+              result = {
+                assetId: vaultAddress,
+                amount: earnings.toString(),
+                amountUsdc: earningsUsdc.toString(),
+                tokenId: vault.token.id
+              };
+              return _context2.abrupt("return", result);
+
+            case 11:
+            case "end":
+              return _context2.stop();
+          }
+        }
+      }, _callee2, this);
+    }));
+
+    function assetEarnings(_x) {
+      return _assetEarnings.apply(this, arguments);
+    }
+
+    return assetEarnings;
+  }();
+
+  _proto.tokensValueInUsdc = /*#__PURE__*/function () {
+    var _tokensValueInUsdc = /*#__PURE__*/_asyncToGenerator( /*#__PURE__*/runtime_1.mark(function _callee3(tokenAmount, token) {
+      var tokenUsdcPrice;
+      return runtime_1.wrap(function _callee3$(_context3) {
+        while (1) {
+          switch (_context3.prev = _context3.next) {
+            case 0:
+              _context3.next = 2;
+              return this.yearn.services.oracle.getPriceUsdc(token.id);
+
+            case 2:
+              tokenUsdcPrice = _context3.sent;
+              console.log(tokenUsdcPrice);
+              return _context3.abrupt("return", +tokenUsdcPrice * tokenAmount / Math.pow(10, +token.decimals));
+
+            case 5:
+            case "end":
+              return _context3.stop();
+          }
+        }
+      }, _callee3, this);
+    }));
+
+    function tokensValueInUsdc(_x2, _x3) {
+      return _tokensValueInUsdc.apply(this, arguments);
+    }
+
+    return tokensValueInUsdc;
+  }();
+
+  return EarningsReader;
+}(Reader);
+
+function calculateEarningsForVault(vault) {
+  var pricePerShare = +vault.latestUpdate.pricePerShare / Math.pow(10, +vault.token.decimals);
+  var totalTokens = pricePerShare * +vault.sharesSupply;
+  var earnedTokens = totalTokens - +vault.balanceTokens;
+  return earnedTokens;
+}
+
 var Yearn = function Yearn(chainId, context, cache) {
   var ctx = new Context(context, cache);
   this.services = {
@@ -2831,6 +2985,7 @@ var Yearn = function Yearn(chainId, context, cache) {
   };
   this.vaults = new VaultReader(this, chainId, ctx);
   this.tokens = new TokenReader(this, chainId, ctx);
+  this.earnings = new EarningsReader(this, chainId, ctx);
   this.ready = Promise.all([this.services.icons.ready]);
 };
 
