@@ -69,7 +69,7 @@ export class EarningsReader<C extends ChainId> extends Reader<C> {
       // TODO - some results are negative, and some are too large to be realistically possible. This is due to problems with the subgraph and should be fixed there
       if (
         earningsUsdc.gt(BigNumber.from(0)) &&
-        earningsUsdc.lt(BigNumber.from(1000000000))
+        earningsUsdc.lt(BigNumber.from(100000000000000))
       ) {
         result.add(earningsUsdc);
       }
