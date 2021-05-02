@@ -67,9 +67,10 @@ export class EarningsReader<C extends ChainId> extends Reader<C> {
       const earnings = calculateEarningsForVault(vault);
       const earningsUsdc = await this.tokensValueInUsdc(earnings, vault.token);
       // TODO - some results are negative, and some are too large to be realistically possible. This is due to problems with the subgraph and should be fixed there
+      const oneHundredMillionUsd = BigNumber.from(100000000000000)
       if (
         earningsUsdc.gt(BigNumber.from(0)) &&
-        earningsUsdc.lt(BigNumber.from(100000000000000))
+        earningsUsdc.lt(oneHundredMillionUsd)
       ) {
         result.add(earningsUsdc);
       }
