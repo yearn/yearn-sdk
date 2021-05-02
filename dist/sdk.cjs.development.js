@@ -2900,21 +2900,18 @@ var EarningsReader = /*#__PURE__*/function (_Reader) {
         while (1) {
           switch (_context2.prev = _context2.next) {
             case 0:
-              query = "\n    {\n      vault(id: \"" + vaultAddress.toLowerCase() + "\") {\n        id\n        balanceTokens\n        token {\n          symbol\n          id\n          decimals\n        }\n        latestUpdate {\n          pricePerShare\n        }\n        sharesSupply\n      }\n    }\n    "; // console.log(query);
-
+              query = "\n    {\n      vault(id: \"" + vaultAddress.toLowerCase() + "\") {\n        id\n        balanceTokens\n        token {\n          symbol\n          id\n          decimals\n        }\n        latestUpdate {\n          pricePerShare\n        }\n        sharesSupply\n      }\n    }\n    ";
               _context2.next = 3;
               return this.yearn.services.subgraph.performQuery(query);
 
             case 3:
               response = _context2.sent;
-              console.log(response);
               vault = response.vault;
               earnings = calculateEarningsForVault(vault);
-              console.log(earnings.toString());
-              _context2.next = 10;
+              _context2.next = 8;
               return this.tokensValueInUsdc(earnings, vault.token);
 
-            case 10:
+            case 8:
               earningsUsdc = _context2.sent;
               result = {
                 assetId: vaultAddress,
@@ -2924,7 +2921,7 @@ var EarningsReader = /*#__PURE__*/function (_Reader) {
               };
               return _context2.abrupt("return", result);
 
-            case 13:
+            case 11:
             case "end":
               return _context2.stop();
           }
