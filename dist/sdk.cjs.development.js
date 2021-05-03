@@ -2774,7 +2774,7 @@ var IconsService = /*#__PURE__*/function (_Service) {
   return IconsService;
 }(Service);
 
-var subgraphUrl = "https://api.thegraph.com/subgraphs/name/salazarguille/yearn-vaults-v2-subgraph-mainnet";
+var subgraphUrl = "https://api.thegraph.com/subgraphs/name/tomprsn/yearn-vaults-v2-subgraph-mainnet";
 var SubgraphService = /*#__PURE__*/function (_Service) {
   _inheritsLoose(SubgraphService, _Service);
 
@@ -2837,13 +2837,13 @@ var EarningsReader = /*#__PURE__*/function (_Reader) {
 
   _proto.protocolEarnings = /*#__PURE__*/function () {
     var _protocolEarnings = /*#__PURE__*/_asyncToGenerator( /*#__PURE__*/runtime_1.mark(function _callee() {
-      var query, response, result, _iterator, _step, vault, earnings, earningsUsdc;
+      var query, response, result, _iterator, _step, vault, returnsGenerated, earningsUsdc, oneHundredMillionUsd;
 
       return runtime_1.wrap(function _callee$(_context) {
         while (1) {
           switch (_context.prev = _context.next) {
             case 0:
-              query = "\n    {\n      vaults(where:{balanceTokens_gt:0}) {\n        id\n        balanceTokens\n        token {\n          symbol\n          id\n          decimals\n        }\n        latestUpdate {\n          pricePerShare\n        }\n        sharesSupply\n      }\n    }\n    ";
+              query = "\n    {\n      vaults {\n        token {\n          id\n          decimals\n        }\n        latestUpdate {\n          returnsGenerated\n        }\n      }\n    }\n    ";
               _context.next = 3;
               return this.yearn.services.subgraph.performQuery(query);
 
@@ -2854,31 +2854,41 @@ var EarningsReader = /*#__PURE__*/function (_Reader) {
 
             case 6:
               if ((_step = _iterator()).done) {
-                _context.next = 15;
+                _context.next = 18;
                 break;
               }
 
               vault = _step.value;
-              earnings = calculateEarningsForVault(vault);
-              _context.next = 11;
-              return this.tokensValueInUsdc(earnings, vault.token);
 
-            case 11:
-              earningsUsdc = _context.sent;
-
-              // TODO - some results are negative, and some are too large to be realistically possible. This is due to problems with the subgraph and should be fixed there
-              if (earningsUsdc.gt(bignumber$1.BigNumber.from(0)) && earningsUsdc.lt(bignumber$1.BigNumber.from(1000000000))) {
-                result.add(earningsUsdc);
+              if (!(vault.latestUpdate === null)) {
+                _context.next = 10;
+                break;
               }
 
+              return _context.abrupt("continue", 16);
+
+            case 10:
+              returnsGenerated = bignumber$1.BigNumber.from(vault.latestUpdate.returnsGenerated);
+              _context.next = 13;
+              return this.tokensValueInUsdc(returnsGenerated, vault.token);
+
             case 13:
+              earningsUsdc = _context.sent;
+              // TODO - some results are negative, and some are too large to be realistically possible. This is due to problems with the subgraph and should be fixed there
+              oneHundredMillionUsd = bignumber$1.BigNumber.from(100000000000000);
+
+              if (earningsUsdc.gt(bignumber$1.BigNumber.from(0)) && earningsUsdc.lt(oneHundredMillionUsd)) {
+                result = result.add(earningsUsdc);
+              }
+
+            case 16:
               _context.next = 6;
               break;
 
-            case 15:
+            case 18:
               return _context.abrupt("return", result.toString());
 
-            case 16:
+            case 19:
             case "end":
               return _context.stop();
           }
@@ -2895,27 +2905,27 @@ var EarningsReader = /*#__PURE__*/function (_Reader) {
 
   _proto.assetEarnings = /*#__PURE__*/function () {
     var _assetEarnings = /*#__PURE__*/_asyncToGenerator( /*#__PURE__*/runtime_1.mark(function _callee2(vaultAddress) {
-      var query, response, vault, earnings, earningsUsdc, result;
+      var query, response, vault, returnsGenerated, earningsUsdc, result;
       return runtime_1.wrap(function _callee2$(_context2) {
         while (1) {
           switch (_context2.prev = _context2.next) {
             case 0:
-              query = "\n    {\n      vault(id: \"" + vaultAddress.toLowerCase() + "\") {\n        id\n        balanceTokens\n        token {\n          symbol\n          id\n          decimals\n        }\n        latestUpdate {\n          pricePerShare\n        }\n        sharesSupply\n      }\n    }\n    ";
+              query = "\n    {\n      vault(id: \"" + vaultAddress.toLowerCase() + "\") {\n        token {\n          id\n          decimals\n        }\n        latestUpdate {\n          returnsGenerated\n        }\n      }\n    }\n    ";
               _context2.next = 3;
               return this.yearn.services.subgraph.performQuery(query);
 
             case 3:
               response = _context2.sent;
               vault = response.vault;
-              earnings = calculateEarningsForVault(vault);
+              returnsGenerated = bignumber$1.BigNumber.from(vault.latestUpdate.returnsGenerated);
               _context2.next = 8;
-              return this.tokensValueInUsdc(earnings, vault.token);
+              return this.tokensValueInUsdc(returnsGenerated, vault.token);
 
             case 8:
               earningsUsdc = _context2.sent;
               result = {
                 assetId: vaultAddress,
-                amount: earnings.toString(),
+                amount: vault.latestUpdate.returnsGenerated,
                 amountUsdc: earningsUsdc.toString(),
                 tokenId: vault.token.id
               };
@@ -2936,172 +2946,29 @@ var EarningsReader = /*#__PURE__*/function (_Reader) {
     return assetEarnings;
   }();
 
-  _proto.accountEarnings = /*#__PURE__*/function () {
-    var _accountEarnings = /*#__PURE__*/_asyncToGenerator( /*#__PURE__*/runtime_1.mark(function _callee4(accountAddress) {
-      var _this = this;
-
-      var sumTokenAmountsFromInteractions, calculateEarningsForVaultPosition, query, response, account, vaultPositions, earnings, totalEarningsUsdc, _iterator2, _step2, vaultPosition, vaultUserEarnings, result;
-
-      return runtime_1.wrap(function _callee4$(_context4) {
-        while (1) {
-          switch (_context4.prev = _context4.next) {
-            case 0:
-              sumTokenAmountsFromInteractions = function _sumTokenAmountsFromI(interactions, vaultAddress) {
-                return interactions.filter(function (deposit) {
-                  return deposit.vault.id == vaultAddress;
-                }).map(function (deposit) {
-                  return bignumber$1.BigNumber.from(deposit.tokenAmount);
-                }).reduce(function (total, amount) {
-                  return total.add(amount);
-                }, bignumber$1.BigNumber.from(0));
-              };
-
-              calculateEarningsForVaultPosition = /*#__PURE__*/function () {
-                var _ref = _asyncToGenerator( /*#__PURE__*/runtime_1.mark(function _callee3(vaultPosition) {
-                  var vaultAddress, depositsTotal, sharesReceivedTotal, sharesSentTotal, withdrawalsTotal, positiveValues, negativeValues, totalTokensEarned, totalEarnedUsdc, result;
-                  return runtime_1.wrap(function _callee3$(_context3) {
-                    while (1) {
-                      switch (_context3.prev = _context3.next) {
-                        case 0:
-                          vaultAddress = vaultPosition.vault.id;
-                          depositsTotal = sumTokenAmountsFromInteractions(account.deposits, vaultAddress);
-                          sharesReceivedTotal = sumTokenAmountsFromInteractions(account.sharesReceived, vaultAddress);
-                          sharesSentTotal = sumTokenAmountsFromInteractions(account.sharesSent, vaultAddress);
-                          withdrawalsTotal = sumTokenAmountsFromInteractions(account.withdrawals, vaultAddress);
-                          positiveValues = bignumber$1.BigNumber.from(vaultPosition.tokenAmount).add(withdrawalsTotal).add(sharesSentTotal);
-                          negativeValues = depositsTotal.add(sharesReceivedTotal);
-                          totalTokensEarned = bignumber$1.BigNumber.from(0);
-
-                          if (!positiveValues.gt(negativeValues)) {
-                            _context3.next = 12;
-                            break;
-                          }
-
-                          totalTokensEarned = positiveValues.sub(negativeValues);
-                          _context3.next = 13;
-                          break;
-
-                        case 12:
-                          throw new Error("subtraction overthrow error while calculating earnings for vault " + vaultPosition.vault.id + " with account address " + accountAddress + "}");
-
-                        case 13:
-                          _context3.next = 15;
-                          return _this.tokensValueInUsdc(totalTokensEarned, vaultPosition.token);
-
-                        case 15:
-                          totalEarnedUsdc = _context3.sent;
-                          result = {
-                            assetId: vaultPosition.vault.id,
-                            tokenId: vaultPosition.token.id,
-                            amount: totalTokensEarned.toString(),
-                            amountUsdc: totalEarnedUsdc.toString()
-                          };
-                          return _context3.abrupt("return", result);
-
-                        case 18:
-                        case "end":
-                          return _context3.stop();
-                      }
-                    }
-                  }, _callee3);
-                }));
-
-                return function calculateEarningsForVaultPosition(_x3) {
-                  return _ref.apply(this, arguments);
-                };
-              }();
-
-              query = "\n      {\n        account(id: \"" + accountAddress.toLowerCase() + "\") {\n        sharesSent {\n          tokenAmount\n          vault {\n            id\n          }\n        }\n        sharesReceived {\n          tokenAmount\n          vault {\n            id\n          }\n        }\n        deposits {\n          tokenAmount\n          vault {\n            id\n          }\n        }\n        withdrawals {\n          tokenAmount\n          vault {\n            id\n          }\n        }\n        vaultPositions {\n          balanceShares\n          token {\n            id\n            symbol\n            decimals\n          }\n          shareToken {\n            id\n            symbol\n            decimals\n          }\n          vault {\n            id\n            latestUpdate {\n                pricePerShare\n            }\n          }\n        }\n      }\n    }\n    ";
-              _context4.next = 5;
-              return this.yearn.services.subgraph.performQuery(query);
-
-            case 5:
-              response = _context4.sent;
-              account = response.account;
-              vaultPositions = account.vaultPositions.map(function (vaultPositionContainer) {
-                var shares = bignumber$1.BigNumber.from(vaultPositionContainer.balanceShares);
-                var pricePerShare = bignumber$1.BigNumber.from(vaultPositionContainer.vault.latestUpdate.pricePerShare);
-                var decimals = bignumber$1.BigNumber.from(vaultPositionContainer.token.decimals);
-                var tokenAmount = shares.mul(pricePerShare).div(bignumber$1.BigNumber.from(10).pow(decimals));
-                var result = {
-                  balanceShares: vaultPositionContainer.balanceShares,
-                  token: vaultPositionContainer.token,
-                  shareToken: vaultPositionContainer.shareToken,
-                  vault: vaultPositionContainer.vault,
-                  tokenAmount: tokenAmount.toString()
-                };
-                return result;
-              });
-              earnings = [];
-              totalEarningsUsdc = bignumber$1.BigNumber.from(0);
-              _iterator2 = _createForOfIteratorHelperLoose(vaultPositions);
-
-            case 11:
-              if ((_step2 = _iterator2()).done) {
-                _context4.next = 20;
-                break;
-              }
-
-              vaultPosition = _step2.value;
-              _context4.next = 15;
-              return calculateEarningsForVaultPosition(vaultPosition);
-
-            case 15:
-              vaultUserEarnings = _context4.sent;
-              earnings.push(vaultUserEarnings);
-              totalEarningsUsdc = totalEarningsUsdc.add(bignumber$1.BigNumber.from(vaultUserEarnings.amountUsdc));
-
-            case 18:
-              _context4.next = 11;
-              break;
-
-            case 20:
-              result = {
-                earnings: earnings,
-                accountId: accountAddress,
-                totalEarnedUsdc: totalEarningsUsdc.toString()
-              };
-              console.log(result);
-              return _context4.abrupt("return", result);
-
-            case 23:
-            case "end":
-              return _context4.stop();
-          }
-        }
-      }, _callee4, this);
-    }));
-
-    function accountEarnings(_x2) {
-      return _accountEarnings.apply(this, arguments);
-    }
-
-    return accountEarnings;
-  }();
-
   _proto.tokensValueInUsdc = /*#__PURE__*/function () {
-    var _tokensValueInUsdc = /*#__PURE__*/_asyncToGenerator( /*#__PURE__*/runtime_1.mark(function _callee5(tokenAmount, token) {
+    var _tokensValueInUsdc = /*#__PURE__*/_asyncToGenerator( /*#__PURE__*/runtime_1.mark(function _callee3(tokenAmount, token) {
       var tokenUsdcPrice;
-      return runtime_1.wrap(function _callee5$(_context5) {
+      return runtime_1.wrap(function _callee3$(_context3) {
         while (1) {
-          switch (_context5.prev = _context5.next) {
+          switch (_context3.prev = _context3.next) {
             case 0:
-              _context5.next = 2;
+              _context3.next = 2;
               return this.yearn.services.oracle.getPriceUsdc(token.id);
 
             case 2:
-              tokenUsdcPrice = _context5.sent;
-              return _context5.abrupt("return", bignumber$1.BigNumber.from(tokenUsdcPrice).mul(tokenAmount).div(bignumber$1.BigNumber.from(10).pow(bignumber$1.BigNumber.from(token.decimals))));
+              tokenUsdcPrice = _context3.sent;
+              return _context3.abrupt("return", bignumber$1.BigNumber.from(tokenUsdcPrice).mul(tokenAmount).div(bignumber$1.BigNumber.from(10).pow(bignumber$1.BigNumber.from(token.decimals))));
 
             case 4:
             case "end":
-              return _context5.stop();
+              return _context3.stop();
           }
         }
-      }, _callee5, this);
+      }, _callee3, this);
     }));
 
-    function tokensValueInUsdc(_x4, _x5) {
+    function tokensValueInUsdc(_x2, _x3) {
       return _tokensValueInUsdc.apply(this, arguments);
     }
 
@@ -3110,13 +2977,6 @@ var EarningsReader = /*#__PURE__*/function (_Reader) {
 
   return EarningsReader;
 }(Reader);
-
-function calculateEarningsForVault(vault) {
-  var pricePerShare = bignumber$1.BigNumber.from(vault.latestUpdate.pricePerShare);
-  var totalTokens = pricePerShare.mul(bignumber$1.BigNumber.from(vault.sharesSupply));
-  var earnedTokens = totalTokens.sub(bignumber$1.BigNumber.from(vault.balanceTokens)).div(bignumber$1.BigNumber.from(10).pow(bignumber$1.BigNumber.from(vault.token.decimals)));
-  return earnedTokens;
-}
 
 var Yearn = function Yearn(chainId, context, cache) {
   var ctx = new Context(context, cache);
