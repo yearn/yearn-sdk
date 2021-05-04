@@ -10,3 +10,7 @@ export type VaultV2Dynamic = AssetDynamic<"VAULT_V2">;
 export type Vault = VaultV1 | VaultV2;
 export type VaultStatic = VaultV1Static | VaultV2Static;
 export type VaultDynamic = VaultV1Dynamic | VaultV2Dynamic;
+
+export type IronBankMarket = Asset<"IRON_BANK_MARKET">;
+export type IronBankMarketStatic = AssetStatic<"IRON_BANK_MARKET">;
+export type IronBankMarketDynamic = AssetDynamic<"IRON_BANK_MARKET">;

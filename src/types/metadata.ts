@@ -1,24 +1,35 @@
 import { Address, Integer } from "../common";
 
-export interface VaultV2Metadata {
+export interface VaultMetadata {
   symbol: string;
   pricePerShare: Integer;
   migrationAvailable: boolean;
   latestVaultAddress: Address;
   depositLimit: Integer;
   emergencyShutdown: boolean;
-}
 
-export interface VaultV1Metadata {
   controller: Address;
   totalAssets: Integer;
   totalSupply: Integer;
-  pricePerShare: Integer;
+}
+
+export interface IronBankMarketMetadata {
+  totalSuppliedUsdc: Integer;
+  totalBorrowedUsdc: Integer;
+  lendApyBips: Integer;
+  borrowApyBips: Integer;
+  liquidity: Integer;
+  liquidityUsdc: Integer;
+  collateralFactor: Integer;
+  isActive: boolean;
+  reserveFactor: Integer;
+  exchangeRate: Integer;
 }
 
 export type Metadata = {
-  VAULT_V2: VaultV2Metadata;
-  VAULT_V1: VaultV1Metadata;
+  VAULT_V2: VaultMetadata;
+  VAULT_V1: VaultMetadata;
+  IRON_BANK_MARKET: IronBankMarketMetadata;
 };
 
 export type TypeId = keyof Metadata;
