@@ -36,23 +36,17 @@ export class OracleService<T extends ChainId> extends ContractService {
   static abi = OracleAbi;
 
   constructor(chainId: T, ctx: Context) {
-    super(
-      ctx.address("oracle") ?? OracleService.addressByChain(chainId),
-      chainId,
-      ctx
-    );
+    super(ctx.address("oracle") ?? OracleService.addressByChain(chainId), chainId, ctx);
   }
 
   static addressByChain(chainId: ChainId): string {
     switch (chainId) {
       case 1:
+      case 1337:
         return "0xd3ca98D986Be88b72Ff95fc2eC976a5E6339150d";
       case 250:
         return "0xae813841436fe29b95a14AC701AFb1502C4CB789";
     }
-    throw new TypeError(
-      `Oracle does not have an address for chainId ${chainId}`
-    );
   }
 
   async getCalculations(): Promise<Address[]> {

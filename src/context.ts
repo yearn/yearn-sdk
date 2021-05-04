@@ -7,6 +7,7 @@ export interface AddressesOverride {
   lens?: Address;
   oracle?: Address;
   registryV2Adapter?: Address;
+  ironBankAdapter?: Address;
 }
 
 export interface ContextValue {
@@ -22,7 +23,8 @@ export class Context implements Required<ContextValue> {
 
   constructor(ctx: ContextValue, cache?: Cache) {
     this.ctx = Object.assign({}, ctx, {
-      // https://docs.zapper.fi/build/zapper-api#authentication
+      // Public API key provided by zapper.
+      // see https://docs.zapper.fi/zapper-api/endpoints
       zapper: "96e0cc51-a62e-42ca-acee-910ea7d2a241"
     });
     this.cache = new CacheManager(cache);
@@ -30,23 +32,17 @@ export class Context implements Required<ContextValue> {
 
   get provider(): Provider {
     if (this.ctx.provider) return this.ctx.provider;
-    throw new SdkError(
-      "provider must not be undefined in Context for this feature to work."
-    );
+    throw new SdkError("provider must not be undefined in Context for this feature to work.");
   }
 
   get zapper(): string {
     if (this.ctx.zapper) return this.ctx.zapper;
-    throw new SdkError(
-      "zapper must not be undefined in Context for this feature to work."
-    );
+    throw new SdkError("zapper must not be undefined in Context for this feature to work.");
   }
 
   get etherscan(): string {
     if (this.ctx.etherscan) return this.ctx.etherscan;
-    throw new SdkError(
-      "etherscan must not be undefined in Context for this feature to work."
-    );
+    throw new SdkError("etherscan must not be undefined in Context for this feature to work.");
   }
 
   get addresses(): AddressesOverride {

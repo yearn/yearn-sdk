@@ -58,7 +58,6 @@ export interface AssetDynamic<T extends TypeId> {
   metadata: Metadata[T];
 }
 
-export type Asset<T extends TypeId> = AssetStatic<T> &
-  AssetDynamic<T> & { typeId: T };
+export type Asset<T extends TypeId> = AssetStatic<T> & AssetDynamic<T> & { typeId: T };
 
 export type GenericAsset = Asset<"VAULT_V1"> | Asset<"VAULT_V2">;

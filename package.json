@@ -17,8 +17,7 @@
     "lint": "tsdx lint src test",
     "docs": "typedoc --out docs src/index.ts",
     "size": "size-limit",
-    "analyze": "size-limit --why",
-    "release": "release-it"
+    "analyze": "size-limit --why"
   },
   "peerDependencies": {
     "@ethersproject/address": "^5.1.0",
@@ -59,7 +58,8 @@
     }
   ],
   "prettier": {
-    "endOfLine": "auto"
+    "endOfLine": "auto",
+    "printWidth": 120
   },
   "keywords": [
     "yearn",
