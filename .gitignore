@@ -10,5 +10,4 @@ docs/
 ignore/
 node_modules/
 
-# FIXME: remove
-# dist/
+dist/
