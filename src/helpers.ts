@@ -7,9 +7,8 @@ export const EthAddress = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";
 
 export async function handleHttpError(response: Response): Promise<Response> {
   if (response.status !== 200) {
-    throw new SdkError(
-      `HTTP to ${response.url} request failed (status ${response.status} ${response.statusText})`
-    );
+    const { url, status, statusText } = response;
+    throw new SdkError(`HTTP to ${url} request failed (status ${status} ${statusText})`);
   }
   return response;
 }

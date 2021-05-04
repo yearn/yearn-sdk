@@ -4,10 +4,8 @@ import { Context } from "../context";
 import { handleHttpError } from "../helpers";
 import { Icon, IconMap } from "../types";
 
-const YearnAssets =
-  "https://api.github.com/repos/yearn/yearn-assets/contents/icons/tokens";
-const TrustAssets =
-  "https://raw.githack.com/trustwallet/assets/master/blockchains/ethereum/tokenlist.json";
+const YearnAssets = "https://api.github.com/repos/yearn/yearn-assets/contents/icons/tokens";
+const TrustAssets = "https://raw.githack.com/trustwallet/assets/master/blockchains/ethereum/tokenlist.json";
 
 const YearnAsset = (address: Address) =>
   `https://raw.githack.com/yearn/yearn-assets/master/icons/tokens/${address}/logo-128.png`;
@@ -54,8 +52,6 @@ export class IconsService extends Service {
     if (!Array.isArray(address)) {
       return this.supported.get(address);
     }
-    return Object.fromEntries(
-      address.map(address => [address, this.supported.get(address)])
-    ) as IconMap<T>;
+    return Object.fromEntries(address.map(address => [address, this.supported.get(address)])) as IconMap<T>;
   }
 }

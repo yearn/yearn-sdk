@@ -5,21 +5,8 @@ import { structArray } from "../struct";
 import { Context } from "../context";
 import { IRegistryAdapter, RegistryV2Adapter } from "./adapters/registry";
 
-export const LensAbi = [
-  "function getRegistries() external view returns (address[] memory)",
-  "function getAssets() external view returns (" +
-    "tuple(string name, address address, string version)[] memory" +
-    ")",
-  "function getAssetsFromAdapter(address) external view returns (" +
-    "tuple(string name, address address, string version)[] memory" +
-    ")",
-  "function getPositionsOf(address) external view returns (" +
-    "tuple(address asset, uint256 depositedBalance, uint256 tokenBalance, uint256 tokenAllowance)[] memory" +
-    ")",
-  "function getPositionsOf(address, address) external view returns (" +
-    "tuple(address asset, uint256 depositedBalance, uint256 tokenBalance, uint256 tokenAllowance)[] memory" +
-    ")"
-];
+// FIXME: no
+export const LensAbi = ["function getRegistries() external view returns (address[] memory)"];
 
 export type Adapters<T extends ChainId> = T extends EthMain | EthLocal
   ? {
@@ -43,11 +30,7 @@ export class LensService<T extends ChainId> extends ContractService {
   static abi = LensAbi;
 
   constructor(chainId: T, ctx: Context) {
-    super(
-      ctx.address("lens") ?? LensService.addressByChain(chainId),
-      chainId,
-      ctx
-    );
+    super(ctx.address("lens") ?? LensService.addressByChain(chainId), chainId, ctx);
   }
 
   get adapters(): Adapters<T> {
@@ -67,10 +50,10 @@ export class LensService<T extends ChainId> extends ContractService {
   static addressByChain(chainId: ChainId): string {
     switch (chainId) {
       case 1: // FIXME: doesn't actually exist
-      case 250:
+      case 250: // ditto
+      case 1337: // ditto
         return "0xFa58130BE296EDFA23C42a1d15549fA91449F979";
     }
-    throw new TypeError(`Lens does not have an address for chainId ${chainId}`);
   }
 
   async getRegistries(): Promise<string[]> {

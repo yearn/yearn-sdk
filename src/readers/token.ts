@@ -14,9 +14,7 @@ export class TokenReader<C extends ChainId> extends Reader<C> {
   async balances<T extends Address>(address: T): Promise<Balance[]>;
   async balances<T extends Address>(addresses: T[]): Promise<BalancesMap<T>>;
 
-  async balances<T extends Address>(
-    addresses: T[] | T
-  ): Promise<BalancesMap<T> | Balance[]> {
+  async balances<T extends Address>(addresses: T[] | T): Promise<BalancesMap<T> | Balance[]> {
     return this.yearn.services.zapper.balances<T>(addresses);
   }
 
@@ -31,9 +29,7 @@ export class TokenReader<C extends ChainId> extends Reader<C> {
     const vaults = await Promise.all(
       adapters.map(async adapter => {
         const tokens = await adapter.tokens();
-        const icons = this.yearn.services.icons.get(
-          tokens.map(({ address }) => address)
-        );
+        const icons = this.yearn.services.icons.get(tokens.map(({ address }) => address));
         return Promise.all(
           tokens.map(async token => ({
             ...token,

@@ -45,6 +45,8 @@ const source = fs.readFileSync(file, "utf-8");
 try {
   const ast = parser.parse(source, { loc: true });
   visit(ast, {
+    // StructDefinition: node => {
+    // },
     FunctionDefinition: node => {
       if (!node.body) return;
       if (node.isConstructor) return;

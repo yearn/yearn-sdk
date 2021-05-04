@@ -44,27 +44,17 @@ export class EarningsReader<C extends ChainId> extends Reader<C> {
     }
     `;
 
-    const response: VaultsContainer = await this.yearn.services.subgraph.performQuery(
-      query
-    );
+    const response: VaultsContainer = await this.yearn.services.subgraph.performQuery(query);
     var result = BigNumber.from(0);
     for (const vault of response.vaults) {
       if (vault.latestUpdate === null) {
         continue;
       }
-      const returnsGenerated = BigNumber.from(
-        vault.latestUpdate.returnsGenerated
-      );
-      const earningsUsdc = await this.tokensValueInUsdc(
-        returnsGenerated,
-        vault.token
-      );
+      const returnsGenerated = BigNumber.from(vault.latestUpdate.returnsGenerated);
+      const earningsUsdc = await this.tokensValueInUsdc(returnsGenerated, vault.token);
       // TODO - some results are negative, and some are too large to be realistically possible. This is due to problems with the subgraph and should be fixed there
       const oneHundredMillionUsd = BigNumber.from(100000000000000);
-      if (
-        earningsUsdc.gt(BigNumber.from(0)) &&
-        earningsUsdc.lt(oneHundredMillionUsd)
-      ) {
+      if (earningsUsdc.gt(BigNumber.from(0)) && earningsUsdc.lt(oneHundredMillionUsd)) {
         result = result.add(earningsUsdc);
       }
     }
@@ -90,17 +80,10 @@ export class EarningsReader<C extends ChainId> extends Reader<C> {
       }
     }
     `;
-    const response: VaultDataContainer = await this.yearn.services.subgraph.performQuery(
-      query
-    );
+    const response: VaultDataContainer = await this.yearn.services.subgraph.performQuery(query);
     const vault = response.vault;
-    const returnsGenerated = BigNumber.from(
-      vault.latestUpdate.returnsGenerated
-    );
-    const earningsUsdc = await this.tokensValueInUsdc(
-      returnsGenerated,
-      vault.token
-    );
+    const returnsGenerated = BigNumber.from(vault.latestUpdate.returnsGenerated);
+    const earningsUsdc = await this.tokensValueInUsdc(returnsGenerated, vault.token);
     const result: AssetEarnings = {
       assetId: vaultAddress,
       amount: vault.latestUpdate.returnsGenerated,
@@ -110,13 +93,8 @@ export class EarningsReader<C extends ChainId> extends Reader<C> {
     return result;
   }
 
-  private async tokensValueInUsdc(
-    tokenAmount: BigNumber,
-    token: Token
-  ): Promise<BigNumber> {
-    const tokenUsdcPrice = await this.yearn.services.oracle.getPriceUsdc(
-      token.id
-    );
+  private async tokensValueInUsdc(tokenAmount: BigNumber, token: Token): Promise<BigNumber> {
+    const tokenUsdcPrice = await this.yearn.services.oracle.getPriceUsdc(token.id);
     return BigNumber.from(tokenUsdcPrice)
       .mul(tokenAmount)
       .div(BigNumber.from(10).pow(BigNumber.from(token.decimals)));

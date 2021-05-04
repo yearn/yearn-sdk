@@ -11,13 +11,9 @@ export class VaultReader<T extends ChainId> extends Reader<T> {
         const assetsDynamic = await adapter.assetsDynamic(addresses);
         const assets = new Array<Vault>();
         for (const asset of assetsStatic) {
-          const dynamic = assetsDynamic.find(
-            ({ address }) => asset.address === address
-          );
+          const dynamic = assetsDynamic.find(({ address }) => asset.address === address);
           if (!dynamic) {
-            throw new SdkError(
-              `Dynamic asset does not exist for ${asset.address}`
-            );
+            throw new SdkError(`Dynamic asset does not exist for ${asset.address}`);
           }
           assets.push({ ...asset, ...dynamic });
         }
@@ -26,10 +22,7 @@ export class VaultReader<T extends ChainId> extends Reader<T> {
     ).then(arr => arr.flat());
   }
 
-  async positionsOf(
-    address: Address,
-    addresses?: Address[]
-  ): Promise<Position[]> {
+  async positionsOf(address: Address, addresses?: Address[]): Promise<Position[]> {
     const adapters = Object.values(this.yearn.services.lens.adapters.vaults);
     return await Promise.all(
       adapters.map(adapter => {
