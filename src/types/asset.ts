@@ -1,16 +1,6 @@
 import { Address, Integer, Usdc } from "../common";
 import { Metadata, TypeId } from "./metadata";
 
-export interface Position {
-  assetId: Address;
-  tokenId: Address;
-  typeId: string;
-  balance: Integer;
-  underlyingTokenBalance: TokenAmount;
-  assetAllowances: Allowance[];
-  tokenAllowances: Allowance[];
-}
-
 export interface Allowance {
   owner: Address;
   spender: Address;
@@ -35,6 +25,16 @@ export interface Token extends ERC20 {
   supported: {
     zapper?: boolean;
   };
+}
+
+export interface Position {
+  assetId: Address;
+  tokenId: Address;
+  typeId: string;
+  balance: Integer;
+  underlyingTokenBalance: TokenAmount;
+  assetAllowances: Allowance[];
+  tokenAllowances: Allowance[];
 }
 
 export type Icon = string | undefined;
