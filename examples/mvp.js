@@ -2,22 +2,10 @@ const { JsonRpcProvider } = require("@ethersproject/providers");
 
 const { Yearn } = require("../dist");
 
-const provider = new JsonRpcProvider("http://localhost:8545");
+const url = process.env.WEB3_PROVIDER || "http://localhost:8545";
+const provider = new JsonRpcProvider(url);
 
-const map = new Map();
-
-const yearn = new Yearn(
-  1337,
-  {
-    provider,
-    addresses: {
-      lens: "0xE7eD6747FaC5360f88a2EFC03E00d25789F69291", // not actually here
-      oracle: "0xd3ca98d986be88b72ff95fc2ec976a5e6339150d",
-      registryV2Adapter: "0xE7eD6747FaC5360f88a2EFC03E00d25789F69291"
-    }
-  },
-  { get: (id) => map.get(id), set: (id, val) => map.set(id, val) }
-);
+const yearn = new Yearn(1, { provider });
 
 async function main() {
   // Get all vaults in the current network
@@ -35,13 +23,13 @@ async function main() {
   // ONLY ETH
 
   // Get all tokens supported by zapper
-  const usdcVault = vaults[0].id;
+  const usdcVault = vaults[0].address;
   const apy = await yearn.vaults.apy(usdcVault);
   console.log(apy);
 
   // Get all tokens supported by zapper
   const supported = await yearn.tokens.supported();
-  console.log(JSON.stringify(supported));
+  console.log(supported);
 
   // Get gas prices by zapper
   const gas = await yearn.services.zapper.gas();

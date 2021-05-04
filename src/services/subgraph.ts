@@ -1,7 +1,7 @@
 import { Service } from "../common";
 
 interface DataContainer {
-  data: any
+  data: any;
 }
 
 // TODO - revert to salazarguille/yearn-vaults-v2-subgraph-mainnet once https://github.com/yearn/yearn-vaults-v2-subgraph/pull/61 has been merged
@@ -15,7 +15,7 @@ export class SubgraphService extends Service {
       body: JSON.stringify({ query })
     });
 
-    const result: DataContainer = await response.json()
-    return result.data
+    const result: DataContainer = await response.json();
+    return result.data;
   }
 }
