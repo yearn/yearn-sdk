@@ -8,7 +8,6 @@ import { LensService } from "./services/lens";
 import { OracleService } from "./services/oracle";
 import { ZapperService } from "./services/zapper";
 import { IconsService } from "./services/icons";
-import { SubgraphService } from "./services/subgraph";
 import { EarningsReader } from "./readers/earnings";
 
 export class Yearn<T extends ChainId> {
@@ -18,7 +17,6 @@ export class Yearn<T extends ChainId> {
     zapper: ZapperService;
     icons: IconsService;
     apy: ApyService;
-    subgraph: SubgraphService;
   };
 
   vaults: VaultReader<T>;
@@ -35,7 +33,6 @@ export class Yearn<T extends ChainId> {
       zapper: new ZapperService(chainId, ctx),
       icons: new IconsService(chainId, ctx),
       apy: new ApyService(chainId, ctx),
-      subgraph: new SubgraphService(chainId, ctx)
     };
 
     this.vaults = new VaultReader(this, chainId, ctx);

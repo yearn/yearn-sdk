@@ -28,7 +28,7 @@ export class EarningsReader<C extends ChainId> extends Reader<C> {
       }
       const returnsGenerated = BigNumber.from(vault.latestUpdate.returnsGenerated);
       const earningsUsdc = await this.tokensValueInUsdc(returnsGenerated, vault.token.id, vault.token.decimals);
-      // TODO - some results are negative, and some are too large to be realistically possible. This is due to problems with the subgraph and should be fixed there
+      // TODO - some results are negative, and some are too large to be realistically possible. This is due to problems with the subgraph and should be fixed there - https://github.com/yearn/yearn-vaults-v2-subgraph/issues/60
       const oneHundredMillionUsd = BigNumber.from(100000000000000);
       if (earningsUsdc.gt(BigNumber.from(0)) && earningsUsdc.lt(oneHundredMillionUsd)) {
         result = result.add(earningsUsdc);
