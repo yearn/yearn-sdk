@@ -1,5 +1,4 @@
 import { BigNumber } from "@ethersproject/bignumber";
-import { client } from "../apollo/client";
 import { ProtocolEarnings } from "../apollo/generated/ProtocolEarnings";
 import { VaultEarnings, VaultEarningsVariables } from "../apollo/generated/VaultEarnings";
 import { PROTOCOL_EARNINGS, VAULT_EARNINGS } from "../apollo/queries";
@@ -17,7 +16,7 @@ export interface Earnings extends TokenAmount {
 
 export class EarningsReader<C extends ChainId> extends Reader<C> {
   async protocolEarnings(): Promise<Usdc> {
-    const response = await client.query<ProtocolEarnings>({
+    const response = await this.yearn.services.subgraph.client.query<ProtocolEarnings>({
       query: PROTOCOL_EARNINGS
     });
 
@@ -39,7 +38,7 @@ export class EarningsReader<C extends ChainId> extends Reader<C> {
   }
 
   async assetEarnings(vaultAddress: Address): Promise<AssetEarnings> {
-    const response = await client.query<VaultEarnings, VaultEarningsVariables>({
+    const response = await this.yearn.services.subgraph.client.query<VaultEarnings, VaultEarningsVariables>({
       query: VAULT_EARNINGS,
       variables: {
         vault: vaultAddress
