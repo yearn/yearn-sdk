@@ -30,7 +30,7 @@ jobs:
         run: yarn lint
 
       - name: Build
-        run: yarn build
+        run: yarn apollo-codegen && yarn build
 
       - name: Test
         run: yarn test --ci --coverage --maxWorkers=2
