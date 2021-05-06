@@ -6,6 +6,8 @@ import { ChainId } from "../chain";
 import { Address, Reader, Usdc } from "../common";
 import { TokenAmount } from "../types";
 
+const ONE_HUNDRED_MILLION_USD = BigNumber.from(100000000000000);
+
 export interface AssetEarnings extends Earnings {
   assetId: Address;
 }
@@ -28,8 +30,7 @@ export class EarningsReader<C extends ChainId> extends Reader<C> {
       const returnsGenerated = BigNumber.from(vault.latestUpdate.returnsGenerated);
       const earningsUsdc = await this.tokensValueInUsdc(returnsGenerated, vault.token.id, vault.token.decimals);
       // TODO - some results are negative, and some are too large to be realistically possible. This is due to problems with the subgraph and should be fixed there - https://github.com/yearn/yearn-vaults-v2-subgraph/issues/60
-      const oneHundredMillionUsd = BigNumber.from(100000000000000);
-      if (earningsUsdc.gt(BigNumber.from(0)) && earningsUsdc.lt(oneHundredMillionUsd)) {
+      if (earningsUsdc.gt(BigNumber.from(0)) && earningsUsdc.lt(ONE_HUNDRED_MILLION_USD)) {
         result = result.add(earningsUsdc);
       }
     }
@@ -47,7 +48,7 @@ export class EarningsReader<C extends ChainId> extends Reader<C> {
 
     const vault = response.data.vault;
 
-    if (vault == undefined) {
+    if (!vault) {
       throw Error(`failed to find vault with address ${vaultAddress}`);
     }
 

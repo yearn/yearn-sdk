@@ -12,7 +12,7 @@
   ],
   "scripts": {
     "start": "tsdx watch",
-    "build": "yarn apollo-codegen && tsdx build",
+    "build": "tsdx build",
     "test": "tsdx test",
     "lint": "tsdx lint src test",
     "docs": "typedoc --out docs src/index.ts",
@@ -57,11 +57,11 @@
   "size-limit": [
     {
       "path": "dist/sdk.cjs.production.min.js",
-      "limit": "25 KB"
+      "limit": "80 KB"
     },
     {
       "path": "dist/sdk.esm.js",
-      "limit": "25 KB"
+      "limit": "80 KB"
     }
   ],
   "prettier": {
