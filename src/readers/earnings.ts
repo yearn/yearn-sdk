@@ -1,21 +1,12 @@
 import { BigNumber } from "@ethersproject/bignumber";
+import { ProtocolEarnings } from "../apollo/generated/ProtocolEarnings";
+import { VaultEarnings, VaultEarningsVariables } from "../apollo/generated/VaultEarnings";
+import { PROTOCOL_EARNINGS, VAULT_EARNINGS } from "../apollo/queries";
 import { ChainId } from "../chain";
-import { Address, Integer, Reader, Usdc } from "../common";
+import { Address, Reader, Usdc } from "../common";
 import { TokenAmount } from "../types";
 
-interface Vault {
-  token: Token;
-  latestUpdate: LatestUpdate;
-}
-
-interface Token {
-  id: Address;
-  decimals: Integer;
-}
-
-interface LatestUpdate {
-  returnsGenerated: Integer;
-}
+const ONE_HUNDRED_MILLION_USD = BigNumber.from(100000000000000);
 
 export interface AssetEarnings extends Earnings {
   assetId: Address;
@@ -27,34 +18,19 @@ export interface Earnings extends TokenAmount {
 
 export class EarningsReader<C extends ChainId> extends Reader<C> {
   async protocolEarnings(): Promise<Usdc> {
-    interface VaultsContainer {
-      vaults: Vault[];
-    }
-    const query = `
-    {
-      vaults {
-        token {
-          id
-          decimals
-        }
-        latestUpdate {
-          returnsGenerated
-        }
-      }
-    }
-    `;
+    const response = await this.yearn.services.subgraph.client.query<ProtocolEarnings>({
+      query: PROTOCOL_EARNINGS
+    });
 
-    const response: VaultsContainer = await this.yearn.services.subgraph.performQuery(query);
     var result = BigNumber.from(0);
-    for (const vault of response.vaults) {
+    for (const vault of response.data.vaults) {
       if (vault.latestUpdate === null) {
         continue;
       }
       const returnsGenerated = BigNumber.from(vault.latestUpdate.returnsGenerated);
-      const earningsUsdc = await this.tokensValueInUsdc(returnsGenerated, vault.token);
-      // TODO - some results are negative, and some are too large to be realistically possible. This is due to problems with the subgraph and should be fixed there
-      const oneHundredMillionUsd = BigNumber.from(100000000000000);
-      if (earningsUsdc.gt(BigNumber.from(0)) && earningsUsdc.lt(oneHundredMillionUsd)) {
+      const earningsUsdc = await this.tokensValueInUsdc(returnsGenerated, vault.token.id, vault.token.decimals);
+      // TODO - some results are negative, and some are too large to be realistically possible. This is due to problems with the subgraph and should be fixed there - https://github.com/yearn/yearn-vaults-v2-subgraph/issues/60
+      if (earningsUsdc.gt(BigNumber.from(0)) && earningsUsdc.lt(ONE_HUNDRED_MILLION_USD)) {
         result = result.add(earningsUsdc);
       }
     }
@@ -63,40 +39,34 @@ export class EarningsReader<C extends ChainId> extends Reader<C> {
   }
 
   async assetEarnings(vaultAddress: Address): Promise<AssetEarnings> {
-    interface VaultDataContainer {
-      vault: Vault;
+    const response = await this.yearn.services.subgraph.client.query<VaultEarnings, VaultEarningsVariables>({
+      query: VAULT_EARNINGS,
+      variables: {
+        vault: vaultAddress
+      }
+    });
+
+    const vault = response.data.vault;
+
+    if (!vault) {
+      throw Error(`failed to find vault with address ${vaultAddress}`);
     }
 
-    const query = `
-    {
-      vault(id: "${vaultAddress.toLowerCase()}") {
-        token {
-          id
-          decimals
-        }
-        latestUpdate {
-          returnsGenerated
-        }
-      }
-    }
-    `;
-    const response: VaultDataContainer = await this.yearn.services.subgraph.performQuery(query);
-    const vault = response.vault;
-    const returnsGenerated = BigNumber.from(vault.latestUpdate.returnsGenerated);
-    const earningsUsdc = await this.tokensValueInUsdc(returnsGenerated, vault.token);
+    const returnsGenerated = BigNumber.from(vault.latestUpdate?.returnsGenerated);
+    const earningsUsdc = await this.tokensValueInUsdc(returnsGenerated, vault.token.id, vault.token.decimals);
     const result: AssetEarnings = {
       assetId: vaultAddress,
-      amount: vault.latestUpdate.returnsGenerated,
+      amount: vault.latestUpdate?.returnsGenerated || "",
       amountUsdc: earningsUsdc.toString(),
       tokenId: vault.token.id
     };
     return result;
   }
 
-  private async tokensValueInUsdc(tokenAmount: BigNumber, token: Token): Promise<BigNumber> {
-    const tokenUsdcPrice = await this.yearn.services.oracle.getPriceUsdc(token.id);
+  private async tokensValueInUsdc(tokenAmount: BigNumber, tokenAddress: Address, decimals: number): Promise<BigNumber> {
+    const tokenUsdcPrice = await this.yearn.services.oracle.getPriceUsdc(tokenAddress);
     return BigNumber.from(tokenUsdcPrice)
       .mul(tokenAmount)
-      .div(BigNumber.from(10).pow(BigNumber.from(token.decimals)));
+      .div(BigNumber.from(10).pow(BigNumber.from(decimals)));
   }
 }
