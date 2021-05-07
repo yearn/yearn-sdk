@@ -22,7 +22,9 @@ jobs:
         uses: bahmutov/npm-install@v1
 
       - name: Build package
-        run: yarn build
+        run: |
+          yarn codegen
+          yarn build
 
       - name: Build docs
         run: yarn docs

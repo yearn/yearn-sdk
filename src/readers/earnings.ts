@@ -1,12 +1,14 @@
 import { BigNumber } from "@ethersproject/bignumber";
-import { ProtocolEarnings } from "../apollo/generated/ProtocolEarnings";
-import { VaultEarnings, VaultEarningsVariables } from "../apollo/generated/VaultEarnings";
-import { PROTOCOL_EARNINGS, VAULT_EARNINGS } from "../apollo/queries";
+
+import { ProtocolEarnings } from "../services/subgraph/apollo/generated/ProtocolEarnings";
+import { VaultEarnings, VaultEarningsVariables } from "../services/subgraph/apollo/generated/VaultEarnings";
+import { PROTOCOL_EARNINGS, VAULT_EARNINGS } from "../services/subgraph/apollo/queries";
+
 import { ChainId } from "../chain";
 import { Address, Reader, Usdc } from "../common";
 import { TokenAmount } from "../types";
 
-const ONE_HUNDRED_MILLION_USD = BigNumber.from(100000000000000);
+const OneHundredMillionUsdc = BigNumber.from(1e14); // 1e8 (100M) * 1e6 (Usdc decimals)
 
 export interface AssetEarnings extends Earnings {
   assetId: Address;
@@ -29,8 +31,10 @@ export class EarningsReader<C extends ChainId> extends Reader<C> {
       }
       const returnsGenerated = BigNumber.from(vault.latestUpdate.returnsGenerated);
       const earningsUsdc = await this.tokensValueInUsdc(returnsGenerated, vault.token.id, vault.token.decimals);
-      // TODO - some results are negative, and some are too large to be realistically possible. This is due to problems with the subgraph and should be fixed there - https://github.com/yearn/yearn-vaults-v2-subgraph/issues/60
-      if (earningsUsdc.gt(BigNumber.from(0)) && earningsUsdc.lt(ONE_HUNDRED_MILLION_USD)) {
+      // FIXME: some results are negative, and some are too large to be realistically possible.
+      // This is due to problems with the subgraph and should be fixed there:
+      // https://github.com/yearn/yearn-vaults-v2-subgraph/issues/60
+      if (earningsUsdc.gt(BigNumber.from(0)) && earningsUsdc.lt(OneHundredMillionUsdc)) {
         result = result.add(earningsUsdc);
       }
     }
