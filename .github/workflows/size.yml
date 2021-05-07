@@ -8,6 +8,6 @@ jobs:
     steps:
       - uses: actions/checkout@v1
       - uses: andresz1/size-limit-action@v1
-        build_script: yarn apollo-codegen && yarn build
         with:
+          build_script: yarn codegen && yarn build
           github_token: ${{ secrets.GITHUB_TOKEN }}

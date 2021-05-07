@@ -18,7 +18,8 @@
     "docs": "typedoc --out docs src/index.ts",
     "size": "size-limit",
     "analyze": "size-limit --why",
-    "apollo-codegen": "apollo client:codegen --target typescript --endpoint=https://api.thegraph.com/subgraphs/name/tomprsn/yearn-vaults-v2-subgraph-mainnet --outputFlat --includes \"src/apollo/**\" --excludes \"src/apollo/generated\" --passthroughCustomScalars --customScalarsPrefix YearnSubgraph src/apollo/generated"
+    "codegen": "yarn codegen:apollo",
+    "codegen:apollo": "apollo client:codegen --target typescript --endpoint=https://api.thegraph.com/subgraphs/name/tomprsn/yearn-vaults-v2-subgraph-mainnet --outputFlat --includes \"src/services/subgraph/apollo/**\" --excludes \"src/services/subgraph/apollo/generated\" --passthroughCustomScalars --customScalarsPrefix YearnSubgraph src/services/subgraph/apollo/generated"
   },
   "peerDependencies": {
     "@ethersproject/address": "^5.1.0",
@@ -39,7 +40,8 @@
     "size-limit": "^4.10.1",
     "tsdx": "^0.14.1",
     "tslib": "^2.1.0",
-    "typedoc": "^0.20.33"
+    "typedoc": "^0.20.33",
+    "typescript": "^4.2.4"
   },
   "dependencies": {
     "apollo-cache-inmemory": "^1.6.6",
@@ -64,6 +66,9 @@
       "limit": "80 KB"
     }
   ],
+  "engines" : { 
+    "node" : ">=12.0.0" 
+  },
   "prettier": {
     "endOfLine": "auto",
     "printWidth": 120

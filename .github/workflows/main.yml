@@ -7,7 +7,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        node: ["10.x", "12.x", "14.x"]
+        node: ["12.x", "14.x"]
         os: [ubuntu-latest, windows-latest, macOS-latest]
 
     env:
@@ -30,7 +30,9 @@ jobs:
         run: yarn lint
 
       - name: Build
-        run: yarn build
+        run: |
+          yarn codegen
+          yarn build
 
       - name: Test
         run: yarn test --ci --coverage --maxWorkers=2
