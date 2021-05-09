@@ -2,13 +2,21 @@ import { BigNumber } from "@ethersproject/bignumber";
 
 import { ProtocolEarnings } from "../services/subgraph/apollo/generated/ProtocolEarnings";
 import { VaultEarnings, VaultEarningsVariables } from "../services/subgraph/apollo/generated/VaultEarnings";
-import { PROTOCOL_EARNINGS, VAULT_EARNINGS } from "../services/subgraph/apollo/queries";
+import { ACCOUNT_EARNINGS, PROTOCOL_EARNINGS, VAULT_EARNINGS } from "../services/subgraph/apollo/queries";
 
 import { ChainId } from "../chain";
 import { Address, Reader, Usdc } from "../common";
 import { TokenAmount } from "../types";
+import {
+  AccountEarnings as AccountVaultEarnings,
+  AccountEarningsVariables as AccountVaultEarningsVariables
+} from "../services/subgraph/apollo/generated/AccountEarnings";
 
 const OneHundredMillionUsdc = BigNumber.from(1e14); // 1e8 (100M) * 1e6 (Usdc decimals)
+
+export interface AccountEarnings extends Earnings {
+  accountId: Address;
+}
 
 export interface AssetEarnings extends Earnings {
   assetId: Address;
@@ -65,6 +73,42 @@ export class EarningsReader<C extends ChainId> extends Reader<C> {
       tokenId: vault.token.id
     };
     return result;
+  }
+
+  async accountEarnings(accountAddress: Address): Promise<AccountEarnings[]> {
+    const response = await this.yearn.services.subgraph.client.query<
+      AccountVaultEarnings,
+      AccountVaultEarningsVariables
+    >({
+      query: ACCOUNT_EARNINGS,
+      variables: {
+        id: accountAddress
+      }
+    });
+
+    const account = response.data.account;
+
+    if (!account) {
+      throw Error(`failed to find account address ${accountAddress}`);
+    }
+
+    return await Promise.all(
+      account.vaultPositions.map(async vaultPosition => {
+        const amount = BigNumber.from(vaultPosition.balanceShares)
+          .mul(BigNumber.from(vaultPosition.vault.latestUpdate?.pricePerShare || 0))
+          .div(BigNumber.from(10).pow(vaultPosition.token.decimals));
+
+        const amountUsdc = await this.tokensValueInUsdc(amount, vaultPosition.token.id, vaultPosition.token.decimals);
+
+        const accountVaultEarnings: AccountEarnings = {
+          accountId: accountAddress,
+          amount: amount.toString(),
+          amountUsdc: amountUsdc.toString(),
+          tokenId: vaultPosition.token.id
+        };
+        return accountVaultEarnings;
+      })
+    );
   }
 
   private async tokensValueInUsdc(tokenAmount: BigNumber, tokenAddress: Address, decimals: number): Promise<BigNumber> {
