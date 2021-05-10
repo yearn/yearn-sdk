@@ -37,15 +37,20 @@ export const ACCOUNT_EARNINGS= gql`
     account(id: $id) {
       vaultPositions {
         balanceShares
+        token {
+          id
+          decimals
+        }
+        updates {
+          deposits
+          withdrawals
+          tokensReceived
+          tokensSent
+        }
         vault {
           latestUpdate {
             pricePerShare
           }
-        }
-        token {
-          id
-          symbol
-          decimals
         }
       }
     }

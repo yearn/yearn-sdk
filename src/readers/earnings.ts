@@ -94,16 +94,40 @@ export class EarningsReader<C extends ChainId> extends Reader<C> {
 
     return await Promise.all(
       account.vaultPositions.map(async vaultPosition => {
-        const amount = BigNumber.from(vaultPosition.balanceShares)
+        const balanceTokens = BigNumber.from(vaultPosition.balanceShares)
           .mul(BigNumber.from(vaultPosition.vault.latestUpdate?.pricePerShare || 0))
           .div(BigNumber.from(10).pow(vaultPosition.token.decimals));
 
-        const amountUsdc = await this.tokensValueInUsdc(amount, vaultPosition.token.id, vaultPosition.token.decimals);
+        const deposits = vaultPosition.updates
+          .map(update => BigNumber.from(update.deposits))
+          .reduce((sum, value) => sum.add(value));
+        const withdrawals = vaultPosition.updates
+          .map(update => BigNumber.from(update.withdrawals))
+          .reduce((sum, value) => sum.add(value));
+        const tokensReceived = vaultPosition.updates
+          .map(update => BigNumber.from(update.tokensReceived))
+          .reduce((sum, value) => sum.add(value));
+        const tokensSent = vaultPosition.updates
+          .map(update => BigNumber.from(update.tokensSent))
+          .reduce((sum, value) => sum.add(value));
+
+        const positiveTokens = balanceTokens.add(withdrawals).add(tokensSent);
+        const negativeTokens = deposits.add(tokensReceived);
+
+        let earnings: BigNumber;
+
+        if (negativeTokens.gt(positiveTokens)) {
+          earnings = BigNumber.from(0);
+        } else {
+          earnings = positiveTokens.sub(negativeTokens);
+        }
+
+        const earningsUsdc = await this.tokensValueInUsdc(earnings, vaultPosition.token.id, vaultPosition.token.decimals);
 
         const accountVaultEarnings: AccountEarnings = {
           accountId: accountAddress,
-          amount: amount.toString(),
-          amountUsdc: amountUsdc.toString(),
+          amount: earnings.toString(),
+          amountUsdc: earningsUsdc.toString(),
           tokenId: vaultPosition.token.id
         };
         return accountVaultEarnings;
