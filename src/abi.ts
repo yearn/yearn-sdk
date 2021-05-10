@@ -3,9 +3,11 @@ export const TokenAbi = "tuple(address address, string name, string symbol, uint
 export const AssetStaticAbi = `tuple(
   address address,
   string typeId,
+  address token,
   string name,
   string version,
-  ${TokenAbi} token
+  string symbol,
+  uint8 decimals,
 )`;
 
 export const AssetDynamicAbi = (Metadata: string) => `tuple(
