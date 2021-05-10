@@ -45,9 +45,11 @@ export type IconMap<T extends Address> = { [K in T]: Icon };
 export interface AssetStatic<T extends TypeId> {
   address: Address;
   typeId: T;
+  token: Address;
   name: string;
   version: string;
-  token: ERC20;
+  symbol: string;
+  decimals: string;
 }
 
 export interface AssetDynamic<T extends TypeId> {
