@@ -122,7 +122,11 @@ export class EarningsReader<C extends ChainId> extends Reader<C> {
           earnings = positiveTokens.sub(negativeTokens);
         }
 
-        const earningsUsdc = await this.tokensValueInUsdc(earnings, vaultPosition.token.id, vaultPosition.token.decimals);
+        const earningsUsdc = await this.tokensValueInUsdc(
+          earnings,
+          vaultPosition.token.id,
+          vaultPosition.token.decimals
+        );
 
         const accountVaultEarnings: AccountEarnings = {
           accountId: accountAddress,
