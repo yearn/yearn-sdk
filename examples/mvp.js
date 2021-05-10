@@ -35,7 +35,7 @@ async function main() {
   const positionsTable = new Table();
   positionsTable.push(
     ...positions.map(position => {
-      const vault = vaults.find(vault => (vault.address = position.assetId));
+      const vault = vaults.find(vault => (vault.address = position.assetAddress));
       return [vault.name, position.balance];
     })
   );
