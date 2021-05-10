@@ -8,8 +8,8 @@ import { ChainId } from "../chain";
 import { Address, Reader, Usdc } from "../common";
 import { TokenAmount } from "../types";
 import {
-  AccountEarnings as AccountVaultEarnings,
-  AccountEarningsVariables as AccountVaultEarningsVariables
+  AccountEarnings as AccountEarningsQuery,
+  AccountEarningsVariables as AccountEarningsQueryVariables
 } from "../services/subgraph/apollo/generated/AccountEarnings";
 
 const OneHundredMillionUsdc = BigNumber.from(1e14); // 1e8 (100M) * 1e6 (Usdc decimals)
@@ -77,8 +77,8 @@ export class EarningsReader<C extends ChainId> extends Reader<C> {
 
   async accountEarnings(accountAddress: Address): Promise<AccountEarnings[]> {
     const response = await this.yearn.services.subgraph.client.query<
-      AccountVaultEarnings,
-      AccountVaultEarningsVariables
+      AccountEarningsQuery,
+      AccountEarningsQueryVariables
     >({
       query: ACCOUNT_EARNINGS,
       variables: {
