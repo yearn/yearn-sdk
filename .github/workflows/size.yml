@@ -9,5 +9,5 @@ jobs:
       - uses: actions/checkout@v1
       - uses: andresz1/size-limit-action@v1
         with:
-          build_script: yarn codegen && yarn build
+          build_script: "yarn codegen && yarn build"
           github_token: ${{ secrets.GITHUB_TOKEN }}

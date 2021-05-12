@@ -28,8 +28,8 @@ export interface Token extends ERC20 {
 }
 
 export interface Position {
-  assetId: Address;
-  tokenId: Address;
+  assetAddress: Address;
+  tokenAddress: Address;
   typeId: string;
   balance: Integer;
   underlyingTokenBalance: TokenAmount;

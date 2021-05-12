@@ -19,7 +19,7 @@ export const AssetDynamicAbi = (Metadata: string) => `tuple(
 )`;
 
 export const PositionAbi =
-  "tuple(address assetId, address tokenId, string typeId, uint256 balance," +
+  "tuple(address assetAddress, address tokenAddress, string typeId, uint256 balance," +
   "tuple(uint256 amount, uint256 amountUsdc) underlyingTokenBalance," +
   "tuple(address owner, address spender, uint256 amount)[] tokenAllowances," +
   "tuple(address owner, address spender, uint256 amount)[] assetAllowances)";

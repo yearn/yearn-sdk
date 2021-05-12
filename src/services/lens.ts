@@ -42,6 +42,7 @@ export class LensService<T extends ChainId> extends ContractService {
           ironBank: new IronBankAdapter(this.chainId, this.ctx)
         } as Adapters<T>; // FIXME: missing adapters
     }
+    throw TypeError(`No lens adapter for chainId "${this.chainId}".`);
   }
 
   static addressByChain(chainId: ChainId): string {
