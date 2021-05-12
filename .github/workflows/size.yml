@@ -7,7 +7,13 @@ jobs:
       CI_JOB_NUMBER: 1
     steps:
       - uses: actions/checkout@v1
+
+      - name: Install deps and build (with cache)
+        uses: bahmutov/npm-install@v1
+
+      - name: codegen
+        run: yarn codegen
+
       - uses: andresz1/size-limit-action@v1
         with:
-          build_script: "yarn codegen && yarn build"
           github_token: ${{ secrets.GITHUB_TOKEN }}
