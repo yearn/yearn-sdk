@@ -14,7 +14,7 @@ export interface IRegistryAdapter {
   tokens(): Promise<ERC20[]>;
 }
 
-const VaultV2Metadata = `tuple(
+const VaultV2MetadataAbi = `tuple(
   string symbol,
   uint256 pricePerShare,
   bool migrationAvailable,
@@ -24,7 +24,7 @@ const VaultV2Metadata = `tuple(
 )`;
 
 export class RegistryV2Adapter<T extends ChainId> extends ContractService implements IRegistryAdapter {
-  static abi = AdapterAbi(VaultV2Metadata);
+  static abi = AdapterAbi(VaultV2MetadataAbi);
 
   constructor(chainId: T, ctx: Context) {
     super(ctx.address("registryV2Adapter") ?? RegistryV2Adapter.addressByChain(chainId), chainId, ctx);

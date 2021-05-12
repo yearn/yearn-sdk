@@ -4,9 +4,18 @@ import { Address, ContractService } from "../../common";
 import { Context } from "../../context";
 import { structArray } from "../../struct";
 
-import { Position, IronBankMarketStatic, IronBankMarketDynamic, ERC20 } from "../../types";
+import {
+  Position,
+  IronBankMarketStatic,
+  IronBankMarketDynamic,
+  ERC20,
+  IronBankPosition,
+  CyTokenUserMetadata
+} from "../../types";
 
-export const IronBankMarketMetadata = `tuple(
+export interface IronBank {}
+
+const CyTokenMetadataAbi = `tuple(
   uint256 totalSuppliedUsdc,
   uint256 totalBorrowedUsdc,
   uint256 lendApyBips,
@@ -19,8 +28,28 @@ export const IronBankMarketMetadata = `tuple(
   uint256 collateralFactor
 )`;
 
+const CyTokenUserMetadataAbi = `tuple(
+  address assetAddress,
+  bool enteredMarket,
+  uint256 supplyBalanceUsdc,
+  uint256 borrowBalanceUsdc,
+  uint256 borrowLimitUsdc
+)`;
+
+const IronBankPositionAbi = `tuple(
+  uint256 supplyBalanceUsdc,
+  uint256 borrowBalanceUsdc,
+  uint256 borrowLimitUsdc,
+  uint256 utilizationRatioBips
+)`;
+
+const CustomAbi = [
+  `adapterPositionOf(address) external view returns (${IronBankPositionAbi} memory)`,
+  `assetsUserMetadata(address) public view returns (${CyTokenUserMetadataAbi}[] memory)`
+];
+
 export class IronBankAdapter<T extends ChainId> extends ContractService {
-  static abi = AdapterAbi(IronBankMarketMetadata);
+  static abi = AdapterAbi(CyTokenMetadataAbi).concat(CustomAbi);
 
   constructor(chainId: T, ctx: Context) {
     super(ctx.address("ironBankAdapter") ?? IronBankAdapter.addressByChain(chainId), chainId, ctx);
@@ -55,6 +84,14 @@ export class IronBankAdapter<T extends ChainId> extends ContractService {
       return await this.contract["assetsPositionsOf(address,address[])"](address, addresses).then(structArray);
     }
     return await this.contract["assetsPositionsOf(address)"](address).then(structArray);
+  }
+
+  async generalPositionOf(address: Address): Promise<IronBankPosition> {
+    return await this.contract.adapterPositionOf(address).then(structArray);
+  }
+
+  async assetsUserMetadata(address: Address): Promise<CyTokenUserMetadata[]> {
+    return await this.contract.assetsUserMetadata(address).then(structArray);
   }
 
   async tokens(): Promise<ERC20[]> {

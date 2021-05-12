@@ -12,3 +12,4 @@ export * from "./asset";
 export * from "./metadata";
 export * from "./alias";
 export * from "./services";
+export * from "./custom/ironbank";

@@ -1,4 +1,4 @@
-import { Position, IronBankMarket } from "../types";
+import { Position, IronBankMarket, CyTokenUserMetadata, IronBankPosition } from "../types";
 import { ChainId } from "../chain";
 import { Address, Reader, SdkError } from "../common";
 
@@ -19,5 +19,13 @@ export class IronBankReader<T extends ChainId> extends Reader<T> {
 
   async positionsOf(address: Address, addresses?: Address[]): Promise<Position[]> {
     return this.yearn.services.lens.adapters.ironBank.positionsOf(address, addresses);
+  }
+
+  async userMetadata(address: Address): Promise<CyTokenUserMetadata[]> {
+    return this.yearn.services.lens.adapters.ironBank.assetsUserMetadata(address);
+  }
+
+  async generalPositionOf(address: Address): Promise<IronBankPosition> {
+    return this.yearn.services.lens.adapters.ironBank.generalPositionOf(address);
   }
 }
