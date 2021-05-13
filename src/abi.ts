@@ -31,5 +31,5 @@ export const AdapterAbi = (Metadata: string) => [
   `function assetsDynamic(address[] memory) public view returns (${AssetDynamicAbi(Metadata)}[] memory)`,
   `function assetsPositionsOf(address) public view returns (${PositionAbi}[] memory)`,
   `function assetsPositionsOf(address, address[] memory) public view returns (${PositionAbi}[] memory)`,
-  `function tokens() public view returns (${TokenAbi}[] memory)`
+  `function assetsTokensAddresses() public view returns (address[] memory)`
 ];

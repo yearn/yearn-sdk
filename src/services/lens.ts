@@ -27,7 +27,7 @@ export class LensService<T extends ChainId> extends ContractService {
   static abi = LensAbi;
 
   constructor(chainId: T, ctx: Context) {
-    super(ctx.address("lens") ?? LensService.addressByChain(chainId), chainId, ctx);
+    super(ctx.addresses.lens ?? LensService.addressByChain(chainId), chainId, ctx);
   }
 
   get adapters(): Adapters<T> {

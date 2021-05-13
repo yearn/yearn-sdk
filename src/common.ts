@@ -45,7 +45,11 @@ export class Service {
               if (res && res instanceof Promise) {
                 res
                   .then(result => {
-                    this.events.emit(method.name, result);
+                    try {
+                      this.events.emit(method.name, result);
+                    } catch (error) {
+                      throw new SdkError(`${path} (event listener): ${error.message}`);
+                    }
                     return result;
                   })
                   .catch(error => {

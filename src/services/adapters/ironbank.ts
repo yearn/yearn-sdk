@@ -2,18 +2,15 @@ import { AdapterAbi } from "../../abi";
 import { ChainId } from "../../chain";
 import { Address, ContractService } from "../../common";
 import { Context } from "../../context";
-import { structArray } from "../../struct";
+import { struct, structArray } from "../../struct";
 
 import {
   Position,
   IronBankMarketStatic,
   IronBankMarketDynamic,
-  ERC20,
   IronBankPosition,
   CyTokenUserMetadata
 } from "../../types";
-
-export interface IronBank {}
 
 const CyTokenMetadataAbi = `tuple(
   uint256 totalSuppliedUsdc,
@@ -25,7 +22,7 @@ const CyTokenMetadataAbi = `tuple(
   uint256 collateralFactor,
   bool isActive,
   uint256 reserveFactor,
-  uint256 collateralFactor
+  uint256 exchangeRate
 )`;
 
 const CyTokenUserMetadataAbi = `tuple(
@@ -44,15 +41,15 @@ const IronBankPositionAbi = `tuple(
 )`;
 
 const CustomAbi = [
-  `adapterPositionOf(address) external view returns (${IronBankPositionAbi} memory)`,
-  `assetsUserMetadata(address) public view returns (${CyTokenUserMetadataAbi}[] memory)`
+  `function adapterPositionOf(address) external view returns (${IronBankPositionAbi} memory)`,
+  `function assetsUserMetadata(address) public view returns (${CyTokenUserMetadataAbi}[] memory)`
 ];
 
 export class IronBankAdapter<T extends ChainId> extends ContractService {
   static abi = AdapterAbi(CyTokenMetadataAbi).concat(CustomAbi);
 
   constructor(chainId: T, ctx: Context) {
-    super(ctx.address("ironBankAdapter") ?? IronBankAdapter.addressByChain(chainId), chainId, ctx);
+    super(ctx.addresses.adapters.ironBank ?? IronBankAdapter.addressByChain(chainId), chainId, ctx);
   }
 
   static addressByChain(chainId: ChainId): string {
@@ -87,14 +84,14 @@ export class IronBankAdapter<T extends ChainId> extends ContractService {
   }
 
   async generalPositionOf(address: Address): Promise<IronBankPosition> {
-    return await this.contract.adapterPositionOf(address).then(structArray);
+    return await this.contract.adapterPositionOf(address).then(struct);
   }
 
   async assetsUserMetadata(address: Address): Promise<CyTokenUserMetadata[]> {
     return await this.contract.assetsUserMetadata(address).then(structArray);
   }
 
-  async tokens(): Promise<ERC20[]> {
-    return await this.contract.tokens().then(structArray);
+  async tokens(): Promise<Address[]> {
+    return await this.contract.assetsTokensAddresses();
   }
 }

@@ -5,17 +5,16 @@ import { Context } from "../../context";
 import { ZeroAddress } from "../../helpers";
 import { structArray } from "../../struct";
 
-import { Position, VaultStatic, VaultDynamic, ERC20 } from "../../types";
+import { Position, VaultStatic, VaultDynamic } from "../../types";
 
 export interface IRegistryAdapter {
   assetsStatic(): Promise<VaultStatic[]>;
   assetsDynamic(): Promise<VaultDynamic[]>;
   positionsOf(address: Address, addresses?: Address[]): Promise<Position[]>;
-  tokens(): Promise<ERC20[]>;
+  tokens(): Promise<Address[]>;
 }
 
 const VaultV2MetadataAbi = `tuple(
-  string symbol,
   uint256 pricePerShare,
   bool migrationAvailable,
   address latestVaultAddress,
@@ -27,7 +26,7 @@ export class RegistryV2Adapter<T extends ChainId> extends ContractService implem
   static abi = AdapterAbi(VaultV2MetadataAbi);
 
   constructor(chainId: T, ctx: Context) {
-    super(ctx.address("registryV2Adapter") ?? RegistryV2Adapter.addressByChain(chainId), chainId, ctx);
+    super(ctx.addresses.adapters.registryV2 ?? RegistryV2Adapter.addressByChain(chainId), chainId, ctx);
   }
 
   static addressByChain(chainId: ChainId): string {
@@ -71,7 +70,7 @@ export class RegistryV2Adapter<T extends ChainId> extends ContractService implem
     return await this.contract["assetsPositionsOf(address)"](address).then(structArray);
   }
 
-  async tokens(): Promise<ERC20[]> {
-    return await this.contract.tokens().then(structArray);
+  async tokens(): Promise<Address[]> {
+    return await this.contract.assetsTokensAddresses();
   }
 }
