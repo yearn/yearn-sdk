@@ -1,4 +1,6 @@
+import { PartialDeep } from "type-fest";
 import { Provider } from "@ethersproject/providers";
+
 import { CacheManager, Cache } from "./cache";
 
 import { Address, SdkError } from "./common";
@@ -6,15 +8,18 @@ import { Address, SdkError } from "./common";
 export interface AddressesOverride {
   lens?: Address;
   oracle?: Address;
-  registryV2Adapter?: Address;
-  ironBankAdapter?: Address;
+  adapters: {
+    registryV2?: Address;
+    ironBank?: Address;
+  };
+  helper?: Address;
 }
 
 export interface ContextValue {
   provider?: Provider;
   zapper?: string;
   etherscan?: string;
-  addresses?: AddressesOverride;
+  addresses?: PartialDeep<AddressesOverride>;
 }
 
 export class Context implements Required<ContextValue> {
@@ -46,11 +51,6 @@ export class Context implements Required<ContextValue> {
   }
 
   get addresses(): AddressesOverride {
-    if (this.ctx.addresses) return this.ctx.addresses;
-    return {};
-  }
-
-  address(service: keyof AddressesOverride): Address | undefined {
-    return this.addresses[service];
+    return Object.assign({ adapters: {} }, this.ctx.addresses);
   }
 }

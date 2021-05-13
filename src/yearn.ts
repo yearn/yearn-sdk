@@ -11,6 +11,7 @@ import { IconsService } from "./services/icons";
 import { SubgraphService } from "./services/subgraph";
 import { EarningsReader } from "./readers/earnings";
 import { IronBankReader } from "./readers/ironbank";
+import { HelperService } from "./services/helper";
 
 export class Yearn<T extends ChainId> {
   services: {
@@ -20,6 +21,8 @@ export class Yearn<T extends ChainId> {
     icons: IconsService;
     apy: ApyService;
     subgraph: SubgraphService;
+
+    helper: HelperService<T>;
   };
 
   vaults: VaultReader<T>;
@@ -38,7 +41,8 @@ export class Yearn<T extends ChainId> {
       zapper: new ZapperService(chainId, ctx),
       icons: new IconsService(chainId, ctx),
       apy: new ApyService(chainId, ctx),
-      subgraph: new SubgraphService(chainId, ctx)
+      subgraph: new SubgraphService(chainId, ctx),
+      helper: new HelperService(chainId, ctx)
     };
 
     this.vaults = new VaultReader(this, chainId, ctx);
