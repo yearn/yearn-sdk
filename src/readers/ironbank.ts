@@ -1,6 +1,6 @@
-import { Position, IronBankMarket, CyTokenUserMetadata, IronBankPosition } from "../types";
+import { Position, IronBankMarket, CyTokenUserMetadata, IronBankPosition, Address, SdkError } from "../types";
 import { ChainId } from "../chain";
-import { Address, Reader, SdkError } from "../common";
+import { Reader } from "../common";
 
 export class IronBankReader<T extends ChainId> extends Reader<T> {
   async get(addresses?: Address[]): Promise<IronBankMarket[]> {

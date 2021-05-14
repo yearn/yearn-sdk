@@ -1,21 +1,10 @@
 import EventEmitter from "events";
-import { Contract } from "@ethersproject/contracts";
+import { Contract, ContractInterface } from "@ethersproject/contracts";
 
 import { ChainId } from "./chain";
 import { Yearn } from "./yearn";
-import { Context } from "./context";
-
-/**
- * Generic SDK error, likely caused by internal method calls.
- *
- * // TODO: setup error codes
- */
-export class SdkError extends Error {}
-
-export type Address = string;
-export type Integer = string;
-
-export type Usdc = string;
+import { Context, ReadWriteProvider } from "./context";
+import { Address } from "./types";
 
 export class Service {
   ctx: Context;
@@ -28,44 +17,6 @@ export class Service {
     this.ctx = ctx;
 
     this.events = new EventEmitter();
-
-    // Error handling + update events via proxy / reflection
-    const methods = Object.getOwnPropertyNames(Object.getPrototypeOf(this));
-
-    for (const property of methods) {
-      const method = Reflect.get(this, property);
-      const path = [this.constructor.name, method.name].join(".");
-      Reflect.set(
-        this,
-        property,
-        new Proxy(method, {
-          apply: (target, thisArg, argArray) => {
-            try {
-              const res = target.apply(thisArg, argArray);
-              if (res && res instanceof Promise) {
-                res
-                  .then(result => {
-                    try {
-                      this.events.emit(method.name, result);
-                    } catch (error) {
-                      throw new SdkError(`${path} (event listener): ${error.message}`);
-                    }
-                    return result;
-                  })
-                  .catch(error => {
-                    throw new SdkError(`${path}: ${error.message}`);
-                  });
-              } else {
-                this.events.emit(method.name, res);
-              }
-              return res;
-            } catch (error) {
-              throw new SdkError(`${path}: ${error.message}`);
-            }
-          }
-        })
-      );
-    }
   }
 }
 
@@ -111,22 +62,43 @@ export class Reader<T extends ChainId> extends Service {
   }
 }
 
+export class WrappedContract {
+  address: Address;
+  abi: ContractInterface;
+
+  read: Contract;
+  write: Contract;
+
+  constructor(address: Address, abi: ContractInterface, ctx: Context) {
+    this.address = address;
+    this.abi = abi;
+
+    this.read = new Contract(address, abi, ctx.provider.read);
+    this.write = new Contract(address, abi, ctx.provider.write);
+    ctx.events.on(Context.PROVIDER, (provider: ReadWriteProvider) => {
+      console.log(this.address, this.abi, provider.read);
+      this.read = new Contract(this.address, this.abi, provider.read);
+      this.write = new Contract(this.address, this.abi, provider.write);
+    });
+  }
+}
+
 export class ContractService extends Service {
   static abi: string[] = [];
 
   address: string;
 
-  contract: Contract;
+  contract: WrappedContract;
 
   constructor(address: Address, chainId: ChainId, ctx: Context) {
     super(chainId, ctx);
     this.address = address;
 
-    this.contract = new Contract(
+    this.contract = new WrappedContract(
       this.address,
       // @ts-ignore
       this.constructor.abi,
-      ctx.provider
+      ctx
     );
   }
 }

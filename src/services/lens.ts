@@ -1,5 +1,5 @@
-import { GenericAsset, Position } from "../types";
-import { Address, ContractService } from "../common";
+import { Address, GenericAsset, Position } from "../types";
+import { ContractService } from "../common";
 import { ChainId } from "../chain";
 import { structArray } from "../struct";
 import { Context } from "../context";
@@ -55,18 +55,18 @@ export class LensService<T extends ChainId> extends ContractService {
   }
 
   async getRegistries(): Promise<string[]> {
-    return await this.contract.getRegistries();
+    return await this.contract.read.getRegistries();
   }
 
   async getAssets(): Promise<GenericAsset[]> {
-    return await this.contract.getAssets().then(structArray);
+    return await this.contract.read.getAssets().then(structArray);
   }
 
   async getAssetsFromAdapter(adapter: Address): Promise<GenericAsset[]> {
-    return await this.contract.getAssetsFromAdapter(adapter).then(structArray);
+    return await this.contract.read.getAssetsFromAdapter(adapter).then(structArray);
   }
 
   async getPositions(address: string): Promise<Position[]> {
-    return await this.contract.getPositionsOf(address).then(structArray);
+    return await this.contract.read.getPositionsOf(address).then(structArray);
   }
 }

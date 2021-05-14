@@ -43,7 +43,7 @@ async function main() {
 
   console.log("Yearn Multisig vault positions:");
   console.log(positionsTable.toString());
-
+  
   // IRON BANK
   const ironBank = await yearn.ironBank.get();
 
@@ -68,12 +68,6 @@ async function main() {
   console.log(ironBankUserMetadataTable.toString());
 
   // ONLY ETH
-
-  // Get all tokens supported by zapper
-  const yfiVault = vaults.find(vault => vault.name === "YFI yVault").address;
-  const apy = await yearn.vaults.apy(yfiVault);
-  console.log("YFI yVault APY:");
-  console.log(apy);
 
   // Get all tokens supported by zapper
   const supported = await yearn.tokens.supported();

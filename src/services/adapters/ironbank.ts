@@ -1,15 +1,16 @@
+import { struct, structArray } from "../../struct";
+import { ContractService } from "../../common";
 import { AdapterAbi } from "../../abi";
 import { ChainId } from "../../chain";
-import { Address, ContractService } from "../../common";
 import { Context } from "../../context";
-import { struct, structArray } from "../../struct";
 
 import {
   Position,
   IronBankMarketStatic,
   IronBankMarketDynamic,
   IronBankPosition,
-  CyTokenUserMetadata
+  CyTokenUserMetadata,
+  Address
 } from "../../types";
 
 const CyTokenMetadataAbi = `tuple(
@@ -64,34 +65,34 @@ export class IronBankAdapter<T extends ChainId> extends ContractService {
 
   async assetsStatic(addresses?: Address[]): Promise<IronBankMarketStatic[]> {
     if (addresses) {
-      return await this.contract["assetsStatic(address[])"](addresses).then(structArray);
+      return await this.contract.read["assetsStatic(address[])"](addresses).then(structArray);
     }
-    return await this.contract["assetsStatic()"]().then(structArray);
+    return await this.contract.read["assetsStatic()"]().then(structArray);
   }
 
   async assetsDynamic(addresses?: Address[]): Promise<IronBankMarketDynamic[]> {
     if (addresses) {
-      return await this.contract["assetsDynamic(address[])"](addresses).then(structArray);
+      return await this.contract.read["assetsDynamic(address[])"](addresses).then(structArray);
     }
-    return await this.contract["assetsDynamic()"]().then(structArray);
+    return await this.contract.read["assetsDynamic()"]().then(structArray);
   }
 
   async positionsOf(address: Address, addresses?: Address[]): Promise<Position[]> {
     if (addresses) {
-      return await this.contract["assetsPositionsOf(address,address[])"](address, addresses).then(structArray);
+      return await this.contract.read["assetsPositionsOf(address,address[])"](address, addresses).then(structArray);
     }
-    return await this.contract["assetsPositionsOf(address)"](address).then(structArray);
+    return await this.contract.read["assetsPositionsOf(address)"](address).then(structArray);
   }
 
   async generalPositionOf(address: Address): Promise<IronBankPosition> {
-    return await this.contract.adapterPositionOf(address).then(struct);
+    return await this.contract.read.adapterPositionOf(address).then(struct);
   }
 
   async assetsUserMetadata(address: Address): Promise<CyTokenUserMetadata[]> {
-    return await this.contract.assetsUserMetadata(address).then(structArray);
+    return await this.contract.read.assetsUserMetadata(address).then(structArray);
   }
 
   async tokens(): Promise<Address[]> {
-    return await this.contract.assetsTokensAddresses();
+    return await this.contract.read.assetsTokensAddresses();
   }
 }

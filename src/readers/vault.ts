@@ -1,6 +1,7 @@
-import { Position, Vault, Apy } from "../types";
+import { Address, SdkError } from "../types";
+import { Position, Vault } from "../types";
 import { ChainId } from "../chain";
-import { Address, Reader, SdkError } from "../common";
+import { Reader } from "../common";
 
 export class VaultReader<T extends ChainId> extends Reader<T> {
   async get(addresses?: Address[]): Promise<Vault[]> {
@@ -9,12 +10,14 @@ export class VaultReader<T extends ChainId> extends Reader<T> {
       adapters.map(async adapter => {
         const assetsStatic = await adapter.assetsStatic(addresses);
         const assetsDynamic = await adapter.assetsDynamic(addresses);
+        const assetsApy = await this.yearn.services.vision.apy(addresses);
         const assets = new Array<Vault>();
         for (const asset of assetsStatic) {
           const dynamic = assetsDynamic.find(({ address }) => asset.address === address);
           if (!dynamic) {
             throw new SdkError(`Dynamic asset does not exist for ${asset.address}`);
           }
+          dynamic.metadata.apy = assetsApy[asset.address];
           assets.push({ ...asset, ...dynamic });
         }
         return assets;
@@ -29,9 +32,5 @@ export class VaultReader<T extends ChainId> extends Reader<T> {
         return adapter.positionsOf(address, addresses);
       })
     ).then(arr => arr.flat());
-  }
-
-  async apy(address: Address): Promise<Apy | undefined> {
-    return this.yearn.services.apy.get(address);
   }
 }

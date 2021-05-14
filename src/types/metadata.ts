@@ -1,4 +1,5 @@
-import { Address, Integer } from "../common";
+import { Address, Integer } from "./common";
+import { Apy } from "./services";
 
 export interface VaultMetadata {
   symbol: string;
@@ -11,6 +12,8 @@ export interface VaultMetadata {
   controller: Address;
   totalAssets: Integer;
   totalSupply: Integer;
+
+  apy?: Apy;
 }
 
 export interface IronBankMarketMetadata {

@@ -1,7 +1,7 @@
 import { getAddress } from "@ethersproject/address";
 
-import { Address, Service } from "../common";
-import { Balance, BalancesMap, GasPrice, Token } from "../types";
+import { Service } from "../common";
+import { Address, Balance, BalancesMap, GasPrice, Token } from "../types";
 import { EthAddress, handleHttpError, ZeroAddress, usdc } from "../helpers";
 
 /**

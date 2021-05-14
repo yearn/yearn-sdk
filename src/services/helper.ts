@@ -1,10 +1,10 @@
 import { TokenAbi } from "../abi";
 import { ChainId } from "../chain";
-import { Address, ContractService } from "../common";
+import { ContractService } from "../common";
 import { Context } from "../context";
 import { structArray } from "../struct";
 
-import { ERC20 } from "../types";
+import { Address, ERC20 } from "../types";
 
 const HelperAbi = [`function tokensMetadata(address[] memory) public view returns (${TokenAbi}[] memory)`];
 
@@ -25,6 +25,6 @@ export class HelperService<T extends ChainId> extends ContractService {
   }
 
   async tokens(addresses: Address[]): Promise<ERC20[]> {
-    return await this.contract.tokensMetadata(addresses).then(structArray);
+    return await this.contract.read.tokensMetadata(addresses).then(structArray);
   }
 }
