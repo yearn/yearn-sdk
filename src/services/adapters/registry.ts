@@ -1,11 +1,10 @@
-import { AdapterAbi } from "../../abi";
-import { ChainId } from "../../chain";
-import { Address, ContractService } from "../../common";
-import { Context } from "../../context";
+import { ContractService } from "../../common";
 import { ZeroAddress } from "../../helpers";
 import { structArray } from "../../struct";
-
-import { Position, VaultStatic, VaultDynamic } from "../../types";
+import { Context } from "../../context";
+import { AdapterAbi } from "../../abi";
+import { ChainId } from "../../chain";
+import { Position, VaultStatic, VaultDynamic, Address } from "../../types";
 
 export interface IRegistryAdapter {
   assetsStatic(): Promise<VaultStatic[]>;
@@ -41,14 +40,14 @@ export class RegistryV2Adapter<T extends ChainId> extends ContractService implem
 
   async assetsStatic(addresses?: Address[]): Promise<VaultStatic[]> {
     if (addresses) {
-      return await this.contract["assetsStatic(address[])"](addresses).then(structArray);
+      return await this.contract.read["assetsStatic(address[])"](addresses).then(structArray);
     }
-    return await this.contract["assetsStatic()"]().then(structArray);
+    return await this.contract.read["assetsStatic()"]().then(structArray);
   }
 
   async assetsDynamic(addresses?: Address[]): Promise<VaultDynamic[]> {
     if (addresses) {
-      return await this.contract["assetsDynamic(address[])"](addresses)
+      return await this.contract.read["assetsDynamic(address[])"](addresses)
         .then(structArray)
         .then((assets: any) => {
           // FIXME: metadata polyfill
@@ -60,17 +59,17 @@ export class RegistryV2Adapter<T extends ChainId> extends ContractService implem
           };
         });
     }
-    return await this.contract["assetsDynamic()"]().then(structArray);
+    return await this.contract.read["assetsDynamic()"]().then(structArray);
   }
 
   async positionsOf(address: Address, addresses?: Address[]): Promise<Position[]> {
     if (addresses) {
-      return await this.contract["assetsPositionsOf(address,address[])"](address, addresses).then(structArray);
+      return await this.contract.read["assetsPositionsOf(address,address[])"](address, addresses).then(structArray);
     }
-    return await this.contract["assetsPositionsOf(address)"](address).then(structArray);
+    return await this.contract.read["assetsPositionsOf(address)"](address).then(structArray);
   }
 
   async tokens(): Promise<Address[]> {
-    return await this.contract.assetsTokensAddresses();
+    return await this.contract.read.assetsTokensAddresses();
   }
 }

@@ -1,4 +1,4 @@
-import { Address, Integer } from "../../common";
+import { Address, Integer } from "../common";
 
 export interface IronBankPosition {
   assetAddress: Address;

@@ -1,4 +1,5 @@
-import { Address, Integer, Reader } from "../common";
+import { Address, Integer } from "../types";
+import { Reader } from "../common";
 import { ChainId } from "../chain";
 import { Token, Balance, BalancesMap, IconMap, Icon } from "../types";
 

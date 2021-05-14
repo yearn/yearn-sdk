@@ -5,8 +5,8 @@ import { VaultEarnings, VaultEarningsVariables } from "../services/subgraph/apol
 import { PROTOCOL_EARNINGS, VAULT_EARNINGS } from "../services/subgraph/apollo/queries";
 
 import { ChainId } from "../chain";
-import { Address, Reader, Usdc } from "../common";
-import { TokenAmount } from "../types";
+import { Reader } from "../common";
+import { Address, TokenAmount, Usdc } from "../types";
 
 const OneHundredMillionUsdc = BigNumber.from(1e14); // 1e8 (100M) * 1e6 (Usdc decimals)
 

@@ -1,4 +1,4 @@
-import { Address, Integer, Usdc } from "../common";
+import { Address, Integer, Usdc } from "./common";
 import { Metadata, TypeId } from "./metadata";
 
 export interface Allowance {
@@ -36,9 +36,6 @@ export interface Position {
   assetAllowances: Allowance[];
   tokenAllowances: Allowance[];
 }
-
-export type Icon = string | undefined;
-export type IconMap<T extends Address> = { [K in T]: Icon };
 
 /// Assets
 
