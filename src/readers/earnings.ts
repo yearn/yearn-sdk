@@ -114,13 +114,7 @@ export class EarningsReader<C extends ChainId> extends Reader<C> {
         const positiveTokens = balanceTokens.add(withdrawals).add(tokensSent);
         const negativeTokens = deposits.add(tokensReceived);
 
-        let earnings: BigNumber;
-
-        if (negativeTokens.gt(positiveTokens)) {
-          earnings = BigNumber.from(0);
-        } else {
-          earnings = positiveTokens.sub(negativeTokens);
-        }
+        let earnings = positiveTokens.sub(negativeTokens);
 
         const earningsUsdc = await this.tokensValueInUsdc(
           earnings,
