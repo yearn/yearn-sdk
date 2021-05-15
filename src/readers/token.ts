@@ -1,4 +1,5 @@
-import { Address, Integer, Reader } from "../common";
+import { Address, Integer } from "../types";
+import { Reader } from "../common";
 import { ChainId } from "../chain";
 import { Token, Balance, BalancesMap, IconMap, Icon } from "../types";
 
@@ -28,8 +29,9 @@ export class TokenReader<C extends ChainId> extends Reader<C> {
     const adapters = Object.values(this.yearn.services.lens.adapters.vaults);
     const vaults = await Promise.all(
       adapters.map(async adapter => {
-        const tokens = await adapter.tokens();
-        const icons = this.yearn.services.icons.get(tokens.map(({ address }) => address));
+        const tokenAddresses = await adapter.tokens();
+        const tokens = await this.yearn.services.helper.tokens(tokenAddresses);
+        const icons = this.yearn.services.icons.get(tokenAddresses);
         return Promise.all(
           tokens.map(async token => ({
             ...token,

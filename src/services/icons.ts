@@ -1,8 +1,8 @@
 import { ChainId } from "../chain";
-import { Address, Service } from "../common";
+import { Service } from "../common";
 import { Context } from "../context";
 import { handleHttpError } from "../helpers";
-import { Icon, IconMap } from "../types";
+import { Icon, IconMap, Address } from "../types";
 
 const YearnAssets = "https://api.github.com/repos/yearn/yearn-assets/contents/icons/tokens";
 const TrustAssets = "https://raw.githack.com/trustwallet/assets/master/blockchains/ethereum/tokenlist.json";

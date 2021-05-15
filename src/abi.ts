@@ -3,9 +3,11 @@ export const TokenAbi = "tuple(address address, string name, string symbol, uint
 export const AssetStaticAbi = `tuple(
   address address,
   string typeId,
+  address token,
   string name,
   string version,
-  ${TokenAbi} token
+  string symbol,
+  uint8 decimals,
 )`;
 
 export const AssetDynamicAbi = (Metadata: string) => `tuple(
@@ -17,7 +19,7 @@ export const AssetDynamicAbi = (Metadata: string) => `tuple(
 )`;
 
 export const PositionAbi =
-  "tuple(address assetId, address tokenId, string typeId, uint256 balance," +
+  "tuple(address assetAddress, address tokenAddress, string typeId, uint256 balance," +
   "tuple(uint256 amount, uint256 amountUsdc) underlyingTokenBalance," +
   "tuple(address owner, address spender, uint256 amount)[] tokenAllowances," +
   "tuple(address owner, address spender, uint256 amount)[] assetAllowances)";
@@ -29,5 +31,5 @@ export const AdapterAbi = (Metadata: string) => [
   `function assetsDynamic(address[] memory) public view returns (${AssetDynamicAbi(Metadata)}[] memory)`,
   `function assetsPositionsOf(address) public view returns (${PositionAbi}[] memory)`,
   `function assetsPositionsOf(address, address[] memory) public view returns (${PositionAbi}[] memory)`,
-  `function tokens() public view returns (${TokenAbi}[] memory)`
+  `function assetsTokensAddresses() public view returns (address[] memory)`
 ];

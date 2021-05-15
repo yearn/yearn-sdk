@@ -1,25 +1,22 @@
-import { GenericAsset, Position } from "../types";
-import { Address, ContractService } from "../common";
-import { ChainId, EthMain, EthLocal } from "../chain";
+import { Address, GenericAsset, Position } from "../types";
+import { ContractService } from "../common";
+import { ChainId } from "../chain";
 import { structArray } from "../struct";
 import { Context } from "../context";
+
 import { IRegistryAdapter, RegistryV2Adapter } from "./adapters/registry";
+import { IronBankAdapter } from "./adapters/ironbank";
 
 // FIXME: no
 export const LensAbi = ["function getRegistries() external view returns (address[] memory)"];
 
-export type Adapters<T extends ChainId> = T extends EthMain | EthLocal
-  ? {
-      vaults: {
-        v1: IRegistryAdapter;
-        v2: RegistryV2Adapter<T>;
-      };
-    }
-  : {
-      vaults: {
-        v2: RegistryV2Adapter<T>;
-      };
-    };
+export type Adapters<T extends ChainId> = {
+  vaults: {
+    v1: IRegistryAdapter;
+    v2: RegistryV2Adapter<T>;
+  };
+  ironBank: IronBankAdapter<T>;
+};
 
 /**
  * [[LensService]] provides access to all yearn's assets and user positions.
@@ -30,21 +27,22 @@ export class LensService<T extends ChainId> extends ContractService {
   static abi = LensAbi;
 
   constructor(chainId: T, ctx: Context) {
-    super(ctx.address("lens") ?? LensService.addressByChain(chainId), chainId, ctx);
+    super(ctx.addresses.lens ?? LensService.addressByChain(chainId), chainId, ctx);
   }
 
   get adapters(): Adapters<T> {
     switch (this.chainId) {
-      case 1:
-      case 250:
-      case 1337:
+      case 1: // FIXME: doesn't actually exist
+      case 250: // ditto
+      case 1337: // ditto
         return {
           vaults: {
             v2: new RegistryV2Adapter(this.chainId, this.ctx)
-          }
-        } as Adapters<T>;
+          },
+          ironBank: new IronBankAdapter(this.chainId, this.ctx)
+        } as Adapters<T>; // FIXME: missing adapters
     }
-    throw new TypeError(`No adapter exist for chainId ${this.chainId}`);
+    throw TypeError(`No lens adapter for chainId "${this.chainId}".`);
   }
 
   static addressByChain(chainId: ChainId): string {
@@ -57,18 +55,18 @@ export class LensService<T extends ChainId> extends ContractService {
   }
 
   async getRegistries(): Promise<string[]> {
-    return await this.contract.getRegistries();
+    return await this.contract.read.getRegistries();
   }
 
   async getAssets(): Promise<GenericAsset[]> {
-    return await this.contract.getAssets().then(structArray);
+    return await this.contract.read.getAssets().then(structArray);
   }
 
   async getAssetsFromAdapter(adapter: Address): Promise<GenericAsset[]> {
-    return await this.contract.getAssetsFromAdapter(adapter).then(structArray);
+    return await this.contract.read.getAssetsFromAdapter(adapter).then(structArray);
   }
 
   async getPositions(address: string): Promise<Position[]> {
-    return await this.contract.getPositionsOf(address).then(structArray);
+    return await this.contract.read.getPositionsOf(address).then(structArray);
   }
 }

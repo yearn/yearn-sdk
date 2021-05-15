@@ -1,6 +1,6 @@
 {
   "name": "@yfi/sdk",
-  "version": "0.0.19",
+  "version": "0.0.21",
   "description": "Interaction framework for the yearn protocol",
   "author": "nymmrx <nymmrx@protonmail.com>",
   "license": "MIT",
@@ -36,7 +36,7 @@
     "@solidity-parser/parser": "^0.12.0",
     "@types/object-hash": "^2.1.0",
     "apollo": "^2.33.0",
-    "release-it": "^14.6.1",
+    "cli-table3": "^0.6.0",
     "size-limit": "^4.10.1",
     "tsdx": "^0.14.1",
     "tslib": "^2.1.0",
@@ -51,7 +51,8 @@
     "events": "^3.3.0",
     "graphql": "^15.5.0",
     "graphql-tag": "^2.12.4",
-    "object-hash": "^2.1.1"
+    "object-hash": "^2.1.1",
+    "type-fest": "^1.1.1"
   },
   "publishConfig": {
     "access": "public"
@@ -66,8 +67,8 @@
       "limit": "80 KB"
     }
   ],
-  "engines" : { 
-    "node" : ">=12.0.0" 
+  "engines": {
+    "node": ">=12.0.0"
   },
   "prettier": {
     "endOfLine": "auto",

@@ -1,7 +1,8 @@
-import { Address, Integer, ContractService } from "../common";
+import { ContractService } from "../common";
 import { ChainId } from "../chain";
 import { Context } from "../context";
 import { int } from "../helpers";
+import { Address, Integer } from "../types";
 
 export const OracleAbi = [
   // Oracle general
@@ -36,7 +37,7 @@ export class OracleService<T extends ChainId> extends ContractService {
   static abi = OracleAbi;
 
   constructor(chainId: T, ctx: Context) {
-    super(ctx.address("oracle") ?? OracleService.addressByChain(chainId), chainId, ctx);
+    super(ctx.addresses.oracle ?? OracleService.addressByChain(chainId), chainId, ctx);
   }
 
   static addressByChain(chainId: ChainId): string {
@@ -50,76 +51,76 @@ export class OracleService<T extends ChainId> extends ContractService {
   }
 
   async getCalculations(): Promise<Address[]> {
-    return await this.contract.calculations();
+    return await this.contract.read.calculations();
   }
 
   async getPriceUsdc(token: Address): Promise<Integer> {
-    return await this.contract.getPriceUsdcRecommended(token).then(int);
+    return await this.contract.read.getPriceUsdcRecommended(token).then(int);
   }
 
   async getUsdcAddress(): Promise<Integer> {
-    return await this.contract.usdcAddress().then(int);
+    return await this.contract.read.usdcAddress().then(int);
   }
 
   // Calculations Curve
 
   async isCurveLpToken(lpToken: Address): Promise<boolean> {
-    return await this.contract.isCurveLpToken(lpToken);
+    return await this.contract.read.isCurveLpToken(lpToken);
   }
 
   async getCurvePriceUsdc(lpToken: Address): Promise<Integer> {
-    return await this.contract.getCurvePriceUsdc(lpToken).then(int);
+    return await this.contract.read.getCurvePriceUsdc(lpToken).then(int);
   }
 
   async getBasePrice(lpToken: Address): Promise<Integer> {
-    return await this.contract.getBasePrice(lpToken).then(int);
+    return await this.contract.read.getBasePrice(lpToken).then(int);
   }
 
   async getVirtualPrice(lpToken: Address): Promise<Integer> {
-    return await this.contract.getVirtualPrice(lpToken).then(int);
+    return await this.contract.read.getVirtualPrice(lpToken).then(int);
   }
 
   async getFirstUnderlyingCoinFromPool(pool: Address): Promise<Address> {
-    return await this.contract.getFirstUnderlyingCoinFromPool(pool);
+    return await this.contract.read.getFirstUnderlyingCoinFromPool(pool);
   }
 
   async getCurveRegistryAddress(): Promise<Integer> {
-    return await this.contract.usdcAddress().then(int);
+    return await this.contract.read.usdcAddress().then(int);
   }
 
   // Calculations: Iron Bank
 
   async isIronBankMarket(token: Address): Promise<boolean> {
-    return await this.contract.isIronBankMarket(token);
+    return await this.contract.read.isIronBankMarket(token);
   }
 
   async getIronBankMarketPriceUsdc(token: Address): Promise<Integer> {
-    return await this.contract.getIronBankMarketPriceUsdc(token).then(int);
+    return await this.contract.read.getIronBankMarketPriceUsdc(token).then(int);
   }
 
   async getIronBankMarkets(): Promise<Address[]> {
-    return await this.contract.getIronBankMarkets();
+    return await this.contract.read.getIronBankMarkets();
   }
 
   // Calculations: Sushiswap
 
   async isLpToken(token: Address): Promise<boolean> {
-    return await this.contract.isLpToken(token);
+    return await this.contract.read.isLpToken(token);
   }
 
   async getPriceFromRouter(token0: Address, token1: Address): Promise<Integer> {
-    return await this.contract.getPriceFromRouter(token0, token1).then(int);
+    return await this.contract.read.getPriceFromRouter(token0, token1).then(int);
   }
 
   async getPriceFromRouterUsdc(token: Address): Promise<Integer> {
-    return await this.contract.getPriceFromRouterUsdc(token).then(int);
+    return await this.contract.read.getPriceFromRouterUsdc(token).then(int);
   }
 
   async getLpTokenTotalLiquidityUsdc(token: Address): Promise<Integer> {
-    return await this.contract.getLpTokenTotalLiquidityUsdc(token).then(int);
+    return await this.contract.read.getLpTokenTotalLiquidityUsdc(token).then(int);
   }
 
   async getLpTokenPriceUsdc(token: Address): Promise<Integer> {
-    return await this.contract.getLpTokenPriceUsdc(token).then(int);
+    return await this.contract.read.getLpTokenPriceUsdc(token).then(int);
   }
 }

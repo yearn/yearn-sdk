@@ -5,8 +5,8 @@ import { VaultEarnings, VaultEarningsVariables } from "../services/subgraph/apol
 import { ACCOUNT_EARNINGS, PROTOCOL_EARNINGS, VAULT_EARNINGS } from "../services/subgraph/apollo/queries";
 
 import { ChainId } from "../chain";
-import { Address, Reader, Usdc } from "../common";
-import { TokenAmount } from "../types";
+import { Reader } from "../common";
+import { Address, TokenAmount, Usdc } from "../types";
 import {
   AccountEarnings as AccountEarningsQuery,
   AccountEarningsVariables as AccountEarningsQueryVariables

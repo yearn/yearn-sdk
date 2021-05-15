@@ -1,4 +1,4 @@
-import { Address, Integer, Usdc } from "../common";
+import { Address, Integer, Usdc } from "./common";
 import { Metadata, TypeId } from "./metadata";
 
 export interface Allowance {
@@ -28,8 +28,8 @@ export interface Token extends ERC20 {
 }
 
 export interface Position {
-  assetId: Address;
-  tokenId: Address;
+  assetAddress: Address;
+  tokenAddress: Address;
   typeId: string;
   balance: Integer;
   underlyingTokenBalance: TokenAmount;
@@ -37,17 +37,16 @@ export interface Position {
   tokenAllowances: Allowance[];
 }
 
-export type Icon = string | undefined;
-export type IconMap<T extends Address> = { [K in T]: Icon };
-
 /// Assets
 
 export interface AssetStatic<T extends TypeId> {
   address: Address;
   typeId: T;
+  token: Address;
   name: string;
   version: string;
-  token: ERC20;
+  symbol: string;
+  decimals: string;
 }
 
 export interface AssetDynamic<T extends TypeId> {
