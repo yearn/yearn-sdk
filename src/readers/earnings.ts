@@ -1,4 +1,5 @@
-import { BigNumber } from "@ethersproject/bignumber";
+import { BigNumber } from "bignumber.js";
+import { getAddress } from "@ethersproject/address";
 
 import { ProtocolEarnings } from "../services/subgraph/apollo/generated/ProtocolEarnings";
 import { VaultEarnings, VaultEarningsVariables } from "../services/subgraph/apollo/generated/VaultEarnings";
@@ -12,70 +13,81 @@ import {
   AccountEarningsVariables as AccountEarningsQueryVariables
 } from "../services/subgraph/apollo/generated/AccountEarnings";
 
-const OneHundredMillionUsdc = BigNumber.from(1e14); // 1e8 (100M) * 1e6 (Usdc decimals)
+const OneHundredMillionUsdc = new BigNumber(10 ** 14); // 1e8 (100M) * 1e6 (Usdc decimals)
+const BigZero = new BigNumber(0);
 
-export interface AccountEarnings extends Earnings {
+export interface AccountSummary {
   accountId: Address;
+  aggregatedApy: String;
+  totalDepoistedUsdc: Usdc;
+  totalEarningsUsdc: Usdc;
+  projectedDailyEarningsUsdc: Usdc;
 }
 
-export interface AssetEarnings extends Earnings {
-  assetId: Address;
+export interface AccountAssetPosition {
+  accountAddress: Address;
+  assetAddress: Address;
+  tokenAddress: Address;
+  balance: TokenAmount;
+  earnings: TokenAmount;
+  roi: String;
 }
 
-export interface Earnings extends TokenAmount {
-  tokenId: Address;
+export interface AssetEarnings extends TokenAmount {
+  tokenAddress: Address;
+  assetAddress: Address;
 }
 
 export class EarningsReader<C extends ChainId> extends Reader<C> {
-  async protocolEarnings(): Promise<Usdc> {
+  async protocolEarnings(): Promise<String> {
     const response = await this.yearn.services.subgraph.client.query<ProtocolEarnings>({
       query: PROTOCOL_EARNINGS
     });
 
-    var result = BigNumber.from(0);
+    let result = BigZero;
     for (const vault of response.data.vaults) {
       if (vault.latestUpdate === null) {
         continue;
       }
-      const returnsGenerated = BigNumber.from(vault.latestUpdate.returnsGenerated);
+      const returnsGenerated = new BigNumber(vault.latestUpdate.returnsGenerated);
       const earningsUsdc = await this.tokensValueInUsdc(returnsGenerated, vault.token.id, vault.token.decimals);
       // FIXME: some results are negative, and some are too large to be realistically possible.
       // This is due to problems with the subgraph and should be fixed there:
       // https://github.com/yearn/yearn-vaults-v2-subgraph/issues/60
-      if (earningsUsdc.gt(BigNumber.from(0)) && earningsUsdc.lt(OneHundredMillionUsdc)) {
-        result = result.add(earningsUsdc);
+      if (earningsUsdc.gt(BigZero) && earningsUsdc.lt(OneHundredMillionUsdc)) {
+        result = result.plus(earningsUsdc);
       }
     }
 
-    return result.toString();
+    return result.toFixed(0);
   }
 
-  async assetEarnings(vaultAddress: Address): Promise<AssetEarnings> {
+  async assetEarnings(assetAddress: Address): Promise<AssetEarnings> {
     const response = await this.yearn.services.subgraph.client.query<VaultEarnings, VaultEarningsVariables>({
       query: VAULT_EARNINGS,
       variables: {
-        vault: vaultAddress
+        vault: assetAddress
       }
     });
 
     const vault = response.data.vault;
 
     if (!vault) {
-      throw Error(`failed to find vault with address ${vaultAddress}`);
+      throw Error(`failed to find asset with address ${assetAddress}`);
     }
 
-    const returnsGenerated = BigNumber.from(vault.latestUpdate?.returnsGenerated);
+    const returnsGenerated = new BigNumber(vault.latestUpdate?.returnsGenerated || 0);
     const earningsUsdc = await this.tokensValueInUsdc(returnsGenerated, vault.token.id, vault.token.decimals);
     const result: AssetEarnings = {
-      assetId: vaultAddress,
-      amount: vault.latestUpdate?.returnsGenerated || "",
-      amountUsdc: earningsUsdc.toString(),
-      tokenId: vault.token.id
+      assetAddress: getAddress(assetAddress), // addresses from subgraph are not checksummed
+      amount: returnsGenerated.toFixed(0),
+      amountUsdc: earningsUsdc.toFixed(0),
+      tokenAddress: getAddress(vault.token.id)
     };
     return result;
   }
 
-  async accountEarnings(accountAddress: Address): Promise<AccountEarnings[]> {
+  async accountAssetPositions(accountAddress: Address): Promise<AccountAssetPosition[]> {
     const response = await this.yearn.services.subgraph.client.query<
       AccountEarningsQuery,
       AccountEarningsQueryVariables
@@ -93,50 +105,115 @@ export class EarningsReader<C extends ChainId> extends Reader<C> {
     }
 
     return await Promise.all(
-      account.vaultPositions.map(async vaultPosition => {
-        const balanceTokens = BigNumber.from(vaultPosition.balanceShares)
-          .mul(BigNumber.from(vaultPosition.vault.latestUpdate?.pricePerShare || 0))
-          .div(BigNumber.from(10).pow(vaultPosition.token.decimals));
+      account.vaultPositions.map(async assetPosition => {
+        const balanceTokens = new BigNumber(assetPosition.balanceShares)
+          .multipliedBy(new BigNumber(assetPosition.vault.latestUpdate?.pricePerShare || 0))
+          .div(10 ** assetPosition.token.decimals);
 
-        const deposits = vaultPosition.updates
-          .map(update => BigNumber.from(update.deposits))
-          .reduce((sum, value) => sum.add(value));
-        const withdrawals = vaultPosition.updates
-          .map(update => BigNumber.from(update.withdrawals))
-          .reduce((sum, value) => sum.add(value));
-        const tokensReceived = vaultPosition.updates
-          .map(update => BigNumber.from(update.tokensReceived))
-          .reduce((sum, value) => sum.add(value));
-        const tokensSent = vaultPosition.updates
-          .map(update => BigNumber.from(update.tokensSent))
-          .reduce((sum, value) => sum.add(value));
+        const deposits = assetPosition.updates
+          .map(update => new BigNumber(update.deposits))
+          .reduce((sum, value) => sum.plus(value));
+        const withdrawals = assetPosition.updates
+          .map(update => new BigNumber(update.withdrawals))
+          .reduce((sum, value) => sum.plus(value));
+        const tokensReceived = assetPosition.updates
+          .map(update => new BigNumber(update.tokensReceived))
+          .reduce((sum, value) => sum.plus(value));
+        const tokensSent = assetPosition.updates
+          .map(update => new BigNumber(update.tokensSent))
+          .reduce((sum, value) => sum.plus(value));
 
-        const positiveTokens = balanceTokens.add(withdrawals).add(tokensSent);
-        const negativeTokens = deposits.add(tokensReceived);
-
-        let earnings = positiveTokens.sub(negativeTokens);
+        const positiveTokens = balanceTokens.plus(withdrawals).plus(tokensSent);
+        const negativeTokens = deposits.plus(tokensReceived);
+        const earningsTokens = positiveTokens.minus(negativeTokens);
 
         const earningsUsdc = await this.tokensValueInUsdc(
-          earnings,
-          vaultPosition.token.id,
-          vaultPosition.token.decimals
+          earningsTokens,
+          assetPosition.token.id,
+          assetPosition.token.decimals
         );
 
-        const accountVaultEarnings: AccountEarnings = {
-          accountId: accountAddress,
-          amount: earnings.toString(),
-          amountUsdc: earningsUsdc.toString(),
-          tokenId: vaultPosition.token.id
+        const earnings: TokenAmount = {
+          amount: earningsTokens.toFixed(0),
+          amountUsdc: earningsUsdc.toFixed(0)
+        };
+
+        const balanceUsdc = await this.tokensValueInUsdc(
+          balanceTokens,
+          assetPosition.token.id,
+          assetPosition.token.decimals
+        );
+
+        const balance: TokenAmount = {
+          amount: balanceTokens.toFixed(0),
+          amountUsdc: balanceUsdc.toFixed(0)
+        };
+
+        const roi =
+          balanceTokens.minus(earningsTokens) !== BigZero
+            ? earningsTokens
+                .div(balanceTokens.minus(earningsTokens))
+                .multipliedBy(100)
+                .toFixed(2) + "%"
+            : "0%";
+
+        const accountVaultEarnings: AccountAssetPosition = {
+          earnings: earnings,
+          balance: balance,
+          accountAddress: getAddress(accountAddress), // addresses from subgraph are not checksummed
+          tokenAddress: getAddress(assetPosition.token.id),
+          assetAddress: getAddress(assetPosition.vault.id),
+          roi: roi
         };
         return accountVaultEarnings;
       })
     );
   }
 
+  async accountSummary(accountAddress: Address): Promise<AccountSummary> {
+    const accountAssetPositions = await this.accountAssetPositions(accountAddress);
+
+    const totalDepoistedUsdc = accountAssetPositions
+      .map(poisition => new BigNumber(poisition.balance.amountUsdc))
+      .reduce((sum, next) => sum.plus(next));
+
+    const assetAddresses = accountAssetPositions.map(poisition => poisition.assetAddress);
+    const apys = await this.yearn.services.vision.apy(assetAddresses);
+
+    const aggregatedApy: BigNumber = accountAssetPositions.reduce((sum: BigNumber, next: AccountAssetPosition) => {
+      if (totalDepoistedUsdc === BigZero) {
+        return sum;
+      }
+      const apy = apys[next.assetAddress]?.recommended;
+      if (!apy) {
+        return sum;
+      }
+      const ratio = new BigNumber(next.balance.amountUsdc).dividedBy(new BigNumber(totalDepoistedUsdc));
+      const weightedApy = ratio.multipliedBy(new BigNumber(apy));
+      return sum.plus(weightedApy);
+    }, BigZero);
+
+    const totalEarningsUsdc = accountAssetPositions
+      .map(position => new BigNumber(position.earnings.amountUsdc))
+      .reduce((sum, current) => sum.plus(current));
+
+    const projectedDailyEarningsUsdc = aggregatedApy
+      .multipliedBy(new BigNumber(totalDepoistedUsdc))
+      .dividedBy(new BigNumber(365));
+
+    const result: AccountSummary = {
+      accountId: accountAddress,
+      totalDepoistedUsdc: totalDepoistedUsdc.toFixed(0),
+      totalEarningsUsdc: totalEarningsUsdc.toFixed(0),
+      aggregatedApy: aggregatedApy.multipliedBy(100).toFixed(2) + "%",
+      projectedDailyEarningsUsdc: projectedDailyEarningsUsdc.toFixed(0)
+    };
+
+    return result;
+  }
+
   private async tokensValueInUsdc(tokenAmount: BigNumber, tokenAddress: Address, decimals: number): Promise<BigNumber> {
     const tokenUsdcPrice = await this.yearn.services.oracle.getPriceUsdc(tokenAddress);
-    return BigNumber.from(tokenUsdcPrice)
-      .mul(tokenAmount)
-      .div(BigNumber.from(10).pow(BigNumber.from(decimals)));
+    return new BigNumber(tokenUsdcPrice).multipliedBy(tokenAmount).div(10 ** decimals);
   }
 }

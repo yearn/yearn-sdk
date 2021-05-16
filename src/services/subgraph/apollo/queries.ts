@@ -32,7 +32,7 @@ export const PROTOCOL_EARNINGS = gql`
   }
 `;
 
-export const ACCOUNT_EARNINGS= gql`
+export const ACCOUNT_EARNINGS = gql`
   query AccountEarnings($id: ID!) {
     account(id: $id) {
       vaultPositions {
@@ -48,6 +48,7 @@ export const ACCOUNT_EARNINGS= gql`
           tokensSent
         }
         vault {
+          id
           latestUpdate {
             pricePerShare
           }
@@ -55,4 +56,4 @@ export const ACCOUNT_EARNINGS= gql`
       }
     }
   }
-`
+`;
