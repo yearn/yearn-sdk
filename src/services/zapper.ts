@@ -1,7 +1,7 @@
 import { getAddress } from "@ethersproject/address";
 
 import { Service } from "../common";
-import { Address, Balance, BalancesMap, GasPrice, Token } from "../types";
+import { Address, Balance, BalancesMap, Token } from "../types";
 import { EthAddress, handleHttpError, ZeroAddress, usdc } from "../helpers";
 
 /**
@@ -22,7 +22,7 @@ export class ZapperService extends Service {
         symbol: token.symbol,
         icon: `https://zapper.fi/icons/${token.symbol}-icon.png`,
         decimals: token.decimals,
-        price: usdc(token.price),
+        priceUsdc: usdc(token.price),
         supported: { zapper: true }
       })
     );
@@ -57,23 +57,12 @@ export class ZapperService extends Service {
             },
             balance: balance.balanceRaw,
             balanceUsdc: usdc(balance.balanceUSD),
-            price: usdc(balance.price)
+            priceUsdc: usdc(balance.price)
           };
         }
       );
     });
     if (!Array.isArray(addresses)) return balances[addresses];
     return balances;
-  }
-
-  async gas(): Promise<GasPrice[]> {
-    const url = "https://api.zapper.fi/v1/gas-price";
-    const params = new URLSearchParams({
-      api_key: this.ctx.zapper
-    });
-    const gas = await fetch(`${url}?${params}`)
-      .then(handleHttpError)
-      .then(res => res.json());
-    return gas;
   }
 }

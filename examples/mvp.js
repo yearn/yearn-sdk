@@ -43,6 +43,15 @@ async function main() {
 
   console.log("Yearn Multisig vault positions:");
   console.log(positionsTable.toString());
+
+  // Get token balances for common coins in ETH mainnet
+  const vaultBalances = await yearn.vaults.balances(gov);
+
+  const vaultBalancesTable = new Table();
+  vaultBalancesTable.push(...vaultBalances.map(balance => [balance.token.name, balance.balance, balance.balanceUsdc]));
+
+  console.log("Yearn Multisig underlying vault tokens balances:");
+  console.log(vaultBalancesTable.toString());
   
   // IRON BANK
   const ironBank = await yearn.ironBank.get();
@@ -73,13 +82,8 @@ async function main() {
   const supported = await yearn.tokens.supported();
   console.log("SDK supported tokens:", supported.length);
 
-  // Get gas prices by zapper
-  const gas = await yearn.services.zapper.gas();
-  console.log("Current Gas:");
-  console.log(gas);
-
   // Get token balances for common coins in ETH mainnet
-  const balances = await yearn.services.zapper.balances(gov);
+  const balances = await yearn.tokens.balances(gov);
 
   const balancesTable = new Table();
   balancesTable.push(...balances.map(balance => [balance.token.name, balance.balance, balance.balanceUsdc]));

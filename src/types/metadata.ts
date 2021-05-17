@@ -1,5 +1,5 @@
 import { Address, Integer } from "./common";
-import { Apy } from "./services";
+import { Apy } from "./custom/vault";
 
 export interface VaultMetadata {
   symbol: string;
