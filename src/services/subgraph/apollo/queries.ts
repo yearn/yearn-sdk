@@ -31,3 +31,29 @@ export const PROTOCOL_EARNINGS = gql`
     }
   }
 `;
+
+export const ACCOUNT_EARNINGS = gql`
+  query AccountEarnings($id: ID!) {
+    account(id: $id) {
+      vaultPositions {
+        balanceShares
+        token {
+          id
+          decimals
+        }
+        updates {
+          deposits
+          withdrawals
+          tokensReceived
+          tokensSent
+        }
+        vault {
+          id
+          latestUpdate {
+            pricePerShare
+          }
+        }
+      }
+    }
+  }
+`;
