@@ -1,8 +1,6 @@
 import { PartialDeep } from "type-fest";
 import { Provider } from "@ethersproject/providers";
 
-import { CacheManager, Cache } from "./cache";
-
 import { Address, SdkError } from "./types";
 import EventEmitter from "events";
 
@@ -39,12 +37,10 @@ export class Context implements Required<ContextValue> {
 
   private ctx: ContextValue;
 
-  cache: CacheManager;
   events: EventEmitter;
 
-  constructor(ctx: ContextValue, cache?: Cache) {
+  constructor(ctx: ContextValue) {
     this.ctx = Object.assign({}, DefaultContext, ctx);
-    this.cache = new CacheManager(cache);
     this.events = new EventEmitter().setMaxListeners(100);
     this.setProvider(ctx.provider);
   }

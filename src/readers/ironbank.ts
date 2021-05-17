@@ -1,4 +1,13 @@
-import { Position, IronBankMarket, CyTokenUserMetadata, IronBankPosition, Address, SdkError } from "../types";
+import {
+  Position,
+  IronBankMarket,
+  CyTokenUserMetadata,
+  IronBankPosition,
+  Address,
+  SdkError,
+  IronBankMarketStatic,
+  IronBankMarketDynamic
+} from "../types";
 import { ChainId } from "../chain";
 import { Reader } from "../common";
 
@@ -15,6 +24,13 @@ export class IronBankReader<T extends ChainId> extends Reader<T> {
       assets.push({ ...asset, ...dynamic });
     }
     return assets;
+  }
+  async getStatic(addresses?: Address[]): Promise<IronBankMarketStatic[]> {
+    return await this.yearn.services.lens.adapters.ironBank.assetsStatic(addresses);
+  }
+
+  async getDynamic(addresses?: Address[]): Promise<IronBankMarketDynamic[]> {
+    return await this.yearn.services.lens.adapters.ironBank.assetsDynamic(addresses);
   }
 
   async positionsOf(address: Address, addresses?: Address[]): Promise<Position[]> {

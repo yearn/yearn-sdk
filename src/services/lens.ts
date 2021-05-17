@@ -1,4 +1,4 @@
-import { Address, GenericAsset, Position } from "../types";
+import { Address, GenericAsset, Position, SdkError } from "../types";
 import { ContractService } from "../common";
 import { ChainId } from "../chain";
 import { structArray } from "../struct";
@@ -42,7 +42,7 @@ export class LensService<T extends ChainId> extends ContractService {
           ironBank: new IronBankAdapter(this.chainId, this.ctx)
         } as Adapters<T>; // FIXME: missing adapters
     }
-    throw TypeError(`No lens adapter for chainId "${this.chainId}".`);
+    throw new SdkError(`No lens adapter for chainId "${this.chainId}".`);
   }
 
   static addressByChain(chainId: ChainId): string {

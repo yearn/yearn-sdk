@@ -1,4 +1,12 @@
 export const TokenAbi = "tuple(address address, string name, string symbol, uint256 decimals)";
+export const TokenPriceAbi = "tuple(address address, uint256 priceUsdc)";
+export const TokenBalanceAbi = `tuple(
+  address address, 
+  uint256 priceUsdc, 
+  uint256 balance,
+  uint256 balanceUsdc
+)`;
+export const AllowanceAbi = "tuple(address owner, address spender, uint256 amount, address token)";
 
 export const AssetStaticAbi = `tuple(
   address address,

@@ -21,7 +21,7 @@ export interface TokenAmount {
 
 export interface Token extends ERC20 {
   icon?: string;
-  price: Integer;
+  priceUsdc: Usdc;
   supported: {
     zapper?: boolean;
   };

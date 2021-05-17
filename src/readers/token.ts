@@ -1,49 +1,38 @@
-import { Address, Integer } from "../types";
+import { Address, Integer, TypedMap, Usdc } from "../types";
 import { Reader } from "../common";
 import { ChainId } from "../chain";
-import { Token, Balance, BalancesMap, IconMap, Icon } from "../types";
+import { Token, Balance, IconMap, Icon } from "../types";
 
 export class TokenReader<C extends ChainId> extends Reader<C> {
-  async priceUsdc(token: Address): Promise<Integer> {
-    return this.yearn.services.oracle.getPriceUsdc(token);
-  }
-
   async price(from: Address, to: Address): Promise<Integer> {
     return this.yearn.services.oracle.getPriceFromRouter(from, to);
   }
 
-  async balances<T extends Address>(address: T): Promise<Balance[]>;
-  async balances<T extends Address>(addresses: T[]): Promise<BalancesMap<T>>;
+  async priceUsdc<T extends Address>(token: T): Promise<Usdc>;
+  async priceUsdc<T extends Address>(tokens: T[]): Promise<TypedMap<T, Usdc>>;
+  async priceUsdc<T extends Address>(tokens: T | T[]): Promise<TypedMap<T, Usdc> | Usdc> {
+    if (Array.isArray(tokens)) {
+      const entries = await Promise.all(
+        tokens.map(async token => {
+          const price = await this.yearn.services.oracle.getPriceUsdc(token);
+          return [token, price];
+        })
+      );
+      return Object.fromEntries(entries) as TypedMap<T, Usdc>;
+    }
+    return this.yearn.services.oracle.getPriceUsdc(tokens);
+  }
 
-  async balances<T extends Address>(addresses: T[] | T): Promise<BalancesMap<T> | Balance[]> {
-    return this.yearn.services.zapper.balances<T>(addresses);
+  async balances(address: Address): Promise<Balance[]> {
+    return this.yearn.services.zapper.balances(address);
   }
 
   async supported(): Promise<Token[]> {
-    const tokens = [];
     if (this.chainId === 1 || this.chainId === 1337) {
       // only ETH Main is supported
-      const zapper = await this.yearn.services.zapper.supportedTokens();
-      tokens.push(...zapper);
+      return await this.yearn.services.zapper.supportedTokens();
     }
-    const adapters = Object.values(this.yearn.services.lens.adapters.vaults);
-    const vaults = await Promise.all(
-      adapters.map(async adapter => {
-        const tokenAddresses = await adapter.tokens();
-        const tokens = await this.yearn.services.helper.tokens(tokenAddresses);
-        const icons = this.yearn.services.icons.get(tokenAddresses);
-        return Promise.all(
-          tokens.map(async token => ({
-            ...token,
-            icon: icons[token.address],
-            supported: {},
-            price: await this.yearn.services.oracle.getPriceUsdc(token.address)
-          }))
-        );
-      })
-    ).then(arr => arr.flat());
-    tokens.push(...vaults);
-    return tokens;
+    return [];
   }
 
   icon<T extends Address>(address: T): Icon;

@@ -7,7 +7,7 @@ import { ACCOUNT_EARNINGS, PROTOCOL_EARNINGS, VAULT_EARNINGS } from "../services
 
 import { ChainId } from "../chain";
 import { Reader } from "../common";
-import { Address, TokenAmount, Usdc } from "../types";
+import { Address, SdkError, TokenAmount, Usdc } from "../types";
 import {
   AccountEarnings as AccountEarningsQuery,
   AccountEarningsVariables as AccountEarningsQueryVariables
@@ -19,7 +19,7 @@ const BigZero = new BigNumber(0);
 export interface AccountSummary {
   accountId: Address;
   aggregatedApy: String;
-  totalDepoistedUsdc: Usdc;
+  totalDepositedUsdc: Usdc;
   totalEarningsUsdc: Usdc;
   projectedDailyEarningsUsdc: Usdc;
 }
@@ -73,7 +73,7 @@ export class EarningsReader<C extends ChainId> extends Reader<C> {
     const vault = response.data.vault;
 
     if (!vault) {
-      throw Error(`failed to find asset with address ${assetAddress}`);
+      throw new SdkError(`failed to find asset with address ${assetAddress}`);
     }
 
     const returnsGenerated = new BigNumber(vault.latestUpdate?.returnsGenerated || 0);
@@ -101,7 +101,7 @@ export class EarningsReader<C extends ChainId> extends Reader<C> {
     const account = response.data.account;
 
     if (!account) {
-      throw Error(`failed to find account address ${accountAddress}`);
+      throw new SdkError(`failed to find account address ${accountAddress}`);
     }
 
     return await Promise.all(
@@ -173,22 +173,22 @@ export class EarningsReader<C extends ChainId> extends Reader<C> {
   async accountSummary(accountAddress: Address): Promise<AccountSummary> {
     const accountAssetPositions = await this.accountAssetPositions(accountAddress);
 
-    const totalDepoistedUsdc = accountAssetPositions
-      .map(poisition => new BigNumber(poisition.balance.amountUsdc))
+    const totalDepositedUsdc = accountAssetPositions
+      .map(position => new BigNumber(position.balance.amountUsdc))
       .reduce((sum, next) => sum.plus(next));
 
-    const assetAddresses = accountAssetPositions.map(poisition => poisition.assetAddress);
+    const assetAddresses = accountAssetPositions.map(position => position.assetAddress);
     const apys = await this.yearn.services.vision.apy(assetAddresses);
 
     const aggregatedApy: BigNumber = accountAssetPositions.reduce((sum: BigNumber, next: AccountAssetPosition) => {
-      if (totalDepoistedUsdc === BigZero) {
+      if (totalDepositedUsdc === BigZero) {
         return sum;
       }
       const apy = apys[next.assetAddress]?.recommended;
       if (!apy) {
         return sum;
       }
-      const ratio = new BigNumber(next.balance.amountUsdc).dividedBy(new BigNumber(totalDepoistedUsdc));
+      const ratio = new BigNumber(next.balance.amountUsdc).dividedBy(new BigNumber(totalDepositedUsdc));
       const weightedApy = ratio.multipliedBy(new BigNumber(apy));
       return sum.plus(weightedApy);
     }, BigZero);
@@ -198,12 +198,12 @@ export class EarningsReader<C extends ChainId> extends Reader<C> {
       .reduce((sum, current) => sum.plus(current));
 
     const projectedDailyEarningsUsdc = aggregatedApy
-      .multipliedBy(new BigNumber(totalDepoistedUsdc))
+      .multipliedBy(new BigNumber(totalDepositedUsdc))
       .dividedBy(new BigNumber(365));
 
     const result: AccountSummary = {
       accountId: accountAddress,
-      totalDepoistedUsdc: totalDepoistedUsdc.toFixed(0),
+      totalDepositedUsdc: totalDepositedUsdc.toFixed(0),
       totalEarningsUsdc: totalEarningsUsdc.toFixed(0),
       aggregatedApy: aggregatedApy.multipliedBy(100).toFixed(2) + "%",
       projectedDailyEarningsUsdc: projectedDailyEarningsUsdc.toFixed(0)
