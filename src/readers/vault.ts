@@ -2,6 +2,7 @@ import { Address, Balance, SdkError, Token, VaultDynamic, VaultStatic } from "..
 import { Position, Vault } from "../types";
 import { ChainId } from "../chain";
 import { Reader } from "../common";
+import { CallOverrides } from "@ethersproject/contracts";
 
 export class VaultReader<T extends ChainId> extends Reader<T> {
   async get(addresses?: Address[]): Promise<Vault[]> {
@@ -25,38 +26,39 @@ export class VaultReader<T extends ChainId> extends Reader<T> {
     ).then(arr => arr.flat());
   }
 
-  async getStatic(addresses?: Address[]): Promise<VaultStatic[]> {
+  async getStatic(addresses?: Address[], overrides?: CallOverrides): Promise<VaultStatic[]> {
     const adapters = Object.values(this.yearn.services.lens.adapters.vaults);
     return await Promise.all(
       adapters.map(async adapter => {
-        return await adapter.assetsStatic(addresses);
+        return await adapter.assetsStatic(addresses, overrides);
       })
     ).then(arr => arr.flat());
   }
 
-  async getDynamic(addresses?: Address[]): Promise<VaultDynamic[]> {
+  async getDynamic(addresses?: Address[], overrides?: CallOverrides): Promise<VaultDynamic[]> {
     const adapters = Object.values(this.yearn.services.lens.adapters.vaults);
     return await Promise.all(
       adapters.map(async adapter => {
-        return await adapter.assetsDynamic(addresses);
+        return await adapter.assetsDynamic(addresses, overrides);
       })
     ).then(arr => arr.flat());
   }
 
-  async positionsOf(address: Address, addresses?: Address[]): Promise<Position[]> {
+  async positionsOf(address: Address, addresses?: Address[], overrides?: CallOverrides): Promise<Position[]> {
     const adapters = Object.values(this.yearn.services.lens.adapters.vaults);
     return await Promise.all(
       adapters.map(adapter => {
-        return adapter.positionsOf(address, addresses);
+        return adapter.positionsOf(address, addresses, overrides);
       })
     ).then(arr => arr.flat());
   }
 
-  async balances(address: Address): Promise<Balance[]> {
+  async balances(address: Address, overrides?: CallOverrides): Promise<Balance[]> {
     const tokens = await this.tokens();
     const balances = await this.yearn.services.helper.tokenBalances(
       address,
-      tokens.map(token => token.address)
+      tokens.map(token => token.address),
+      overrides
     );
     return balances.map(balance => {
       const token = tokens.find(token => token.address === balance.address);
@@ -70,19 +72,19 @@ export class VaultReader<T extends ChainId> extends Reader<T> {
     });
   }
 
-  async tokens(): Promise<Token[]> {
+  async tokens(overrides?: CallOverrides): Promise<Token[]> {
     const adapters = Object.values(this.yearn.services.lens.adapters.vaults);
     return await Promise.all(
       adapters.map(async adapter => {
-        const tokenAddresses = await adapter.tokens();
-        const tokens = await this.yearn.services.helper.tokens(tokenAddresses);
+        const tokenAddresses = await adapter.tokens(overrides);
+        const tokens = await this.yearn.services.helper.tokens(tokenAddresses, overrides);
         const icons = this.yearn.services.icons.get(tokenAddresses);
         return Promise.all(
           tokens.map(async token => ({
             ...token,
             icon: icons[token.address],
             supported: {},
-            priceUsdc: await this.yearn.services.oracle.getPriceUsdc(token.address)
+            priceUsdc: await this.yearn.services.oracle.getPriceUsdc(token.address, overrides)
           }))
         );
       })

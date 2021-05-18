@@ -6,6 +6,7 @@ import { Context } from "../context";
 
 import { IRegistryAdapter, RegistryV2Adapter } from "./adapters/registry";
 import { IronBankAdapter } from "./adapters/ironbank";
+import { CallOverrides } from "@ethersproject/contracts";
 
 // FIXME: no
 export const LensAbi = ["function getRegistries() external view returns (address[] memory)"];
@@ -54,19 +55,19 @@ export class LensService<T extends ChainId> extends ContractService {
     }
   }
 
-  async getRegistries(): Promise<string[]> {
-    return await this.contract.read.getRegistries();
+  async getRegistries(overrides: CallOverrides = {}): Promise<string[]> {
+    return await this.contract.read.getRegistries(overrides);
   }
 
-  async getAssets(): Promise<GenericAsset[]> {
-    return await this.contract.read.getAssets().then(structArray);
+  async getAssets(overrides: CallOverrides = {}): Promise<GenericAsset[]> {
+    return await this.contract.read.getAssets(overrides).then(structArray);
   }
 
-  async getAssetsFromAdapter(adapter: Address): Promise<GenericAsset[]> {
-    return await this.contract.read.getAssetsFromAdapter(adapter).then(structArray);
+  async getAssetsFromAdapter(adapter: Address, overrides: CallOverrides = {}): Promise<GenericAsset[]> {
+    return await this.contract.read.getAssetsFromAdapter(adapter, overrides).then(structArray);
   }
 
-  async getPositions(address: string): Promise<Position[]> {
-    return await this.contract.read.getPositionsOf(address).then(structArray);
+  async getPositions(address: string, overrides: CallOverrides = {}): Promise<Position[]> {
+    return await this.contract.read.getPositionsOf(address, overrides).then(structArray);
   }
 }

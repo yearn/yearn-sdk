@@ -43,7 +43,7 @@ export class IconsService extends Service {
     }
 
     for (const token of yearn) {
-      this.supported.set(token.address, YearnAsset(token.address));
+      this.supported.set(token.name, YearnAsset(token.name));
     }
   }
 

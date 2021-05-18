@@ -1,3 +1,5 @@
+import { CallOverrides } from "@ethersproject/contracts";
+
 import { ContractService } from "../../common";
 import { ZeroAddress } from "../../helpers";
 import { structArray } from "../../struct";
@@ -7,10 +9,10 @@ import { ChainId } from "../../chain";
 import { Position, VaultStatic, VaultDynamic, Address } from "../../types";
 
 export interface IRegistryAdapter {
-  assetsStatic(): Promise<VaultStatic[]>;
-  assetsDynamic(): Promise<VaultDynamic[]>;
-  positionsOf(address: Address, addresses?: Address[]): Promise<Position[]>;
-  tokens(): Promise<Address[]>;
+  assetsStatic(addresses?: Address[], overrides?: CallOverrides): Promise<VaultStatic[]>;
+  assetsDynamic(addresses?: Address[], overrides?: CallOverrides): Promise<VaultDynamic[]>;
+  positionsOf(address: Address, addresses?: Address[], overrides?: CallOverrides): Promise<Position[]>;
+  tokens(overrides?: CallOverrides): Promise<Address[]>;
 }
 
 const VaultV2MetadataAbi = `tuple(
@@ -38,38 +40,54 @@ export class RegistryV2Adapter<T extends ChainId> extends ContractService implem
     }
   }
 
-  async assetsStatic(addresses?: Address[]): Promise<VaultStatic[]> {
+  async assetsStatic(addresses?: Address[], overrides: CallOverrides = {}): Promise<VaultStatic[]> {
     if (addresses) {
-      return await this.contract.read["assetsStatic(address[])"](addresses).then(structArray);
+      return await this.contract.read["assetsStatic(address[])"](addresses, overrides).then(structArray);
     }
     return await this.contract.read["assetsStatic()"]().then(structArray);
   }
 
-  async assetsDynamic(addresses?: Address[]): Promise<VaultDynamic[]> {
+  async assetsDynamic(addresses?: Address[], overrides: CallOverrides = {}): Promise<VaultDynamic[]> {
     if (addresses) {
-      return await this.contract.read["assetsDynamic(address[])"](addresses)
+      return await this.contract.read["assetsDynamic(address[])"](addresses, overrides)
         .then(structArray)
-        .then((assets: any) => {
-          // FIXME: metadata polyfill
-          assets.metadata = {
+        .then((assets: any) =>
+          assets.map((asset: any) => ({
+            ...asset,
+            metadata: {
+              ...assets.metadata,
+              controller: ZeroAddress,
+              totalAssets: "0",
+              totalSupply: "0"
+            }
+          }))
+        );
+    }
+    return await this.contract.read["assetsDynamic()"]()
+      .then(structArray)
+      .then((assets: any) =>
+        assets.map((asset: any) => ({
+          ...asset,
+          metadata: {
             ...assets.metadata,
             controller: ZeroAddress,
             totalAssets: "0",
             totalSupply: "0"
-          };
-        });
-    }
-    return await this.contract.read["assetsDynamic()"]().then(structArray);
+          }
+        }))
+      );
   }
 
-  async positionsOf(address: Address, addresses?: Address[]): Promise<Position[]> {
+  async positionsOf(address: Address, addresses?: Address[], overrides: CallOverrides = {}): Promise<Position[]> {
     if (addresses) {
-      return await this.contract.read["assetsPositionsOf(address,address[])"](address, addresses).then(structArray);
+      return await this.contract.read["assetsPositionsOf(address,address[])"](address, addresses, overrides).then(
+        structArray
+      );
     }
-    return await this.contract.read["assetsPositionsOf(address)"](address).then(structArray);
+    return await this.contract.read["assetsPositionsOf(address)"](address, overrides).then(structArray);
   }
 
-  async tokens(): Promise<Address[]> {
-    return await this.contract.read.assetsTokensAddresses();
+  async tokens(overrides: CallOverrides = {}): Promise<Address[]> {
+    return await this.contract.read.assetsTokensAddresses(overrides);
   }
 }
