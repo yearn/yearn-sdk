@@ -32,9 +32,9 @@ export class RegistryV2Adapter<T extends ChainId> extends ContractService implem
     switch (chainId) {
       case 1:
       case 1337:
-        return "0xE75E51566C5761896528B4698a88C92A54B3C954";
+        return "0x240315db938d44bb124ae619f5fd0269a02d1271";
       case 250: // FIXME: doesn't actually exist
-        return "0xE75E51566C5761896528B4698a88C92A54B3C954";
+        return "0x240315db938d44bb124ae619f5fd0269a02d1271";
     }
   }
 

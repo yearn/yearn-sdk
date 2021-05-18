@@ -22,10 +22,10 @@ export class HelperService<T extends ChainId> extends ContractService {
 
   static addressByChain(chainId: ChainId): string {
     switch (chainId) {
-      case 1: // FIXME: doesn't actually exist
-      case 250: // ditto
-      case 1337: // ditto
-        return "0x420b1099B9eF5baba6D92029594eF45E19A04A4A";
+      case 1:
+      case 1337:
+      case 250: // FIXME: doesn't actually exist
+        return "0x5AACD0D03096039aC4381CD814637e9FB7C34a6f";
     }
   }
 
