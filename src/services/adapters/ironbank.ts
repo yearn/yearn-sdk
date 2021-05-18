@@ -1,3 +1,4 @@
+import { CallOverrides } from "@ethersproject/contracts";
 import { struct, structArray } from "../../struct";
 import { ContractService } from "../../common";
 import { AdapterAbi } from "../../abi";
@@ -63,36 +64,38 @@ export class IronBankAdapter<T extends ChainId> extends ContractService {
     }
   }
 
-  async assetsStatic(addresses?: Address[]): Promise<IronBankMarketStatic[]> {
+  async assetsStatic(addresses?: Address[], overrides: CallOverrides = {}): Promise<IronBankMarketStatic[]> {
     if (addresses) {
-      return await this.contract.read["assetsStatic(address[])"](addresses).then(structArray);
+      return await this.contract.read["assetsStatic(address[])"](addresses, overrides).then(structArray);
     }
-    return await this.contract.read["assetsStatic()"]().then(structArray);
+    return await this.contract.read["assetsStatic()"](overrides).then(structArray);
   }
 
-  async assetsDynamic(addresses?: Address[]): Promise<IronBankMarketDynamic[]> {
+  async assetsDynamic(addresses?: Address[], overrides: CallOverrides = {}): Promise<IronBankMarketDynamic[]> {
     if (addresses) {
-      return await this.contract.read["assetsDynamic(address[])"](addresses).then(structArray);
+      return await this.contract.read["assetsDynamic(address[])"](addresses, overrides).then(structArray);
     }
-    return await this.contract.read["assetsDynamic()"]().then(structArray);
+    return await this.contract.read["assetsDynamic()"](overrides).then(structArray);
   }
 
-  async positionsOf(address: Address, addresses?: Address[]): Promise<Position[]> {
+  async positionsOf(address: Address, addresses?: Address[], overrides: CallOverrides = {}): Promise<Position[]> {
     if (addresses) {
-      return await this.contract.read["assetsPositionsOf(address,address[])"](address, addresses).then(structArray);
+      return await this.contract.read["assetsPositionsOf(address,address[])"](address, addresses, overrides).then(
+        structArray
+      );
     }
-    return await this.contract.read["assetsPositionsOf(address)"](address).then(structArray);
+    return await this.contract.read["assetsPositionsOf(address)"](address, overrides).then(structArray);
   }
 
-  async generalPositionOf(address: Address): Promise<IronBankPosition> {
-    return await this.contract.read.adapterPositionOf(address).then(struct);
+  async generalPositionOf(address: Address, overrides: CallOverrides = {}): Promise<IronBankPosition> {
+    return await this.contract.read.adapterPositionOf(address, overrides).then(struct);
   }
 
-  async assetsUserMetadata(address: Address): Promise<CyTokenUserMetadata[]> {
-    return await this.contract.read.assetsUserMetadata(address).then(structArray);
+  async assetsUserMetadata(address: Address, overrides: CallOverrides = {}): Promise<CyTokenUserMetadata[]> {
+    return await this.contract.read.assetsUserMetadata(address, overrides).then(structArray);
   }
 
-  async tokens(): Promise<Address[]> {
-    return await this.contract.read.assetsTokensAddresses();
+  async tokens(overrides: CallOverrides = {}): Promise<Address[]> {
+    return await this.contract.read.assetsTokensAddresses(overrides);
   }
 }

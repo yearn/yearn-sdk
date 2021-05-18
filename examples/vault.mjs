@@ -34,6 +34,8 @@ async function main() {
 
   console.log("Yearn Multisig vault positions:");
   console.log(positionsTable.toString());
+
+  console.log(await yearn.vaults.balances(YearnGovernance));
 }
 
 main();

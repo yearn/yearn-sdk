@@ -1,3 +1,4 @@
+import { CallOverrides } from "@ethersproject/contracts";
 import { AllowanceAbi, TokenAbi, TokenBalanceAbi, TokenPriceAbi } from "../abi";
 import { ChainId } from "../chain";
 import { ContractService } from "../common";
@@ -29,19 +30,24 @@ export class HelperService<T extends ChainId> extends ContractService {
     }
   }
 
-  async tokens(addresses: Address[]): Promise<ERC20[]> {
-    return await this.contract.read.tokensMetadata(addresses).then(structArray);
+  async tokens(addresses: Address[], overrides: CallOverrides = {}): Promise<ERC20[]> {
+    return await this.contract.read.tokensMetadata(addresses, overrides).then(structArray);
   }
 
-  async tokenPrices(addresses: Address[]): Promise<TokenPrice[]> {
-    return await this.contract.read.tokensPrices(addresses).then(structArray);
+  async tokenPrices(addresses: Address[], overrides: CallOverrides = {}): Promise<TokenPrice[]> {
+    return await this.contract.read.tokensPrices(addresses, overrides).then(structArray);
   }
 
-  async tokenBalances(address: Address, tokens: Address[]): Promise<TokenBalance[]> {
-    return await this.contract.read.tokensBalances(address, tokens).then(structArray);
+  async tokenBalances(address: Address, tokens: Address[], overrides: CallOverrides = {}): Promise<TokenBalance[]> {
+    return await this.contract.read.tokensBalances(address, tokens, overrides).then(structArray);
   }
 
-  async tokenAllowances(address: Address, tokens: Address[], spenders: Address[]): Promise<TokenAllowance[]> {
-    return await this.contract.read.allowance(address, tokens, spenders).then(structArray);
+  async tokenAllowances(
+    address: Address,
+    tokens: Address[],
+    spenders: Address[],
+    overrides: CallOverrides = {}
+  ): Promise<TokenAllowance[]> {
+    return await this.contract.read.allowance(address, tokens, spenders, overrides).then(structArray);
   }
 }
