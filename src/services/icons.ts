@@ -29,11 +29,13 @@ export class IconsService extends Service {
   private async initialize(): Promise<void> {
     const yearn = await fetch(YearnAssets)
       .then(handleHttpError)
-      .then(res => res.json());
+      .then(res => res.json())
+      .catch(console.error); // FIXME: remove
     const trust = await fetch(TrustAssets)
       .then(handleHttpError)
       .then(res => res.json())
-      .then(res => res.tokens);
+      .then(res => res.tokens)
+      .catch(console.error); // FIXME: remove
 
     this.supported = new Map();
     for (const token of trust) {
