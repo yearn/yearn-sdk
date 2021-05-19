@@ -33,7 +33,7 @@ export class ZapperService extends Service {
   async balances<T extends Address>(addresses: T[] | T): Promise<BalancesMap<T> | Balance[]>;
 
   async balances<T extends Address>(addresses: T[] | T): Promise<BalancesMap<T> | Balance[]> {
-    const url = "https://api.zapper.fi/v1/balances/tokens";
+    const url = "https://api.zapper.fi/v1/protocols/tokens/balances";
     const params = new URLSearchParams({
       "addresses[]": Array.isArray(addresses) ? addresses.join() : addresses,
       api_key: this.ctx.zapper
@@ -42,7 +42,7 @@ export class ZapperService extends Service {
       .then(handleHttpError)
       .then(res => res.json());
     Object.keys(balances).forEach(address => {
-      const copy = balances[address];
+      const copy = balances[address]["products"][0]["assets"];
       delete balances[address];
       balances[getAddress(address)] = copy.map(
         (balance: Record<string, string>): Balance => {
@@ -50,7 +50,7 @@ export class ZapperService extends Service {
           return {
             address,
             token: {
-              address: address,
+              address,
               name: balance.symbol,
               symbol: balance.symbol,
               decimals: balance.decimals
