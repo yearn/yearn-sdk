@@ -5,12 +5,12 @@ import { Reader } from "../common";
 import { CallOverrides } from "@ethersproject/contracts";
 
 export class VaultReader<T extends ChainId> extends Reader<T> {
-  async get(addresses?: Address[]): Promise<Vault[]> {
+  async get(addresses?: Address[], overrides?: CallOverrides): Promise<Vault[]> {
     const adapters = Object.values(this.yearn.services.lens.adapters.vaults);
     return await Promise.all(
       adapters.map(async adapter => {
-        const assetsStatic = await adapter.assetsStatic(addresses);
-        const assetsDynamic = await adapter.assetsDynamic(addresses);
+        const assetsStatic = await adapter.assetsStatic(addresses, overrides);
+        const assetsDynamic = await adapter.assetsDynamic(addresses, overrides);
         const assetsApy = await this.yearn.services.vision.apy(addresses);
         const assets = new Array<Vault>();
         for (const asset of assetsStatic) {
