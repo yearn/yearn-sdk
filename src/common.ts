@@ -43,7 +43,6 @@ export class WrappedContract {
     this.read = new Contract(address, abi, ctx.provider.read);
     this.write = new Contract(address, abi, ctx.provider.write);
     ctx.events.on(Context.PROVIDER, (provider: ReadWriteProvider) => {
-      console.log(this.address, this.abi, provider.read);
       this.read = new Contract(this.address, this.abi, provider.read);
       this.write = new Contract(this.address, this.abi, provider.write);
     });
