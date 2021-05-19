@@ -3,7 +3,12 @@ import { getAddress } from "@ethersproject/address";
 
 import { ProtocolEarnings } from "../services/subgraph/apollo/generated/ProtocolEarnings";
 import { VaultEarnings, VaultEarningsVariables } from "../services/subgraph/apollo/generated/VaultEarnings";
-import { ACCOUNT_EARNINGS, PROTOCOL_EARNINGS, VAULT_EARNINGS } from "../services/subgraph/apollo/queries";
+import {
+  ACCOUNT_EARNINGS,
+  ASSET_HISTORIC_EARNINGS,
+  PROTOCOL_EARNINGS,
+  VAULT_EARNINGS
+} from "../services/subgraph/apollo/queries";
 
 import { ChainId } from "../chain";
 import { Reader } from "../common";
@@ -12,13 +17,17 @@ import {
   AccountEarnings as AccountEarningsQuery,
   AccountEarningsVariables as AccountEarningsQueryVariables
 } from "../services/subgraph/apollo/generated/AccountEarnings";
+import {
+  AssetHistoricEarnings as AssetHistoricEarningsQuery,
+  AssetHistoricEarningsVariables as AssetHistoricEarningsQueryVariables
+} from "../services/subgraph/apollo/generated/AssetHistoricEarnings";
 
 const OneHundredMillionUsdc = new BigNumber(10 ** 14); // 1e8 (100M) * 1e6 (Usdc decimals)
 const BigZero = new BigNumber(0);
 
 export interface AccountSummary {
   accountId: Address;
-  aggregatedApy: String;
+  aggregatedApy: number;
   totalDepositedUsdc: Usdc;
   totalEarningsUsdc: Usdc;
   projectedDailyEarningsUsdc: Usdc;
@@ -30,12 +39,23 @@ export interface AccountAssetPosition {
   tokenAddress: Address;
   balance: TokenAmount;
   earnings: TokenAmount;
-  roi: String;
+  roi: number;
 }
 
 export interface AssetEarnings extends TokenAmount {
   tokenAddress: Address;
   assetAddress: Address;
+}
+
+export interface AssetDayData {
+  earnings: TokenAmount;
+  date: number;
+}
+
+export interface AssetHistoricEarnings {
+  assetAddress: Address;
+  decimals: number;
+  dayData: AssetDayData[];
 }
 
 export class EarningsReader<C extends ChainId> extends Reader<C> {
@@ -78,13 +98,12 @@ export class EarningsReader<C extends ChainId> extends Reader<C> {
 
     const returnsGenerated = new BigNumber(vault.latestUpdate?.returnsGenerated || 0);
     const earningsUsdc = await this.tokensValueInUsdc(returnsGenerated, vault.token.id, vault.token.decimals);
-    const result: AssetEarnings = {
+    return {
       assetAddress: getAddress(assetAddress), // addresses from subgraph are not checksummed
       amount: returnsGenerated.toFixed(0),
       amountUsdc: earningsUsdc.toFixed(0),
       tokenAddress: getAddress(vault.token.id)
     };
-    return result;
   }
 
   async accountAssetPositions(accountAddress: Address): Promise<AccountAssetPosition[]> {
@@ -151,13 +170,10 @@ export class EarningsReader<C extends ChainId> extends Reader<C> {
 
         const roi =
           balanceTokens.minus(earningsTokens) !== BigZero
-            ? earningsTokens
-                .div(balanceTokens.minus(earningsTokens))
-                .multipliedBy(100)
-                .toFixed(2) + "%"
-            : "0%";
+            ? earningsTokens.div(balanceTokens.minus(earningsTokens)).toNumber()
+            : 0;
 
-        const accountVaultEarnings: AccountAssetPosition = {
+        return {
           earnings: earnings,
           balance: balance,
           accountAddress: getAddress(accountAddress), // addresses from subgraph are not checksummed
@@ -165,7 +181,6 @@ export class EarningsReader<C extends ChainId> extends Reader<C> {
           assetAddress: getAddress(assetPosition.vault.id),
           roi: roi
         };
-        return accountVaultEarnings;
       })
     );
   }
@@ -201,15 +216,52 @@ export class EarningsReader<C extends ChainId> extends Reader<C> {
       .multipliedBy(new BigNumber(totalDepositedUsdc))
       .dividedBy(new BigNumber(365));
 
-    const result: AccountSummary = {
+    return {
       accountId: accountAddress,
       totalDepositedUsdc: totalDepositedUsdc.toFixed(0),
       totalEarningsUsdc: totalEarningsUsdc.toFixed(0),
-      aggregatedApy: aggregatedApy.multipliedBy(100).toFixed(2) + "%",
+      aggregatedApy: aggregatedApy.toNumber(),
       projectedDailyEarningsUsdc: projectedDailyEarningsUsdc.toFixed(0)
     };
+  }
 
-    return result;
+  async assetHistoricEarnings(assetAddress: Address, sinceDate: number): Promise<AssetHistoricEarnings> {
+    const vault = await this.yearn.services.subgraph.client
+      .query<AssetHistoricEarningsQuery, AssetHistoricEarningsQueryVariables>({
+        query: ASSET_HISTORIC_EARNINGS,
+        variables: {
+          id: assetAddress.toLowerCase(),
+          sinceDate: sinceDate
+        }
+      })
+      .then(response => response.data.vault);
+
+    if (!vault) {
+      throw new SdkError(`failed to find asset with address ${assetAddress}`);
+    }
+
+    const dayData = await Promise.all(
+      vault.vaultDayData.map(async vaultDayDatum => {
+        const amountUsdc = await this.tokensValueInUsdc(
+          new BigNumber(vaultDayDatum.dayReturnsGenerated),
+          getAddress(vault.token.id),
+          vault.token.decimals
+        );
+        return {
+          earnings: {
+            amountUsdc: amountUsdc.toFixed(0),
+            amount: vaultDayDatum.dayReturnsGenerated
+          },
+          date: vaultDayDatum.date
+        };
+      })
+    );
+
+    return {
+      decimals: vault.token.decimals,
+      assetAddress: assetAddress,
+      dayData: dayData
+    };
   }
 
   private async tokensValueInUsdc(tokenAmount: BigNumber, tokenAddress: Address, decimals: number): Promise<BigNumber> {

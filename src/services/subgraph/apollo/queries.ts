@@ -57,3 +57,19 @@ export const ACCOUNT_EARNINGS = gql`
     }
   }
 `;
+
+export const ASSET_HISTORIC_EARNINGS = gql`
+  query AssetHistoricEarnings($id: ID!, $sinceDate: Int!) {
+    vault(id: $id) {
+      id
+      token {
+        id
+        decimals
+      }
+      vaultDayData(where: { date_gt: $sinceDate }) {
+        dayReturnsGenerated
+        date
+      }
+    }
+  }
+`;
