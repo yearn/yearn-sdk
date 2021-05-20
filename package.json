@@ -18,6 +18,7 @@
     "docs": "typedoc --out docs src/index.ts",
     "size": "size-limit",
     "analyze": "size-limit --why",
+    "version": "tsdx build",
     "codegen": "yarn codegen:apollo",
     "codegen:apollo": "apollo client:codegen --target typescript --endpoint=https://api.thegraph.com/subgraphs/name/tomprsn/yearn-vaults-v2-subgraph-mainnet --outputFlat --includes \"src/services/subgraph/apollo/**\" --excludes \"src/services/subgraph/apollo/generated\" --passthroughCustomScalars --customScalarsPrefix YearnSubgraph src/services/subgraph/apollo/generated"
   },
@@ -52,9 +53,6 @@
     "graphql": "^15.5.0",
     "graphql-tag": "^2.12.4",
     "type-fest": "^1.1.1"
-  },
-  "publishConfig": {
-    "access": "public"
   },
   "size-limit": [
     {
