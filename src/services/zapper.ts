@@ -16,15 +16,18 @@ export class ZapperService extends Service {
       .then(handleHttpError)
       .then(res => res.json());
     return tokens.map(
-      (token: Record<string, string>): Token => ({
-        address: token.address,
-        name: token.symbol,
-        symbol: token.symbol,
-        icon: `https://zapper.fi/icons/${token.symbol}-icon.png`,
-        decimals: token.decimals,
-        priceUsdc: usdc(token.price),
-        supported: { zapper: true }
-      })
+      (token: Record<string, string>): Token => {
+        const address = getAddress(String(token.address));
+        return {
+          address: address,
+          name: token.symbol,
+          symbol: token.symbol,
+          icon: `https://zapper.fi/icons/${token.symbol}-icon.png`,
+          decimals: token.decimals,
+          priceUsdc: usdc(token.price),
+          supported: { zapper: true }
+        };
+      }
     );
   }
 
