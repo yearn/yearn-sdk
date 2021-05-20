@@ -22,7 +22,7 @@ export class ZapperService extends Service {
           address: address,
           name: token.symbol,
           symbol: token.symbol,
-          icon: `https://zapper.fi/icons/${token.symbol}-icon.png`,
+          icon: `https://zapper.fi/images/${token.symbol}-icon.png`,
           decimals: token.decimals,
           priceUsdc: usdc(token.price),
           supported: { zapper: true }
