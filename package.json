@@ -34,7 +34,6 @@
     "@ethersproject/providers": "^5.1.0",
     "@size-limit/preset-small-lib": "^4.10.1",
     "@solidity-parser/parser": "^0.12.0",
-    "@types/object-hash": "^2.1.0",
     "apollo": "^2.33.0",
     "cli-table3": "^0.6.0",
     "size-limit": "^4.10.1",

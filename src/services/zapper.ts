@@ -42,25 +42,30 @@ export class ZapperService extends Service {
       .then(handleHttpError)
       .then(res => res.json());
     Object.keys(balances).forEach(address => {
-      const copy = balances[address]["products"][0]["assets"];
+      const copy = balances[address];
       delete balances[address];
-      balances[getAddress(address)] = copy.map(
-        (balance: Record<string, string>): Balance => {
-          const address = balance.address === ZeroAddress ? EthAddress : getAddress(String(balance.address));
-          return {
-            address,
-            token: {
+      if (copy.products.length === 0) {
+        balances[getAddress(address)] = [];
+      } else {
+        const assets = copy.products[0].assets;
+        balances[getAddress(address)] = assets.map(
+          (balance: Record<string, string>): Balance => {
+            const address = balance.address === ZeroAddress ? EthAddress : getAddress(String(balance.address));
+            return {
               address,
-              name: balance.symbol,
-              symbol: balance.symbol,
-              decimals: balance.decimals
-            },
-            balance: balance.balanceRaw,
-            balanceUsdc: usdc(balance.balanceUSD),
-            priceUsdc: usdc(balance.price)
-          };
-        }
-      );
+              token: {
+                address,
+                name: balance.symbol,
+                symbol: balance.symbol,
+                decimals: balance.decimals
+              },
+              balance: balance.balanceRaw,
+              balanceUsdc: usdc(balance.balanceUSD),
+              priceUsdc: usdc(balance.price)
+            };
+          }
+        );
+      }
     });
     if (!Array.isArray(addresses)) return balances[addresses];
     return balances;
