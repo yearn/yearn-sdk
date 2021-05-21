@@ -1,6 +1,11 @@
 import { handleHttpError } from "../helpers";
 import { Service } from "../common";
-import { Address, ApiVault, Apy, ApyMap } from "../types";
+import { Address, Apy, ApyMap } from "../types";
+
+interface ApiVault {
+  address: string;
+  apy?: Apy;
+}
 
 /**
  * [[VisionService]] provides access to off chain apy calculations for yearn
