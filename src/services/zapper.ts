@@ -9,6 +9,11 @@ import { EthAddress, handleHttpError, ZeroAddress, usdc } from "../helpers";
  * tokens and user positions.
  */
 export class ZapperService extends Service {
+  /**
+   * Fetch all the tokens supported by the zapper protocol along with some basic
+   * metadata.
+   * @returns list of tokens supported by the zapper protocol.
+   */
   async supportedTokens(): Promise<Token[]> {
     const url = "https://api.zapper.fi/v1/prices";
     const params = new URLSearchParams({ api_key: this.ctx.zapper });
@@ -31,7 +36,18 @@ export class ZapperService extends Service {
     );
   }
 
+  /**
+   * Fetch token balances from the {@link ZapperService.supportedTokens} list
+   * for a particular address.
+   * @param address
+   */
   async balances<T extends Address>(address: T): Promise<Balance[]>;
+
+  /**
+   * Fetch token balances from the {@link ZapperService.supportedTokens} list
+   * for a list of addresses.
+   * @param addresses
+   */
   async balances<T extends Address>(addresses: T[]): Promise<BalancesMap<T>>;
   async balances<T extends Address>(addresses: T[] | T): Promise<BalancesMap<T> | Balance[]>;
 
