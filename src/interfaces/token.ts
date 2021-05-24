@@ -1,10 +1,11 @@
-import { Address, Integer, TypedMap, Usdc } from "../types";
-import { Reader } from "../common";
-import { ChainId } from "../chain";
-import { Token, Balance, IconMap, Icon } from "../types";
 import { CallOverrides } from "@ethersproject/contracts";
 
-export class TokenReader<C extends ChainId> extends Reader<C> {
+import { ChainId } from "../chain";
+import { ServiceInterface } from "../common";
+import { Address, Integer, TypedMap, Usdc } from "../types";
+import { Balance, Icon, IconMap, Token } from "../types";
+
+export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
   /**
    * Get exchange rate between two tokens.
    * @param from
@@ -45,7 +46,7 @@ export class TokenReader<C extends ChainId> extends Reader<C> {
   }
 
   /**
-   * Fetch token balances from the {@link TokenReader.supported} list
+   * Fetch token balances from the {@link TokenInterface.supported} list
    * for a particular address.
    * @param address
    */
