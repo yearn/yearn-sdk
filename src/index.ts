@@ -7,10 +7,10 @@
  *
  * ### Interfaces
  *
- * - [[VaultReader]] asset aggregation for yearn's v1 & v2 vaults.
- * - [[IronBankReader]] asset aggregation form iron bank products.
- * - [[TokenReader]] utility function for ERC20 and balances.
- * - [[EarningsReader]] historical earnings.
+ * - [[VaultInterface]] asset aggregation for yearn's v1 & v2 vaults.
+ * - [[IronBankInterface]] asset aggregation form iron bank products.
+ * - [[TokenInterface]] utility function for ERC20 and balances.
+ * - [[EarningsInterface]] historical earnings.
  *
  * ### Services
  *
@@ -35,22 +35,18 @@
 // global fetch polyfill
 import "cross-fetch/polyfill";
 
-export { LensService } from "./services/lens";
-export { RegistryV2Adapter } from "./services/adapters/registry";
-export { IronBankAdapter } from "./services/adapters/ironbank";
-export { OracleService } from "./services/oracle";
-export { ZapperService } from "./services/zapper";
-export { VisionService } from "./services/vision";
-export { SubgraphService } from "./services/subgraph";
-
-export { VaultReader } from "./readers/vault";
-export { IronBankReader } from "./readers/ironbank";
-export { TokenReader } from "./readers/token";
-export { EarningsReader } from "./readers/earnings";
-
-export { Yearn } from "./yearn";
-export { Context, ContextValue } from "./context";
-
 export { ChainId } from "./chain";
-
+export { Context, ContextValue } from "./context";
+export { EarningsInterface } from "./interfaces/earnings";
+export { IronBankInterface } from "./interfaces/ironbank";
+export { TokenInterface } from "./interfaces/token";
+export { VaultInterface } from "./interfaces/vault";
+export { IronBankAdapter } from "./services/adapters/ironbank";
+export { RegistryV2Adapter } from "./services/adapters/registry";
+export { LensService } from "./services/lens";
+export { OracleService } from "./services/oracle";
+export { SubgraphService } from "./services/subgraph";
+export { VisionService } from "./services/vision";
+export { ZapperService } from "./services/zapper";
 export * from "./types";
+export { Yearn } from "./yearn";
