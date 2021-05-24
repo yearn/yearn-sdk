@@ -1,8 +1,8 @@
 import { getAddress } from "@ethersproject/address";
 
 import { Service } from "../common";
+import { EthAddress, handleHttpError, usdc, ZeroAddress } from "../helpers";
 import { Address, Balance, BalancesMap, Token } from "../types";
-import { EthAddress, handleHttpError, ZeroAddress, usdc } from "../helpers";
 
 /**
  * [[ZapperService]] interacts with the zapper api to gather more insight for

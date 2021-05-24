@@ -1,5 +1,5 @@
-import { handleHttpError } from "../helpers";
 import { Service } from "../common";
+import { handleHttpError } from "../helpers";
 import { Address, Apy, ApyMap } from "../types";
 
 /**

@@ -1,8 +1,8 @@
-import { PartialDeep } from "type-fest";
 import { Provider } from "@ethersproject/providers";
+import EventEmitter from "events";
+import { PartialDeep } from "type-fest";
 
 import { Address, SdkError } from "./types";
-import EventEmitter from "events";
 
 export interface AddressesOverride {
   lens?: Address;

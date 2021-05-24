@@ -37,7 +37,7 @@
     "@solidity-parser/parser": "^0.12.0",
     "apollo": "^2.33.0",
     "cli-table3": "^0.6.0",
-    "nodemon": "^2.0.7",
+    "eslint-plugin-simple-import-sort": "6",
     "size-limit": "^4.10.1",
     "tsdx": "^0.14.1",
     "tslib": "^2.1.0",
