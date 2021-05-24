@@ -14,11 +14,19 @@ export interface AddressesOverride {
   helper?: Address;
 }
 
+/**
+ * For particular situations it's helpful to have two separate providers, one
+ * for reading data and one for writing data.
+ */
 export interface ReadWriteProvider {
   read: Provider;
   write: Provider;
 }
 
+/**
+ * Context options that are used to access all the data sources queried by the
+ * SDK.
+ */
 export interface ContextValue {
   provider?: Provider | ReadWriteProvider;
   zapper?: string;
@@ -32,11 +40,22 @@ const DefaultContext = {
   zapper: "96e0cc51-a62e-42ca-acee-910ea7d2a241"
 };
 
+/**
+ * [[Context]] is the configuration object passed around every function in
+ * the SDK. It contains basic information on how to access the various services
+ * that the SDK aggregates.
+ *
+ * [[Context]] **should not** be instantiated by users, as it's managed by
+ * {@link Yearn.context}.
+ */
 export class Context implements Required<ContextValue> {
   static PROVIDER = "refresh:provider";
 
   private ctx: ContextValue;
 
+  /**
+   * For internal events only.
+   */
   events: EventEmitter;
 
   constructor(ctx: ContextValue) {
@@ -45,6 +64,11 @@ export class Context implements Required<ContextValue> {
     this.setProvider(ctx.provider);
   }
 
+  /**
+   * Change providers during executions for all services that require on-chain
+   * interaction.
+   * @param provider new provider(s)
+   */
   setProvider(provider?: Provider | ReadWriteProvider) {
     if (provider instanceof Provider) {
       this.ctx.provider = { read: provider, write: provider };

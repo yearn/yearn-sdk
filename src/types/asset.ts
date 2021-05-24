@@ -27,6 +27,9 @@ export interface Token extends ERC20 {
   };
 }
 
+/**
+ * Representation of a user position in a particular asset.
+ */
 export interface Position {
   assetAddress: Address;
   tokenAddress: Address;
@@ -37,8 +40,10 @@ export interface Position {
   tokenAllowances: Allowance[];
 }
 
-/// Assets
-
+/**
+ * Part of a full [[Asset]]. Represents the part of the asset that will remain
+ * the same over time (and can be cached indefinitely).
+ */
 export interface AssetStatic<T extends TypeId> {
   address: Address;
   typeId: T;
@@ -49,6 +54,11 @@ export interface AssetStatic<T extends TypeId> {
   decimals: string;
 }
 
+/**
+ * Part of a full [[Asset]]. Represents the part of the asset that will change
+ * over time, especially after state-altering method is called on the asset.
+ * This structure should generally not be cached.
+ */
 export interface AssetDynamic<T extends TypeId> {
   address: Address;
   typeId: T;
@@ -57,6 +67,14 @@ export interface AssetDynamic<T extends TypeId> {
   metadata: Metadata[T];
 }
 
+/**
+ * Union of both [[AssetStatic]] and [[AssetDynamic]] parts.
+ *
+ * @dev `{ typeId: T }` is included in the union to make `Metadata[T]` work.
+ */
 export type Asset<T extends TypeId> = AssetStatic<T> & AssetDynamic<T> & { typeId: T };
 
-export type GenericAsset = Asset<"VAULT_V1"> | Asset<"VAULT_V2">;
+/**
+ * Possible assets that lens can return.
+ */
+export type GenericAsset = Asset<"VAULT_V1"> | Asset<"VAULT_V2"> | Asset<"IRON_BANK_MARKET">;

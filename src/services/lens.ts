@@ -46,6 +46,11 @@ export class LensService<T extends ChainId> extends ContractService {
     throw new SdkError(`No lens adapter for chainId "${this.chainId}".`);
   }
 
+  /**
+   * Get most up-to-date address of the Lens contract for a particular chain id.
+   * @param chainId
+   * @returns address
+   */
   static addressByChain(chainId: ChainId): string {
     switch (chainId) {
       case 1: // FIXME: doesn't actually exist
@@ -55,19 +60,42 @@ export class LensService<T extends ChainId> extends ContractService {
     }
   }
 
-  async getRegistries(overrides: CallOverrides = {}): Promise<string[]> {
+  /**
+   * Get all the adapter addresses attached to Lens.
+   * @param overrides
+   * @returns list of registry addresses
+   */
+  async getAdapters(overrides: CallOverrides = {}): Promise<string[]> {
     return await this.contract.read.getRegistries(overrides);
   }
 
+  /**
+   * Get all the assets from all the adapters attached to Lens.
+   * @param overrides
+   * @returns list of assets
+   */
   async getAssets(overrides: CallOverrides = {}): Promise<GenericAsset[]> {
     return await this.contract.read.getAssets(overrides).then(structArray);
   }
 
-  async getAssetsFromAdapter(adapter: Address, overrides: CallOverrides = {}): Promise<GenericAsset[]> {
-    return await this.contract.read.getAssetsFromAdapter(adapter, overrides).then(structArray);
-  }
-
+  /**
+   * Get all positions of a particular assets for all the assets in all the
+   * adapters attached to lens.
+   * @param address
+   * @param overrides
+   * @returns list of user positions
+   */
   async getPositions(address: string, overrides: CallOverrides = {}): Promise<Position[]> {
     return await this.contract.read.getPositionsOf(address, overrides).then(structArray);
+  }
+
+  /**
+   * Get all the assets from a specific Lens adapter.
+   * @param adapter
+   * @param overrides
+   * @returns list of assets
+   */
+  async getAssetsFromAdapter(adapter: Address, overrides: CallOverrides = {}): Promise<GenericAsset[]> {
+    return await this.contract.read.getAssetsFromAdapter(adapter, overrides).then(structArray);
   }
 }

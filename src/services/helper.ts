@@ -14,6 +14,10 @@ const HelperAbi = [
   `function allowances(address, address[] memory, address[] memory) external view returns (${AllowanceAbi}[] memory)`
 ];
 
+/**
+ * [[HelperService]] is a generalized containers for all the utilities that are
+ * used in the lens codebase and in the SDK.
+ */
 export class HelperService<T extends ChainId> extends ContractService {
   static abi = HelperAbi;
 
@@ -21,6 +25,12 @@ export class HelperService<T extends ChainId> extends ContractService {
     super(ctx.addresses.helper ?? HelperService.addressByChain(chainId), chainId, ctx);
   }
 
+  /**
+   * Get most up-to-date address of the Helper contract for a particular chain
+   * id.
+   * @param chainId
+   * @returns address
+   */
   static addressByChain(chainId: ChainId): string {
     switch (chainId) {
       case 1:
@@ -30,18 +40,47 @@ export class HelperService<T extends ChainId> extends ContractService {
     }
   }
 
+  /**
+   * Get a list of [[ERC20]] objects for a list of token addresses.
+   * @param addresses
+   * @param overrides
+   * @returns list of erc20 object
+   */
   async tokens(addresses: Address[], overrides: CallOverrides = {}): Promise<ERC20[]> {
     return await this.contract.read.tokensMetadata(addresses, overrides).then(structArray);
   }
 
+  /**
+   * Get a list of token prices for a list of token addresses.
+   * @param addresses
+   * @param overrides
+   * @returns list of token prices
+   */
   async tokenPrices(addresses: Address[], overrides: CallOverrides = {}): Promise<TokenPrice[]> {
     return await this.contract.read.tokensPrices(addresses, overrides).then(structArray);
   }
 
+  /**
+   * Get a list of token balances from a list of token addresses for a
+   * particular address.
+   * @param address
+   * @param tokens
+   * @param overrides
+   * @returns list of token balances
+   */
   async tokenBalances(address: Address, tokens: Address[], overrides: CallOverrides = {}): Promise<TokenBalance[]> {
     return await this.contract.read.tokensBalances(address, tokens, overrides).then(structArray);
   }
 
+  /**
+   * Get a list of token allowances for a list of token addresses and spenders
+   * for a particular address.
+   * @param address
+   * @param tokens
+   * @param spenders
+   * @param overrides
+   * @returns
+   */
   async tokenAllowances(
     address: Address,
     tokens: Address[],
