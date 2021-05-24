@@ -1,12 +1,12 @@
 import { CallOverrides } from "@ethersproject/contracts";
 
-import { ContractService } from "../../common";
-import { ZeroAddress } from "../../helpers";
-import { structArray } from "../../struct";
-import { Context } from "../../context";
 import { AdapterAbi } from "../../abi";
 import { ChainId } from "../../chain";
-import { Position, VaultStatic, VaultDynamic, Address } from "../../types";
+import { ContractService } from "../../common";
+import { Context } from "../../context";
+import { ZeroAddress } from "../../helpers";
+import { structArray } from "../../struct";
+import { Address, Position, VaultDynamic, VaultStatic } from "../../types";
 
 export interface IRegistryAdapter {
   assetsStatic(addresses?: Address[], overrides?: CallOverrides): Promise<VaultStatic[]>;

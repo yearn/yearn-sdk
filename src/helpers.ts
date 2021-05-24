@@ -1,6 +1,6 @@
 import { BigNumber } from "@ethersproject/bignumber";
 
-import { SdkError, Integer, Usdc } from "./types";
+import { Integer, SdkError, Usdc } from "./types";
 
 export const ZeroAddress = "0x0000000000000000000000000000000000000000";
 export const EthAddress = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";
