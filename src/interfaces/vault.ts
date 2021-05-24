@@ -180,7 +180,7 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
     const signer = this.ctx.provider.read.getSigner(account);
     if (vaultRef.token === token) {
       const vaultContract = new Contract(vault, VaultAbi, signer);
-      return vaultContract.withdraw(amount);
+      return vaultContract.withdraw(amount, overrides);
     } else {
       // ZAPPER!
       throw new SdkError("deposit:zapper not implemented.");
