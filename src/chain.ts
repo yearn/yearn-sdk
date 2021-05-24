@@ -2,9 +2,9 @@
  * Supported chains in the yearn ecosystem.
  */
 export const Chains = {
-  1: "ETH Mainnet",
-  250: "FTM Mainnet",
-  1337: "ETH Local"
+  1: "ethereum",
+  250: "fantom",
+  1337: "ethereum"
 };
 
 export type EthMain = 1;

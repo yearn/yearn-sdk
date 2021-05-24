@@ -1,5 +1,6 @@
 import { getAddress } from "@ethersproject/address";
 
+import { Chains } from "../chain";
 import { Service } from "../common";
 import { EthAddress, handleHttpError, usdc, ZeroAddress } from "../helpers";
 import { Address, Balance, BalancesMap, Token } from "../types";
@@ -20,6 +21,7 @@ export class ZapperService extends Service {
     const tokens = await fetch(`${url}?${params}`)
       .then(handleHttpError)
       .then(res => res.json());
+    const network = Chains[this.chainId] ?? "ethereum";
     return tokens.map(
       (token: Record<string, string>): Token => {
         const address = getAddress(String(token.address));
@@ -27,7 +29,7 @@ export class ZapperService extends Service {
           address: address,
           name: token.symbol,
           symbol: token.symbol,
-          icon: `https://zapper.fi/images/${token.symbol}-icon.png`,
+          icon: `https://zapper.fi/images/networks/${network}/${token.address}.png`,
           decimals: token.decimals,
           priceUsdc: usdc(token.price),
           supported: { zapper: true }
