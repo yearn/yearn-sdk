@@ -11,6 +11,16 @@ export class SubgraphService extends Service {
     link: new HttpLink({
       uri: YearnSubgraphEndpoint
     }),
-    cache: new InMemoryCache()
+    cache: new InMemoryCache(),
+    defaultOptions: {
+      watchQuery: {
+        fetchPolicy: 'no-cache',
+        errorPolicy: 'ignore',
+      },
+      query: {
+        fetchPolicy: 'no-cache',
+        errorPolicy: 'all',
+      },
+    }
   });
 }
