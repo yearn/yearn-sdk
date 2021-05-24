@@ -47,7 +47,7 @@ try {
   visit(ast, {
     // StructDefinition: node => {
     // },
-    FunctionDefinition: node => {
+    FunctionDefinition: (node) => {
       if (!node.body) return;
       if (node.isConstructor) return;
       const loc = node.loc;
@@ -56,13 +56,9 @@ try {
         .splice(loc.start.line - 1, loc.end.line - loc.start.line - 1)
         .join("\n")
         .trim();
-      const name = end
-        .slice(0, end.indexOf("{"))
-        .replace(/\n/g, " ")
-        .replace(/\s\s+/g, " ")
-        .trim();
+      const name = end.slice(0, end.indexOf("{")).replace(/\n/g, " ").replace(/\s\s+/g, " ").trim();
       console.log(name);
-    }
+    },
   });
 } catch (e) {
   if (e instanceof parser.ParserError) {

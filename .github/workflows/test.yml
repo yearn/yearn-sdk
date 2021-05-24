@@ -5,7 +5,7 @@ on:
       - master
 jobs:
   build:
-    name: Build and test on Node ${{ matrix.node }} and ${{ matrix.os }}
+    name: build and test on Node ${{ matrix.node }} and ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:

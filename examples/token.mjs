@@ -10,7 +10,7 @@ const provider = new JsonRpcProvider(url);
 
 const yearn = new Yearn(1, {
   provider,
-  addresses: Addresses
+  addresses: Addresses,
 });
 
 async function main() {
@@ -23,7 +23,7 @@ async function main() {
   console.log(balances);
 
   const balancesTable = new Table();
-  balancesTable.push(...balances.map(balance => [balance.token.name, balance.balance, balance.balanceUsdc]));
+  balancesTable.push(...balances.map((balance) => [balance.token.name, balance.balance, balance.balanceUsdc]));
 
   console.log("Yearn Multisig token balances:");
   console.log(balancesTable.toString());
