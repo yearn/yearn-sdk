@@ -1,3 +1,7 @@
+/**
+ * Utility types for easy management of asset classes.
+ */
+
 import { Asset, AssetDynamic, AssetStatic } from "./asset";
 
 export type VaultV1 = Asset<"VAULT_V1">;

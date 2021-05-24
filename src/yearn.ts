@@ -12,6 +12,19 @@ import { EarningsReader } from "./readers/earnings";
 import { IronBankReader } from "./readers/ironbank";
 import { HelperService } from "./services/helper";
 
+/**
+ * [[Yearn]] is a wrapper for all the services and interfaces of the SDK.
+ *
+ * Yearn namespace can be instantiated as a class, providing configuration
+ * options that will then be used by all the services and interfaces:
+ *
+ * ```typescript
+ * import { Yearn } from "@yfi/sdk";
+ *
+ * const provider = new JsonRpcProvider("http://localhost:8545");
+ * const yearn = new Yearn(1, { provider });
+ * ```
+ */
 export class Yearn<T extends ChainId> {
   services: {
     lens: LensService<T>;
@@ -31,8 +44,22 @@ export class Yearn<T extends ChainId> {
 
   context: Context;
 
+  /**
+   * This promise can be **optionally** awaited to assure that all services
+   * have been correctly loaded.
+   *
+   * ```typescript
+   * const yearn = new Yearn(1, { provider });
+   * await yearn.ready;
+   * ```
+   */
   ready: Promise<void[]>;
 
+  /**
+   * Create a new SDK instance.
+   * @param chainId
+   * @param context plain object containing all the optional configuration
+   */
   constructor(chainId: T, context: ContextValue) {
     this.context = new Context(context);
 

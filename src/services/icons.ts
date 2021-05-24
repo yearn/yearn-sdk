@@ -47,8 +47,18 @@ export class IconsService extends Service {
     }
   }
 
+  /**
+   * Get an icon url for a particular address.
+   * @param address
+   */
   get<T extends Address>(address: T): Icon;
+
+  /**
+   * Get a map of icons for a list of addresses.
+   * @param addresses
+   */
   get<T extends Address>(addresses: T[]): IconMap<T>;
+
   get<T extends Address>(address: T | T[]): IconMap<T> | Icon;
   get<T extends Address>(address: T | T[]): IconMap<T> | Icon {
     if (!Array.isArray(address)) {

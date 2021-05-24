@@ -1,3 +1,8 @@
+/**
+ * Storing ABIs in Human-Readable ABI format.
+ * https://blog.ricmoo.com/human-readable-contract-abis-in-ethers-js-141902f4d917
+ */
+
 export const TokenAbi = "tuple(address address, string name, string symbol, uint256 decimals)";
 export const TokenPriceAbi = "tuple(address address, uint256 priceUsdc)";
 export const TokenBalanceAbi = `tuple(

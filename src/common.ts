@@ -29,6 +29,10 @@ export class Reader<T extends ChainId> extends Service {
   }
 }
 
+/**
+ * Contract that supports two different providers to differentiate read and
+ * write operations.
+ */
 export class WrappedContract {
   address: Address;
   abi: ContractInterface;
@@ -49,6 +53,9 @@ export class WrappedContract {
   }
 }
 
+/**
+ * A service that has a contract representation on chain.
+ */
 export class ContractService extends Service {
   static abi: string[] = [];
 

@@ -20,6 +20,7 @@ async function main() {
 
   // Get token balances for common coins in ETH mainnet
   const balances = await yearn.tokens.balances(YearnGovernance);
+  console.log(balances);
 
   const balancesTable = new Table();
   balancesTable.push(...balances.map(balance => [balance.token.name, balance.balance, balance.balanceUsdc]));
