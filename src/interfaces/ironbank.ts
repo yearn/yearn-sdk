@@ -1,20 +1,21 @@
-import {
-  Position,
-  IronBankMarket,
-  CyTokenUserMetadata,
-  IronBankPosition,
-  Address,
-  SdkError,
-  IronBankMarketStatic,
-  IronBankMarketDynamic,
-  Balance,
-  Token
-} from "../types";
-import { ChainId } from "../chain";
-import { Reader } from "../common";
 import { CallOverrides } from "@ethersproject/contracts";
 
-export class IronBankReader<T extends ChainId> extends Reader<T> {
+import { ChainId } from "../chain";
+import { ServiceInterface } from "../common";
+import {
+  Address,
+  Balance,
+  CyTokenUserMetadata,
+  IronBankMarket,
+  IronBankMarketDynamic,
+  IronBankMarketStatic,
+  IronBankPosition,
+  Position,
+  SdkError,
+  Token
+} from "../types";
+
+export class IronBankInterface<T extends ChainId> extends ServiceInterface<T> {
   /**
    * Get all IronBank markets.
    * @param addresses filter, if not provided all positions are returned

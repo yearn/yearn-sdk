@@ -1,10 +1,11 @@
-import { Address, Balance, SdkError, Token, VaultDynamic, VaultStatic } from "../types";
-import { Position, Vault } from "../types";
-import { ChainId } from "../chain";
-import { Reader } from "../common";
 import { CallOverrides } from "@ethersproject/contracts";
 
-export class VaultReader<T extends ChainId> extends Reader<T> {
+import { ChainId } from "../chain";
+import { ServiceInterface } from "../common";
+import { Address, Balance, SdkError, Token, VaultDynamic, VaultStatic } from "../types";
+import { Position, Vault } from "../types";
+
+export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
   /**
    * Get all yearn vaults.
    * @param addresses filter, if not provided all positions are returned
