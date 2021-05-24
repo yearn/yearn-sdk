@@ -1,17 +1,17 @@
 import { CallOverrides } from "@ethersproject/contracts";
-import { struct, structArray } from "../../struct";
-import { ContractService } from "../../common";
+
 import { AdapterAbi } from "../../abi";
 import { ChainId } from "../../chain";
+import { ContractService } from "../../common";
 import { Context } from "../../context";
-
+import { struct, structArray } from "../../struct";
 import {
-  Position,
-  IronBankMarketStatic,
-  IronBankMarketDynamic,
-  IronBankPosition,
+  Address,
   CyTokenUserMetadata,
-  Address
+  IronBankMarketDynamic,
+  IronBankMarketStatic,
+  IronBankPosition,
+  Position
 } from "../../types";
 
 const CyTokenMetadataAbi = `tuple(
