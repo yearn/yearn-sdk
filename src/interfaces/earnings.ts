@@ -8,21 +8,21 @@ import {
   AccountEarningsVariables as AccountEarningsQueryVariables
 } from "../services/subgraph/apollo/generated/AccountEarnings";
 import {
-  AssetHistoricEarnings as AssetHistoricEarningsQuery,
-  AssetHistoricEarningsVariables as AssetHistoricEarningsQueryVariables
-} from "../services/subgraph/apollo/generated/AssetHistoricEarnings";
-import {
   AccountHistoricEarnings as AccountHistoricEarningsQuery,
   AccountHistoricEarningsVariables as AccountHistoricEarningsQueryVariables
 } from "../services/subgraph/apollo/generated/AccountHistoricEarnings";
+import {
+  AssetHistoricEarnings as AssetHistoricEarningsQuery,
+  AssetHistoricEarningsVariables as AssetHistoricEarningsQueryVariables
+} from "../services/subgraph/apollo/generated/AssetHistoricEarnings";
 import { ProtocolEarnings } from "../services/subgraph/apollo/generated/ProtocolEarnings";
 import { VaultEarnings, VaultEarningsVariables } from "../services/subgraph/apollo/generated/VaultEarnings";
 import {
   ACCOUNT_EARNINGS,
+  ACCOUNT_HISTORIC_EARNINGS,
   ASSET_HISTORIC_EARNINGS,
   PROTOCOL_EARNINGS,
-  VAULT_EARNINGS,
-  ACCOUNT_HISTORIC_EARNINGS
+  VAULT_EARNINGS
 } from "../services/subgraph/apollo/queries";
 import { Address, SdkError, TokenAmount, Usdc } from "../types";
 
@@ -315,7 +315,7 @@ export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
       });
 
     for (const [index, vaultPositionUpdate] of updates.entries()) {
-      if (index == 0) {
+      if (index === 0) {
         const snapshot: AccountSnapshot = {
           startDate: new Date(0).getTime(),
           endDate: +vaultPositionUpdate.timestamp,
