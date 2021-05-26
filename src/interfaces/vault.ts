@@ -1,10 +1,17 @@
-import { Address, Balance, SdkError, Token, VaultDynamic, VaultStatic } from "../types";
-import { Position, Vault } from "../types";
-import { ChainId } from "../chain";
-import { Reader } from "../common";
 import { CallOverrides } from "@ethersproject/contracts";
 
-export class VaultReader<T extends ChainId> extends Reader<T> {
+import { ChainId } from "../chain";
+import { ServiceInterface } from "../common";
+import { Address, Balance, SdkError, Token, VaultDynamic, VaultStatic } from "../types";
+import { Position, Vault } from "../types";
+
+export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
+  /**
+   * Get all yearn vaults.
+   * @param addresses filter, if not provided all positions are returned
+   * @param overrides
+   * @returns
+   */
   async get(addresses?: Address[], overrides?: CallOverrides): Promise<Vault[]> {
     const adapters = Object.values(this.yearn.services.lens.adapters.vaults);
     return await Promise.all(
@@ -26,6 +33,12 @@ export class VaultReader<T extends ChainId> extends Reader<T> {
     ).then(arr => arr.flat());
   }
 
+  /**
+   * Get static part of yearn vaults.
+   * @param addresses filter, if not provided all positions are returned
+   * @param overrides
+   * @returns
+   */
   async getStatic(addresses?: Address[], overrides?: CallOverrides): Promise<VaultStatic[]> {
     const adapters = Object.values(this.yearn.services.lens.adapters.vaults);
     return await Promise.all(
@@ -35,6 +48,12 @@ export class VaultReader<T extends ChainId> extends Reader<T> {
     ).then(arr => arr.flat());
   }
 
+  /**
+   * Get dynamic part of yearn vaults.
+   * @param addresses filter, if not provided all positions are returned
+   * @param overrides
+   * @returns
+   */
   async getDynamic(addresses?: Address[], overrides?: CallOverrides): Promise<VaultDynamic[]> {
     const adapters = Object.values(this.yearn.services.lens.adapters.vaults);
     return await Promise.all(
@@ -44,6 +63,13 @@ export class VaultReader<T extends ChainId> extends Reader<T> {
     ).then(arr => arr.flat());
   }
 
+  /**
+   * Get yearn vault positions for a particular address.
+   * @param address
+   * @param addresses filter, if not provided all positions are returned
+   * @param overrides
+   * @returns
+   */
   async positionsOf(address: Address, addresses?: Address[], overrides?: CallOverrides): Promise<Position[]> {
     const adapters = Object.values(this.yearn.services.lens.adapters.vaults);
     return await Promise.all(
@@ -53,6 +79,12 @@ export class VaultReader<T extends ChainId> extends Reader<T> {
     ).then(arr => arr.flat());
   }
 
+  /**
+   * Get all yearn vault's underlying token balances for a particular address.
+   * @param address
+   * @param overrides
+   * @returns
+   */
   async balances(address: Address, overrides?: CallOverrides): Promise<Balance[]> {
     const tokens = await this.tokens();
     const balances = await this.yearn.services.helper.tokenBalances(
@@ -72,6 +104,11 @@ export class VaultReader<T extends ChainId> extends Reader<T> {
     });
   }
 
+  /**
+   * Get all yearn vault's underlying tokens.
+   * @param overrides
+   * @returns
+   */
   async tokens(overrides?: CallOverrides): Promise<Token[]> {
     const adapters = Object.values(this.yearn.services.lens.adapters.vaults);
     return await Promise.all(

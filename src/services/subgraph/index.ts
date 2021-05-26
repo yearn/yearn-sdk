@@ -1,5 +1,5 @@
-import { ApolloClient } from "apollo-client";
 import { InMemoryCache } from "apollo-cache-inmemory";
+import { ApolloClient } from "apollo-client";
 import { HttpLink } from "apollo-link-http";
 
 import { Service } from "../../common";
@@ -11,6 +11,16 @@ export class SubgraphService extends Service {
     link: new HttpLink({
       uri: YearnSubgraphEndpoint
     }),
-    cache: new InMemoryCache()
+    cache: new InMemoryCache(),
+    defaultOptions: {
+      watchQuery: {
+        fetchPolicy: "no-cache",
+        errorPolicy: "ignore"
+      },
+      query: {
+        fetchPolicy: "no-cache",
+        errorPolicy: "all"
+      }
+    }
   });
 }

@@ -1,14 +1,33 @@
-import { handleHttpError } from "../helpers";
 import { Service } from "../common";
-import { Address, ApiVault, Apy, ApyMap } from "../types";
+import { handleHttpError } from "../helpers";
+import { Address, Apy, ApyMap } from "../types";
+
+/**
+ * Internal representation of a vault returned by the vaults.finance/all API.
+ */
+interface ApiVault {
+  address: string;
+  apy?: Apy;
+}
 
 /**
  * [[VisionService]] provides access to off chain apy calculations for yearn
  * products.
  */
 export class VisionService extends Service {
-  async apy<T extends Address>(address?: T[]): Promise<ApyMap<T>>;
+  /**
+   * Fetch APY from a list of yearn's vault addresses (or all of them is address
+   * is not provided).
+   * @param addresses
+   */
+  async apy<T extends Address>(addresses?: T[]): Promise<ApyMap<T>>;
+
+  /**
+   * Fetch API for a specific yearn's vault address.
+   * @param addresses
+   */
   async apy(address: Address): Promise<Apy | undefined>;
+
   async apy<T extends Address>(addresses?: T | T[]): Promise<ApyMap<T> | Apy | undefined> {
     const url = "https://vaults.finance/all";
     const vaults: ApiVault[] = await fetch(url)

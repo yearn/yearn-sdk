@@ -1,10 +1,10 @@
-import EventEmitter from "events";
 import { Contract, ContractInterface } from "@ethersproject/contracts";
+import EventEmitter from "events";
 
 import { ChainId } from "./chain";
-import { Yearn } from "./yearn";
 import { Context, ReadWriteProvider } from "./context";
 import { Address } from "./types";
+import { Yearn } from "./yearn";
 
 export class Service {
   ctx: Context;
@@ -20,7 +20,7 @@ export class Service {
   }
 }
 
-export class Reader<T extends ChainId> extends Service {
+export class ServiceInterface<T extends ChainId> extends Service {
   protected yearn: Yearn<T>;
 
   constructor(yearn: Yearn<T>, chainId: T, ctx: Context) {
@@ -29,6 +29,10 @@ export class Reader<T extends ChainId> extends Service {
   }
 }
 
+/**
+ * Contract that supports two different providers to differentiate read and
+ * write operations.
+ */
 export class WrappedContract {
   address: Address;
   abi: ContractInterface;
@@ -49,6 +53,9 @@ export class WrappedContract {
   }
 }
 
+/**
+ * A service that has a contract representation on chain.
+ */
 export class ContractService extends Service {
   static abi: string[] = [];
 

@@ -1,19 +1,8 @@
-import { BigNumber } from "bignumber.js";
 import { getAddress } from "@ethersproject/address";
-
-import { ProtocolEarnings } from "../services/subgraph/apollo/generated/ProtocolEarnings";
-import { VaultEarnings, VaultEarningsVariables } from "../services/subgraph/apollo/generated/VaultEarnings";
-import {
-  ACCOUNT_EARNINGS,
-  ACCOUNT_HISTORIC_EARNINGS,
-  ASSET_HISTORIC_EARNINGS,
-  PROTOCOL_EARNINGS,
-  VAULT_EARNINGS
-} from "../services/subgraph/apollo/queries";
+import { BigNumber } from "bignumber.js";
 
 import { ChainId } from "../chain";
-import { Reader } from "../common";
-import { Address, SdkError, TokenAmount, Usdc } from "../types";
+import { ServiceInterface } from "../common";
 import {
   AccountEarnings as AccountEarningsQuery,
   AccountEarningsVariables as AccountEarningsQueryVariables
@@ -26,6 +15,16 @@ import {
   AccountHistoricEarnings as AccountHistoricEarningsQuery,
   AccountHistoricEarningsVariables as AccountHistoricEarningsQueryVariables
 } from "../services/subgraph/apollo/generated/AccountHistoricEarnings";
+import { ProtocolEarnings } from "../services/subgraph/apollo/generated/ProtocolEarnings";
+import { VaultEarnings, VaultEarningsVariables } from "../services/subgraph/apollo/generated/VaultEarnings";
+import {
+  ACCOUNT_EARNINGS,
+  ASSET_HISTORIC_EARNINGS,
+  PROTOCOL_EARNINGS,
+  VAULT_EARNINGS,
+  ACCOUNT_HISTORIC_EARNINGS
+} from "../services/subgraph/apollo/queries";
+import { Address, SdkError, TokenAmount, Usdc } from "../types";
 
 const OneHundredMillionUsdc = new BigNumber(10 ** 14); // 1e8 (100M) * 1e6 (Usdc decimals)
 const BigZero = new BigNumber(0);
@@ -71,7 +70,7 @@ export interface EarningsDayData {
   date: number;
 }
 
-export class EarningsReader<C extends ChainId> extends Reader<C> {
+export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
   async protocolEarnings(): Promise<String> {
     const response = await this.yearn.services.subgraph.client.query<ProtocolEarnings>({
       query: PROTOCOL_EARNINGS

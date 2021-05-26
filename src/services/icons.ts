@@ -2,7 +2,7 @@ import { ChainId } from "../chain";
 import { Service } from "../common";
 import { Context } from "../context";
 import { handleHttpError } from "../helpers";
-import { Icon, IconMap, Address } from "../types";
+import { Address, Icon, IconMap } from "../types";
 
 const YearnAssets = "https://api.github.com/repos/yearn/yearn-assets/contents/icons/tokens";
 const TrustAssets = "https://raw.githack.com/trustwallet/assets/master/blockchains/ethereum/tokenlist.json";
@@ -47,8 +47,18 @@ export class IconsService extends Service {
     }
   }
 
+  /**
+   * Get an icon url for a particular address.
+   * @param address
+   */
   get<T extends Address>(address: T): Icon;
+
+  /**
+   * Get a map of icons for a list of addresses.
+   * @param addresses
+   */
   get<T extends Address>(addresses: T[]): IconMap<T>;
+
   get<T extends Address>(address: T | T[]): IconMap<T> | Icon;
   get<T extends Address>(address: T | T[]): IconMap<T> | Icon {
     if (!Array.isArray(address)) {

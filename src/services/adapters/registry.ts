@@ -1,12 +1,12 @@
 import { CallOverrides } from "@ethersproject/contracts";
 
-import { ContractService } from "../../common";
-import { ZeroAddress } from "../../helpers";
-import { structArray } from "../../struct";
-import { Context } from "../../context";
 import { AdapterAbi } from "../../abi";
 import { ChainId } from "../../chain";
-import { Position, VaultStatic, VaultDynamic, Address } from "../../types";
+import { ContractService } from "../../common";
+import { Context } from "../../context";
+import { ZeroAddress } from "../../helpers";
+import { structArray } from "../../struct";
+import { Address, Position, VaultDynamic, VaultStatic } from "../../types";
 
 export interface IRegistryAdapter {
   assetsStatic(addresses?: Address[], overrides?: CallOverrides): Promise<VaultStatic[]>;
@@ -30,6 +30,12 @@ export class RegistryV2Adapter<T extends ChainId> extends ContractService implem
     super(ctx.addresses.adapters.registryV2 ?? RegistryV2Adapter.addressByChain(chainId), chainId, ctx);
   }
 
+  /**
+   * Get most up-to-date address of the Vault V2 adapter contract for a
+   * particular chain id.
+   * @param chainId
+   * @returns address
+   */
   static addressByChain(chainId: ChainId): string {
     switch (chainId) {
       case 1:
@@ -40,6 +46,12 @@ export class RegistryV2Adapter<T extends ChainId> extends ContractService implem
     }
   }
 
+  /**
+   * Get the static part of Vault assets.
+   * @param addresses filter, if not provided all assets are returned
+   * @param overrides
+   * @returns static
+   */
   async assetsStatic(addresses?: Address[], overrides: CallOverrides = {}): Promise<VaultStatic[]> {
     if (addresses) {
       return await this.contract.read["assetsStatic(address[])"](addresses, overrides).then(structArray);
@@ -47,6 +59,12 @@ export class RegistryV2Adapter<T extends ChainId> extends ContractService implem
     return await this.contract.read["assetsStatic()"]().then(structArray);
   }
 
+  /**
+   * Get the dynamic part of Vault assets.
+   * @param addresses filter, if not provided all assets are returned
+   * @param overrides
+   * @returns dynamic
+   */
   async assetsDynamic(addresses?: Address[], overrides: CallOverrides = {}): Promise<VaultDynamic[]> {
     if (addresses) {
       return await this.contract.read["assetsDynamic(address[])"](addresses, overrides)
@@ -78,6 +96,14 @@ export class RegistryV2Adapter<T extends ChainId> extends ContractService implem
       );
   }
 
+  /**
+   * Get all Vault asset positions for a particular address.
+   * @param address
+   * @param addresses filter, if not provided all positions are returned
+   * @param overrides
+   * @returns
+   */
+
   async positionsOf(address: Address, addresses?: Address[], overrides: CallOverrides = {}): Promise<Position[]> {
     if (addresses) {
       return await this.contract.read["assetsPositionsOf(address,address[])"](address, addresses, overrides).then(
@@ -87,6 +113,11 @@ export class RegistryV2Adapter<T extends ChainId> extends ContractService implem
     return await this.contract.read["assetsPositionsOf(address)"](address, overrides).then(structArray);
   }
 
+  /**
+   * Get all Vault underlying token addresses.
+   * @param overrides
+   * @returns
+   */
   async tokens(overrides: CallOverrides = {}): Promise<Address[]> {
     return await this.contract.read.assetsTokensAddresses(overrides);
   }

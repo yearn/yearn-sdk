@@ -1,9 +1,8 @@
+import { JsonRpcProvider } from "@ethersproject/providers";
 import Table from "cli-table3";
 
-import { JsonRpcProvider } from "@ethersproject/providers";
-import { YearnGovernance, Addresses } from "./common.mjs";
-
 import { Yearn } from "../dist/index.js";
+import { Addresses, YearnGovernance } from "./common.mjs";
 
 const url = process.env.WEB3_PROVIDER || "http://localhost:8545";
 const provider = new JsonRpcProvider(url);

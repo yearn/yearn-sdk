@@ -1,6 +1,6 @@
 {
   "name": "@yfi/sdk",
-  "version": "0.0.28",
+  "version": "0.0.29",
   "description": "Interaction framework for the yearn protocol",
   "author": "nymmrx <nymmrx@protonmail.com>",
   "license": "MIT",
@@ -37,6 +37,7 @@
     "@solidity-parser/parser": "^0.12.0",
     "apollo": "^2.33.0",
     "cli-table3": "^0.6.0",
+    "eslint-plugin-simple-import-sort": "6",
     "size-limit": "^4.10.1",
     "tsdx": "^0.14.1",
     "tslib": "^2.1.0",

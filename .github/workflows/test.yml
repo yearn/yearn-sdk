@@ -1,19 +1,19 @@
-name: ci
-on: [push]
+name: test
+on:
+  push:
+    branches:
+      - master
 jobs:
   build:
-    name: Build, lint, and test on Node ${{ matrix.node }} and ${{ matrix.os }}
-
+    name: build and test on Node ${{ matrix.node }} and ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         node: ["12.x", "14.x"]
         os: [ubuntu-latest, windows-latest, macOS-latest]
-
     env:
       WEB3_PROVIDER_WSS: ${{ secrets.WEB3_PROVIDER_WSS }}
       ETHERSCAN_KEY: ${{ secrets.ETHERSCAN_KEY }}
-
     steps:
       - name: Checkout repo
         uses: actions/checkout@v2
@@ -25,9 +25,6 @@ jobs:
 
       - name: Install deps and build (with cache)
         uses: bahmutov/npm-install@v1
-
-      - name: Lint
-        run: yarn lint
 
       - name: Build
         run: |

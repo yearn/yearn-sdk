@@ -17,6 +17,9 @@ export interface TokenAllowance extends Allowance {
   token: Address;
 }
 
+/**
+ * Balance of a particular token for a particular address.
+ */
 export interface Balance {
   address: Address;
   token: ERC20;
@@ -27,5 +30,9 @@ export interface Balance {
 
 export type BalancesMap<T extends Address> = TypedMap<T, Balance[]>;
 
+/**
+ * An URL pointing to an image/png file.
+ */
 export type Icon = string | undefined;
+
 export type IconMap<T extends Address> = TypedMap<T, Icon>;

@@ -1,5 +1,8 @@
 import { Address, TypedMap } from "../common";
 
+/**
+ * Annual Percentage Yield of a particular vault.
+ */
 export interface Apy {
   recommended: number;
   composite: boolean;
@@ -9,8 +12,3 @@ export interface Apy {
 }
 
 export type ApyMap<T extends Address> = TypedMap<T, Apy | undefined>;
-
-export interface ApiVault {
-  address: string;
-  apy?: Apy;
-}

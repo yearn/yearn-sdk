@@ -1,17 +1,14 @@
 /**
- * Asset typings for the SDK. A few things to keep in mind:
+ * All SDK types are stored under the `types/` directory for easy
+ * access from all the defined classes.
  *
- * - `id` is _always_ the address of a data structure in the chain. we use `id`
- *  just because address is a reserved word in solidity.
- *
- * @dev
  * @module
  */
 
+export * from "./alias";
 export * from "./asset";
 export * from "./common";
-export * from "./metadata";
-export * from "./alias";
 export * from "./custom/ironbank";
 export * from "./custom/token";
 export * from "./custom/vault";
+export * from "./metadata";

@@ -1,20 +1,27 @@
 import { getAddress } from "@ethersproject/address";
 
+import { Chains } from "../chain";
 import { Service } from "../common";
+import { EthAddress, handleHttpError, usdc, ZeroAddress } from "../helpers";
 import { Address, Balance, BalancesMap, Token } from "../types";
-import { EthAddress, handleHttpError, ZeroAddress, usdc } from "../helpers";
 
 /**
  * [[ZapperService]] interacts with the zapper api to gather more insight for
  * tokens and user positions.
  */
 export class ZapperService extends Service {
+  /**
+   * Fetch all the tokens supported by the zapper protocol along with some basic
+   * metadata.
+   * @returns list of tokens supported by the zapper protocol.
+   */
   async supportedTokens(): Promise<Token[]> {
     const url = "https://api.zapper.fi/v1/prices";
     const params = new URLSearchParams({ api_key: this.ctx.zapper });
     const tokens = await fetch(`${url}?${params}`)
       .then(handleHttpError)
       .then(res => res.json());
+    const network = Chains[this.chainId] ?? "ethereum";
     return tokens.map(
       (token: Record<string, string>): Token => {
         const address = getAddress(String(token.address));
@@ -22,7 +29,7 @@ export class ZapperService extends Service {
           address: address,
           name: token.symbol,
           symbol: token.symbol,
-          icon: `https://zapper.fi/images/${token.symbol}-icon.png`,
+          icon: `https://zapper.fi/images/networks/${network}/${token.address}.png`,
           decimals: token.decimals,
           priceUsdc: usdc(token.price),
           supported: { zapper: true }
@@ -31,7 +38,18 @@ export class ZapperService extends Service {
     );
   }
 
+  /**
+   * Fetch token balances from the {@link ZapperService.supportedTokens} list
+   * for a particular address.
+   * @param address
+   */
   async balances<T extends Address>(address: T): Promise<Balance[]>;
+
+  /**
+   * Fetch token balances from the {@link ZapperService.supportedTokens} list
+   * for a list of addresses.
+   * @param addresses
+   */
   async balances<T extends Address>(addresses: T[]): Promise<BalancesMap<T>>;
   async balances<T extends Address>(addresses: T[] | T): Promise<BalancesMap<T> | Balance[]>;
 
