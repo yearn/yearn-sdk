@@ -66,7 +66,7 @@ export const ASSET_HISTORIC_EARNINGS = gql`
         id
         decimals
       }
-      vaultDayData(where: { date_gt: $sinceDate }) {
+      vaultDayData(where: { date_gt: $sinceDate }, first: 1000) {
         dayReturnsGenerated
         date
       }
@@ -84,12 +84,12 @@ export const ACCOUNT_HISTORIC_EARNINGS = gql`
           decimals
         }
         vault {
-          vaultDayData(where: { date_gt: $sinceDate }, orderBy: date, orderDirection: asc) {
+          vaultDayData(where: { date_gt: $sinceDate }, orderBy: date, orderDirection: asc, first: 1000) {
             pricePerShare
             date
           }
         }
-        updates(orderBy: timestamp, orderDirection: asc) {
+        updates(orderBy: timestamp, orderDirection: asc, first: 1000) {
           balanceShares
           timestamp
           deposits
