@@ -1,4 +1,4 @@
-import { Provider } from "@ethersproject/providers";
+import { JsonRpcProvider } from "@ethersproject/providers";
 import EventEmitter from "events";
 import { PartialDeep } from "type-fest";
 
@@ -19,8 +19,8 @@ export interface AddressesOverride {
  * for reading data and one for writing data.
  */
 export interface ReadWriteProvider {
-  read: Provider;
-  write: Provider;
+  read: JsonRpcProvider;
+  write: JsonRpcProvider;
 }
 
 /**
@@ -28,7 +28,7 @@ export interface ReadWriteProvider {
  * SDK.
  */
 export interface ContextValue {
-  provider?: Provider | ReadWriteProvider;
+  provider?: JsonRpcProvider | ReadWriteProvider;
   zapper?: string;
   etherscan?: string;
   addresses?: PartialDeep<AddressesOverride>;
@@ -69,8 +69,8 @@ export class Context implements Required<ContextValue> {
    * interaction.
    * @param provider new provider(s)
    */
-  setProvider(provider?: Provider | ReadWriteProvider) {
-    if (provider instanceof Provider) {
+  setProvider(provider?: JsonRpcProvider | ReadWriteProvider) {
+    if (provider instanceof JsonRpcProvider) {
       this.ctx.provider = { read: provider, write: provider };
     } else if (provider) {
       this.ctx.provider = provider;

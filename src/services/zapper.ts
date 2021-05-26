@@ -4,6 +4,7 @@ import { Chains } from "../chain";
 import { Service } from "../common";
 import { EthAddress, handleHttpError, usdc, ZeroAddress } from "../helpers";
 import { Address, Balance, BalancesMap, Token } from "../types";
+import { GasPrice } from "../types/custom/zapper";
 
 /**
  * [[ZapperService]] interacts with the zapper api to gather more insight for
@@ -90,5 +91,20 @@ export class ZapperService extends Service {
     });
     if (!Array.isArray(addresses)) return balances[addresses];
     return balances;
+  }
+
+  /**
+   * Fetch up to date gas prices in gwei
+   * @returns gas prices
+   */
+  async gas(): Promise<GasPrice[]> {
+    const url = "https://api.zapper.fi/v1/gas-price";
+    const params = new URLSearchParams({
+      api_key: this.ctx.zapper
+    });
+    const gas = await fetch(`${url}?${params}`)
+      .then(handleHttpError)
+      .then(res => res.json());
+    return gas;
   }
 }

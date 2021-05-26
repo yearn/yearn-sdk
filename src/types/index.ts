@@ -11,4 +11,5 @@ export * from "./common";
 export * from "./custom/ironbank";
 export * from "./custom/token";
 export * from "./custom/vault";
+export * from "./custom/zapper";
 export * from "./metadata";

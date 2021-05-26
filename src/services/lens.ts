@@ -8,7 +8,6 @@ import { Address, GenericAsset, Position, SdkError } from "../types";
 import { IronBankAdapter } from "./adapters/ironbank";
 import { IRegistryAdapter, RegistryV2Adapter } from "./adapters/registry";
 
-// FIXME: no
 export const LensAbi = ["function getRegistries() external view returns (address[] memory)"];
 
 export type Adapters<T extends ChainId> = {

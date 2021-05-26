@@ -1,9 +1,15 @@
-import { CallOverrides } from "@ethersproject/contracts";
+import { TransactionResponse } from "@ethersproject/abstract-provider";
+import { CallOverrides, Contract } from "@ethersproject/contracts";
 
 import { ChainId } from "../chain";
 import { ServiceInterface } from "../common";
-import { Address, Balance, SdkError, Token, VaultDynamic, VaultStatic } from "../types";
+import { EthAddress } from "../helpers";
+import { Address, Balance, Integer, SdkError, Token, VaultDynamic, VaultStatic } from "../types";
 import { Position, Vault } from "../types";
+
+const VaultAbi = ["function deposit(uint256 amount) public", "function withdraw(uint256 amount) public"];
+const VaultV1Abi = VaultAbi.concat(["function depositETH(uint256 amount) payable public"]);
+// const VaultV2Abi = VaultAbi.concat([]);
 
 export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
   /**
@@ -126,5 +132,58 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
         );
       })
     ).then(arr => arr.flat());
+  }
+
+  /**
+   * Deposit into a yearn vault
+   * @param vault
+   * @param token
+   * @param amount
+   * @param account
+   * @param overrides
+   * @returns transaction
+   */
+  // eslint-disable-next-line prettier/prettier
+  async deposit(vault: Address, token: Address, amount: Integer, account: Address, overrides?: CallOverrides): Promise<TransactionResponse> {
+    const [vaultRef] = await this.getStatic([vault], overrides);
+    const signer = this.ctx.provider.read.getSigner(account);
+    if (vaultRef.token === token) {
+      if (token === EthAddress) {
+        if (vaultRef.typeId === "VAULT_V1") {
+          const vaultContract = new Contract(vault, VaultV1Abi, signer);
+          return vaultContract.depositETH(amount, overrides);
+        } else {
+          throw new SdkError("deposit:v2:eth not implemented");
+        }
+      } else {
+        const vaultContract = new Contract(vault, VaultAbi, signer);
+        return vaultContract.deposit(vault, overrides);
+      }
+    } else {
+      // ZAPPER!
+      throw new SdkError("deposit:zapper not implemented.");
+    }
+  }
+
+  /**
+   * Withdraw from a yearn vault.
+   * @param vault
+   * @param token
+   * @param amount
+   * @param account
+   * @param overrides
+   * @returns transaction
+   */
+  // eslint-disable-next-line prettier/prettier
+  async withdraw(vault: Address, token: Address, amount: Integer, account: Address, overrides?: CallOverrides): Promise<TransactionResponse> {
+    const [vaultRef] = await this.getStatic([vault], overrides);
+    const signer = this.ctx.provider.read.getSigner(account);
+    if (vaultRef.token === token) {
+      const vaultContract = new Contract(vault, VaultAbi, signer);
+      return vaultContract.withdraw(amount, overrides);
+    } else {
+      // ZAPPER!
+      throw new SdkError("deposit:zapper not implemented.");
+    }
   }
 }
