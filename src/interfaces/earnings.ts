@@ -237,13 +237,13 @@ export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
     };
   }
 
-  async assetHistoricEarnings(assetAddress: Address, sinceDate: number): Promise<AssetHistoricEarnings> {
+  async assetHistoricEarnings(assetAddress: Address, sinceDate: Date): Promise<AssetHistoricEarnings> {
     const vault = await this.yearn.services.subgraph.client
       .query<AssetHistoricEarningsQuery, AssetHistoricEarningsQueryVariables>({
         query: ASSET_HISTORIC_EARNINGS,
         variables: {
           id: assetAddress.toLowerCase(),
-          sinceDate: sinceDate
+          sinceDate: sinceDate.getTime().toString()
         }
       })
       .then(response => response.data.vault);
@@ -279,7 +279,7 @@ export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
   async accountHistoricEarnings(
     accountAddress: Address,
     shareTokenAddress: Address,
-    sinceDate: number
+    sinceDate: Date
   ): Promise<AccountHistoricEarnings> {
     const vaultPositions = await this.yearn.services.subgraph.client
       .query<AccountHistoricEarningsQuery, AccountHistoricEarningsQueryVariables>({
@@ -287,7 +287,7 @@ export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
         variables: {
           id: accountAddress.toLowerCase(),
           shareToken: shareTokenAddress.toLowerCase(),
-          sinceDate: sinceDate / 1000
+          sinceDate: (sinceDate.getTime() / 1000).toString()
         }
       })
       .then(response => response.data.account?.vaultPositions);

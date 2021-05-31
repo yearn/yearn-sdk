@@ -4,7 +4,7 @@ import { HttpLink } from "apollo-link-http";
 
 import { Service } from "../../common";
 
-const YearnSubgraphEndpoint = "https://api.thegraph.com/subgraphs/name/tomprsn/yearn-vaults-v2-subgraph-mainnet";
+const YearnSubgraphEndpoint = "https://api.thegraph.com/subgraphs/name/jstashh/yearn-subgraph-three";
 
 export class SubgraphService extends Service {
   client = new ApolloClient({

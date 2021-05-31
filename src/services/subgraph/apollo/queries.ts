@@ -59,7 +59,7 @@ export const ACCOUNT_EARNINGS = gql`
 `;
 
 export const ASSET_HISTORIC_EARNINGS = gql`
-  query AssetHistoricEarnings($id: ID!, $sinceDate: Int!) {
+  query AssetHistoricEarnings($id: ID!, $sinceDate: String!) {
     vault(id: $id) {
       id
       token {
@@ -75,7 +75,7 @@ export const ASSET_HISTORIC_EARNINGS = gql`
 `;
 
 export const ACCOUNT_HISTORIC_EARNINGS = gql`
-  query AccountHistoricEarnings($id: ID!, $shareToken: String!, $sinceDate: Int!) {
+  query AccountHistoricEarnings($id: ID!, $shareToken: String!, $sinceDate: String!) {
     account(id: $id) {
       vaultPositions(where: { shareToken: $shareToken }) {
         balanceShares
@@ -98,6 +98,14 @@ export const ACCOUNT_HISTORIC_EARNINGS = gql`
           tokensSent
         }
       }
+    }
+  }
+`;
+
+export const PROTOCOL_FEES = gql`
+  query ProtocolFees($sinceDate: String!) {
+    transfers(where: { timestamp_gt: $sinceDate, isProtocolFee: true }, first: 1000) {
+      tokenAmountUsdc
     }
   }
 `;

@@ -1,6 +1,7 @@
 import { ChainId } from "./chain";
 import { Context, ContextValue } from "./context";
 import { EarningsInterface } from "./interfaces/earnings";
+import { FeesInterface } from "./interfaces/fees";
 import { IronBankInterface } from "./interfaces/ironbank";
 import { TokenInterface } from "./interfaces/token";
 import { VaultInterface } from "./interfaces/vault";
@@ -40,6 +41,7 @@ export class Yearn<T extends ChainId> {
   vaults: VaultInterface<T>;
   tokens: TokenInterface<T>;
   earnings: EarningsInterface<T>;
+  fees: FeesInterface<T>;
   ironBank: IronBankInterface<T>;
 
   context: Context;
@@ -76,6 +78,7 @@ export class Yearn<T extends ChainId> {
     this.vaults = new VaultInterface(this, chainId, this.context);
     this.tokens = new TokenInterface(this, chainId, this.context);
     this.earnings = new EarningsInterface(this, chainId, this.context);
+    this.fees = new FeesInterface(this, chainId, this.context);
     this.ironBank = new IronBankInterface(this, chainId, this.context);
 
     this.ready = Promise.all([this.services.icons.ready]);
