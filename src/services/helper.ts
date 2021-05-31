@@ -18,7 +18,7 @@ const HelperAbi = [
  * [[HelperService]] is a generalized containers for all the utilities that are
  * used in the lens codebase and in the SDK.
  */
-export class HelperService<T extends ChainId> extends ContractService {
+export class HelperService<T extends ChainId> extends ContractService<T> {
   static abi = HelperAbi;
 
   constructor(chainId: T, ctx: Context) {

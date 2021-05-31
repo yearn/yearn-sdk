@@ -34,7 +34,7 @@ export const OracleAbi = [
  * It's implemented in the form of a contract that lives on all networks
  * supported by yearn.
  */
-export class OracleService<T extends ChainId> extends ContractService {
+export class OracleService<T extends ChainId> extends ContractService<T> {
   static abi = OracleAbi;
 
   constructor(chainId: T, ctx: Context) {
