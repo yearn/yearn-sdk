@@ -73,7 +73,7 @@ export class IronBankInterface<T extends ChainId> extends ServiceInterface<T> {
    * @param overrides
    * @returns
    */
-  async generalPositionOf(address: Address, overrides?: CallOverrides): Promise<CyTokenUserMetadata> {
+  async generalPositionOf(address: Address, overrides?: CallOverrides): Promise<IronBankPosition> {
     return this.yearn.services.lens.adapters.ironBank.generalPositionOf(address, overrides);
   }
 
@@ -83,7 +83,7 @@ export class IronBankInterface<T extends ChainId> extends ServiceInterface<T> {
    * @param overrides
    * @returns
    */
-  async userMetadata(address: Address, overrides?: CallOverrides): Promise<IronBankPosition[]> {
+  async userMetadata(address: Address, overrides?: CallOverrides): Promise<CyTokenUserMetadata[]> {
     return this.yearn.services.lens.adapters.ironBank.assetsUserMetadata(address, overrides);
   }
 

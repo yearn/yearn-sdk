@@ -43,8 +43,8 @@ const CyTokenUserMetadataAbi = `tuple(
 )`;
 
 const CustomAbi = [
-  `function adapterPositionOf(address) external view returns (${CyTokenUserMetadataAbi} memory)`,
-  `function assetsUserMetadata(address) public view returns (${IronBankPositionAbi}[] memory)`
+  `function adapterPositionOf(address) external view returns (${IronBankPositionAbi} memory)`,
+  `function assetsUserMetadata(address) public view returns (${CyTokenUserMetadataAbi}[] memory)`
 ];
 
 export class IronBankAdapter<T extends ChainId> extends ContractService<T> {
@@ -118,7 +118,7 @@ export class IronBankAdapter<T extends ChainId> extends ContractService<T> {
    * @param overrides
    * @returns
    */
-  async generalPositionOf(address: Address, overrides: CallOverrides = {}): Promise<CyTokenUserMetadata> {
+  async generalPositionOf(address: Address, overrides: CallOverrides = {}): Promise<IronBankPosition> {
     return await this.contract.read.adapterPositionOf(address, overrides).then(struct);
   }
 
@@ -128,7 +128,7 @@ export class IronBankAdapter<T extends ChainId> extends ContractService<T> {
    * @param overrides
    * @returns
    */
-  async assetsUserMetadata(address: Address, overrides: CallOverrides = {}): Promise<IronBankPosition[]> {
+  async assetsUserMetadata(address: Address, overrides: CallOverrides = {}): Promise<CyTokenUserMetadata[]> {
     return await this.contract.read.assetsUserMetadata(address, overrides).then(structArray);
   }
 
