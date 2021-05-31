@@ -59,7 +59,7 @@ export const ACCOUNT_EARNINGS = gql`
 `;
 
 export const ASSET_HISTORIC_EARNINGS = gql`
-  query AssetHistoricEarnings($id: ID!, $sinceDate: String!) {
+  query AssetHistoricEarnings($id: ID!, $sinceDate: Int!) {
     vault(id: $id) {
       id
       token {
@@ -75,7 +75,7 @@ export const ASSET_HISTORIC_EARNINGS = gql`
 `;
 
 export const ACCOUNT_HISTORIC_EARNINGS = gql`
-  query AccountHistoricEarnings($id: ID!, $shareToken: String!, $sinceDate: String!) {
+  query AccountHistoricEarnings($id: ID!, $shareToken: String!, $sinceDate: Int!) {
     account(id: $id) {
       vaultPositions(where: { shareToken: $shareToken }) {
         balanceShares
