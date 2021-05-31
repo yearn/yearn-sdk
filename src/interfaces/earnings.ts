@@ -8,6 +8,10 @@ import {
   AccountEarningsVariables as AccountEarningsQueryVariables
 } from "../services/subgraph/apollo/generated/AccountEarnings";
 import {
+  AccountHistoricEarnings as AccountHistoricEarningsQuery,
+  AccountHistoricEarningsVariables as AccountHistoricEarningsQueryVariables
+} from "../services/subgraph/apollo/generated/AccountHistoricEarnings";
+import {
   AssetHistoricEarnings as AssetHistoricEarningsQuery,
   AssetHistoricEarningsVariables as AssetHistoricEarningsQueryVariables
 } from "../services/subgraph/apollo/generated/AssetHistoricEarnings";
@@ -15,6 +19,7 @@ import { ProtocolEarnings } from "../services/subgraph/apollo/generated/Protocol
 import { VaultEarnings, VaultEarningsVariables } from "../services/subgraph/apollo/generated/VaultEarnings";
 import {
   ACCOUNT_EARNINGS,
+  ACCOUNT_HISTORIC_EARNINGS,
   ASSET_HISTORIC_EARNINGS,
   PROTOCOL_EARNINGS,
   VAULT_EARNINGS
@@ -46,15 +51,23 @@ export interface AssetEarnings extends TokenAmount {
   assetAddress: Address;
 }
 
-export interface AssetDayData {
-  earnings: TokenAmount;
-  date: number;
+export interface AssetHistoricEarnings extends HistoricEarnings {
+  assetAddress: Address;
 }
 
-export interface AssetHistoricEarnings {
-  assetAddress: Address;
+export interface AccountHistoricEarnings extends HistoricEarnings {
+  accountAddress: Address;
+  shareTokenAddress: Address;
+}
+
+export interface HistoricEarnings {
   decimals: number;
-  dayData: AssetDayData[];
+  dayData: EarningsDayData[];
+}
+
+export interface EarningsDayData {
+  earnings: TokenAmount;
+  date: number;
 }
 
 export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
@@ -260,6 +273,130 @@ export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
       decimals: vault.token.decimals,
       assetAddress: assetAddress,
       dayData: dayData
+    };
+  }
+
+  async accountHistoricEarnings(
+    accountAddress: Address,
+    shareTokenAddress: Address,
+    sinceDate: number
+  ): Promise<AccountHistoricEarnings> {
+    const vaultPositions = await this.yearn.services.subgraph.client
+      .query<AccountHistoricEarningsQuery, AccountHistoricEarningsQueryVariables>({
+        query: ACCOUNT_HISTORIC_EARNINGS,
+        variables: {
+          id: accountAddress.toLowerCase(),
+          shareToken: shareTokenAddress.toLowerCase(),
+          sinceDate: sinceDate / 1000
+        }
+      })
+      .then(response => response.data.account?.vaultPositions);
+
+    if (!vaultPositions) {
+      throw new SdkError(`failed to find account with address ${accountAddress}`);
+    }
+
+    interface AccountSnapshot {
+      startDate: number;
+      endDate: number;
+      deposits: BigNumber;
+      withdrawals: BigNumber;
+      tokensReceived: BigNumber;
+      tokensSent: BigNumber;
+      balanceShares: BigNumber;
+    }
+
+    let snapshotTimeline: AccountSnapshot[] = [];
+
+    const updates = vaultPositions
+      .flatMap(vaultPosition => vaultPosition.updates)
+      .sort((lhs, rhs) => {
+        return +lhs.timestamp - +rhs.timestamp;
+      });
+
+    for (const [index, vaultPositionUpdate] of updates.entries()) {
+      if (index === 0) {
+        const snapshot: AccountSnapshot = {
+          startDate: new Date(0).getTime(),
+          endDate: +vaultPositionUpdate.timestamp,
+          deposits: new BigNumber(vaultPositionUpdate.deposits),
+          withdrawals: new BigNumber(vaultPositionUpdate.withdrawals),
+          tokensReceived: new BigNumber(vaultPositionUpdate.tokensReceived),
+          tokensSent: new BigNumber(vaultPositionUpdate.tokensSent),
+          balanceShares: new BigNumber(vaultPositionUpdate.balanceShares)
+        };
+        snapshotTimeline.push(snapshot);
+      } else {
+        const previousSnapshot = snapshotTimeline[index - 1];
+        const snapshot: AccountSnapshot = {
+          startDate: previousSnapshot.endDate,
+          endDate: +vaultPositionUpdate.timestamp,
+          deposits: previousSnapshot.deposits.plus(new BigNumber(vaultPositionUpdate.deposits)),
+          withdrawals: previousSnapshot.withdrawals.plus(new BigNumber(vaultPositionUpdate.withdrawals)),
+          tokensReceived: previousSnapshot.tokensReceived.plus(new BigNumber(vaultPositionUpdate.tokensReceived)),
+          tokensSent: previousSnapshot.tokensSent.plus(new BigNumber(vaultPositionUpdate.tokensSent)),
+          balanceShares: previousSnapshot.balanceShares.plus(new BigNumber(vaultPositionUpdate.balanceShares))
+        };
+        snapshotTimeline.push(snapshot);
+      }
+    }
+
+    if (snapshotTimeline.length > 0) {
+      const lastSnapshot = snapshotTimeline[snapshotTimeline.length - 1];
+      const distantFuture = new Date().setFullYear(3000);
+      const snapshot: AccountSnapshot = {
+        startDate: lastSnapshot.endDate,
+        endDate: distantFuture,
+        deposits: lastSnapshot.deposits,
+        withdrawals: lastSnapshot.withdrawals,
+        tokensReceived: lastSnapshot.tokensReceived,
+        tokensSent: lastSnapshot.tokensSent,
+        balanceShares: lastSnapshot.balanceShares
+      };
+      snapshotTimeline.push(snapshot);
+    }
+
+    const vaultDayData = vaultPositions[0].vault.vaultDayData;
+    const token = vaultPositions[0].token;
+
+    const earningsDayData = await Promise.all(
+      vaultDayData.map(async vaultDayDatum => {
+        const date = vaultDayDatum.date * 1000;
+        const snapshot = snapshotTimeline.find(snapshot => date >= snapshot.startDate && date < snapshot.endDate);
+        if (snapshot) {
+          const balanceTokens = snapshot.balanceShares
+            .multipliedBy(new BigNumber(vaultDayDatum.pricePerShare))
+            .dividedBy(new BigNumber(10 ** token.decimals));
+          let positives = balanceTokens.plus(snapshot.withdrawals).plus(snapshot.tokensSent);
+          let negatives = snapshot.deposits.plus(snapshot.tokensReceived);
+          let earnings = positives.minus(negatives);
+
+          const amountUsdc = await this.tokensValueInUsdc(earnings, token.id, token.decimals);
+
+          return {
+            earnings: {
+              amount: earnings.toFixed(0),
+              amountUsdc: amountUsdc.toFixed(0)
+            },
+            date: date
+          };
+        } else {
+          return {
+            earnings: {
+              amount: "0",
+              amountUsdc: "0"
+            },
+            date: date
+          };
+        }
+      })
+    );
+
+    return {
+      accountAddress: accountAddress,
+      shareTokenAddress: shareTokenAddress,
+      decimals: token.decimals,
+      dayData: earningsDayData
     };
   }
 
