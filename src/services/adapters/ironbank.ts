@@ -27,7 +27,7 @@ const CyTokenMetadataAbi = `tuple(
   uint256 exchangeRate
 )`;
 
-const CyTokenUserMetadataAbi = `tuple(
+const IronBankPositionAbi = `tuple(
   address assetAddress,
   bool enteredMarket,
   uint256 supplyBalanceUsdc,
@@ -35,7 +35,7 @@ const CyTokenUserMetadataAbi = `tuple(
   uint256 borrowLimitUsdc
 )`;
 
-const IronBankPositionAbi = `tuple(
+const CyTokenUserMetadataAbi = `tuple(
   uint256 supplyBalanceUsdc,
   uint256 borrowBalanceUsdc,
   uint256 borrowLimitUsdc,
@@ -43,11 +43,11 @@ const IronBankPositionAbi = `tuple(
 )`;
 
 const CustomAbi = [
-  `function adapterPositionOf(address) external view returns (${IronBankPositionAbi} memory)`,
-  `function assetsUserMetadata(address) public view returns (${CyTokenUserMetadataAbi}[] memory)`
+  `function adapterPositionOf(address) external view returns (${CyTokenUserMetadataAbi} memory)`,
+  `function assetsUserMetadata(address) public view returns (${IronBankPositionAbi}[] memory)`
 ];
 
-export class IronBankAdapter<T extends ChainId> extends ContractService {
+export class IronBankAdapter<T extends ChainId> extends ContractService<T> {
   static abi = AdapterAbi(CyTokenMetadataAbi).concat(CustomAbi);
 
   constructor(chainId: T, ctx: Context) {
@@ -118,7 +118,7 @@ export class IronBankAdapter<T extends ChainId> extends ContractService {
    * @param overrides
    * @returns
    */
-  async generalPositionOf(address: Address, overrides: CallOverrides = {}): Promise<IronBankPosition> {
+  async generalPositionOf(address: Address, overrides: CallOverrides = {}): Promise<CyTokenUserMetadata> {
     return await this.contract.read.adapterPositionOf(address, overrides).then(struct);
   }
 
@@ -128,7 +128,7 @@ export class IronBankAdapter<T extends ChainId> extends ContractService {
    * @param overrides
    * @returns
    */
-  async assetsUserMetadata(address: Address, overrides: CallOverrides = {}): Promise<CyTokenUserMetadata[]> {
+  async assetsUserMetadata(address: Address, overrides: CallOverrides = {}): Promise<IronBankPosition[]> {
     return await this.contract.read.assetsUserMetadata(address, overrides).then(structArray);
   }
 

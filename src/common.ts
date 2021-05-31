@@ -1,26 +1,26 @@
 import { Contract, ContractInterface } from "@ethersproject/contracts";
-import EventEmitter from "events";
+import Emittery from "emittery";
 
 import { ChainId } from "./chain";
 import { Context, ReadWriteProvider } from "./context";
 import { Address } from "./types";
 import { Yearn } from "./yearn";
 
-export class Service {
+export class Service<E = {}> {
   ctx: Context;
   chainId: ChainId;
 
-  events: EventEmitter;
+  events: Emittery<E>;
 
   constructor(chainId: ChainId, ctx: Context) {
     this.chainId = chainId;
     this.ctx = ctx;
 
-    this.events = new EventEmitter();
+    this.events = new Emittery();
   }
 }
 
-export class ServiceInterface<T extends ChainId> extends Service {
+export class ServiceInterface<T extends ChainId, E = {}> extends Service<E> {
   protected yearn: Yearn<T>;
 
   constructor(yearn: Yearn<T>, chainId: T, ctx: Context) {
@@ -56,14 +56,14 @@ export class WrappedContract {
 /**
  * A service that has a contract representation on chain.
  */
-export class ContractService extends Service {
+export class ContractService<T extends ChainId, E = {}> extends Service<E> {
   static abi: string[] = [];
 
   address: string;
 
   contract: WrappedContract;
 
-  constructor(address: Address, chainId: ChainId, ctx: Context) {
+  constructor(address: Address, chainId: T, ctx: Context) {
     super(chainId, ctx);
     this.address = address;
 

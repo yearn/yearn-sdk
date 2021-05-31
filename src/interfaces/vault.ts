@@ -4,7 +4,17 @@ import { CallOverrides, Contract } from "@ethersproject/contracts";
 import { ChainId } from "../chain";
 import { ServiceInterface } from "../common";
 import { EthAddress } from "../helpers";
-import { Address, Balance, Integer, SdkError, Token, VaultDynamic, VaultStatic } from "../types";
+import {
+  Address,
+  Balance,
+  DepositOptions,
+  Integer,
+  SdkError,
+  Token,
+  VaultDynamic,
+  VaultStatic,
+  WithdrawOptions
+} from "../types";
 import { Position, Vault } from "../types";
 
 const VaultAbi = ["function deposit(uint256 amount) public", "function withdraw(uint256 amount) public"];
@@ -143,8 +153,15 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
    * @param overrides
    * @returns transaction
    */
-  // eslint-disable-next-line prettier/prettier
-  async deposit(vault: Address, token: Address, amount: Integer, account: Address, overrides?: CallOverrides): Promise<TransactionResponse> {
+  async deposit(
+    vault: Address,
+    token: Address,
+    amount: Integer,
+    account: Address,
+    options: DepositOptions = {},
+    overrides?: CallOverrides
+  ): Promise<TransactionResponse> {
+    console.log(options);
     const [vaultRef] = await this.getStatic([vault], overrides);
     const signer = this.ctx.provider.read.getSigner(account);
     if (vaultRef.token === token) {
@@ -174,8 +191,15 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
    * @param overrides
    * @returns transaction
    */
-  // eslint-disable-next-line prettier/prettier
-  async withdraw(vault: Address, token: Address, amount: Integer, account: Address, overrides?: CallOverrides): Promise<TransactionResponse> {
+  async withdraw(
+    vault: Address,
+    token: Address,
+    amount: Integer,
+    account: Address,
+    options: WithdrawOptions = {},
+    overrides?: CallOverrides
+  ): Promise<TransactionResponse> {
+    console.log(options);
     const [vaultRef] = await this.getStatic([vault], overrides);
     const signer = this.ctx.provider.read.getSigner(account);
     if (vaultRef.token === token) {

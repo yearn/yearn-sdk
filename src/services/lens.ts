@@ -23,7 +23,7 @@ export type Adapters<T extends ChainId> = {
  * It's implemented in the form of a contract that lives on all networks
  * supported by yearn.
  */
-export class LensService<T extends ChainId> extends ContractService {
+export class LensService<T extends ChainId> extends ContractService<T> {
   static abi = LensAbi;
 
   constructor(chainId: T, ctx: Context) {

@@ -6,3 +6,8 @@ export interface GasPrice {
   instant: number;
   fast: number;
 }
+
+export interface ZapOptions {
+  slippage?: number;
+  gas?: keyof GasPrice;
+}
