@@ -3,7 +3,7 @@ import { Address, Integer } from "../common";
 /**
  * Generalized position of an address in the IronBank.
  */
-export interface IronBankPosition {
+export interface CyTokenUserMetadata {
   assetAddress: Address;
   enteredMarket: boolean;
   supplyBalanceUsdc: Integer;
@@ -11,7 +11,7 @@ export interface IronBankPosition {
   borrowLimitUsdc: Integer;
 }
 
-export interface CyTokenUserMetadata {
+export interface IronBankPosition {
   supplyBalanceUsdc: Integer;
   borrowBalanceUsdc: Integer;
   borrowLimitUsdc: Integer;

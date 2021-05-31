@@ -23,7 +23,7 @@ const VaultV2MetadataAbi = `tuple(
   bool emergencyShutdown
 )`;
 
-export class RegistryV2Adapter<T extends ChainId> extends ContractService implements IRegistryAdapter {
+export class RegistryV2Adapter<T extends ChainId> extends ContractService<T> implements IRegistryAdapter {
   static abi = AdapterAbi(VaultV2MetadataAbi);
 
   constructor(chainId: T, ctx: Context) {
