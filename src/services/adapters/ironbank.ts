@@ -27,7 +27,7 @@ const CyTokenMetadataAbi = `tuple(
   uint256 exchangeRate
 )`;
 
-const IronBankPositionAbi = `tuple(
+const CyTokenUserMetadataAbi = `tuple(
   address assetAddress,
   bool enteredMarket,
   uint256 supplyBalanceUsdc,
@@ -35,7 +35,7 @@ const IronBankPositionAbi = `tuple(
   uint256 borrowLimitUsdc
 )`;
 
-const CyTokenUserMetadataAbi = `tuple(
+const IronBankPositionAbi = `tuple(
   uint256 supplyBalanceUsdc,
   uint256 borrowBalanceUsdc,
   uint256 borrowLimitUsdc,
