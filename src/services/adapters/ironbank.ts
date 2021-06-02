@@ -128,8 +128,17 @@ export class IronBankAdapter<T extends ChainId> extends ContractService<T> {
    * @param overrides
    * @returns
    */
-  async assetsUserMetadata(address: Address, overrides: CallOverrides = {}): Promise<CyTokenUserMetadata[]> {
-    return await this.contract.read.assetsUserMetadata(address, overrides).then(structArray);
+  async assetsUserMetadata(
+    address: Address,
+    addresses?: Address[],
+    overrides: CallOverrides = {}
+  ): Promise<CyTokenUserMetadata[]> {
+    if (addresses) {
+      return await this.contract.read["assetsUserMetadata(address,address[])"](address, addresses, overrides).then(
+        structArray
+      );
+    }
+    return await this.contract.read["assetsUserMetadata(address)"](address, overrides).then(structArray);
   }
 
   /**
