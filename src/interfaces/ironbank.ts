@@ -83,8 +83,12 @@ export class IronBankInterface<T extends ChainId> extends ServiceInterface<T> {
    * @param overrides
    * @returns
    */
-  async userMetadata(address: Address, overrides?: CallOverrides): Promise<CyTokenUserMetadata[]> {
-    return this.yearn.services.lens.adapters.ironBank.assetsUserMetadata(address, overrides);
+  async userMetadata(
+    address: Address,
+    addresses?: Address[],
+    overrides?: CallOverrides
+  ): Promise<CyTokenUserMetadata[]> {
+    return this.yearn.services.lens.adapters.ironBank.assetsUserMetadata(address, addresses, overrides);
   }
 
   /**
