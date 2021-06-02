@@ -11,6 +11,7 @@
  * - [[IronBankInterface]] asset aggregation form iron bank products.
  * - [[TokenInterface]] utility function for ERC20 and balances.
  * - [[EarningsInterface]] historical earnings.
+ * - [[FeesInterface]] historical fees collected by yearn.
  *
  * ### Services
  *
@@ -38,6 +39,7 @@ import "cross-fetch/polyfill";
 export { ChainId } from "./chain";
 export { Context, ContextValue } from "./context";
 export { EarningsInterface } from "./interfaces/earnings";
+export { FeesInterface } from "./interfaces/fees";
 export { IronBankInterface } from "./interfaces/ironbank";
 export { TokenInterface } from "./interfaces/token";
 export { VaultInterface } from "./interfaces/vault";
