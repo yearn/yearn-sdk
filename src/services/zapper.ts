@@ -25,7 +25,7 @@ export class ZapperService extends Service {
     const network = Chains[this.chainId] ?? "ethereum";
     return tokens.map(
       (token: Record<string, string>): Token => {
-        const address = getAddress(String(token.address));
+        const address = token.address === ZeroAddress ? EthAddress : getAddress(String(token.address));
         return {
           address: address,
           name: token.symbol,
