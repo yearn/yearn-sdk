@@ -26,15 +26,13 @@ async function main() {
   const positionsTable = new Table();
   positionsTable.push(
     ...positions.map(position => {
-      const vault = vaults.find(vault => (vault.address = position.assetAddress));
+      const vault = vaults.find(vault => vault.address === position.assetAddress);
       return [vault.name, position.balance];
     })
   );
 
   console.log("Yearn Multisig vault positions:");
   console.log(positionsTable.toString());
-
-  console.log(await yearn.vaults.balances(YearnGovernance));
 }
 
 main();

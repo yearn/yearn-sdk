@@ -73,10 +73,10 @@ export class RegistryV2Adapter<T extends ChainId> extends ContractService<T> imp
           assets.map((asset: any) => ({
             ...asset,
             metadata: {
-              ...assets.metadata,
               controller: ZeroAddress,
               totalAssets: "0",
-              totalSupply: "0"
+              totalSupply: "0",
+              ...asset.metadata
             }
           }))
         );
@@ -84,15 +84,17 @@ export class RegistryV2Adapter<T extends ChainId> extends ContractService<T> imp
     return await this.contract.read["assetsDynamic()"]()
       .then(structArray)
       .then((assets: any) =>
-        assets.map((asset: any) => ({
-          ...asset,
-          metadata: {
-            ...assets.metadata,
-            controller: ZeroAddress,
-            totalAssets: "0",
-            totalSupply: "0"
-          }
-        }))
+        assets.map((asset: any) => {
+          return {
+            ...asset,
+            metadata: {
+              controller: ZeroAddress,
+              totalAssets: "0",
+              totalSupply: "0",
+              ...asset.metadata
+            }
+          };
+        })
       );
   }
 
