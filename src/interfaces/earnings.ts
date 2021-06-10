@@ -67,7 +67,7 @@ export interface HistoricEarnings {
 
 export interface EarningsDayData {
   earnings: TokenAmount;
-  date: number;
+  date: Date;
 }
 
 export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
@@ -237,13 +237,13 @@ export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
     };
   }
 
-  async assetHistoricEarnings(assetAddress: Address, sinceDate: number): Promise<AssetHistoricEarnings> {
+  async assetHistoricEarnings(assetAddress: Address, sinceDate: Date): Promise<AssetHistoricEarnings> {
     const vault = await this.yearn.services.subgraph.client
       .query<AssetHistoricEarningsQuery, AssetHistoricEarningsQueryVariables>({
         query: ASSET_HISTORIC_EARNINGS,
         variables: {
           id: assetAddress.toLowerCase(),
-          sinceDate: sinceDate
+          sinceDate: sinceDate.getTime().toString()
         }
       })
       .then(response => response.data.vault);
@@ -264,7 +264,7 @@ export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
             amountUsdc: amountUsdc.toFixed(0),
             amount: vaultDayDatum.dayReturnsGenerated
           },
-          date: vaultDayDatum.date
+          date: new Date(+vaultDayDatum.timestamp)
         };
       })
     );
@@ -279,7 +279,7 @@ export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
   async accountHistoricEarnings(
     accountAddress: Address,
     shareTokenAddress: Address,
-    sinceDate: number
+    sinceDate: Date
   ): Promise<AccountHistoricEarnings> {
     const vaultPositions = await this.yearn.services.subgraph.client
       .query<AccountHistoricEarningsQuery, AccountHistoricEarningsQueryVariables>({
@@ -287,7 +287,7 @@ export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
         variables: {
           id: accountAddress.toLowerCase(),
           shareToken: shareTokenAddress.toLowerCase(),
-          sinceDate: sinceDate / 1000
+          sinceDate: sinceDate.getTime().toString()
         }
       })
       .then(response => response.data.account?.vaultPositions);
@@ -297,8 +297,8 @@ export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
     }
 
     interface AccountSnapshot {
-      startDate: number;
-      endDate: number;
+      startDate: Date;
+      endDate: Date;
       deposits: BigNumber;
       withdrawals: BigNumber;
       tokensReceived: BigNumber;
@@ -317,8 +317,8 @@ export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
     for (const [index, vaultPositionUpdate] of updates.entries()) {
       if (index === 0) {
         const snapshot: AccountSnapshot = {
-          startDate: new Date(0).getTime(),
-          endDate: +vaultPositionUpdate.timestamp,
+          startDate: new Date(0),
+          endDate: new Date(+vaultPositionUpdate.timestamp),
           deposits: new BigNumber(vaultPositionUpdate.deposits),
           withdrawals: new BigNumber(vaultPositionUpdate.withdrawals),
           tokensReceived: new BigNumber(vaultPositionUpdate.tokensReceived),
@@ -330,7 +330,7 @@ export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
         const previousSnapshot = snapshotTimeline[index - 1];
         const snapshot: AccountSnapshot = {
           startDate: previousSnapshot.endDate,
-          endDate: +vaultPositionUpdate.timestamp,
+          endDate: new Date(+vaultPositionUpdate.timestamp),
           deposits: previousSnapshot.deposits.plus(new BigNumber(vaultPositionUpdate.deposits)),
           withdrawals: previousSnapshot.withdrawals.plus(new BigNumber(vaultPositionUpdate.withdrawals)),
           tokensReceived: previousSnapshot.tokensReceived.plus(new BigNumber(vaultPositionUpdate.tokensReceived)),
@@ -346,7 +346,7 @@ export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
       const distantFuture = new Date().setFullYear(3000);
       const snapshot: AccountSnapshot = {
         startDate: lastSnapshot.endDate,
-        endDate: distantFuture,
+        endDate: new Date(distantFuture),
         deposits: lastSnapshot.deposits,
         withdrawals: lastSnapshot.withdrawals,
         tokensReceived: lastSnapshot.tokensReceived,
@@ -361,7 +361,7 @@ export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
 
     const earningsDayData = await Promise.all(
       vaultDayData.map(async vaultDayDatum => {
-        const date = vaultDayDatum.date * 1000;
+        const date = new Date(+vaultDayDatum.timestamp);
         const snapshot = snapshotTimeline.find(snapshot => date >= snapshot.startDate && date < snapshot.endDate);
         if (snapshot) {
           const balanceTokens = snapshot.balanceShares
