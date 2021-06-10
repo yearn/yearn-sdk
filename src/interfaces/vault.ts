@@ -159,11 +159,11 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
     amount: Integer,
     account: Address,
     options: DepositOptions = {},
-    overrides?: CallOverrides
+    overrides: CallOverrides = {}
   ): Promise<TransactionResponse> {
     console.log(options);
     const [vaultRef] = await this.getStatic([vault], overrides);
-    const signer = this.ctx.provider.read.getSigner(account);
+    const signer = this.ctx.provider.write.getSigner(account);
     if (vaultRef.token === token) {
       if (token === EthAddress) {
         if (vaultRef.typeId === "VAULT_V1") {
@@ -174,7 +174,7 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
         }
       } else {
         const vaultContract = new Contract(vault, VaultAbi, signer);
-        return vaultContract.deposit(vault, overrides);
+        return vaultContract.deposit(amount, overrides);
       }
     } else {
       // ZAPPER!
@@ -197,11 +197,11 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
     amount: Integer,
     account: Address,
     options: WithdrawOptions = {},
-    overrides?: CallOverrides
+    overrides: CallOverrides = {}
   ): Promise<TransactionResponse> {
     console.log(options);
     const [vaultRef] = await this.getStatic([vault], overrides);
-    const signer = this.ctx.provider.read.getSigner(account);
+    const signer = this.ctx.provider.write.getSigner(account);
     if (vaultRef.token === token) {
       const vaultContract = new Contract(vault, VaultAbi, signer);
       return vaultContract.withdraw(amount, overrides);
