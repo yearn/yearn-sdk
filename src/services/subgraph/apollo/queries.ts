@@ -87,6 +87,7 @@ export const ACCOUNT_HISTORIC_EARNINGS = gql`
           vaultDayData(where: { date_gt: $sinceDate }, orderBy: date, orderDirection: asc, first: 1000) {
             pricePerShare
             date
+            tokenPriceUSDC
           }
         }
         updates(orderBy: timestamp, orderDirection: asc, first: 1000) {
