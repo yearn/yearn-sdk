@@ -59,23 +59,23 @@ export const ACCOUNT_EARNINGS = gql`
 `;
 
 export const ASSET_HISTORIC_EARNINGS = gql`
-  query AssetHistoricEarnings($id: ID!, $sinceDate: Int!) {
+  query AssetHistoricEarnings($id: ID!, $sinceDate: BigInt!) {
     vault(id: $id) {
       id
       token {
         id
         decimals
       }
-      vaultDayData(where: { date_gt: $sinceDate }, first: 1000) {
+      vaultDayData(where: { timestamp_gte: $sinceDate }, first: 1000) {
         dayReturnsGenerated
-        date
+        timestamp
       }
     }
   }
 `;
 
 export const ACCOUNT_HISTORIC_EARNINGS = gql`
-  query AccountHistoricEarnings($id: ID!, $shareToken: String!, $sinceDate: Int!) {
+  query AccountHistoricEarnings($id: ID!, $shareToken: String!, $sinceDate: BigInt!) {
     account(id: $id) {
       vaultPositions(where: { shareToken: $shareToken }) {
         balanceShares
@@ -84,9 +84,9 @@ export const ACCOUNT_HISTORIC_EARNINGS = gql`
           decimals
         }
         vault {
-          vaultDayData(where: { date_gt: $sinceDate }, orderBy: date, orderDirection: asc, first: 1000) {
+          vaultDayData(where: { timestamp_gte: $sinceDate }, orderBy: timestamp, orderDirection: asc, first: 1000) {
             pricePerShare
-            date
+            timestamp
             tokenPriceUSDC
           }
         }
