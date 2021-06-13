@@ -26,7 +26,6 @@ import {
 } from "../services/subgraph/apollo/queries";
 import { Address, SdkError, TokenAmount, Usdc } from "../types";
 
-const OneHundredMillionUsdc = new BigNumber(10 ** 14); // 1e8 (100M) * 1e6 (Usdc decimals)
 const BigZero = new BigNumber(0);
 
 export interface AccountSummary {
@@ -83,12 +82,7 @@ export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
       }
       const returnsGenerated = new BigNumber(vault.latestUpdate.returnsGenerated);
       const earningsUsdc = await this.tokensValueInUsdc(returnsGenerated, vault.token.id, vault.token.decimals);
-      // FIXME: some results are negative, and some are too large to be realistically possible.
-      // This is due to problems with the subgraph and should be fixed there:
-      // https://github.com/yearn/yearn-vaults-v2-subgraph/issues/60
-      if (earningsUsdc.gt(BigZero) && earningsUsdc.lt(OneHundredMillionUsdc)) {
-        result = result.plus(earningsUsdc);
-      }
+      result = result.plus(earningsUsdc);
     }
 
     return result.toFixed(0);
@@ -371,7 +365,9 @@ export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
           let negatives = snapshot.deposits.plus(snapshot.tokensReceived);
           let earnings = positives.minus(negatives);
 
-          const amountUsdc = await this.tokensValueInUsdc(earnings, token.id, token.decimals);
+          const amountUsdc = new BigNumber(vaultDayDatum.tokenPriceUSDC)
+            .multipliedBy(earnings)
+            .dividedBy(token.decimals);
 
           return {
             earnings: {
