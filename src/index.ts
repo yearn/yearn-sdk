@@ -25,7 +25,7 @@
  * - [[ZapperService]]: interaction with zapper public API.
  * - [[VisionService]]: interaction with yearn's product stats aggregator.
  * - [[SubgraphService]]: interaction with yearn's subgraph.
- * - [[SimulatorService]]: allows simulation of ethereum transactions.
+ * - [[SimulationService]]: allows simulation of ethereum transactions.
  *
  * ### Peer dependencies
  *
