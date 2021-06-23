@@ -24,7 +24,8 @@
  * - [[OracleService]]: pricing engine used for calculations.
  * - [[ZapperService]]: interaction with zapper public API.
  * - [[VisionService]]: interaction with yearn's product stats aggregator.
- * - [[SubgraphService]]: interaction with yearn's subgraph
+ * - [[SubgraphService]]: interaction with yearn's subgraph.
+ * - [[SimulatorService]]: allows simulation of ethereum transactions.
  *
  * ### Peer dependencies
  *
@@ -42,12 +43,13 @@ export { EarningsInterface } from "./interfaces/earnings";
 export { FeesInterface } from "./interfaces/fees";
 export { IronBankInterface } from "./interfaces/ironbank";
 export { TokenInterface } from "./interfaces/token";
-export { VaultInterface } from "./interfaces/vault";
 export { IronBankAdapter } from "./services/adapters/ironbank";
-export { RegistryV2Adapter } from "./services/adapters/registry";
 export { LensService } from "./services/lens";
 export { OracleService } from "./services/oracle";
+export { RegistryV2Adapter } from "./services/adapters/registry";
+export { SimulationService } from "./services/simulation";
 export { SubgraphService } from "./services/subgraph";
+export { VaultInterface } from "./interfaces/vault";
 export { VisionService } from "./services/vision";
 export { ZapperService } from "./services/zapper";
 export * from "./types";
