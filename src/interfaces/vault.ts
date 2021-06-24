@@ -1,4 +1,4 @@
-import { TransactionResponse } from "@ethersproject/abstract-provider";
+import { TransactionResponse, TransactionRequest } from "@ethersproject/abstract-provider";
 import { CallOverrides, Contract } from "@ethersproject/contracts";
 
 import { ChainId } from "../chain";
@@ -177,8 +177,25 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
         return vaultContract.deposit(amount, overrides);
       }
     } else {
-      // ZAPPER!
-      throw new SdkError("deposit:zapper not implemented.");
+      const zapInParams = await this.yearn.services.zapper.zapIn(
+        account,
+        token,
+        amount,
+        vault,
+        overrides.gasPrice?.toString() || "0",
+        0.01
+      );
+
+      const transaction: TransactionRequest = {
+        to: zapInParams.to,
+        from: zapInParams.from,
+        gasLimit: overrides.gasLimit?.toString() || "0",
+        gasPrice: zapInParams.gasPrice,
+        data: zapInParams.data as string,
+        value: zapInParams.value as string
+      };
+
+      return this.ctx.provider.write.getSigner(account).sendTransaction(transaction);
     }
   }
 
@@ -206,8 +223,25 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
       const vaultContract = new Contract(vault, VaultAbi, signer);
       return vaultContract.withdraw(amount, overrides);
     } else {
-      // ZAPPER!
-      throw new SdkError("deposit:zapper not implemented.");
+      const zapOutParams = await this.yearn.services.zapper.zapOut(
+        account,
+        token,
+        amount,
+        vault,
+        overrides.gasPrice?.toString() || "0",
+        0.01
+      );
+
+      const transaction: TransactionRequest = {
+        to: zapOutParams.to,
+        from: zapOutParams.from,
+        gasLimit: overrides.gasLimit?.toString() || "0",
+        gasPrice: zapOutParams.gasPrice,
+        data: zapOutParams.data as string,
+        value: zapOutParams.value as string
+      };
+
+      return this.ctx.provider.write.getSigner(account).sendTransaction(transaction);
     }
   }
 }
