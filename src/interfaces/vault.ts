@@ -1,4 +1,4 @@
-import { TransactionResponse, TransactionRequest } from "@ethersproject/abstract-provider";
+import { TransactionRequest, TransactionResponse } from "@ethersproject/abstract-provider";
 import { CallOverrides, Contract } from "@ethersproject/contracts";
 
 import { ChainId } from "../chain";
