@@ -3,8 +3,8 @@ import { getAddress } from "@ethersproject/address";
 import { Chains } from "../chain";
 import { Service } from "../common";
 import { EthAddress, handleHttpError, usdc, ZeroAddress } from "../helpers";
-import { Address, Balance, BalancesMap, Token } from "../types";
-import { GasPrice } from "../types/custom/zapper";
+import { Address, Balance, BalancesMap, Integer, Token } from "../types";
+import { GasPrice, ZapInOutput, ZapOutOutput } from "../types/custom/zapper";
 
 /**
  * [[ZapperService]] interacts with the zapper api to gather more insight for
@@ -106,5 +106,73 @@ export class ZapperService extends Service {
       .then(handleHttpError)
       .then(res => res.json());
     return gas;
+  }
+
+  /**
+   * Fetches the data needed to zap into a vault
+   * @param from - the address that is depositing
+   * @param token - the token to be sold to pay for the deposit
+   * @param amount - the amount of tokens to be sold
+   * @param vault - the vault to zap into
+   * @param gasPrice
+   * @param slippagePercentage - slippage as a decimal
+   */
+  async zapIn(
+    from: Address,
+    token: Address,
+    amount: Integer,
+    vault: Address,
+    gasPrice: Integer,
+    slippagePercentage: number
+  ): Promise<ZapInOutput> {
+    const url = "https://api.zapper.fi/v1/zap-in/yearn/transaction";
+    const params = new URLSearchParams({
+      ownerAddress: from,
+      sellTokenAddress: token,
+      sellAmount: amount,
+      poolAddress: vault,
+      gasPrice: gasPrice,
+      slippagePercentage: slippagePercentage.toString(),
+      api_key: this.ctx.zapper
+    });
+    const response: ZapInOutput = await fetch(`${url}?${params}`)
+      .then(handleHttpError)
+      .then(res => res.json());
+
+    return response;
+  }
+
+  /**
+   * Fetches the data needed to zap out of a vault
+   * @param from - the address that is withdrawing
+   * @param token - the token that'll be received
+   * @param amount - the amount of tokens to sell
+   * @param vault - the vault to zap out of
+   * @param gasPrice
+   * @param slippagePercentage - slippage as a decimal
+   */
+  async zapOut(
+    from: Address,
+    token: Address,
+    amount: Integer,
+    vault: Address,
+    gasPrice: Integer,
+    slippagePercentage: number
+  ): Promise<ZapOutOutput> {
+    const url = "https://api.zapper.fi/v1/zap-out/yearn/transaction";
+    const params = new URLSearchParams({
+      ownerAddress: from,
+      toTokenAddress: token,
+      sellAmount: amount,
+      poolAddress: vault,
+      gasPrice: gasPrice,
+      slippagePercentage: slippagePercentage.toString(),
+      api_key: this.ctx.zapper
+    });
+    const response: ZapOutOutput = await fetch(`${url}?${params}`)
+      .then(handleHttpError)
+      .then(res => res.json());
+
+    return response;
   }
 }
