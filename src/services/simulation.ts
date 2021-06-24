@@ -1,0 +1,77 @@
+import { Service } from "../common";
+import { Address } from "../types";
+
+const baseUrl = "https://api.tenderly.co/api/v1/account/yearn/project/yearn-web";
+
+/**
+ * [[OracleService]] allows the simulation of ethereum transactions using Tenderly's api.
+ * This allows us to know information before executing a transaction on mainnet.
+ * For example it can simulate how much slippage is likely to be experienced when withdrawing from a vault,
+ * or how many underlying tokens the user will receive upon withdrawing share tokens.
+ */
+export class SimulationService extends Service {
+  /**
+   * Create a new fork that can be used to simulate multiple sequential transactions on
+   * e.g. approval followed by a deposit.
+   * @returns the uuid of a new fork that has been created
+   */
+  async createForkWithId(): Promise<String> {
+    interface Response {
+      simulation_fork: {
+        id: String;
+      };
+    }
+
+    const body = {
+      alias: "",
+      description: "",
+      network_id: "1"
+    };
+
+    const response: Response = await fetch(`${baseUrl}/fork`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+        // "X-Access-Key": "" // Todo - inject the api key using a CORS proxy
+      },
+      body: JSON.stringify(body)
+    }).then(res => res.json());
+
+    return response.simulation_fork.id;
+  }
+
+  /**
+   * Simulate a transaction
+   * @param block the block number to simluate the transaction at
+   * @param from
+   * @param to
+   * @param input the encoded input data as per the ethereum abi specification
+   * @returns data about the simluated transaction
+   */
+  async simulateRaw(block: number, from: Address, to: Address, input: String): Promise<any> {
+    const body = {
+      network_id: "1",
+      block_number: block,
+      transaction_index: 0,
+      from: from,
+      input: input,
+      to: to,
+      gas: 800000,
+      simulation_type: "quick",
+      gas_price: "0",
+      value: "0",
+      save: true
+    };
+
+    const response = await fetch(`${baseUrl}/simulate`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+        // "X-Access-Key": "" // Todo - inject the api key using a CORS proxy
+      },
+      body: JSON.stringify(body)
+    }).then(res => res.json());
+
+    return response;
+  }
+}
