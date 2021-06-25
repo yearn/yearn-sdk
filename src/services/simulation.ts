@@ -1,10 +1,10 @@
 import { Service } from "../common";
 import { Address } from "../types";
 
-const baseUrl = "https://api.tenderly.co/api/v1/account/yearn/project/yearn-web";
+const baseUrl = "https://simulate.yearn.network";
 
 /**
- * [[OracleService]] allows the simulation of ethereum transactions using Tenderly's api.
+ * [[SimulationService]] allows the simulation of ethereum transactions using Tenderly's api.
  * This allows us to know information before executing a transaction on mainnet.
  * For example it can simulate how much slippage is likely to be experienced when withdrawing from a vault,
  * or how many underlying tokens the user will receive upon withdrawing share tokens.
@@ -32,8 +32,8 @@ export class SimulationService extends Service {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
-        // "X-Access-Key": "" // Todo - inject the api key using a CORS proxy
       },
+      credentials: "include",
       body: JSON.stringify(body)
     }).then(res => res.json());
 
@@ -65,13 +65,13 @@ export class SimulationService extends Service {
 
     const response = await fetch(`${baseUrl}/simulate`, {
       method: "POST",
+      credentials: "include",
       headers: {
         "Content-Type": "application/json"
-        // "X-Access-Key": "" // Todo - inject the api key using a CORS proxy
       },
       body: JSON.stringify(body)
     }).then(res => res.json());
 
-    return response;
+    return response.json();
   }
 }
