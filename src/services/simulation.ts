@@ -70,6 +70,6 @@ export class SimulationService extends Service {
       body: JSON.stringify(body)
     }).then(res => res.json());
 
-    return response.json();
+    return response;
   }
 }
