@@ -33,7 +33,6 @@ export class SimulationService extends Service {
       headers: {
         "Content-Type": "application/json"
       },
-      credentials: "include",
       body: JSON.stringify(body)
     }).then(res => res.json());
 
@@ -65,7 +64,6 @@ export class SimulationService extends Service {
 
     const response = await fetch(`${baseUrl}/simulate`, {
       method: "POST",
-      credentials: "include",
       headers: {
         "Content-Type": "application/json"
       },
