@@ -128,7 +128,7 @@ export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
     };
   }
 
-  async accountAssetPositions(accountAddress: Address): Promise<AccountAssetsData> {
+  async accountAssetsData(accountAddress: Address): Promise<AccountAssetsData> {
     const response = await this.yearn.services.subgraph.client.query<
       AccountEarningsQuery,
       AccountEarningsQueryVariables
