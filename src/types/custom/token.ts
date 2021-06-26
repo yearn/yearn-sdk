@@ -17,6 +17,11 @@ export interface TokenAllowance extends Allowance {
   token: Address;
 }
 
+export interface TokenAlias {
+  name: String;
+  symbol: String;
+}
+
 /**
  * Balance of a particular token for a particular address.
  */

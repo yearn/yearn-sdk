@@ -69,6 +69,22 @@ export interface EarningsDayData {
   date: Date;
 }
 
+export interface AccountAssetsData {
+  earnings: Usdc;
+  holdings: Usdc;
+  estimatedYearlyYield: Usdc;
+  depositedAssets: AssetData[];
+}
+
+export interface AssetData {
+  name: String;
+  iconUrl: String;
+  apy: number;
+  assetAddress: Address;
+  balance: TokenAmount;
+  earned: Usdc;
+}
+
 export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
   async protocolEarnings(): Promise<String> {
     const response = await this.yearn.services.subgraph.client.query<ProtocolEarnings>({
@@ -393,6 +409,101 @@ export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
       shareTokenAddress: shareTokenAddress,
       decimals: token.decimals,
       dayData: earningsDayData
+    };
+  }
+
+  async accountAssetPositions2(accountAddress: Address): Promise<AccountAssetsData> {
+    const response = await this.yearn.services.subgraph.client.query<
+      AccountEarningsQuery,
+      AccountEarningsQueryVariables
+    >({
+      query: ACCOUNT_EARNINGS,
+      variables: {
+        id: accountAddress
+      }
+    });
+
+    const account = response.data.account;
+
+    if (!account) {
+      throw new SdkError(`failed to find account address ${accountAddress}`);
+    }
+
+    const tokenAddresses = account.vaultPositions.map(position => getAddress(position.token.id));
+    const assetAddresses = account.vaultPositions.map(position => getAddress(position.vault.id));
+    const apys = await this.yearn.services.vision.apy(assetAddresses);
+    const aliases = await this.yearn.services.helper.tokenAliases(tokenAddresses);
+
+    const assetsData = await Promise.all(
+      account.vaultPositions.map(async assetPosition => {
+        const balanceTokens = new BigNumber(assetPosition.balanceShares)
+          .multipliedBy(new BigNumber(assetPosition.vault.latestUpdate?.pricePerShare || 0))
+          .div(10 ** assetPosition.token.decimals);
+
+        const deposits = assetPosition.updates
+          .map(update => new BigNumber(update.deposits))
+          .reduce((sum, value) => sum.plus(value));
+        const withdrawals = assetPosition.updates
+          .map(update => new BigNumber(update.withdrawals))
+          .reduce((sum, value) => sum.plus(value));
+        const tokensReceived = assetPosition.updates
+          .map(update => new BigNumber(update.tokensReceived))
+          .reduce((sum, value) => sum.plus(value));
+        const tokensSent = assetPosition.updates
+          .map(update => new BigNumber(update.tokensSent))
+          .reduce((sum, value) => sum.plus(value));
+
+        const positiveTokens = balanceTokens.plus(withdrawals).plus(tokensSent);
+        const negativeTokens = deposits.plus(tokensReceived);
+        const earningsTokens = positiveTokens.minus(negativeTokens);
+
+        const earningsUsdc = await this.tokensValueInUsdc(
+          earningsTokens,
+          assetPosition.token.id,
+          assetPosition.token.decimals
+        );
+
+        const balanceUsdc = await this.tokensValueInUsdc(
+          balanceTokens,
+          assetPosition.token.id,
+          assetPosition.token.decimals
+        );
+
+        const balance: TokenAmount = {
+          amount: balanceTokens.toFixed(0),
+          amountUsdc: balanceUsdc.toFixed(0)
+        };
+
+        const tokenAddress = getAddress(assetPosition.token.id);
+        const assetAddress = getAddress(assetPosition.vault.id);
+
+        return {
+          name: aliases.get(tokenAddress)?.symbol || assetPosition.shareToken.symbol,
+          iconUrl: this.yearn.services.helper.tokenIconUrl(tokenAddress),
+          apy: apys[assetAddress]?.recommended || 0,
+          assetAddress: assetAddress,
+          balance: balance,
+          earned: earningsUsdc.toFixed(0)
+        };
+      })
+    );
+
+    const estimatedYearlyYield = assetsData
+      .map(datum => {
+        return new BigNumber(datum.apy).times(new BigNumber(datum.balance.amountUsdc));
+      })
+      .reduce((sum, value) => sum.plus(value));
+
+    const totalEarnings = assetsData.map(datum => new BigNumber(datum.earned)).reduce((sum, value) => sum.plus(value));
+    const holdings = assetsData
+      .map(datum => new BigNumber(datum.balance.amountUsdc))
+      .reduce((sum, value) => sum.plus(value));
+
+    return {
+      earnings: totalEarnings.toString(),
+      holdings: holdings.toString(),
+      estimatedYearlyYield: estimatedYearlyYield.toFixed(0),
+      depositedAssets: assetsData
     };
   }
 
