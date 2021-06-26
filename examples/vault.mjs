@@ -13,12 +13,6 @@ const yearn = new Yearn(1, {
 });
 
 async function main() {
-  const data = await yearn.earnings.accountAssetPositions2("0xf8f7770b167a447b3a30a02ff95e560e153be717");
-
-  console.log(data);
-
-  return;
-
   const vaults = await yearn.vaults.get();
 
   const vaultsTable = new Table();
