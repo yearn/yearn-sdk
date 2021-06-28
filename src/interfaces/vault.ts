@@ -177,7 +177,7 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
         return vaultContract.deposit(amount, overrides);
       }
     } else {
-      if (options.slippage === null) {
+      if (options.slippage === undefined) {
         throw new SdkError("zap operations should have a slippage set");
       }
 
@@ -189,7 +189,7 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
         amount,
         vault,
         gasPrice.fast.toString(),
-        options.slippage || 0.01
+        options.slippage
       );
 
       const transaction: TransactionRequest = {
@@ -228,7 +228,7 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
       const vaultContract = new Contract(vault, VaultAbi, signer);
       return vaultContract.withdraw(amount, overrides);
     } else {
-      if (options.slippage === null) {
+      if (options.slippage === undefined) {
         throw new SdkError("zap operations should have a slippage set");
       }
 
@@ -240,7 +240,7 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
         amount,
         vault,
         gasPrice.fast.toString(),
-        options.slippage || 0.01
+        options.slippage
       );
 
       const transaction: TransactionRequest = {
