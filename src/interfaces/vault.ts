@@ -183,14 +183,14 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
       }
 
       const gasPrice = await this.yearn.services.zapper.gas();
-      const gasPriceFast = BigInt(gasPrice.fast) * BigInt(10 ** 9);
+      const gasPriceFastGwei = BigInt(gasPrice.fast) * BigInt(10 ** 9);
 
       const zapInParams = await this.yearn.services.zapper.zapIn(
         account,
         token,
         amount,
         vault,
-        gasPriceFast.toString(),
+        gasPriceFastGwei.toString(),
         options.slippage
       );
 
@@ -235,14 +235,14 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
       }
 
       const gasPrice = await this.yearn.services.zapper.gas();
-      const gasPriceFast = BigInt(gasPrice.fast) * BigInt(10 ** 9);
+      const gasPriceFastGwei = BigInt(gasPrice.fast) * BigInt(10 ** 9);
 
       const zapOutParams = await this.yearn.services.zapper.zapOut(
         account,
         token,
         amount,
         vault,
-        gasPriceFast.toString(),
+        gasPriceFastGwei.toString(),
         options.slippage
       );
 
