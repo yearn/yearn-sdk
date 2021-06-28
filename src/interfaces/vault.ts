@@ -1,5 +1,6 @@
 import { TransactionRequest, TransactionResponse } from "@ethersproject/abstract-provider";
 import { CallOverrides, Contract } from "@ethersproject/contracts";
+import BigNumber from "bignumber.js";
 
 import { ChainId } from "../chain";
 import { ServiceInterface } from "../common";
@@ -182,13 +183,14 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
       }
 
       const gasPrice = await this.yearn.services.zapper.gas();
+      const gasPriceFast = BigInt(gasPrice.fast) * BigInt(10 ** 9);
 
       const zapInParams = await this.yearn.services.zapper.zapIn(
         account,
         token,
         amount,
         vault,
-        gasPrice.fast.toString(),
+        gasPriceFast.toString(),
         options.slippage
       );
 
@@ -233,13 +235,14 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
       }
 
       const gasPrice = await this.yearn.services.zapper.gas();
+      const gasPriceFast = BigInt(gasPrice.fast) * BigInt(10 ** 9);
 
       const zapOutParams = await this.yearn.services.zapper.zapOut(
         account,
         token,
         amount,
         vault,
-        gasPrice.fast.toString(),
+        gasPriceFast.toString(),
         options.slippage
       );
 
