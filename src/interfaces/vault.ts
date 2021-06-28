@@ -177,19 +177,24 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
         return vaultContract.deposit(amount, overrides);
       }
     } else {
+      if (options.slippage === null) {
+        throw new SdkError("zap operations should have a slippage set");
+      }
+
+      const gasPrice = await this.yearn.services.zapper.gas();
+
       const zapInParams = await this.yearn.services.zapper.zapIn(
         account,
         token,
         amount,
         vault,
-        overrides.gasPrice?.toString() || "0",
-        0.01
+        gasPrice.fast.toString(),
+        options.slippage || 0.01
       );
 
       const transaction: TransactionRequest = {
         to: zapInParams.to,
         from: zapInParams.from,
-        gasLimit: overrides.gasLimit?.toString() || "0",
         gasPrice: zapInParams.gasPrice,
         data: zapInParams.data as string,
         value: zapInParams.value as string
@@ -223,19 +228,24 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
       const vaultContract = new Contract(vault, VaultAbi, signer);
       return vaultContract.withdraw(amount, overrides);
     } else {
+      if (options.slippage === null) {
+        throw new SdkError("zap operations should have a slippage set");
+      }
+
+      const gasPrice = await this.yearn.services.zapper.gas();
+
       const zapOutParams = await this.yearn.services.zapper.zapOut(
         account,
         token,
         amount,
         vault,
-        overrides.gasPrice?.toString() || "0",
-        0.01
+        gasPrice.fast.toString(),
+        options.slippage || 0.01
       );
 
       const transaction: TransactionRequest = {
         to: zapOutParams.to,
         from: zapOutParams.from,
-        gasLimit: overrides.gasLimit?.toString() || "0",
         gasPrice: zapOutParams.gasPrice,
         data: zapOutParams.data as string,
         value: zapOutParams.value as string
