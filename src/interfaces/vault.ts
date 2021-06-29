@@ -21,6 +21,9 @@ const VaultAbi = ["function deposit(uint256 amount) public", "function withdraw(
 const VaultV1Abi = VaultAbi.concat(["function depositETH(uint256 amount) payable public"]);
 // const VaultV2Abi = VaultAbi.concat([]);
 
+const ethAddress = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";
+const zeroAddress = "0x0000000000000000000000000000000000000000";
+
 export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
   /**
    * Get all yearn vaults.
@@ -184,9 +187,15 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
       const gasPrice = await this.yearn.services.zapper.gas();
       const gasPriceFastGwei = BigInt(gasPrice.fast) * BigInt(10 ** 9);
 
+      let sellToken = token;
+      if (ethAddress === token) {
+        // If Ether is being sent, the sellTokenAddress should be the zero address
+        sellToken = zeroAddress;
+      }
+
       const zapInParams = await this.yearn.services.zapper.zapIn(
         account,
-        token,
+        sellToken,
         amount,
         vault,
         gasPriceFastGwei.toString(),
@@ -236,9 +245,15 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
       const gasPrice = await this.yearn.services.zapper.gas();
       const gasPriceFastGwei = BigInt(gasPrice.fast) * BigInt(10 ** 9);
 
+      let toToken = token;
+      if (ethAddress === token) {
+        // If Ether is being received, the toTokenAddress should be the zero address
+        toToken = zeroAddress;
+      }
+
       const zapOutParams = await this.yearn.services.zapper.zapOut(
         account,
-        token,
+        toToken,
         amount,
         vault,
         gasPriceFastGwei.toString(),
