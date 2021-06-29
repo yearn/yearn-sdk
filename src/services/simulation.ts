@@ -1,7 +1,17 @@
+import BigNumber from "bignumber.js";
 import { Service } from "../common";
-import { Address } from "../types";
+import { Address, Integer, SdkError, ZapInOutput } from "../types";
 
 const baseUrl = "https://api.tenderly.co/api/v1/account/yearn/project/yearn-web";
+
+interface TransactionOutcome {
+  sourceTokenAddress: Address;
+  sourceTokenAmount: Integer;
+  targetTokenAddress: Address;
+  targetTokenAmount: Integer;
+  conversionRate: number;
+  slippage: number;
+}
 
 /**
  * [[OracleService]] allows the simulation of ethereum transactions using Tenderly's api.
@@ -73,5 +83,80 @@ export class SimulationService extends Service {
     }).then(res => res.json());
 
     return response;
+  }
+
+  async simulateZapIn(
+    from: Address,
+    token: Address,
+    amount: Integer,
+    vault: Address,
+    gasPrice: Integer,
+    slippagePercentage: number,
+    block: number
+  ): Promise<TransactionOutcome> {
+    const url = "https://api.zapper.fi/v1/zap-in/yearn/transaction";
+    const params = new URLSearchParams({
+      ownerAddress: from,
+      sellTokenAddress: token,
+      sellAmount: amount,
+      poolAddress: vault,
+      gasPrice: gasPrice,
+      slippagePercentage: slippagePercentage.toString(),
+      api_key: this.ctx.zapper
+    });
+    const zapInParams: ZapInOutput = await fetch(`${url}?${params}`).then(res => res.json());
+
+    const body = {
+      network_id: "1",
+      block_number: block,
+      transaction_index: 0,
+      from: from,
+      input: zapInParams.data,
+      to: zapInParams.to,
+      gas: zapInParams.gas,
+      simulation_type: "quick",
+      gas_price: zapInParams.gasPrice,
+      value: zapInParams.value,
+      save: true
+    };
+
+    interface SimulationCallTrace {
+      output: string;
+    }
+
+    interface SimulationTransactionInfo {
+      call_trace: SimulationCallTrace;
+    }
+
+    interface SimulationTransaction {
+      transaction_info: SimulationTransactionInfo;
+    }
+
+    interface SimulationResponse {
+      transaction: SimulationTransaction;
+    }
+
+    const response: SimulationResponse = await fetch(`${baseUrl}/simulate`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(body)
+    }).then(res => res.json());
+
+    const tokensReceived = new BigNumber(response.transaction.transaction_info.call_trace.output);
+    const conversionRate = new BigNumber(zapInParams.sellTokenAmount).div(tokensReceived);
+    const slippage = 1 - tokensReceived.div(new BigNumber(zapInParams.minTokens)).toNumber();
+
+    const result: TransactionOutcome = {
+      sourceTokenAddress: token,
+      sourceTokenAmount: amount,
+      targetTokenAddress: zapInParams.buyTokenAddress,
+      targetTokenAmount: response.transaction.transaction_info.call_trace.output,
+      conversionRate: conversionRate.toNumber(),
+      slippage: slippage
+    };
+
+    return result;
   }
 }
