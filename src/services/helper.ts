@@ -5,7 +5,7 @@ import { ChainId } from "../chain";
 import { ContractService } from "../common";
 import { Context } from "../context";
 import { structArray } from "../struct";
-import { Address, ERC20, TokenAlias, TokenAllowance, TokenBalance, TokenPrice } from "../types";
+import { Address, ERC20, TokenAllowance, TokenBalance, TokenPrice } from "../types";
 
 const HelperAbi = [
   `function tokensMetadata(address[] memory) public view returns (${TokenAbi}[] memory)`,
@@ -88,26 +88,5 @@ export class HelperService<T extends ChainId> extends ContractService<T> {
     overrides: CallOverrides = {}
   ): Promise<TokenAllowance[]> {
     return await this.contract.read.allowance(address, tokens, spenders, overrides).then(structArray);
-  }
-
-  async tokenAliases(addresses: Address[]): Promise<Map<Address, TokenAlias>> {
-    interface AliasResponse extends TokenAlias {
-      address: Address;
-    }
-
-    const map = new Map<Address, TokenAlias>();
-    const aliases: AliasResponse[] = await fetch(
-      "https://raw.githubusercontent.com/yearn/yearn-assets/master/icons/aliases.json"
-    ).then(response => response.json());
-
-    aliases
-      .filter(alias => addresses.includes(alias.address))
-      .forEach(alias => map.set(alias.address, { name: alias.name, symbol: alias.symbol }));
-
-    return map;
-  }
-
-  tokenIconUrl(address: Address): String {
-    return `https://raw.githubusercontent.com/iearn-finance/yearn-assets/master/icons/tokens/${address}/logo-128.png`;
   }
 }

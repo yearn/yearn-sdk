@@ -25,6 +25,7 @@ import {
   VAULT_EARNINGS
 } from "../services/subgraph/apollo/queries";
 import { Address, SdkError, TokenAmount, Usdc } from "../types";
+import { EarningsUserData } from "../types/custom/earnings";
 
 const BigZero = new BigNumber(0);
 
@@ -67,22 +68,6 @@ export interface HistoricEarnings {
 export interface EarningsDayData {
   earnings: TokenAmount;
   date: Date;
-}
-
-export interface AccountAssetsData {
-  earnings: Usdc;
-  holdings: Usdc;
-  estimatedYearlyYield: Usdc;
-  depositedAssets: AssetData[];
-}
-
-export interface AssetData {
-  name: String;
-  iconUrl: String;
-  apy: number;
-  assetAddress: Address;
-  balance: TokenAmount;
-  earned: Usdc;
 }
 
 export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
@@ -128,7 +113,7 @@ export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
     };
   }
 
-  async accountAssetsData(accountAddress: Address): Promise<AccountAssetsData> {
+  async accountAssetsData(accountAddress: Address): Promise<EarningsUserData> {
     const response = await this.yearn.services.subgraph.client.query<
       AccountEarningsQuery,
       AccountEarningsQueryVariables
@@ -145,10 +130,8 @@ export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
       throw new SdkError(`failed to find account address ${accountAddress}`);
     }
 
-    const tokenAddresses = account.vaultPositions.map(position => getAddress(position.token.id));
     const assetAddresses = account.vaultPositions.map(position => getAddress(position.vault.id));
     const apys = await this.yearn.services.vision.apy(assetAddresses);
-    const aliases = await this.yearn.services.helper.tokenAliases(tokenAddresses);
 
     const assetsData = await Promise.all(
       account.vaultPositions.map(async assetPosition => {
@@ -185,20 +168,11 @@ export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
           assetPosition.token.decimals
         );
 
-        const balance: TokenAmount = {
-          amount: balanceTokens.toFixed(0),
-          amountUsdc: balanceUsdc.toFixed(0)
-        };
-
-        const tokenAddress = getAddress(assetPosition.token.id);
         const assetAddress = getAddress(assetPosition.vault.id);
 
         return {
-          name: aliases.get(tokenAddress)?.symbol || assetPosition.shareToken.symbol,
-          iconUrl: this.yearn.services.helper.tokenIconUrl(tokenAddress),
-          apy: apys[assetAddress]?.recommended || 0,
           assetAddress: assetAddress,
-          balance: balance,
+          balanceUsdc: balanceUsdc,
           earned: earningsUsdc.toFixed(0)
         };
       })
@@ -206,20 +180,26 @@ export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
 
     const estimatedYearlyYield = assetsData
       .map(datum => {
-        return new BigNumber(datum.apy).times(new BigNumber(datum.balance.amountUsdc));
+        const apy = apys[datum.assetAddress]?.recommended || 0;
+        return new BigNumber(apy).times(datum.balanceUsdc);
       })
       .reduce((sum, value) => sum.plus(value));
 
     const totalEarnings = assetsData.map(datum => new BigNumber(datum.earned)).reduce((sum, value) => sum.plus(value));
-    const holdings = assetsData
-      .map(datum => new BigNumber(datum.balance.amountUsdc))
-      .reduce((sum, value) => sum.plus(value));
+    const holdings = assetsData.map(datum => new BigNumber(datum.balanceUsdc)).reduce((sum, value) => sum.plus(value));
+
+    const earningsAssetData = assetsData.map(datum => {
+      return {
+        assetAddress: datum.assetAddress,
+        earned: datum.earned
+      };
+    });
 
     return {
-      earnings: totalEarnings.toString(),
-      holdings: holdings.toString(),
+      earnings: totalEarnings.toFixed(0),
+      holdings: holdings.toFixed(0),
       estimatedYearlyYield: estimatedYearlyYield.toFixed(0),
-      depositedAssets: assetsData
+      earningsAssetData: earningsAssetData
     };
   }
 
