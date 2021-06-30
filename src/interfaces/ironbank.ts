@@ -9,7 +9,7 @@ import {
   IronBankMarket,
   IronBankMarketDynamic,
   IronBankMarketStatic,
-  IronBankPosition,
+  IronBankUserSummary,
   Position,
   SdkError,
   Token
@@ -68,12 +68,12 @@ export class IronBankInterface<T extends ChainId> extends ServiceInterface<T> {
   }
 
   /**
-   * Get the IronBank Position for a particular address.
+   * Get the IronBank Summary for a particular address.
    * @param address
    * @param overrides
    * @returns
    */
-  async generalPositionOf(address: Address, overrides?: CallOverrides): Promise<IronBankPosition> {
+  async summaryOf(address: Address, overrides?: CallOverrides): Promise<IronBankUserSummary> {
     return this.yearn.services.lens.adapters.ironBank.generalPositionOf(address, overrides);
   }
 
