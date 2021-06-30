@@ -1,9 +1,14 @@
-import { CallOverrides } from "@ethersproject/contracts";
-
+import { CallOverrides, Contract } from "@ethersproject/contracts";
+import { TransactionResponse, TransactionRequest } from "@ethersproject/abstract-provider";
 import { ChainId } from "../chain";
 import { ServiceInterface } from "../common";
-import { Address, Integer, TypedMap, Usdc } from "../types";
+import { Address, Integer, TypedMap, Usdc, Vault } from "../types";
 import { Balance, Icon, IconMap, Token } from "../types";
+import BigNumber from "bignumber.js";
+
+const TokenAbi = ["function approve(address _spender, uint256 _value) public"];
+
+export const EthAddress = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";
 
 export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
   /**
@@ -65,6 +70,87 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
       return await this.yearn.services.zapper.supportedTokens();
     }
     return [];
+  }
+
+  /**
+   * Approve vault to spend a token on zapIn
+   * @param vault
+   * @param token
+   * @param amount
+   * @param account
+   * @returns transaction
+   */
+  async approve(
+    vault: Vault,
+    token: Address,
+    amount: Integer,
+    account: Address
+  ): Promise<TransactionResponse | Boolean> {
+    const signer = this.ctx.provider.write.getSigner(account);
+    if (vault.token === token) {
+      const tokenContract = new Contract(token, TokenAbi, signer);
+      return tokenContract.approve(vault.address, amount);
+    } else {
+      const gasPrice = await this.yearn.services.zapper.gas();
+      const gasPriceFastGwei = new BigNumber(gasPrice.fast).times(new BigNumber(10 ** 9));
+
+      let sellToken = token;
+      if (EthAddress === token) {
+        // If Ether is being sent, no need for approval
+        return true;
+      }
+      const zapInApprovalState = await this.yearn.services.zapper.zapInApprovalState(account, sellToken);
+      if (!zapInApprovalState.isApproved) {
+        const zapInApprovalParams = await this.yearn.services.zapper.zapInApprovalTransaction(
+          account,
+          sellToken,
+          gasPriceFastGwei.toString()
+        );
+        const transaction: TransactionRequest = {
+          to: zapInApprovalParams.to,
+          from: zapInApprovalParams.from,
+          gasPrice: zapInApprovalParams.gasPrice,
+          data: zapInApprovalParams.data as string
+        };
+        return signer.sendTransaction(transaction);
+      } else {
+        return true;
+      }
+    }
+  }
+
+  /**
+   * Approve vault to spend a vault token on zapOut
+   * @param vault
+   * @param token
+   * @param account
+   * @returns transaction
+   */
+  async approveZapOut(vault: Vault, token: Address, account: Address): Promise<TransactionResponse | Boolean> {
+    const signer = this.ctx.provider.write.getSigner(account);
+    if (vault.token === token) {
+      const gasPrice = await this.yearn.services.zapper.gas();
+      const gasPriceFastGwei = new BigNumber(gasPrice.fast).times(new BigNumber(10 ** 9));
+
+      let sellToken = token;
+
+      const zapOutApprovalState = await this.yearn.services.zapper.zapOutApprovalState(account, sellToken);
+      if (!zapOutApprovalState.isApproved) {
+        const zapOutApprovalParams = await this.yearn.services.zapper.zapOutApprovalTransaction(
+          account,
+          sellToken,
+          gasPriceFastGwei.toString()
+        );
+        const transaction: TransactionRequest = {
+          to: zapOutApprovalParams.to,
+          from: zapOutApprovalParams.from,
+          gasPrice: zapOutApprovalParams.gasPrice,
+          data: zapOutApprovalParams.data as string
+        };
+        return signer.sendTransaction(transaction);
+      }
+    }
+    return false;
   }
 
   /**

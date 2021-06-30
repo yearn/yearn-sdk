@@ -4,7 +4,15 @@ import { Chains } from "../chain";
 import { Service } from "../common";
 import { EthAddress, handleHttpError, usdc, ZeroAddress } from "../helpers";
 import { Address, Balance, BalancesMap, Integer, Token } from "../types";
-import { GasPrice, ZapInOutput, ZapOutOutput } from "../types/custom/zapper";
+import {
+  GasPrice,
+  ZapInOutput,
+  ZapOutOutput,
+  ZapInApprovalStateOutput,
+  ZapInApprovalTransactionOutput,
+  ZapOutApprovalStateOutput,
+  ZapOutApprovalTransactionOutput
+} from "../types/custom/zapper";
 
 /**
  * [[ZapperService]] interacts with the zapper api to gather more insight for
@@ -106,6 +114,90 @@ export class ZapperService extends Service {
       .then(handleHttpError)
       .then(res => res.json());
     return gas;
+  }
+
+  /**
+   * Fetches the data needed to check token ZapIn contract approval state
+   * @param from - the address that is depositing
+   * @param token - the token to be sold to pay for the deposit
+   */
+  async zapInApprovalState(from: Address, token: Address): Promise<ZapInApprovalStateOutput> {
+    const url = "https://api.zapper.fi/v1/zap-in/yearn/approval-state";
+    const params = new URLSearchParams({
+      ownerAddress: from,
+      sellTokenAddress: token
+    });
+    const response: ZapInApprovalStateOutput = await fetch(`${url}?${params}`)
+      .then(handleHttpError)
+      .then(res => res.json());
+
+    return response;
+  }
+
+  /**
+   * Fetches the data needed to approve ZapIn Contract for a token
+   * @param from - the address that is depositing
+   * @param token - the token to be sold to pay for the deposit
+   * @param gasPrice
+   */
+  async zapInApprovalTransaction(
+    from: Address,
+    token: Address,
+    gasPrice: Integer
+  ): Promise<ZapInApprovalTransactionOutput> {
+    const url = "https://api.zapper.fi/v1/zap-in/yearn/approval-transaction";
+    const params = new URLSearchParams({
+      gasPrice,
+      ownerAddress: from,
+      sellTokenAddress: token
+    });
+    const response: ZapInApprovalTransactionOutput = await fetch(`${url}?${params}`)
+      .then(handleHttpError)
+      .then(res => res.json());
+
+    return response;
+  }
+
+  /**
+   * Fetches the data needed to check token ZapOut contract approval state
+   * @param from - the address that is withdrawing
+   * @param token - the vault token to be withdrawn
+   */
+  async zapOutApprovalState(from: Address, token: Address): Promise<ZapOutApprovalStateOutput> {
+    const url = "https://api.zapper.fi/v1/zap-out/yearn/approval-state";
+    const params = new URLSearchParams({
+      ownerAddress: from,
+      sellTokenAddress: token
+    });
+    const response: ZapOutApprovalStateOutput = await fetch(`${url}?${params}`)
+      .then(handleHttpError)
+      .then(res => res.json());
+
+    return response;
+  }
+
+  /**
+   * Fetches the data needed to approve ZapOut Contract for a token
+   * @param from - the address that is withdrawing
+   * @param token - the vault token to be withdrawn
+   * @param gasPrice
+   */
+  async zapOutApprovalTransaction(
+    from: Address,
+    token: Address,
+    gasPrice: Integer
+  ): Promise<ZapInApprovalTransactionOutput> {
+    const url = "https://api.zapper.fi/v1/zap-out/yearn/approval-transaction";
+    const params = new URLSearchParams({
+      gasPrice,
+      ownerAddress: from,
+      sellTokenAddress: token
+    });
+    const response: ZapOutApprovalTransactionOutput = await fetch(`${url}?${params}`)
+      .then(handleHttpError)
+      .then(res => res.json());
+
+    return response;
   }
 
   /**

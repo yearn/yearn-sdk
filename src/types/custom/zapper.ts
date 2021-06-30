@@ -13,6 +13,37 @@ export interface ZapOptions {
   slippage?: number;
   gas?: keyof GasPrice;
 }
+export interface ZapInApprovalStateOutput {
+  spenderAddress: Address;
+  tokenAddress: Address;
+  ownerAddress: Address;
+  allowance: Integer;
+  amount: Integer;
+  isApproved: Boolean;
+}
+
+export interface ZapInApprovalTransactionOutput {
+  data: String;
+  to: Address;
+  from: Address;
+  gasPrice: Integer;
+}
+
+export interface ZapOutApprovalStateOutput {
+  spenderAddress: Address;
+  tokenAddress: Address;
+  ownerAddress: Address;
+  allowance: Integer;
+  amount: Integer;
+  isApproved: Boolean;
+}
+
+export interface ZapOutApprovalTransactionOutput {
+  data: String;
+  to: Address;
+  from: Address;
+  gasPrice: Integer;
+}
 
 export interface ZapInOutput {
   to: Address;
