@@ -1,9 +1,10 @@
 import { TransactionRequest, TransactionResponse } from "@ethersproject/abstract-provider";
 import { CallOverrides, Contract } from "@ethersproject/contracts";
+import BigNumber from "bignumber.js";
 
 import { ChainId } from "../chain";
 import { ServiceInterface } from "../common";
-import { EthAddress } from "../helpers";
+import { EthAddress, ZeroAddress } from "../helpers";
 import {
   Address,
   Balance,
@@ -20,9 +21,6 @@ import { Position, Vault } from "../types";
 const VaultAbi = ["function deposit(uint256 amount) public", "function withdraw(uint256 amount) public"];
 const VaultV1Abi = VaultAbi.concat(["function depositETH(uint256 amount) payable public"]);
 // const VaultV2Abi = VaultAbi.concat([]);
-
-const ethAddress = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";
-const zeroAddress = "0x0000000000000000000000000000000000000000";
 
 export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
   /**
@@ -185,12 +183,12 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
       }
 
       const gasPrice = await this.yearn.services.zapper.gas();
-      const gasPriceFastGwei = BigInt(gasPrice.fast) * BigInt(10 ** 9);
+      const gasPriceFastGwei = new BigNumber(gasPrice.fast).times(new BigNumber(10 ** 9));
 
       let sellToken = token;
-      if (ethAddress === token) {
+      if (EthAddress === token) {
         // If Ether is being sent, the sellTokenAddress should be the zero address
-        sellToken = zeroAddress;
+        sellToken = ZeroAddress;
       }
 
       const zapInParams = await this.yearn.services.zapper.zapIn(
@@ -210,7 +208,7 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
         value: zapInParams.value as string
       };
 
-      return this.ctx.provider.write.getSigner(account).sendTransaction(transaction);
+      return signer.sendTransaction(transaction);
     }
   }
 
@@ -243,12 +241,12 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
       }
 
       const gasPrice = await this.yearn.services.zapper.gas();
-      const gasPriceFastGwei = BigInt(gasPrice.fast) * BigInt(10 ** 9);
+      const gasPriceFastGwei = new BigNumber(gasPrice.fast).times(new BigNumber(10 ** 9));
 
       let toToken = token;
-      if (ethAddress === token) {
+      if (EthAddress === token) {
         // If Ether is being received, the toTokenAddress should be the zero address
-        toToken = zeroAddress;
+        toToken = ZeroAddress;
       }
 
       const zapOutParams = await this.yearn.services.zapper.zapOut(
@@ -268,7 +266,7 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
         value: zapOutParams.value as string
       };
 
-      return this.ctx.provider.write.getSigner(account).sendTransaction(transaction);
+      return signer.sendTransaction(transaction);
     }
   }
 }
