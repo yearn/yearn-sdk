@@ -1,7 +1,7 @@
 import BigNumber from "bignumber.js";
 
 import { Service } from "../common";
-import { Address, Integer, SdkError, ZapInOutput } from "../types";
+import { Address, Integer } from "../types";
 import { ZapperService } from "./zapper";
 
 const baseUrl = "https://api.tenderly.co/api/v1/account/yearn/project/yearn-web";
