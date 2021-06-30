@@ -69,6 +69,18 @@ export class SimulationService extends Service {
     return await this.makeRequest(`${baseUrl}/simulate`, body);
   }
 
+  /**
+   * Simulate a Zap In transaction
+   * @param from the address initiating the zap
+   * @param token the token
+   * @param to the token to be sold
+   * @param amount the amount of tokens to be sold
+   * @param vault the vault being zapped into
+   * @param gasPrice
+   * @param slippagePercentage
+   * @param block
+   * @returns the result of the transaction
+   */
   async simulateZapIn(
     from: Address,
     token: Address,
