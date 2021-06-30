@@ -1,6 +1,7 @@
 import BigNumber from "bignumber.js";
 import { Service } from "../common";
 import { Address, Integer, SdkError, ZapInOutput } from "../types";
+import { ZapperService } from "./zapper";
 
 const baseUrl = "https://api.tenderly.co/api/v1/account/yearn/project/yearn-web";
 
@@ -14,7 +15,7 @@ interface TransactionOutcome {
 }
 
 /**
- * [[OracleService]] allows the simulation of ethereum transactions using Tenderly's api.
+ * [[SimulationService]] allows the simulation of ethereum transactions using Tenderly's api.
  * This allows us to know information before executing a transaction on mainnet.
  * For example it can simulate how much slippage is likely to be experienced when withdrawing from a vault,
  * or how many underlying tokens the user will receive upon withdrawing share tokens.
@@ -38,15 +39,7 @@ export class SimulationService extends Service {
       network_id: "1"
     };
 
-    const response: Response = await fetch(`${baseUrl}/fork`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-        // "X-Access-Key": "" // Todo - inject the api key using a CORS proxy
-      },
-      body: JSON.stringify(body)
-    }).then(res => res.json());
-
+    const response: Response = await this.makeRequest(`${baseUrl}/fork`, body);
     return response.simulation_fork.id;
   }
 
@@ -60,7 +53,7 @@ export class SimulationService extends Service {
    */
   async simulateRaw(block: number, from: Address, to: Address, input: String): Promise<any> {
     const body = {
-      network_id: "1",
+      network_id: this.chainId,
       block_number: block,
       transaction_index: 0,
       from: from,
@@ -73,16 +66,7 @@ export class SimulationService extends Service {
       save: true
     };
 
-    const response = await fetch(`${baseUrl}/simulate`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-        // "X-Access-Key": "" // Todo - inject the api key using a CORS proxy
-      },
-      body: JSON.stringify(body)
-    }).then(res => res.json());
-
-    return response;
+    return await this.makeRequest(`${baseUrl}/simulate`, body);
   }
 
   async simulateZapIn(
@@ -94,20 +78,11 @@ export class SimulationService extends Service {
     slippagePercentage: number,
     block: number
   ): Promise<TransactionOutcome> {
-    const url = "https://api.zapper.fi/v1/zap-in/yearn/transaction";
-    const params = new URLSearchParams({
-      ownerAddress: from,
-      sellTokenAddress: token,
-      sellAmount: amount,
-      poolAddress: vault,
-      gasPrice: gasPrice,
-      slippagePercentage: slippagePercentage.toString(),
-      api_key: this.ctx.zapper
-    });
-    const zapInParams: ZapInOutput = await fetch(`${url}?${params}`).then(res => res.json());
+    const zapperService = new ZapperService(this.chainId, this.ctx);
+    const zapInParams = await zapperService.zapIn(from, token, amount, vault, gasPrice, slippagePercentage);
 
     const body = {
-      network_id: "1",
+      network_id: this.chainId,
       block_number: block,
       transaction_index: 0,
       from: from,
@@ -136,15 +111,8 @@ export class SimulationService extends Service {
       transaction: SimulationTransaction;
     }
 
-    const response: SimulationResponse = await fetch(`${baseUrl}/simulate`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(body)
-    }).then(res => res.json());
-
-    const tokensReceived = new BigNumber(response.transaction.transaction_info.call_trace.output);
+    const simulationResponse: SimulationResponse = await this.makeRequest(`${baseUrl}/simulate`, body);
+    const tokensReceived = new BigNumber(simulationResponse.transaction.transaction_info.call_trace.output);
     const conversionRate = new BigNumber(zapInParams.sellTokenAmount).div(tokensReceived);
     const slippage = 1 - tokensReceived.div(new BigNumber(zapInParams.minTokens)).toNumber();
 
@@ -152,11 +120,21 @@ export class SimulationService extends Service {
       sourceTokenAddress: token,
       sourceTokenAmount: amount,
       targetTokenAddress: zapInParams.buyTokenAddress,
-      targetTokenAmount: response.transaction.transaction_info.call_trace.output,
+      targetTokenAmount: simulationResponse.transaction.transaction_info.call_trace.output,
       conversionRate: conversionRate.toNumber(),
       slippage: slippage
     };
 
     return result;
+  }
+
+  async makeRequest(path: string, body: any): Promise<any> {
+    return await fetch(path, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(body)
+    }).then(res => res.json());
   }
 }
