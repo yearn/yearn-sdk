@@ -4,7 +4,7 @@ import { Service } from "../common";
 import { Address, Integer } from "../types";
 import { ZapperService } from "./zapper";
 
-const baseUrl = "https://api.tenderly.co/api/v1/account/yearn/project/yearn-web";
+const baseUrl = "https://simulate.yearn.network";
 
 interface TransactionOutcome {
   sourceTokenAddress: Address;
@@ -40,7 +40,18 @@ export class SimulationService extends Service {
       network_id: "1"
     };
 
+<<<<<<< HEAD
     const response: Response = await this.makeRequest(`${baseUrl}/fork`, body);
+=======
+    const response: Response = await fetch(`${baseUrl}/fork`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(body)
+    }).then(res => res.json());
+
+>>>>>>> master
     return response.simulation_fork.id;
   }
 

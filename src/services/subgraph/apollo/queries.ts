@@ -41,6 +41,9 @@ export const ACCOUNT_EARNINGS = gql`
           id
           decimals
         }
+        shareToken {
+          symbol
+        }
         updates {
           deposits
           withdrawals
