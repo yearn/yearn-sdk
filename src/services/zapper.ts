@@ -97,7 +97,7 @@ export class ZapperService extends Service {
    * Fetch up to date gas prices in gwei
    * @returns gas prices
    */
-  async gas(): Promise<GasPrice[]> {
+  async gas(): Promise<GasPrice> {
     const url = "https://api.zapper.fi/v1/gas-price";
     const params = new URLSearchParams({
       api_key: this.ctx.zapper

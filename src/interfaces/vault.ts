@@ -1,9 +1,10 @@
-import { TransactionResponse } from "@ethersproject/abstract-provider";
+import { TransactionRequest, TransactionResponse } from "@ethersproject/abstract-provider";
 import { CallOverrides, Contract } from "@ethersproject/contracts";
+import BigNumber from "bignumber.js";
 
 import { ChainId } from "../chain";
 import { ServiceInterface } from "../common";
-import { EthAddress } from "../helpers";
+import { EthAddress, ZeroAddress } from "../helpers";
 import {
   Address,
   Balance,
@@ -177,8 +178,37 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
         return vaultContract.deposit(amount, overrides);
       }
     } else {
-      // ZAPPER!
-      throw new SdkError("deposit:zapper not implemented.");
+      if (options.slippage === undefined) {
+        throw new SdkError("zap operations should have a slippage set");
+      }
+
+      const gasPrice = await this.yearn.services.zapper.gas();
+      const gasPriceFastGwei = new BigNumber(gasPrice.fast).times(new BigNumber(10 ** 9));
+
+      let sellToken = token;
+      if (EthAddress === token) {
+        // If Ether is being sent, the sellTokenAddress should be the zero address
+        sellToken = ZeroAddress;
+      }
+
+      const zapInParams = await this.yearn.services.zapper.zapIn(
+        account,
+        sellToken,
+        amount,
+        vault,
+        gasPriceFastGwei.toString(),
+        options.slippage
+      );
+
+      const transaction: TransactionRequest = {
+        to: zapInParams.to,
+        from: zapInParams.from,
+        gasPrice: zapInParams.gasPrice,
+        data: zapInParams.data as string,
+        value: zapInParams.value as string
+      };
+
+      return signer.sendTransaction(transaction);
     }
   }
 
@@ -206,8 +236,37 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
       const vaultContract = new Contract(vault, VaultAbi, signer);
       return vaultContract.withdraw(amount, overrides);
     } else {
-      // ZAPPER!
-      throw new SdkError("deposit:zapper not implemented.");
+      if (options.slippage === undefined) {
+        throw new SdkError("zap operations should have a slippage set");
+      }
+
+      const gasPrice = await this.yearn.services.zapper.gas();
+      const gasPriceFastGwei = new BigNumber(gasPrice.fast).times(new BigNumber(10 ** 9));
+
+      let toToken = token;
+      if (EthAddress === token) {
+        // If Ether is being received, the toTokenAddress should be the zero address
+        toToken = ZeroAddress;
+      }
+
+      const zapOutParams = await this.yearn.services.zapper.zapOut(
+        account,
+        toToken,
+        amount,
+        vault,
+        gasPriceFastGwei.toString(),
+        options.slippage
+      );
+
+      const transaction: TransactionRequest = {
+        to: zapOutParams.to,
+        from: zapOutParams.from,
+        gasPrice: zapOutParams.gasPrice,
+        data: zapOutParams.data as string,
+        value: zapOutParams.value as string
+      };
+
+      return signer.sendTransaction(transaction);
     }
   }
 }
