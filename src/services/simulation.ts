@@ -181,7 +181,7 @@ export class SimulationService extends Service {
     return result;
   }
 
-  async approve(from: Address, token: Address, amount: Integer, vault: Address): Promise<TransactionOutcome> {
+  async approve(from: Address, token: Address, amount: Integer, vault: Address) {
     const TokenAbi = ["function approve(address spender,uint256 amount) bool"];
     const signer = this.ctx.provider.write.getSigner(from);
     const tokenContract = new Contract(token, TokenAbi, signer);
@@ -200,21 +200,9 @@ export class SimulationService extends Service {
       save: true
     };
 
-    const simulationResponse: SimulationResponse = await this.makeRequest(`${baseUrl}/simulate`, body);
-    const tokensReceived = new BigNumber(simulationResponse.transaction.transaction_info.call_trace.output);
-    const conversionRate = new BigNumber(amount).div(tokensReceived);
-    const slippage = 1 - tokensReceived.div(new BigNumber(amount)).toNumber();
+    console.log(body);
 
-    const result: TransactionOutcome = {
-      sourceTokenAddress: token,
-      sourceTokenAmount: amount,
-      targetTokenAddress: vault,
-      targetTokenAmount: simulationResponse.transaction.transaction_info.call_trace.output,
-      conversionRate: conversionRate.toNumber(),
-      slippage: slippage
-    };
-
-    return result;
+    // todo
   }
 
   async withdraw(from: Address, token: Address, amount: Integer, vault: Address): Promise<TransactionOutcome> {
