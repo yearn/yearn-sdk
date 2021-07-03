@@ -11,6 +11,7 @@ export const OracleAbi = [
   "function calculations() external view returns (address[] memory)",
   "function getPriceUsdcRecommended(address) public view returns (uint256)",
   "function usdcAddress() public view returns (address)",
+  "function getNormalizedValueUsdc(address,uint256) view returns (uint256)",
   // Calculations Curve
   "function isCurveLpToken(address) public view returns (bool)",
   "function getCurvePriceUsdc(address) public view returns (uint256)",
@@ -51,7 +52,7 @@ export class OracleService<T extends ChainId> extends ContractService<T> {
     switch (chainId) {
       case 1:
       case 1337:
-        return "0xd3ca98D986Be88b72Ff95fc2eC976a5E6339150d";
+        return "0x83d95e0D5f402511dB06817Aff3f9eA88224B030";
       case 250:
         return "0xae813841436fe29b95a14AC701AFb1502C4CB789";
     }
@@ -74,6 +75,17 @@ export class OracleService<T extends ChainId> extends ContractService<T> {
    */
   async getPriceUsdc(token: Address, overrides: CallOverrides = {}): Promise<Usdc> {
     return await this.contract.read.getPriceUsdcRecommended(token, overrides).then(int);
+  }
+
+  /**
+   * Get the normalized Usdc value for the token and corresponding quantity.
+   * @param token
+   * @param amount
+   * @param overrides
+   * @returns Usdc exchange rate (6 decimals)
+   */
+  async getNormalizedValueUsdc(token: Address, amount: Integer, overrides: CallOverrides = {}): Promise<Usdc> {
+    return await this.contract.read.getNormalizedValueUsdc(token, amount, overrides).then(int);
   }
 
   /**
