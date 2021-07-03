@@ -210,7 +210,7 @@ export class SimulationService extends Service {
     const signer = this.ctx.provider.write.getSigner(from);
     const vaultContract = new Contract(vault, VaultAbi, signer);
     const underlyingToken = await vaultContract.token();
-    const isZapping = underlyingToken === getAddress(token);
+    const isZapping = underlyingToken !== getAddress(token);
 
     const getEncodedInputData = async () => {
       if (isZapping) {
@@ -256,7 +256,7 @@ export class SimulationService extends Service {
     } else {
       const output = new BigNumber(simulationResponse.transaction.transaction_info.call_trace.calls[0].output);
       const conversionRate = new BigNumber(output).div(new BigNumber(amount)).toNumber();
-      const slippage = isZapping ? 0 : Math.abs(1 - conversionRate);
+      const slippage = Math.abs(1 - conversionRate);
 
       let result: TransactionOutcome = {
         sourceTokenAddress: vault,
