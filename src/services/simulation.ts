@@ -209,6 +209,7 @@ async function zapIn(
 ): Promise<TransactionOutcome> {
   const zapperService = new ZapperService(chainId, ctx);
   const zapInParams = await zapperService.zapIn(from, token, amount, vault, "0", slippagePercentage);
+  const value = new BigNumber(zapInParams.value).toFixed(0);
 
   const body = {
     network_id: chainId.toString(),
@@ -219,7 +220,7 @@ async function zapIn(
     gas: gasLimit,
     simulation_type: "quick",
     gas_price: "0",
-    value: zapInParams.value,
+    value: value,
     save: true
   };
 

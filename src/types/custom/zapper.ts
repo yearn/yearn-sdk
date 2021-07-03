@@ -17,8 +17,8 @@ export interface ZapOptions {
 export interface ZapInOutput {
   to: Address;
   from: Address;
-  data: String;
-  value: String;
+  data: string;
+  value: string;
   sellTokenAddress: Address;
   sellTokenAmount: Integer;
   buyTokenAddress: Address;
@@ -30,7 +30,7 @@ export interface ZapInOutput {
 export interface ZapOutOutput {
   to: Address;
   from: Address;
-  data: String;
+  data: string;
   value: Integer;
   sellTokenAddress: Address;
   sellTokenAmount: Integer;
