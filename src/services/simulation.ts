@@ -277,7 +277,7 @@ async function directWithdraw(
   };
 
   const simulationResponse: SimulationResponse = await makeRequest(`${baseUrl}/simulate`, body);
-  const output = new BigNumber(simulationResponse.transaction.transaction_info.call_trace.calls[0].output).toFixed(0);
+  const output = simulationResponse.transaction.transaction_info.call_trace.calls[0].output;
 
   let result: TransactionOutcome = {
     sourceTokenAddress: vault,
