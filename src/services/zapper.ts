@@ -133,7 +133,8 @@ export class ZapperService extends Service {
       poolAddress: vault,
       gasPrice: gasPrice,
       slippagePercentage: slippagePercentage.toString(),
-      api_key: this.ctx.zapper
+      api_key: this.ctx.zapper,
+      skipGasEstimate: "true"
     });
     const response: ZapInOutput = await fetch(`${url}?${params}`)
       .then(handleHttpError)
@@ -167,7 +168,8 @@ export class ZapperService extends Service {
       poolAddress: vault,
       gasPrice: gasPrice,
       slippagePercentage: slippagePercentage.toString(),
-      api_key: this.ctx.zapper
+      api_key: this.ctx.zapper,
+      skipGasEstimate: "true"
     });
     const response: ZapOutOutput = await fetch(`${url}?${params}`)
       .then(handleHttpError)
