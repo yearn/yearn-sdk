@@ -1,8 +1,8 @@
 import { getAddress } from "@ethersproject/address";
 import { Contract } from "@ethersproject/contracts";
 import BigNumber from "bignumber.js";
-import { ChainId } from "../chain";
 
+import { ChainId } from "../chain";
 import { Service } from "../common";
 import { Context } from "../context";
 import { Address, Integer, SdkError } from "../types";
