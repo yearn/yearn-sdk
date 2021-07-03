@@ -16,7 +16,6 @@ const VaultAbi = [
   "function deposit(uint256 amount) public",
   "function withdraw(uint256 amount) public",
   "function token() view returns (address)"
-  // "function pricePerShare() view returns (uint256)"
 ];
 
 interface TransactionOutcome {
