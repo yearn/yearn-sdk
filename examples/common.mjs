@@ -5,5 +5,5 @@ export const Addresses = !process.env.WEB3_PROVIDER && {
     ironBank: "0xed00238F9A0F7b4d93842033cdF56cCB32C781c2"
   },
   helper: "0x420b1099B9eF5baba6D92029594eF45E19A04A4A",
-  oracle: "0xE7eD6747FaC5360f88a2EFC03E00d25789F69291"
+  oracle: "0x83d95e0D5f402511dB06817Aff3f9eA88224B030"
 };

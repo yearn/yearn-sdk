@@ -1,14 +1,23 @@
 import { getAddress } from "@ethersproject/address";
 import { Contract } from "@ethersproject/contracts";
 import BigNumber from "bignumber.js";
+import { ChainId } from "../chain";
 
 import { Service } from "../common";
-import { Address, Integer } from "../types";
+import { Context } from "../context";
+import { Address, Integer, SdkError } from "../types";
+import { OracleService } from "./oracle";
 import { ZapperService } from "./zapper";
 
 const baseUrl = "https://simulate.yearn.network";
 const latestBlockKey = -1;
 const gasLimit = 8000000;
+const VaultAbi = [
+  "function deposit(uint256 amount) public",
+  "function withdraw(uint256 amount) public",
+  "function token() view returns (address)"
+  // "function pricePerShare() view returns (uint256)"
+];
 
 interface TransactionOutcome {
   sourceTokenAddress: Address;
@@ -61,124 +70,77 @@ export class SimulationService extends Service {
       network_id: "1"
     };
 
-    const response: Response = await this.makeRequest(`${baseUrl}/fork`, body);
+    const response: Response = await makeRequest(`${baseUrl}/fork`, body);
     return response.simulation_fork.id;
   }
 
   /**
    * Simulate a transaction
-   * @param block the block number to simluate the transaction at
    * @param from
    * @param to
    * @param input the encoded input data as per the ethereum abi specification
    * @returns data about the simluated transaction
    */
-  async simulateRaw(block: number, from: Address, to: Address, input: String): Promise<any> {
+  async simulateRaw(from: Address, to: Address, input: String): Promise<any> {
     const body = {
       network_id: this.chainId,
-      block_number: block,
+      block_number: latestBlockKey,
       transaction_index: 0,
       from: from,
       input: input,
       to: to,
-      gas: 800000,
+      gas: gasLimit,
       simulation_type: "quick",
       gas_price: "0",
       value: "0",
       save: true
     };
 
-    return await this.makeRequest(`${baseUrl}/simulate`, body);
+    return await makeRequest(`${baseUrl}/simulate`, body);
   }
 
-  /**
-   * Simulate a Zap In transaction
-   * @param from the address initiating the zap
-   * @param token the token
-   * @param to the token to be sold
-   * @param amount the amount of tokens to be sold
-   * @param vault the vault being zapped into
-   * @param gasPrice
-   * @param slippagePercentage
-   * @param block
-   * @returns the result of the transaction
-   */
-  async zapIn(
-    // todo - move this logic into deposit
+  async deposit(
     from: Address,
     token: Address,
     amount: Integer,
     vault: Address,
-    gasPrice: Integer,
-    slippagePercentage: number
+    slippage?: number
   ): Promise<TransactionOutcome> {
-    const zapperService = new ZapperService(this.chainId, this.ctx);
-    const zapInParams = await zapperService.zapIn(from, token, amount, vault, gasPrice, slippagePercentage);
-
-    const body = {
-      network_id: this.chainId.toString(),
-      block_number: latestBlockKey,
-      from: from,
-      input: zapInParams.data,
-      to: zapInParams.to,
-      gas: gasLimit,
-      simulation_type: "quick",
-      gas_price: zapInParams.gasPrice,
-      value: zapInParams.value,
-      save: true
-    };
-
-    const simulationResponse: SimulationResponse = await this.makeRequest(`${baseUrl}/simulate`, body);
-    const tokensReceived = new BigNumber(simulationResponse.transaction.transaction_info.call_trace.output);
-    const conversionRate = new BigNumber(zapInParams.sellTokenAmount).div(tokensReceived);
-    const slippage = 0; // todo
-
-    const result: TransactionOutcome = {
-      sourceTokenAddress: token,
-      sourceTokenAmount: amount,
-      targetTokenAddress: zapInParams.buyTokenAddress,
-      targetTokenAmount: simulationResponse.transaction.transaction_info.call_trace.output,
-      conversionRate: conversionRate.toNumber(),
-      slippage: slippage
-    };
-
-    return result;
-  }
-
-  async deposit(from: Address, token: Address, amount: Integer, vault: Address): Promise<TransactionOutcome> {
-    const VaultAbi = ["function deposit(uint256 amount) public"];
     const signer = this.ctx.provider.write.getSigner(from);
     const vaultContract = new Contract(vault, VaultAbi, signer);
-    const encodedInputData = vaultContract.interface.encodeFunctionData("deposit", [amount]);
+    const underlyingToken = await vaultContract.token();
+    const isZapping = underlyingToken !== getAddress(token);
 
-    const body = {
-      network_id: this.chainId.toString(),
-      block_number: latestBlockKey,
-      from: from,
-      input: encodedInputData,
-      to: vault,
-      gas: gasLimit,
-      simulation_type: "quick",
-      gas_price: "0",
-      value: "0",
-      save: true
-    };
+    if (isZapping) {
+      if (slippage === undefined) {
+        throw new SdkError("slippage needs to be specified for a zap");
+      }
+      return zapIn(from, token, amount, vault, slippage, this.chainId, this.ctx);
+    } else {
+      return directDeposit(from, token, amount, vault, vaultContract, this.chainId);
+    }
+  }
 
-    const simulationResponse: SimulationResponse = await this.makeRequest(`${baseUrl}/simulate`, body);
-    const tokensReceived = new BigNumber(simulationResponse.transaction.transaction_info.call_trace.output);
-    const conversionRate = new BigNumber(amount).div(tokensReceived);
-    const slippage = 1 - tokensReceived.div(new BigNumber(amount)).toNumber();
+  async withdraw(
+    from: Address,
+    token: Address,
+    amount: Integer,
+    vault: Address,
+    slippage?: number
+  ): Promise<TransactionOutcome> {
+    const signer = this.ctx.provider.write.getSigner(from);
+    const vaultContract = new Contract(vault, VaultAbi, signer);
+    const underlyingToken = await vaultContract.token();
+    const isZapping = underlyingToken !== getAddress(token);
 
-    const result: TransactionOutcome = {
-      sourceTokenAddress: token,
-      sourceTokenAmount: amount,
-      targetTokenAddress: vault,
-      targetTokenAmount: simulationResponse.transaction.transaction_info.call_trace.output,
-      conversionRate: conversionRate.toNumber(),
-      slippage: slippage
-    };
-
-    return result;
+    if (isZapping) {
+      if (slippage === undefined) {
+        throw new SdkError("slippage needs to be specified for a zap");
+      }
+      return zapOut(from, token, amount, vault, slippage, this.chainId, this.ctx);
+    } else {
+      return directWithdraw(from, token, amount, vault, vaultContract, this.chainId);
+    }
   }
 
   async approve(from: Address, token: Address, amount: Integer, vault: Address) {
@@ -204,80 +166,186 @@ export class SimulationService extends Service {
 
     // todo
   }
+}
 
-  async withdraw(from: Address, token: Address, amount: Integer, vault: Address): Promise<TransactionOutcome> {
-    const VaultAbi = ["function withdraw(uint256 amount) public", "function token() view returns (address)"];
-    const signer = this.ctx.provider.write.getSigner(from);
-    const vaultContract = new Contract(vault, VaultAbi, signer);
-    const underlyingToken = await vaultContract.token();
-    const isZapping = underlyingToken !== getAddress(token);
+async function directDeposit(
+  from: Address,
+  token: Address,
+  amount: Integer,
+  vault: Address,
+  vaultContract: Contract,
+  chainId: ChainId
+): Promise<TransactionOutcome> {
+  const encodedInputData = vaultContract.interface.encodeFunctionData("deposit", [amount]);
 
-    const getEncodedInputData = async () => {
-      if (isZapping) {
-        const zapper = new ZapperService(this.chainId, this.ctx);
-        return await zapper.zapOut(from, token, amount, vault, "0", 0.03).then(params => params.data);
-      } else {
-        return vaultContract.interface.encodeFunctionData("withdraw", [amount]);
-      }
-    };
+  const body = {
+    network_id: chainId.toString(),
+    block_number: latestBlockKey,
+    from: from,
+    input: encodedInputData,
+    to: vault,
+    gas: gasLimit,
+    simulation_type: "quick",
+    gas_price: "0",
+    value: "0",
+    save: true
+  };
 
-    const encodedInputData = await getEncodedInputData();
+  const simulationResponse: SimulationResponse = await makeRequest(`${baseUrl}/simulate`, body);
+  const tokensReceived = simulationResponse.transaction.transaction_info.call_trace.output;
 
-    const body = {
-      network_id: this.chainId.toString(),
-      block_number: latestBlockKey,
-      from: from,
-      input: encodedInputData,
-      to: vault,
-      gas: gasLimit,
-      simulation_type: "quick",
-      gas_price: "0",
-      value: "0",
-      save: true
-    };
+  const result: TransactionOutcome = {
+    sourceTokenAddress: token,
+    sourceTokenAmount: amount,
+    targetTokenAddress: vault,
+    targetTokenAmount: tokensReceived,
+    conversionRate: 1,
+    slippage: 0
+  };
 
-    const simulationResponse: SimulationResponse = await this.makeRequest(`${baseUrl}/simulate`, body);
+  return result;
+}
 
-    if (isZapping) {
-      const output = new BigNumber(simulationResponse.transaction.transaction_info.call_trace.output).toFixed(0);
-      const conversionRate = new BigNumber(output).div(new BigNumber(amount)).toNumber();
-      const slippage = 0; // todo
+async function zapIn(
+  from: Address,
+  token: Address,
+  amount: Integer,
+  vault: Address,
+  slippagePercentage: number,
+  chainId: ChainId,
+  ctx: Context
+): Promise<TransactionOutcome> {
+  const zapperService = new ZapperService(chainId, ctx);
+  const zapInParams = await zapperService.zapIn(from, token, amount, vault, "0", slippagePercentage);
 
-      let result: TransactionOutcome = {
-        sourceTokenAddress: vault,
-        sourceTokenAmount: amount,
-        targetTokenAddress: token,
-        targetTokenAmount: output,
-        conversionRate: conversionRate,
-        slippage: slippage
-      };
+  const body = {
+    network_id: chainId.toString(),
+    block_number: latestBlockKey,
+    from: from,
+    input: zapInParams.data,
+    to: zapInParams.to,
+    gas: gasLimit,
+    simulation_type: "quick",
+    gas_price: "0",
+    value: zapInParams.value,
+    save: true
+  };
 
-      return result;
-    } else {
-      const output = new BigNumber(simulationResponse.transaction.transaction_info.call_trace.calls[0].output);
-      const conversionRate = new BigNumber(output).div(new BigNumber(amount)).toNumber();
-      const slippage = Math.abs(1 - conversionRate);
+  const simulationResponse: SimulationResponse = await makeRequest(`${baseUrl}/simulate`, body);
+  const tokensReceived = simulationResponse.transaction.transaction_info.call_trace.output;
 
-      let result: TransactionOutcome = {
-        sourceTokenAddress: vault,
-        sourceTokenAmount: amount,
-        targetTokenAddress: token,
-        targetTokenAmount: output.toFixed(0),
-        conversionRate: conversionRate,
-        slippage: slippage
-      };
+  const oracle = new OracleService(chainId, ctx);
 
-      return result;
-    }
-  }
+  const zapInAmountUsdc = await oracle.getNormalizedValueUsdc(token, tokensReceived);
+  const boughtAssetAmountUsdc = await oracle.getNormalizedValueUsdc(vault, amount);
 
-  async makeRequest(path: string, body: any): Promise<any> {
-    return await fetch(path, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(body)
-    }).then(res => res.json());
-  }
+  const conversionRate = new BigNumber(boughtAssetAmountUsdc).div(new BigNumber(zapInAmountUsdc)).toNumber();
+  const slippage = 1 - conversionRate;
+
+  const result: TransactionOutcome = {
+    sourceTokenAddress: token,
+    sourceTokenAmount: amount,
+    targetTokenAddress: zapInParams.buyTokenAddress,
+    targetTokenAmount: tokensReceived,
+    conversionRate: conversionRate,
+    slippage: slippage
+  };
+
+  return result;
+}
+
+async function directWithdraw(
+  from: Address,
+  token: Address,
+  amount: Integer,
+  vault: Address,
+  vaultContract: Contract,
+  chainId: ChainId
+): Promise<TransactionOutcome> {
+  const encodedInputData = vaultContract.interface.encodeFunctionData("withdraw", [amount]);
+
+  const body = {
+    network_id: chainId.toString(),
+    block_number: latestBlockKey,
+    from: from,
+    input: encodedInputData,
+    to: vault,
+    gas: gasLimit,
+    simulation_type: "quick",
+    gas_price: "0",
+    value: "0",
+    save: true
+  };
+
+  const simulationResponse: SimulationResponse = await makeRequest(`${baseUrl}/simulate`, body);
+  const output = new BigNumber(simulationResponse.transaction.transaction_info.call_trace.calls[0].output).toFixed(0);
+
+  let result: TransactionOutcome = {
+    sourceTokenAddress: vault,
+    sourceTokenAmount: amount,
+    targetTokenAddress: token,
+    targetTokenAmount: output,
+    conversionRate: 1,
+    slippage: 0
+  };
+
+  return result;
+}
+
+async function zapOut(
+  from: Address,
+  token: Address,
+  amount: Integer,
+  vault: Address,
+  slippagePercentage: number,
+  chainId: ChainId,
+  ctx: Context
+): Promise<TransactionOutcome> {
+  const zapper = new ZapperService(chainId, ctx);
+  const zapOutParams = await zapper.zapOut(from, token, amount, vault, "0", slippagePercentage);
+
+  const body = {
+    network_id: chainId.toString(),
+    block_number: latestBlockKey,
+    from: zapOutParams.from,
+    input: zapOutParams.data,
+    to: zapOutParams.to,
+    gas: gasLimit,
+    simulation_type: "quick",
+    gas_price: "0",
+    value: "0",
+    save: true
+  };
+
+  const simulationResponse: SimulationResponse = await makeRequest(`${baseUrl}/simulate`, body);
+  const output = new BigNumber(simulationResponse.transaction.transaction_info.call_trace.output).toFixed(0);
+
+  const oracle = new OracleService(chainId, ctx);
+
+  const zapOutAmountUsdc = await oracle.getNormalizedValueUsdc(token, output);
+  const soldAssetAmountUsdc = await oracle.getNormalizedValueUsdc(vault, amount);
+
+  const conversionRate = new BigNumber(zapOutAmountUsdc).div(new BigNumber(soldAssetAmountUsdc)).toNumber();
+  const slippage = 1 - conversionRate;
+
+  let result: TransactionOutcome = {
+    sourceTokenAddress: vault,
+    sourceTokenAmount: amount,
+    targetTokenAddress: token,
+    targetTokenAmount: output,
+    conversionRate: conversionRate,
+    slippage: slippage
+  };
+
+  return result;
+}
+
+async function makeRequest(path: string, body: any): Promise<any> {
+  return await fetch(path, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(body)
+  }).then(res => res.json());
 }
