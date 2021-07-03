@@ -6,6 +6,7 @@ import { ChainId } from "../chain";
 import { Service } from "../common";
 import { Context } from "../context";
 import { Address, Integer, SdkError } from "../types";
+import { TransactionOutcome } from "../types/custom/simulation";
 import { OracleService } from "./oracle";
 import { ZapperService } from "./zapper";
 
@@ -15,17 +16,9 @@ const gasLimit = 8000000;
 const VaultAbi = [
   "function deposit(uint256 amount) public",
   "function withdraw(uint256 amount) public",
-  "function token() view returns (address)"
+  "function token() view returns (address)",
+  "function pricePerShare() view returns (uint256)"
 ];
-
-interface TransactionOutcome {
-  sourceTokenAddress: Address;
-  sourceTokenAmount: Integer;
-  targetTokenAddress: Address;
-  targetTokenAmount: Integer;
-  conversionRate: number;
-  slippage: number;
-}
 
 interface SimulationCallTrace {
   output: Integer;
@@ -114,7 +107,7 @@ export class SimulationService extends Service {
       if (slippage === undefined) {
         throw new SdkError("slippage needs to be specified for a zap");
       }
-      return zapIn(from, token, amount, vault, slippage, this.chainId, this.ctx);
+      return zapIn(from, token, underlyingToken, amount, vault, vaultContract, slippage, this.chainId, this.ctx);
     } else {
       return directDeposit(from, token, amount, vault, vaultContract, this.chainId);
     }
@@ -136,7 +129,7 @@ export class SimulationService extends Service {
       if (slippage === undefined) {
         throw new SdkError("slippage needs to be specified for a zap");
       }
-      return zapOut(from, token, amount, vault, slippage, this.chainId, this.ctx);
+      return zapOut(from, token, underlyingToken, amount, vault, vaultContract, slippage, this.chainId, this.ctx);
     } else {
       return directWithdraw(from, token, amount, vault, vaultContract, this.chainId);
     }
@@ -197,9 +190,7 @@ async function directDeposit(
     sourceTokenAddress: token,
     sourceTokenAmount: amount,
     targetTokenAddress: vault,
-    targetTokenAmount: tokensReceived,
-    conversionRate: 1,
-    slippage: 0
+    targetTokenAmount: tokensReceived
   };
 
   return result;
@@ -208,8 +199,10 @@ async function directDeposit(
 async function zapIn(
   from: Address,
   token: Address,
+  underlyingTokenAddress: Address,
   amount: Integer,
   vault: Address,
+  vaultContract: Contract,
   slippagePercentage: number,
   chainId: ChainId,
   ctx: Context
@@ -231,11 +224,16 @@ async function zapIn(
   };
 
   const simulationResponse: SimulationResponse = await makeRequest(`${baseUrl}/simulate`, body);
-  const tokensReceived = simulationResponse.transaction.transaction_info.call_trace.output;
+  const assetTokensReceived = simulationResponse.transaction.transaction_info.call_trace.output;
+  const pricePerShare = await vaultContract.pricePerShare();
+  const targetUnderlyingTokensReceived = new BigNumber(assetTokensReceived)
+    .times(new BigNumber(pricePerShare.toString()))
+    .div(new BigNumber(10).pow(18))
+    .toFixed(0);
 
   const oracle = new OracleService(chainId, ctx);
 
-  const zapInAmountUsdc = await oracle.getNormalizedValueUsdc(token, tokensReceived);
+  const zapInAmountUsdc = await oracle.getNormalizedValueUsdc(token, assetTokensReceived);
   const boughtAssetAmountUsdc = await oracle.getNormalizedValueUsdc(vault, amount);
 
   const conversionRate = new BigNumber(boughtAssetAmountUsdc).div(new BigNumber(zapInAmountUsdc)).toNumber();
@@ -245,7 +243,9 @@ async function zapIn(
     sourceTokenAddress: token,
     sourceTokenAmount: amount,
     targetTokenAddress: zapInParams.buyTokenAddress,
-    targetTokenAmount: tokensReceived,
+    targetTokenAmount: assetTokensReceived,
+    targetUnderlyingTokenAddress: underlyingTokenAddress,
+    targetUnderlyingTokenAmount: targetUnderlyingTokensReceived,
     conversionRate: conversionRate,
     slippage: slippage
   };
@@ -283,9 +283,7 @@ async function directWithdraw(
     sourceTokenAddress: vault,
     sourceTokenAmount: amount,
     targetTokenAddress: token,
-    targetTokenAmount: output,
-    conversionRate: 1,
-    slippage: 0
+    targetTokenAmount: output
   };
 
   return result;
@@ -294,8 +292,10 @@ async function directWithdraw(
 async function zapOut(
   from: Address,
   token: Address,
+  underlyingTokenAddress: Address,
   amount: Integer,
   vault: Address,
+  vaultContract: Contract,
   slippagePercentage: number,
   chainId: ChainId,
   ctx: Context
@@ -318,6 +318,11 @@ async function zapOut(
 
   const simulationResponse: SimulationResponse = await makeRequest(`${baseUrl}/simulate`, body);
   const output = new BigNumber(simulationResponse.transaction.transaction_info.call_trace.output).toFixed(0);
+  const pricePerShare = await vaultContract.pricePerShare();
+  const targetUnderlyingTokensReceived = new BigNumber(amount)
+    .times(new BigNumber(pricePerShare.toString()))
+    .div(new BigNumber(10).pow(18))
+    .toFixed(0);
 
   const oracle = new OracleService(chainId, ctx);
 
@@ -332,6 +337,8 @@ async function zapOut(
     sourceTokenAmount: amount,
     targetTokenAddress: token,
     targetTokenAmount: output,
+    targetUnderlyingTokenAddress: underlyingTokenAddress,
+    targetUnderlyingTokenAmount: targetUnderlyingTokensReceived,
     conversionRate: conversionRate,
     slippage: slippage
   };
