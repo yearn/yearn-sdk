@@ -5,6 +5,7 @@ import BigNumber from "bignumber.js";
 import { ChainId } from "../chain";
 import { Service } from "../common";
 import { Context } from "../context";
+import { EthAddress, WethAddress } from "../helpers";
 import { Address, Integer, SdkError } from "../types";
 import { TransactionOutcome } from "../types/custom/simulation";
 import { OracleService } from "./oracle";
@@ -219,23 +220,22 @@ async function zapIn(
     to: zapInParams.to,
     gas: gasLimit,
     simulation_type: "quick",
-    gas_price: "0",
     value: value,
     save: true
   };
 
   const simulationResponse: SimulationResponse = await makeRequest(`${baseUrl}/simulate`, body);
-  const assetTokensReceived = simulationResponse.transaction.transaction_info.call_trace.output;
+  const assetTokensReceived = new BigNumber(simulationResponse.transaction.transaction_info.call_trace.output);
   const pricePerShare = await vaultContract.pricePerShare();
-  const targetUnderlyingTokensReceived = new BigNumber(assetTokensReceived)
+  const targetUnderlyingTokensReceived = assetTokensReceived
     .times(new BigNumber(pricePerShare.toString()))
     .div(new BigNumber(10).pow(18))
     .toFixed(0);
 
   const oracle = new OracleService(chainId, ctx);
 
-  const zapInAmountUsdc = await oracle.getNormalizedValueUsdc(token, assetTokensReceived);
-  const boughtAssetAmountUsdc = await oracle.getNormalizedValueUsdc(vault, amount);
+  const zapInAmountUsdc = await oracle.getNormalizedValueUsdc(token === EthAddress ? WethAddress : token, amount);
+  const boughtAssetAmountUsdc = await oracle.getNormalizedValueUsdc(vault, assetTokensReceived.toFixed(0));
 
   const conversionRate = new BigNumber(boughtAssetAmountUsdc).div(new BigNumber(zapInAmountUsdc)).toNumber();
   const slippage = 1 - conversionRate;
@@ -244,7 +244,7 @@ async function zapIn(
     sourceTokenAddress: token,
     sourceTokenAmount: amount,
     targetTokenAddress: zapInParams.buyTokenAddress,
-    targetTokenAmount: assetTokensReceived,
+    targetTokenAmount: assetTokensReceived.toFixed(0),
     targetUnderlyingTokenAddress: underlyingTokenAddress,
     targetUnderlyingTokenAmount: targetUnderlyingTokensReceived,
     conversionRate: conversionRate,
@@ -327,8 +327,8 @@ async function zapOut(
 
   const oracle = new OracleService(chainId, ctx);
 
-  const zapOutAmountUsdc = await oracle.getNormalizedValueUsdc(token, output);
   const soldAssetAmountUsdc = await oracle.getNormalizedValueUsdc(vault, amount);
+  const zapOutAmountUsdc = await oracle.getNormalizedValueUsdc(token === EthAddress ? WethAddress : token, output);
 
   const conversionRate = new BigNumber(zapOutAmountUsdc).div(new BigNumber(soldAssetAmountUsdc)).toNumber();
   const slippage = 1 - conversionRate;

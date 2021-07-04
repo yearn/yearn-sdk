@@ -4,7 +4,7 @@ import BigNumber from "bignumber.js";
 
 import { ChainId } from "../chain";
 import { ServiceInterface } from "../common";
-import { EthAddress, ZeroAddress } from "../helpers";
+import { EthAddress } from "../helpers";
 import {
   Address,
   Balance,
@@ -185,27 +185,23 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
       const gasPrice = await this.yearn.services.zapper.gas();
       const gasPriceFastGwei = new BigNumber(gasPrice.fast).times(new BigNumber(10 ** 9));
 
-      let sellToken = token;
-      if (EthAddress === token) {
-        // If Ether is being sent, the sellTokenAddress should be the zero address
-        sellToken = ZeroAddress;
-      }
-
       const zapInParams = await this.yearn.services.zapper.zapIn(
         account,
-        sellToken,
+        token,
         amount,
         vault,
         gasPriceFastGwei.toString(),
         options.slippage
       );
 
+      const valueBigNumber = new BigNumber(zapInParams.value);
+
       const transaction: TransactionRequest = {
         to: zapInParams.to,
         from: zapInParams.from,
         gasPrice: zapInParams.gasPrice,
-        data: zapInParams.data as string,
-        value: zapInParams.value as string
+        data: zapInParams.data,
+        value: valueBigNumber.toFixed(0)
       };
 
       return signer.sendTransaction(transaction);
@@ -243,15 +239,9 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
       const gasPrice = await this.yearn.services.zapper.gas();
       const gasPriceFastGwei = new BigNumber(gasPrice.fast).times(new BigNumber(10 ** 9));
 
-      let toToken = token;
-      if (EthAddress === token) {
-        // If Ether is being received, the toTokenAddress should be the zero address
-        toToken = ZeroAddress;
-      }
-
       const zapOutParams = await this.yearn.services.zapper.zapOut(
         account,
-        toToken,
+        token,
         amount,
         vault,
         gasPriceFastGwei.toString(),
@@ -262,8 +252,8 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
         to: zapOutParams.to,
         from: zapOutParams.from,
         gasPrice: zapOutParams.gasPrice,
-        data: zapOutParams.data as string,
-        value: zapOutParams.value as string
+        data: zapOutParams.data,
+        value: zapOutParams.value
       };
 
       return signer.sendTransaction(transaction);
