@@ -125,10 +125,16 @@ export class ZapperService extends Service {
     gasPrice: Integer,
     slippagePercentage: number
   ): Promise<ZapInOutput> {
+    let sellToken = token;
+    if (EthAddress === token) {
+      // If Ether is being sent, the sellTokenAddress should be the zero address
+      sellToken = ZeroAddress;
+    }
+
     const url = "https://api.zapper.fi/v1/zap-in/yearn/transaction";
     const params = new URLSearchParams({
       ownerAddress: from,
-      sellTokenAddress: token,
+      sellTokenAddress: sellToken,
       sellAmount: amount,
       poolAddress: vault,
       gasPrice: gasPrice,
@@ -136,6 +142,7 @@ export class ZapperService extends Service {
       api_key: this.ctx.zapper,
       skipGasEstimate: "true"
     });
+
     const response: ZapInOutput = await fetch(`${url}?${params}`)
       .then(handleHttpError)
       .then(res => res.json());
@@ -160,10 +167,16 @@ export class ZapperService extends Service {
     gasPrice: Integer,
     slippagePercentage: number
   ): Promise<ZapOutOutput> {
+    let toToken = token;
+    if (EthAddress === token) {
+      // If Ether is being received, the toTokenAddress should be the zero address
+      toToken = ZeroAddress;
+    }
+
     const url = "https://api.zapper.fi/v1/zap-out/yearn/transaction";
     const params = new URLSearchParams({
       ownerAddress: from,
-      toTokenAddress: token,
+      toTokenAddress: toToken,
       sellAmount: amount,
       poolAddress: vault,
       gasPrice: gasPrice,
