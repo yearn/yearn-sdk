@@ -23,16 +23,16 @@
     "codegen:apollo": "apollo client:codegen --target typescript --endpoint=https://api.thegraph.com/subgraphs/name/salazarguille/yearn-vaults-v2-subgraph-mainnet --outputFlat --includes \"src/services/subgraph/apollo/**\" --excludes \"src/services/subgraph/apollo/generated\" --passthroughCustomScalars --customScalarsPrefix YearnSubgraph src/services/subgraph/apollo/generated"
   },
   "peerDependencies": {
-    "@ethersproject/address": "^5.1.0",
-    "@ethersproject/bignumber": "^5.1.0",
-    "@ethersproject/contracts": "^5.1.0",
-    "@ethersproject/providers": "^5.1.0"
+    "@ethersproject/address": "^5.4.0",
+    "@ethersproject/bignumber": "^5.4.0",
+    "@ethersproject/contracts": "^5.4.0",
+    "@ethersproject/providers": "^5.4.1"
   },
   "devDependencies": {
-    "@ethersproject/address": "^5.1.0",
-    "@ethersproject/bignumber": "^5.1.0",
-    "@ethersproject/contracts": "^5.1.0",
-    "@ethersproject/providers": "^5.1.0",
+    "@ethersproject/address": "^5.4.0",
+    "@ethersproject/bignumber": "^5.4.0",
+    "@ethersproject/contracts": "^5.4.0",
+    "@ethersproject/providers": "^5.4.1",
     "@size-limit/preset-small-lib": "^4.10.1",
     "@solidity-parser/parser": "^0.12.0",
     "apollo": "^2.33.0",
