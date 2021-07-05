@@ -388,7 +388,7 @@ async function zapOut(
 }
 
 async function makeSimulationRequest(body: any, forkId?: string): Promise<any> {
-  const constructedPath = forkId === null ? `${baseUrl}/simulate` : `${baseUrl}/fork/${forkId}/simulate`;
+  const constructedPath = forkId === undefined ? `${baseUrl}/simulate` : `${baseUrl}/fork/${forkId}/simulate`;
   return await fetch(constructedPath, {
     method: "POST",
     headers: {
