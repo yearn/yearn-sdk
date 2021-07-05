@@ -1,6 +1,6 @@
 import { TransactionRequest, TransactionResponse } from "@ethersproject/abstract-provider";
+import { BigNumber } from "@ethersproject/bignumber";
 import { CallOverrides, Contract } from "@ethersproject/contracts";
-import BigNumber from "bignumber.js";
 
 import { ChainId } from "../chain";
 import { ServiceInterface } from "../common";
@@ -183,9 +183,10 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
       }
 
       const gasPrice = await this.yearn.services.zapper.gas();
-      const gasPriceFastGwei = new BigNumber(gasPrice.fast).times(new BigNumber(10 ** 9));
+      const gasPriceSpeed = gasPrice[options.gas ?? "fast"];
+      const gasPriceFastGwei = BigNumber.from(gasPriceSpeed).mul(10 ** 9);
 
-      const zapInParams = await this.yearn.services.zapper.zapIn(
+      const zap = await this.yearn.services.zapper.zapIn(
         account,
         token,
         amount,
@@ -194,15 +195,15 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
         options.slippage
       );
 
-      const valueBigNumber = new BigNumber(zapInParams.value);
-
       const transaction: TransactionRequest = {
-        to: zapInParams.to,
-        from: zapInParams.from,
-        gasPrice: zapInParams.gasPrice,
-        data: zapInParams.data,
-        value: valueBigNumber.toFixed(0)
+        to: zap.to,
+        from: zap.from,
+        gasPrice: BigNumber.from(zap.gasPrice),
+        data: zap.data,
+        value: BigNumber.from(zap.value)
       };
+
+      console.debug(transaction);
 
       return signer.sendTransaction(transaction);
     }
@@ -237,7 +238,7 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
       }
 
       const gasPrice = await this.yearn.services.zapper.gas();
-      const gasPriceFastGwei = new BigNumber(gasPrice.fast).times(new BigNumber(10 ** 9));
+      const gasPriceFastGwei = BigNumber.from(gasPrice.fast).mul(10 ** 9);
 
       const zapOutParams = await this.yearn.services.zapper.zapOut(
         account,
@@ -251,10 +252,12 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
       const transaction: TransactionRequest = {
         to: zapOutParams.to,
         from: zapOutParams.from,
-        gasPrice: zapOutParams.gasPrice,
+        gasPrice: BigNumber.from(zapOutParams.gasPrice),
         data: zapOutParams.data,
-        value: zapOutParams.value
+        value: BigNumber.from(zapOutParams.value)
       };
+
+      console.debug(transaction);
 
       return signer.sendTransaction(transaction);
     }
