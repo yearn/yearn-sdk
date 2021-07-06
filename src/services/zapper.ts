@@ -125,7 +125,8 @@ export class ZapperService extends Service {
     const url = "https://api.zapper.fi/v1/zap-in/yearn/approval-state";
     const params = new URLSearchParams({
       ownerAddress: from,
-      sellTokenAddress: token
+      sellTokenAddress: token,
+      api_key: this.ctx.zapper
     });
     const response: ZapInApprovalStateOutput = await fetch(`${url}?${params}`)
       .then(handleHttpError)
@@ -149,7 +150,8 @@ export class ZapperService extends Service {
     const params = new URLSearchParams({
       gasPrice,
       ownerAddress: from,
-      sellTokenAddress: token
+      sellTokenAddress: token,
+      api_key: this.ctx.zapper
     });
     const response: ZapInApprovalTransactionOutput = await fetch(`${url}?${params}`)
       .then(handleHttpError)
@@ -167,7 +169,8 @@ export class ZapperService extends Service {
     const url = "https://api.zapper.fi/v1/zap-out/yearn/approval-state";
     const params = new URLSearchParams({
       ownerAddress: from,
-      sellTokenAddress: token
+      sellTokenAddress: token,
+      api_key: this.ctx.zapper
     });
     const response: ZapOutApprovalStateOutput = await fetch(`${url}?${params}`)
       .then(handleHttpError)
@@ -191,7 +194,8 @@ export class ZapperService extends Service {
     const params = new URLSearchParams({
       gasPrice,
       ownerAddress: from,
-      sellTokenAddress: token
+      sellTokenAddress: token,
+      api_key: this.ctx.zapper
     });
     const response: ZapOutApprovalTransactionOutput = await fetch(`${url}?${params}`)
       .then(handleHttpError)
@@ -282,4 +286,33 @@ export class ZapperService extends Service {
 
     return response;
   }
+
+  // async approvalState(owner: Address, sellToken: Address): Promise<ZapApprovalState> {
+  //   const url = "https://api.zapper.fi/v1/zap-in/yearn/approval-state";
+  //   const params = new URLSearchParams({
+  //     sellTokenAddress: sellToken,
+  //     ownerAddress: owner,
+  //     api_key: this.ctx.zapper
+  //   });
+  //   const response: ZapApprovalState = await fetch(`${url}?${params}`)
+  //     .then(handleHttpError)
+  //     .then(res => res.json());
+
+  //   return response;
+  // }
+
+  // async approvalTransaction(owner: Address, sellToken: Address): Promise<ZapApprovalTransaction> {
+  //   const url = "https://api.zapper.fi/v1/zap-in/yearn/approval-transaction";
+  //   const params = new URLSearchParams({
+  //     sellTokenAddress: sellToken,
+  //     ownerAddress: owner,
+  //     gasPrice: "0",
+  //     api_key: this.ctx.zapper
+  //   });
+  //   const response: ZapApprovalTransaction = await fetch(`${url}?${params}`)
+  //     .then(handleHttpError)
+  //     .then(res => res.json());
+
+  //   return response;
+  // }
 }
