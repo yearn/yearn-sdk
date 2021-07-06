@@ -1,5 +1,6 @@
 import { getAddress } from "@ethersproject/address";
 import { Contract } from "@ethersproject/contracts";
+import { JsonRpcSigner } from "@ethersproject/providers";
 import BigNumber from "bignumber.js";
 
 import { ChainId } from "../chain";
@@ -34,8 +35,13 @@ interface SimulationTransaction {
   transaction_info: SimulationTransactionInfo;
 }
 
+interface Simulation {
+  id: string;
+}
+
 interface SimulationResponse {
   transaction: SimulationTransaction;
+  simulation: Simulation;
 }
 
 /**
@@ -45,28 +51,6 @@ interface SimulationResponse {
  * or how many underlying tokens the user will receive upon withdrawing share tokens.
  */
 export class SimulationService extends Service {
-  /**
-   * Create a new fork that can be used to simulate multiple sequential transactions on
-   * e.g. approval followed by a deposit.
-   * @returns the uuid of a new fork that has been created
-   */
-  async createForkWithId(): Promise<String> {
-    interface Response {
-      simulation_fork: {
-        id: String;
-      };
-    }
-
-    const body = {
-      alias: "",
-      description: "",
-      network_id: "1"
-    };
-
-    const response: Response = await makeRequest(`${baseUrl}/fork`, body);
-    return response.simulation_fork.id;
-  }
-
   /**
    * Simulate a transaction
    * @param from
@@ -89,7 +73,7 @@ export class SimulationService extends Service {
       save: true
     };
 
-    return await makeRequest(`${baseUrl}/simulate`, body);
+    return await makeSimulationRequest(body);
   }
 
   async deposit(
@@ -110,7 +94,18 @@ export class SimulationService extends Service {
       }
       return zapIn(from, token, underlyingToken, amount, vault, vaultContract, slippage, this.chainId, this.ctx);
     } else {
-      return directDeposit(from, token, amount, vault, vaultContract, this.chainId);
+      const needsApproving = await depositNeedsApproving(from, token, vault, amount, signer);
+      if (needsApproving) {
+        const forkId = await createFork();
+        const approvalTransactionId = await approve(from, token, amount, vault, forkId, this.chainId, this.ctx);
+        try {
+          return directDeposit(from, token, amount, vault, vaultContract, this.chainId, approvalTransactionId, forkId);
+        } finally {
+          await deleteFork(forkId);
+        }
+      } else {
+        return directDeposit(from, token, amount, vault, vaultContract, this.chainId);
+      }
     }
   }
 
@@ -135,30 +130,72 @@ export class SimulationService extends Service {
       return directWithdraw(from, token, amount, vault, vaultContract, this.chainId);
     }
   }
+}
 
-  async approve(from: Address, token: Address, amount: Integer, vault: Address) {
-    const TokenAbi = ["function approve(address spender,uint256 amount) bool"];
-    const signer = this.ctx.provider.write.getSigner(from);
-    const tokenContract = new Contract(token, TokenAbi, signer);
-    const encodedInputData = tokenContract.interface.encodeFunctionData("approve", [vault, amount]);
+async function approve(
+  from: Address,
+  token: Address,
+  amount: Integer,
+  vault: Address,
+  forkId: string,
+  chainId: ChainId,
+  ctx: Context
+): Promise<string> {
+  const TokenAbi = ["function approve(address spender,uint256 amount) bool"];
+  const signer = ctx.provider.write.getSigner(from);
+  const tokenContract = new Contract(token, TokenAbi, signer);
+  const encodedInputData = tokenContract.interface.encodeFunctionData("approve", [vault, amount]);
 
-    const body = {
-      network_id: this.chainId.toString(),
-      block_number: latestBlockKey,
-      from: from,
-      input: encodedInputData,
-      to: token,
-      gas: gasLimit,
-      simulation_type: "quick",
-      gas_price: "0",
-      value: "0",
-      save: true
+  const body = {
+    network_id: chainId.toString(),
+    block_number: latestBlockKey,
+    from: from,
+    input: encodedInputData,
+    to: token,
+    gas: gasLimit,
+    simulation_type: "quick",
+    gas_price: "0",
+    value: "0",
+    save: true
+  };
+
+  const simulationResponse: SimulationResponse = await makeSimulationRequest(body, forkId);
+  return simulationResponse.simulation.id;
+}
+
+/**
+ * Create a new fork that can be used to simulate multiple sequential transactions on
+ * e.g. approval followed by a deposit.
+ * @returns the uuid of a new fork that has been created
+ */
+async function createFork(): Promise<string> {
+  interface Response {
+    simulation_fork: {
+      id: string;
     };
-
-    console.log(body);
-
-    // todo
   }
+
+  const body = {
+    alias: "",
+    description: "",
+    network_id: "1"
+  };
+
+  const response: Response = await makeSimulationRequest(body);
+  return response.simulation_fork.id;
+}
+
+async function depositNeedsApproving(
+  from: Address,
+  token: Address,
+  vault: Address,
+  amount: Integer,
+  signer: JsonRpcSigner
+): Promise<boolean> {
+  const TokenAbi = ["function allowance(address owner,address spender) view returns (uint256)"];
+  const contract = new Contract(token, TokenAbi, signer);
+  const result = await contract.allowance(from, vault);
+  return new BigNumber(result.toString()).lt(new BigNumber(amount));
 }
 
 async function directDeposit(
@@ -167,7 +204,9 @@ async function directDeposit(
   amount: Integer,
   vault: Address,
   vaultContract: Contract,
-  chainId: ChainId
+  chainId: ChainId,
+  root?: string,
+  forkId?: string
 ): Promise<TransactionOutcome> {
   const encodedInputData = vaultContract.interface.encodeFunctionData("deposit", [amount]);
 
@@ -181,10 +220,11 @@ async function directDeposit(
     simulation_type: "quick",
     gas_price: "0",
     value: "0",
-    save: true
+    save: true,
+    root: root
   };
 
-  const simulationResponse: SimulationResponse = await makeRequest(`${baseUrl}/simulate`, body);
+  const simulationResponse: SimulationResponse = await makeSimulationRequest(body, forkId);
   const tokensReceived = simulationResponse.transaction.transaction_info.call_trace.output;
 
   const result: TransactionOutcome = {
@@ -224,7 +264,7 @@ async function zapIn(
     save: true
   };
 
-  const simulationResponse: SimulationResponse = await makeRequest(`${baseUrl}/simulate`, body);
+  const simulationResponse: SimulationResponse = await makeSimulationRequest(body);
   const assetTokensReceived = new BigNumber(simulationResponse.transaction.transaction_info.call_trace.output);
   const pricePerShare = await vaultContract.pricePerShare();
   const targetUnderlyingTokensReceived = assetTokensReceived
@@ -277,7 +317,7 @@ async function directWithdraw(
     save: true
   };
 
-  const simulationResponse: SimulationResponse = await makeRequest(`${baseUrl}/simulate`, body);
+  const simulationResponse: SimulationResponse = await makeSimulationRequest(body);
   const output = simulationResponse.transaction.transaction_info.call_trace.calls[0].output;
 
   let result: TransactionOutcome = {
@@ -317,7 +357,7 @@ async function zapOut(
     save: true
   };
 
-  const simulationResponse: SimulationResponse = await makeRequest(`${baseUrl}/simulate`, body);
+  const simulationResponse: SimulationResponse = await makeSimulationRequest(body);
   const output = new BigNumber(simulationResponse.transaction.transaction_info.call_trace.output).toFixed(0);
   const pricePerShare = await vaultContract.pricePerShare();
   const targetUnderlyingTokensReceived = new BigNumber(amount)
@@ -347,12 +387,17 @@ async function zapOut(
   return result;
 }
 
-async function makeRequest(path: string, body: any): Promise<any> {
-  return await fetch(path, {
+async function makeSimulationRequest(body: any, forkId?: string): Promise<any> {
+  const constructedPath = forkId === undefined ? `${baseUrl}/simulate` : `${baseUrl}/fork/${forkId}/simulate`;
+  return await fetch(constructedPath, {
     method: "POST",
     headers: {
       "Content-Type": "application/json"
     },
     body: JSON.stringify(body)
   }).then(res => res.json());
+}
+
+async function deleteFork(forkId: string): Promise<any> {
+  return await fetch(`${baseUrl}/fork/${forkId}`, { method: "DELETE" });
 }
