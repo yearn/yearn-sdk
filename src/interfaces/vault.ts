@@ -203,8 +203,6 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
         value: BigNumber.from(zap.value)
       };
 
-      console.debug(transaction);
-
       return signer.sendTransaction(transaction);
     }
   }
@@ -256,8 +254,6 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
         data: zapOutParams.data,
         value: BigNumber.from(zapOutParams.value)
       };
-
-      console.debug(transaction);
 
       return signer.sendTransaction(transaction);
     }
