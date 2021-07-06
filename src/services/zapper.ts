@@ -125,7 +125,8 @@ export class ZapperService extends Service {
     const url = "https://api.zapper.fi/v1/zap-in/yearn/approval-state";
     const params = new URLSearchParams({
       ownerAddress: from,
-      sellTokenAddress: token
+      sellTokenAddress: token,
+      api_key: this.ctx.zapper
     });
     const response: ZapInApprovalStateOutput = await fetch(`${url}?${params}`)
       .then(handleHttpError)
@@ -149,7 +150,8 @@ export class ZapperService extends Service {
     const params = new URLSearchParams({
       gasPrice,
       ownerAddress: from,
-      sellTokenAddress: token
+      sellTokenAddress: token,
+      api_key: this.ctx.zapper
     });
     const response: ZapInApprovalTransactionOutput = await fetch(`${url}?${params}`)
       .then(handleHttpError)
@@ -167,7 +169,8 @@ export class ZapperService extends Service {
     const url = "https://api.zapper.fi/v1/zap-out/yearn/approval-state";
     const params = new URLSearchParams({
       ownerAddress: from,
-      sellTokenAddress: token
+      sellTokenAddress: token,
+      api_key: this.ctx.zapper
     });
     const response: ZapOutApprovalStateOutput = await fetch(`${url}?${params}`)
       .then(handleHttpError)
@@ -191,7 +194,8 @@ export class ZapperService extends Service {
     const params = new URLSearchParams({
       gasPrice,
       ownerAddress: from,
-      sellTokenAddress: token
+      sellTokenAddress: token,
+      api_key: this.ctx.zapper
     });
     const response: ZapOutApprovalTransactionOutput = await fetch(`${url}?${params}`)
       .then(handleHttpError)

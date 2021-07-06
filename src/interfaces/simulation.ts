@@ -6,7 +6,7 @@ import BigNumber from "bignumber.js";
 import { ChainId } from "../chain";
 import { ServiceInterface } from "../common";
 import { EthAddress, WethAddress, ZeroAddress } from "../helpers";
-import { Address, Integer, SdkError } from "../types";
+import { Address, Integer, SdkError, ZapInApprovalTransactionOutput } from "../types";
 import { TransactionOutcome } from "../types/custom/simulation";
 
 const baseUrl = "https://simulate.yearn.network";
@@ -89,7 +89,39 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
       if (slippage === undefined) {
         throw new SdkError("slippage needs to be specified for a zap");
       }
-      return this.zapIn(from, token, underlyingToken, amount, vault, vaultContract, slippage);
+
+      let needsApproving: boolean;
+
+      if (token === EthAddress) {
+        needsApproving = false;
+      } else {
+        needsApproving = await this.yearn.services.zapper
+          .zapInApprovalState(from, token)
+          .then(state => !state.isApproved);
+      }
+
+      if (needsApproving) {
+        const approvalTransaction = await this.yearn.services.zapper.zapInApprovalTransaction(from, token, "0");
+        const forkId = await this.createFork();
+        const approvalSimulationResponse = await this.simulateZapApprovalTransaction(approvalTransaction, forkId);
+        try {
+          return this.zapIn(
+            from,
+            token,
+            underlyingToken,
+            amount,
+            vault,
+            vaultContract,
+            slippage,
+            approvalSimulationResponse.simulation.id,
+            forkId
+          );
+        } finally {
+          await this.deleteFork(forkId);
+        }
+      } else {
+        return this.zapIn(from, token, underlyingToken, amount, vault, vaultContract, slippage);
+      }
     } else {
       const needsApproving = await this.depositNeedsApproving(from, token, vault, amount, signer);
       if (needsApproving) {
@@ -151,28 +183,6 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     return simulationResponse.simulation.id;
   }
 
-  /**
-   * Create a new fork that can be used to simulate multiple sequential transactions on
-   * e.g. approval followed by a deposit.
-   * @returns the uuid of a new fork that has been created
-   */
-  private async createFork(): Promise<string> {
-    interface Response {
-      simulation_fork: {
-        id: string;
-      };
-    }
-
-    const body = {
-      alias: "",
-      description: "",
-      network_id: "1"
-    };
-
-    const response: Response = await this.makeSimulationRequest(body);
-    return response.simulation_fork.id;
-  }
-
   private async depositNeedsApproving(
     from: Address,
     token: Address,
@@ -231,7 +241,9 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     amount: Integer,
     vault: Address,
     vaultContract: Contract,
-    slippage: number
+    slippage: number,
+    root?: string,
+    forkId?: string
   ): Promise<TransactionOutcome> {
     const zapToken = token === EthAddress ? ZeroAddress : token;
     const zapInParams = await this.yearn.services.zapper.zapIn(from, zapToken, amount, vault, "0", slippage);
@@ -247,10 +259,11 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
       simulation_type: "quick",
       gas_price: "0",
       value: value,
-      save: true
+      save: true,
+      root: root
     };
 
-    const simulationResponse: SimulationResponse = await this.makeSimulationRequest(body);
+    const simulationResponse: SimulationResponse = await this.makeSimulationRequest(body, forkId);
     const assetTokensReceived = new BigNumber(simulationResponse.transaction.transaction_info.call_trace.output);
     const pricePerShare = await vaultContract.pricePerShare();
     const targetUnderlyingTokensReceived = assetTokensReceived
@@ -366,6 +379,56 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     };
 
     return result;
+  }
+
+  private async simulateZapApprovalTransaction(
+    zapApprovalTransaction: ZapInApprovalTransactionOutput,
+    forkId?: string
+  ): Promise<SimulationResponse> {
+    const body = {
+      network_id: this.chainId.toString(),
+      block_number: latestBlockKey,
+      from: zapApprovalTransaction.from,
+      input: zapApprovalTransaction.data,
+      to: zapApprovalTransaction.to,
+      gas: gasLimit,
+      simulation_type: "quick",
+      gas_price: "0",
+      value: "0",
+      save: true
+    };
+
+    const response: SimulationResponse = await this.makeSimulationRequest(body, forkId);
+    return response;
+  }
+
+  /**
+   * Create a new fork that can be used to simulate multiple sequential transactions on
+   * e.g. approval followed by a deposit.
+   * @returns the uuid of a new fork that has been created
+   */
+  private async createFork(): Promise<string> {
+    interface Response {
+      simulation_fork: {
+        id: string;
+      };
+    }
+
+    const body = {
+      alias: "",
+      description: "",
+      network_id: "1"
+    };
+
+    const response: Response = await await fetch(`${baseUrl}/fork`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(body)
+    }).then(res => res.json());
+
+    return response.simulation_fork.id;
   }
 
   private async makeSimulationRequest(body: any, forkId?: string): Promise<any> {
