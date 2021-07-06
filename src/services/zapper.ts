@@ -6,12 +6,12 @@ import { EthAddress, handleHttpError, usdc, ZeroAddress } from "../helpers";
 import { Address, Balance, BalancesMap, Integer, Token } from "../types";
 import {
   GasPrice,
-  ZapInOutput,
-  ZapOutOutput,
   ZapInApprovalStateOutput,
   ZapInApprovalTransactionOutput,
+  ZapInOutput,
   ZapOutApprovalStateOutput,
-  ZapOutApprovalTransactionOutput
+  ZapOutApprovalTransactionOutput,
+  ZapOutOutput
 } from "../types/custom/zapper";
 
 /**
