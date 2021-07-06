@@ -3,13 +3,13 @@ import { Context, ContextValue } from "./context";
 import { EarningsInterface } from "./interfaces/earnings";
 import { FeesInterface } from "./interfaces/fees";
 import { IronBankInterface } from "./interfaces/ironbank";
+import { SimulationInterface } from "./interfaces/simulation";
 import { TokenInterface } from "./interfaces/token";
 import { VaultInterface } from "./interfaces/vault";
 import { HelperService } from "./services/helper";
 import { IconsService } from "./services/icons";
 import { LensService } from "./services/lens";
 import { OracleService } from "./services/oracle";
-import { SimulationService } from "./services/simulation";
 import { SubgraphService } from "./services/subgraph";
 import { VisionService } from "./services/vision";
 import { ZapperService } from "./services/zapper";
@@ -35,7 +35,6 @@ export class Yearn<T extends ChainId> {
     icons: IconsService;
     vision: VisionService;
     subgraph: SubgraphService;
-    simulation: SimulationService;
 
     helper: HelperService<T>;
   };
@@ -45,6 +44,7 @@ export class Yearn<T extends ChainId> {
   earnings: EarningsInterface<T>;
   fees: FeesInterface<T>;
   ironBank: IronBankInterface<T>;
+  simulation: SimulationInterface<T>;
 
   context: Context;
 
@@ -73,7 +73,6 @@ export class Yearn<T extends ChainId> {
       zapper: new ZapperService(chainId, this.context),
       icons: new IconsService(chainId, this.context),
       vision: new VisionService(chainId, this.context),
-      simulation: new SimulationService(chainId, this.context),
       subgraph: new SubgraphService(chainId, this.context),
       helper: new HelperService(chainId, this.context)
     };
@@ -83,6 +82,7 @@ export class Yearn<T extends ChainId> {
     this.earnings = new EarningsInterface(this, chainId, this.context);
     this.fees = new FeesInterface(this, chainId, this.context);
     this.ironBank = new IronBankInterface(this, chainId, this.context);
+    this.simulation = new SimulationInterface(this, chainId, this.context);
 
     this.ready = Promise.all([this.services.icons.ready]);
   }

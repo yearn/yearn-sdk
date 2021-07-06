@@ -4,12 +4,11 @@ import BigNumber from "bignumber.js";
 
 import { ChainId } from "../chain";
 import { ServiceInterface } from "../common";
+import { EthAddress } from "../helpers";
 import { Address, Integer, TypedMap, Usdc, Vault } from "../types";
 import { Balance, Icon, IconMap, Token } from "../types";
 
 const TokenAbi = ["function approve(address _spender, uint256 _value) public"];
-
-export const EthAddress = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";
 
 export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
   /**
