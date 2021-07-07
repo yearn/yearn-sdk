@@ -14,7 +14,7 @@ export interface ZapOptions {
   gas?: keyof GasPrice;
 }
 
-export interface ZapInApprovalStateOutput {
+export interface ZapApprovalStateOutput {
   spenderAddress: Address;
   tokenAddress: Address;
   ownerAddress: Address;
@@ -23,47 +23,18 @@ export interface ZapInApprovalStateOutput {
   isApproved: Boolean;
 }
 
-export interface ZapInApprovalTransactionOutput {
+export interface ZapApprovalTransactionOutput {
   data: String;
   to: Address;
   from: Address;
   gasPrice: Integer;
 }
 
-export interface ZapOutApprovalStateOutput {
-  spenderAddress: Address;
-  tokenAddress: Address;
-  ownerAddress: Address;
-  allowance: Integer;
-  amount: Integer;
-  isApproved: Boolean;
-}
-
-export interface ZapOutApprovalTransactionOutput {
-  data: String;
-  to: Address;
-  from: Address;
-  gasPrice: Integer;
-}
-
-export interface ZapInOutput {
+export interface ZapOutput {
   to: Address;
   from: Address;
   data: string;
   value: string;
-  sellTokenAddress: Address;
-  sellTokenAmount: Integer;
-  buyTokenAddress: Address;
-  minTokens: Integer;
-  gasPrice: Integer;
-  gas: Integer;
-}
-
-export interface ZapOutOutput {
-  to: Address;
-  from: Address;
-  data: string;
-  value: Integer;
   sellTokenAddress: Address;
   sellTokenAmount: Integer;
   buyTokenAddress: Address;

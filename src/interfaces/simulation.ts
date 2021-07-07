@@ -6,7 +6,7 @@ import BigNumber from "bignumber.js";
 import { ChainId } from "../chain";
 import { ServiceInterface } from "../common";
 import { EthAddress, WethAddress, ZeroAddress } from "../helpers";
-import { Address, Integer, SdkError, ZapInApprovalTransactionOutput } from "../types";
+import { Address, Integer, SdkError, ZapApprovalTransactionOutput } from "../types";
 import { TransactionOutcome } from "../types/custom/simulation";
 
 const baseUrl = "https://simulate.yearn.network";
@@ -154,7 +154,38 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
       if (slippage === undefined) {
         throw new SdkError("slippage needs to be specified for a zap");
       }
-      return this.zapOut(from, token, underlyingToken, amount, vault, vaultContract, slippage);
+      let needsApproving: boolean;
+
+      if (token === EthAddress) {
+        needsApproving = false;
+      } else {
+        needsApproving = await this.yearn.services.zapper
+          .zapOutApprovalState(from, token)
+          .then(state => !state.isApproved);
+      }
+
+      if (needsApproving) {
+        const approvalTransaction = await this.yearn.services.zapper.zapOutApprovalTransaction(from, vault, "0");
+        const forkId = await this.createFork();
+        const approvalSimulationResponse = await this.simulateZapApprovalTransaction(approvalTransaction, forkId);
+        try {
+          return this.zapOut(
+            from,
+            token,
+            underlyingToken,
+            amount,
+            vault,
+            vaultContract,
+            slippage,
+            approvalSimulationResponse.simulation.id,
+            forkId
+          );
+        } finally {
+          await this.deleteFork(forkId);
+        }
+      } else {
+        return this.zapOut(from, token, underlyingToken, amount, vault, vaultContract, slippage);
+      }
     } else {
       return this.directWithdraw(from, token, amount, vault, vaultContract);
     }
@@ -335,7 +366,9 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     amount: Integer,
     vault: Address,
     vaultContract: Contract,
-    slippage: number
+    slippage: number,
+    root?: string,
+    forkId?: string
   ): Promise<TransactionOutcome> {
     const zapToken = token === EthAddress ? ZeroAddress : token;
     const zapOutParams = await this.yearn.services.zapper.zapOut(from, zapToken, amount, vault, "0", slippage);
@@ -343,17 +376,18 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     const body = {
       network_id: this.chainId.toString(),
       block_number: latestBlockKey,
-      from: zapOutParams.from,
+      from: from,
       input: zapOutParams.data,
       to: zapOutParams.to,
       gas: gasLimit,
       simulation_type: "quick",
       gas_price: "0",
-      value: "0",
-      save: true
+      value: zapOutParams.value,
+      save: true,
+      root: root
     };
 
-    const simulationResponse: SimulationResponse = await this.makeSimulationRequest(body);
+    const simulationResponse: SimulationResponse = await this.makeSimulationRequest(body, forkId);
     const output = new BigNumber(simulationResponse.transaction.transaction_info.call_trace.output).toFixed(0);
     const pricePerShare = await vaultContract.pricePerShare();
     const targetUnderlyingTokensReceived = new BigNumber(amount)
@@ -382,7 +416,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
   }
 
   private async simulateZapApprovalTransaction(
-    zapApprovalTransaction: ZapInApprovalTransactionOutput,
+    zapApprovalTransaction: ZapApprovalTransactionOutput,
     forkId?: string
   ): Promise<SimulationResponse> {
     const body = {
