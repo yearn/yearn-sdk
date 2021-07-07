@@ -5,10 +5,10 @@ import { handleHttpError } from "../helpers";
 import { Address, Icon, IconMap } from "../types";
 
 const YearnAssets = "https://api.github.com/repos/yearn/yearn-assets/contents/icons/tokens";
-const TrustAssets = "https://raw.githack.com/trustwallet/assets/master/blockchains/ethereum/tokenlist.json";
+const TrustAssets = "https://rawcdn.githack.com/trustwallet/assets/master/blockchains/ethereum/tokenlist.json";
 
 const YearnAsset = (address: Address) =>
-  `https://raw.githack.com/yearn/yearn-assets/master/icons/tokens/${address}/logo-128.png`;
+  `https://rawcdn.githack.com/yearn/yearn-assets/master/icons/tokens/${address}/logo-128.png`;
 const TrustAsset = (address: Address) =>
   `https://raw.githack.com/trustwallet/assets/master/blockchains/ethereum/assets/${address}/logo.png`;
 
