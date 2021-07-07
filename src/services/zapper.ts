@@ -4,15 +4,7 @@ import { Chains } from "../chain";
 import { Service } from "../common";
 import { EthAddress, handleHttpError, usdc, ZeroAddress } from "../helpers";
 import { Address, Balance, BalancesMap, Integer, Token } from "../types";
-import {
-  GasPrice,
-  ZapInApprovalStateOutput,
-  ZapInApprovalTransactionOutput,
-  ZapInOutput,
-  ZapOutApprovalStateOutput,
-  ZapOutApprovalTransactionOutput,
-  ZapOutOutput
-} from "../types/custom/zapper";
+import { GasPrice, ZapApprovalStateOutput, ZapApprovalTransactionOutput, ZapOutput } from "../types/custom/zapper";
 
 /**
  * [[ZapperService]] interacts with the zapper api to gather more insight for
@@ -121,14 +113,14 @@ export class ZapperService extends Service {
    * @param from - the address that is depositing
    * @param token - the token to be sold to pay for the deposit
    */
-  async zapInApprovalState(from: Address, token: Address): Promise<ZapInApprovalStateOutput> {
+  async zapInApprovalState(from: Address, token: Address): Promise<ZapApprovalStateOutput> {
     const url = "https://api.zapper.fi/v1/zap-in/yearn/approval-state";
     const params = new URLSearchParams({
       ownerAddress: from,
       sellTokenAddress: token,
       api_key: this.ctx.zapper
     });
-    const response: ZapInApprovalStateOutput = await fetch(`${url}?${params}`)
+    const response: ZapApprovalStateOutput = await fetch(`${url}?${params}`)
       .then(handleHttpError)
       .then(res => res.json());
 
@@ -145,7 +137,7 @@ export class ZapperService extends Service {
     from: Address,
     token: Address,
     gasPrice: Integer
-  ): Promise<ZapInApprovalTransactionOutput> {
+  ): Promise<ZapApprovalTransactionOutput> {
     const url = "https://api.zapper.fi/v1/zap-in/yearn/approval-transaction";
     const params = new URLSearchParams({
       gasPrice,
@@ -153,7 +145,7 @@ export class ZapperService extends Service {
       sellTokenAddress: token,
       api_key: this.ctx.zapper
     });
-    const response: ZapInApprovalTransactionOutput = await fetch(`${url}?${params}`)
+    const response: ZapApprovalTransactionOutput = await fetch(`${url}?${params}`)
       .then(handleHttpError)
       .then(res => res.json());
 
@@ -165,14 +157,14 @@ export class ZapperService extends Service {
    * @param from - the address that is withdrawing
    * @param token - the vault token to be withdrawn
    */
-  async zapOutApprovalState(from: Address, token: Address): Promise<ZapOutApprovalStateOutput> {
+  async zapOutApprovalState(from: Address, token: Address): Promise<ZapApprovalStateOutput> {
     const url = "https://api.zapper.fi/v1/zap-out/yearn/approval-state";
     const params = new URLSearchParams({
       ownerAddress: from,
       sellTokenAddress: token,
       api_key: this.ctx.zapper
     });
-    const response: ZapOutApprovalStateOutput = await fetch(`${url}?${params}`)
+    const response: ZapApprovalStateOutput = await fetch(`${url}?${params}`)
       .then(handleHttpError)
       .then(res => res.json());
 
@@ -189,7 +181,7 @@ export class ZapperService extends Service {
     from: Address,
     token: Address,
     gasPrice: Integer
-  ): Promise<ZapInApprovalTransactionOutput> {
+  ): Promise<ZapApprovalTransactionOutput> {
     const url = "https://api.zapper.fi/v1/zap-out/yearn/approval-transaction";
     const params = new URLSearchParams({
       gasPrice,
@@ -197,7 +189,7 @@ export class ZapperService extends Service {
       sellTokenAddress: token,
       api_key: this.ctx.zapper
     });
-    const response: ZapOutApprovalTransactionOutput = await fetch(`${url}?${params}`)
+    const response: ZapApprovalTransactionOutput = await fetch(`${url}?${params}`)
       .then(handleHttpError)
       .then(res => res.json());
 
@@ -220,7 +212,7 @@ export class ZapperService extends Service {
     vault: Address,
     gasPrice: Integer,
     slippagePercentage: number
-  ): Promise<ZapInOutput> {
+  ): Promise<ZapOutput> {
     let sellToken = token;
     if (EthAddress === token) {
       // If Ether is being sent, the sellTokenAddress should be the zero address
@@ -239,7 +231,7 @@ export class ZapperService extends Service {
       skipGasEstimate: "true"
     });
 
-    const response: ZapInOutput = await fetch(`${url}?${params}`)
+    const response: ZapOutput = await fetch(`${url}?${params}`)
       .then(handleHttpError)
       .then(res => res.json());
 
@@ -262,7 +254,7 @@ export class ZapperService extends Service {
     vault: Address,
     gasPrice: Integer,
     slippagePercentage: number
-  ): Promise<ZapOutOutput> {
+  ): Promise<ZapOutput> {
     let toToken = token;
     if (EthAddress === token) {
       // If Ether is being received, the toTokenAddress should be the zero address
@@ -280,7 +272,7 @@ export class ZapperService extends Service {
       api_key: this.ctx.zapper,
       skipGasEstimate: "true"
     });
-    const response: ZapOutOutput = await fetch(`${url}?${params}`)
+    const response: ZapOutput = await fetch(`${url}?${params}`)
       .then(handleHttpError)
       .then(res => res.json());
 
