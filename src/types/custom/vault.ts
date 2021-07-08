@@ -1,4 +1,4 @@
-import { Address, TypedMap } from "../common";
+import { Address, Integer, TypedMap, Usdc } from "../common";
 import { ZapOptions } from "./zapper";
 
 /**
@@ -16,3 +16,14 @@ export type ApyMap<T extends Address> = TypedMap<T, Apy | undefined>;
 
 export interface DepositOptions extends ZapOptions {}
 export interface WithdrawOptions extends ZapOptions {}
+
+export interface VaultsUserSummary {
+  holdings: Usdc;
+  earnings: Usdc;
+  estimatedYearlyYield: Integer;
+}
+
+export interface VaultUserMetadata {
+  assetAddress: Address;
+  earned: Usdc;
+}

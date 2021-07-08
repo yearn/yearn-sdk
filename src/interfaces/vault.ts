@@ -14,6 +14,8 @@ import {
   Token,
   VaultDynamic,
   VaultStatic,
+  VaultsUserSummary,
+  VaultUserMetadata,
   WithdrawOptions
 } from "../types";
 import { Position, Vault } from "../types";
@@ -94,6 +96,28 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
         return adapter.positionsOf(address, addresses, overrides);
       })
     ).then(arr => arr.flat());
+  }
+
+  /**
+   * Get the Vaults User Summary for a particular address.
+   * @param address
+   * @returns
+   */
+  async summaryOf(address: Address): Promise<VaultsUserSummary> {
+    const { earnings, holdings, estimatedYearlyYield } = await this.yearn.earnings.accountAssetsData(address);
+    return { earnings, holdings, estimatedYearlyYield };
+  }
+
+  /**
+   * Get the Vault User Metadata for a particular address.
+   * @param address
+   * @param addresses
+   * @returns
+   */
+  async metadataOf(address: Address, addresses?: Address[]): Promise<VaultUserMetadata[]> {
+    const { earningsAssetData } = await this.yearn.earnings.accountAssetsData(address);
+    if (!addresses) return earningsAssetData;
+    return earningsAssetData.filter(asset => addresses.includes(asset.assetAddress));
   }
 
   /**

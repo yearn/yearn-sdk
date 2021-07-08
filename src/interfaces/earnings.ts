@@ -24,51 +24,15 @@ import {
   PROTOCOL_EARNINGS,
   VAULT_EARNINGS
 } from "../services/subgraph/apollo/queries";
-import { Address, SdkError, TokenAmount, Usdc } from "../types";
-import { EarningsUserData } from "../types/custom/earnings";
+import { Address, SdkError } from "../types";
+import {
+  AccountHistoricEarnings,
+  AssetEarnings,
+  AssetHistoricEarnings,
+  EarningsUserData
+} from "../types/custom/earnings";
 
 const BigZero = new BigNumber(0);
-
-export interface AccountSummary {
-  accountId: Address;
-  aggregatedApy: number;
-  totalDepositedUsdc: Usdc;
-  totalEarningsUsdc: Usdc;
-  projectedDailyEarningsUsdc: Usdc;
-}
-
-export interface AccountAssetPosition {
-  accountAddress: Address;
-  assetAddress: Address;
-  tokenAddress: Address;
-  balance: TokenAmount;
-  earnings: TokenAmount;
-  roi: number;
-}
-
-export interface AssetEarnings extends TokenAmount {
-  tokenAddress: Address;
-  assetAddress: Address;
-}
-
-export interface AssetHistoricEarnings extends HistoricEarnings {
-  assetAddress: Address;
-}
-
-export interface AccountHistoricEarnings extends HistoricEarnings {
-  accountAddress: Address;
-  shareTokenAddress: Address;
-}
-
-export interface HistoricEarnings {
-  decimals: number;
-  dayData: EarningsDayData[];
-}
-
-export interface EarningsDayData {
-  earnings: TokenAmount;
-  date: Date;
-}
 
 export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
   async protocolEarnings(): Promise<String> {

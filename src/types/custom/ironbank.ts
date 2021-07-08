@@ -11,7 +11,7 @@ export interface CyTokenUserMetadata {
   borrowLimitUsdc: Integer;
 }
 
-export interface IronBankPosition {
+export interface IronBankUserSummary {
   supplyBalanceUsdc: Integer;
   borrowBalanceUsdc: Integer;
   borrowLimitUsdc: Integer;
