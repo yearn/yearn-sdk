@@ -9,7 +9,7 @@ import {
   IronBankMarket,
   IronBankMarketDynamic,
   IronBankMarketStatic,
-  IronBankPosition,
+  IronBankUserSummary,
   Position,
   SdkError,
   Token
@@ -68,26 +68,23 @@ export class IronBankInterface<T extends ChainId> extends ServiceInterface<T> {
   }
 
   /**
-   * Get the IronBank Position for a particular address.
+   * Get the IronBank User Summary for a particular address.
    * @param address
    * @param overrides
    * @returns
    */
-  async generalPositionOf(address: Address, overrides?: CallOverrides): Promise<IronBankPosition> {
+  async summaryOf(address: Address, overrides?: CallOverrides): Promise<IronBankUserSummary> {
     return this.yearn.services.lens.adapters.ironBank.generalPositionOf(address, overrides);
   }
 
   /**
    * Get the IronBank User Metadata for a particular address.
    * @param address
+   * @param addresses
    * @param overrides
    * @returns
    */
-  async userMetadata(
-    address: Address,
-    addresses?: Address[],
-    overrides?: CallOverrides
-  ): Promise<CyTokenUserMetadata[]> {
+  async metadataOf(address: Address, addresses?: Address[], overrides?: CallOverrides): Promise<CyTokenUserMetadata[]> {
     return this.yearn.services.lens.adapters.ironBank.assetsUserMetadata(address, addresses, overrides);
   }
 

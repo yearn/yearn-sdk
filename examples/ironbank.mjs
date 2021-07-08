@@ -28,12 +28,12 @@ async function main() {
   console.log("Yearn Multisig general IronBank position:");
   console.log(ironBankGeneralPositionTable.toString());
 
-  const ironBankUserMetadataTable = new Table();
-  const ironBankUserMetadata = await yearn.ironBank.userMetadata(YearnGovernance);
+  const CyTokenUserMetadataTable = new Table();
+  const CyTokenUserMetadata = await yearn.ironBank.userMetadata(YearnGovernance);
 
-  ironBankUserMetadataTable.push(...ironBankUserMetadata.map(market => Object.values(market)));
+  CyTokenUserMetadataTable.push(...CyTokenUserMetadata.map(market => Object.values(market)));
   console.log("Yearn Multisig IronBank user metadata:");
-  console.log(ironBankUserMetadataTable.toString());
+  console.log(CyTokenUserMetadataTable.toString());
 }
 
 main();
