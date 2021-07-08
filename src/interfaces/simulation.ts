@@ -75,15 +75,15 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
 
   async deposit(
     from: Address,
-    token: Address,
+    sellToken: Address,
     amount: Integer,
-    vault: Address,
+    toVault: Address,
     slippage?: number
   ): Promise<TransactionOutcome> {
     const signer = this.ctx.provider.write.getSigner(from);
-    const vaultContract = new Contract(vault, VaultAbi, signer);
+    const vaultContract = new Contract(toVault, VaultAbi, signer);
     const underlyingToken = await vaultContract.token();
-    const isZapping = underlyingToken !== getAddress(token);
+    const isZapping = underlyingToken !== getAddress(sellToken);
 
     if (isZapping) {
       if (slippage === undefined) {
@@ -92,63 +92,67 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
 
       let needsApproving: boolean;
 
-      if (token === EthAddress) {
+      if (sellToken === EthAddress) {
         needsApproving = false;
       } else {
         needsApproving = await this.yearn.services.zapper
-          .zapInApprovalState(from, token)
+          .zapInApprovalState(from, sellToken)
           .then(state => !state.isApproved);
       }
 
       if (needsApproving) {
-        const approvalTransaction = await this.yearn.services.zapper.zapInApprovalTransaction(from, token, "0");
+        const approvalTransaction = await this.yearn.services.zapper.zapInApprovalTransaction(from, sellToken, "0");
         const forkId = await this.createFork();
         const approvalSimulationResponse = await this.simulateZapApprovalTransaction(approvalTransaction, forkId);
-        try {
-          return this.zapIn(
-            from,
-            token,
-            underlyingToken,
-            amount,
-            vault,
-            vaultContract,
-            slippage,
-            approvalSimulationResponse.simulation.id,
-            forkId
-          );
-        } finally {
+        return this.zapIn(
+          from,
+          sellToken,
+          underlyingToken,
+          amount,
+          toVault,
+          vaultContract,
+          slippage,
+          approvalSimulationResponse.simulation.id,
+          forkId
+        ).finally(async () => {
           await this.deleteFork(forkId);
-        }
+        });
       } else {
-        return this.zapIn(from, token, underlyingToken, amount, vault, vaultContract, slippage);
+        return this.zapIn(from, sellToken, underlyingToken, amount, toVault, vaultContract, slippage);
       }
     } else {
-      const needsApproving = await this.depositNeedsApproving(from, token, vault, amount, signer);
+      const needsApproving = await this.depositNeedsApproving(from, sellToken, toVault, amount, signer);
       if (needsApproving) {
         const forkId = await this.createFork();
-        const approvalTransactionId = await this.approve(from, token, amount, vault, forkId);
-        try {
-          return this.directDeposit(from, token, amount, vault, vaultContract, approvalTransactionId, forkId);
-        } finally {
+        const approvalTransactionId = await this.approve(from, sellToken, amount, toVault, forkId);
+        return this.directDeposit(
+          from,
+          sellToken,
+          amount,
+          toVault,
+          vaultContract,
+          approvalTransactionId,
+          forkId
+        ).finally(async () => {
           await this.deleteFork(forkId);
-        }
+        });
       } else {
-        return this.directDeposit(from, token, amount, vault, vaultContract);
+        return this.directDeposit(from, sellToken, amount, toVault, vaultContract);
       }
     }
   }
 
   async withdraw(
     from: Address,
-    token: Address,
+    toToken: Address,
     amount: Integer,
-    vault: Address,
+    fromVault: Address,
     slippage?: number
   ): Promise<TransactionOutcome> {
     const signer = this.ctx.provider.write.getSigner(from);
-    const vaultContract = new Contract(vault, VaultAbi, signer);
+    const vaultContract = new Contract(fromVault, VaultAbi, signer);
     const underlyingToken = await vaultContract.token();
-    const isZapping = underlyingToken !== getAddress(token);
+    const isZapping = underlyingToken !== getAddress(toToken);
 
     if (isZapping) {
       if (slippage === undefined) {
@@ -156,38 +160,36 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
       }
       let needsApproving: boolean;
 
-      if (token === EthAddress) {
+      if (toToken === EthAddress) {
         needsApproving = false;
       } else {
         needsApproving = await this.yearn.services.zapper
-          .zapOutApprovalState(from, token)
+          .zapOutApprovalState(from, toToken)
           .then(state => !state.isApproved);
       }
 
       if (needsApproving) {
-        const approvalTransaction = await this.yearn.services.zapper.zapOutApprovalTransaction(from, vault, "0");
+        const approvalTransaction = await this.yearn.services.zapper.zapOutApprovalTransaction(from, fromVault, "0");
         const forkId = await this.createFork();
         const approvalSimulationResponse = await this.simulateZapApprovalTransaction(approvalTransaction, forkId);
-        try {
-          return this.zapOut(
-            from,
-            token,
-            underlyingToken,
-            amount,
-            vault,
-            vaultContract,
-            slippage,
-            approvalSimulationResponse.simulation.id,
-            forkId
-          );
-        } finally {
+        return this.zapOut(
+          from,
+          toToken,
+          underlyingToken,
+          amount,
+          fromVault,
+          vaultContract,
+          slippage,
+          approvalSimulationResponse.simulation.id,
+          forkId
+        ).finally(async () => {
           await this.deleteFork(forkId);
-        }
+        });
       } else {
-        return this.zapOut(from, token, underlyingToken, amount, vault, vaultContract, slippage);
+        return this.zapOut(from, toToken, underlyingToken, amount, fromVault, vaultContract, slippage);
       }
     } else {
-      return this.directWithdraw(from, token, amount, vault, vaultContract);
+      return this.directWithdraw(from, toToken, amount, fromVault, vaultContract);
     }
   }
 
@@ -229,9 +231,9 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
 
   private async directDeposit(
     from: Address,
-    token: Address,
+    sellToken: Address,
     amount: Integer,
-    vault: Address,
+    toVault: Address,
     vaultContract: Contract,
     root?: string,
     forkId?: string
@@ -243,7 +245,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
       block_number: latestBlockKey,
       from: from,
       input: encodedInputData,
-      to: vault,
+      to: toVault,
       gas: gasLimit,
       simulation_type: "quick",
       gas_price: "0",
@@ -256,9 +258,9 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     const tokensReceived = simulationResponse.transaction.transaction_info.call_trace.output;
 
     const result: TransactionOutcome = {
-      sourceTokenAddress: token,
+      sourceTokenAddress: sellToken,
       sourceTokenAmount: amount,
-      targetTokenAddress: vault,
+      targetTokenAddress: toVault,
       targetTokenAmount: tokensReceived
     };
 
@@ -267,17 +269,17 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
 
   private async zapIn(
     from: Address,
-    token: Address,
+    sellToken: Address,
     underlyingTokenAddress: Address,
     amount: Integer,
-    vault: Address,
+    toVault: Address,
     vaultContract: Contract,
     slippage: number,
     root?: string,
     forkId?: string
   ): Promise<TransactionOutcome> {
-    const zapToken = token === EthAddress ? ZeroAddress : token;
-    const zapInParams = await this.yearn.services.zapper.zapIn(from, zapToken, amount, vault, "0", slippage);
+    const zapToken = sellToken === EthAddress ? ZeroAddress : sellToken;
+    const zapInParams = await this.yearn.services.zapper.zapIn(from, zapToken, amount, toVault, "0", slippage);
     const value = new BigNumber(zapInParams.value).toFixed(0);
 
     const body = {
@@ -295,6 +297,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     };
 
     const simulationResponse: SimulationResponse = await this.makeSimulationRequest(body, forkId);
+    console.log(simulationResponse);
     const assetTokensReceived = new BigNumber(simulationResponse.transaction.transaction_info.call_trace.output);
     const pricePerShare = await vaultContract.pricePerShare();
     const targetUnderlyingTokensReceived = assetTokensReceived
@@ -302,16 +305,16 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
       .div(new BigNumber(10).pow(18))
       .toFixed(0);
 
-    const oracleToken = token === EthAddress ? WethAddress : token;
+    const oracleToken = sellToken === EthAddress ? WethAddress : sellToken;
     const zapInAmountUsdc = await this.yearn.services.oracle.getNormalizedValueUsdc(oracleToken, amount);
 
     const amountReceived = assetTokensReceived.toFixed(0);
-    const boughtAssetAmountUsdc = await this.yearn.services.oracle.getNormalizedValueUsdc(vault, amountReceived);
+    const boughtAssetAmountUsdc = await this.yearn.services.oracle.getNormalizedValueUsdc(toVault, amountReceived);
 
     const conversionRate = new BigNumber(boughtAssetAmountUsdc).div(new BigNumber(zapInAmountUsdc)).toNumber();
 
     const result: TransactionOutcome = {
-      sourceTokenAddress: token,
+      sourceTokenAddress: sellToken,
       sourceTokenAmount: amount,
       targetTokenAddress: zapInParams.buyTokenAddress,
       targetTokenAmount: amountReceived,
@@ -326,9 +329,9 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
 
   private async directWithdraw(
     from: Address,
-    token: Address,
+    toToken: Address,
     amount: Integer,
-    vault: Address,
+    fromVault: Address,
     vaultContract: Contract
   ): Promise<TransactionOutcome> {
     const encodedInputData = vaultContract.interface.encodeFunctionData("withdraw", [amount]);
@@ -338,7 +341,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
       block_number: latestBlockKey,
       from: from,
       input: encodedInputData,
-      to: vault,
+      to: fromVault,
       gas: gasLimit,
       simulation_type: "quick",
       gas_price: "0",
@@ -347,12 +350,12 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     };
 
     const simulationResponse: SimulationResponse = await this.makeSimulationRequest(body);
-    const output = simulationResponse.transaction.transaction_info.call_trace.calls[0].output;
+    const output = new BigNumber(simulationResponse.transaction.transaction_info.call_trace.calls[0].output).toFixed(0);
 
     let result: TransactionOutcome = {
-      sourceTokenAddress: vault,
+      sourceTokenAddress: fromVault,
       sourceTokenAmount: amount,
-      targetTokenAddress: token,
+      targetTokenAddress: toToken,
       targetTokenAmount: output
     };
 
@@ -361,17 +364,17 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
 
   private async zapOut(
     from: Address,
-    token: Address,
+    toToken: Address,
     underlyingTokenAddress: Address,
     amount: Integer,
-    vault: Address,
+    fromVault: Address,
     vaultContract: Contract,
     slippage: number,
     root?: string,
     forkId?: string
   ): Promise<TransactionOutcome> {
-    const zapToken = token === EthAddress ? ZeroAddress : token;
-    const zapOutParams = await this.yearn.services.zapper.zapOut(from, zapToken, amount, vault, "0", slippage);
+    const zapToken = toToken === EthAddress ? ZeroAddress : toToken;
+    const zapOutParams = await this.yearn.services.zapper.zapOut(from, zapToken, amount, fromVault, "0", slippage);
 
     const body = {
       network_id: this.chainId.toString(),
@@ -395,16 +398,16 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
       .div(new BigNumber(10).pow(18))
       .toFixed(0);
 
-    const oracleToken = token === EthAddress ? WethAddress : token;
+    const oracleToken = toToken === EthAddress ? WethAddress : toToken;
     const zapOutAmountUsdc = await this.yearn.services.oracle.getNormalizedValueUsdc(oracleToken, output);
-    const soldAssetAmountUsdc = await this.yearn.services.oracle.getNormalizedValueUsdc(vault, amount);
+    const soldAssetAmountUsdc = await this.yearn.services.oracle.getNormalizedValueUsdc(fromVault, amount);
 
     const conversionRate = new BigNumber(zapOutAmountUsdc).div(new BigNumber(soldAssetAmountUsdc)).toNumber();
 
     let result: TransactionOutcome = {
-      sourceTokenAddress: vault,
+      sourceTokenAddress: fromVault,
       sourceTokenAmount: amount,
-      targetTokenAddress: token,
+      targetTokenAddress: toToken,
       targetTokenAmount: output,
       targetUnderlyingTokenAddress: underlyingTokenAddress,
       targetUnderlyingTokenAmount: targetUnderlyingTokensReceived,
