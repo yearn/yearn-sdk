@@ -108,7 +108,7 @@ export const ACCOUNT_HISTORIC_EARNINGS = gql`
 
 export const PROTOCOL_FEES = gql`
   query ProtocolFees($sinceDate: BigInt!) {
-    transfers(where: { timestamp_gt: $sinceDate, isProtocolFee: true }, first: 1000) {
+    transfers(where: { timestamp_gt: $sinceDate }, first: 1000) {
       tokenAmountUsdc
     }
   }
