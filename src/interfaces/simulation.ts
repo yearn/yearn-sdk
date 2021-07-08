@@ -255,7 +255,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     };
 
     const simulationResponse: SimulationResponse = await this.makeSimulationRequest(body, forkId);
-    const tokensReceived = simulationResponse.transaction.transaction_info.call_trace.output;
+    const tokensReceived = new BigNumber(simulationResponse.transaction.transaction_info.call_trace.output).toFixed(0);
 
     const result: TransactionOutcome = {
       sourceTokenAddress: sellToken,
@@ -297,7 +297,6 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     };
 
     const simulationResponse: SimulationResponse = await this.makeSimulationRequest(body, forkId);
-    console.log(simulationResponse);
     const assetTokensReceived = new BigNumber(simulationResponse.transaction.transaction_info.call_trace.output);
     const pricePerShare = await vaultContract.pricePerShare();
     const targetUnderlyingTokensReceived = assetTokensReceived
