@@ -84,7 +84,7 @@ export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
     >({
       query: ACCOUNT_EARNINGS,
       variables: {
-        id: accountAddress
+        id: accountAddress.toLowerCase()
       }
     });
 
