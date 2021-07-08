@@ -18,7 +18,7 @@ export type Address = string;
 export type Integer = string;
 
 /**
- * Utility type to help distinguish [[Integers]] that represent a USDC (6 dec)
+ * Utility type to help distinguish [[Integer]]s that represent a USDC (6 dec)
  * value.
  */
 export type Usdc = string;

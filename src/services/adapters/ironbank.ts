@@ -10,7 +10,7 @@ import {
   CyTokenUserMetadata,
   IronBankMarketDynamic,
   IronBankMarketStatic,
-  IronBankPosition,
+  IronBankUserSummary,
   Position
 } from "../../types";
 
@@ -35,7 +35,7 @@ const CyTokenUserMetadataAbi = `tuple(
   uint256 borrowLimitUsdc
 )`;
 
-const IronBankPositionAbi = `tuple(
+const IronBankUserSummaryAbi = `tuple(
   uint256 supplyBalanceUsdc,
   uint256 borrowBalanceUsdc,
   uint256 borrowLimitUsdc,
@@ -43,7 +43,7 @@ const IronBankPositionAbi = `tuple(
 )`;
 
 const CustomAbi = [
-  `function adapterPositionOf(address) external view returns (${IronBankPositionAbi} memory)`,
+  `function adapterPositionOf(address) external view returns (${IronBankUserSummaryAbi} memory)`,
   `function assetsUserMetadata(address) public view returns (${CyTokenUserMetadataAbi}[] memory)`
 ];
 
@@ -118,7 +118,7 @@ export class IronBankAdapter<T extends ChainId> extends ContractService<T> {
    * @param overrides
    * @returns
    */
-  async generalPositionOf(address: Address, overrides: CallOverrides = {}): Promise<IronBankPosition> {
+  async generalPositionOf(address: Address, overrides: CallOverrides = {}): Promise<IronBankUserSummary> {
     return await this.contract.read.adapterPositionOf(address, overrides).then(struct);
   }
 
