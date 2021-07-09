@@ -144,9 +144,9 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
 
   async withdraw(
     from: Address,
-    toToken: Address,
-    amount: Integer,
     fromVault: Address,
+    amount: Integer,
+    toToken: Address,
     slippage?: number
   ): Promise<TransactionOutcome> {
     const signer = this.ctx.provider.write.getSigner(from);
