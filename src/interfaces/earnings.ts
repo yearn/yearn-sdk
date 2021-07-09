@@ -64,7 +64,7 @@ export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
     const vault = response.data.vault;
 
     if (!vault) {
-      throw new SdkError(`failed to find asset with address ${assetAddress}`);
+      throw new SdkError(`No asset with address ${assetAddress}`);
     }
 
     const returnsGenerated = new BigNumber(vault.latestUpdate?.returnsGenerated || 0);
@@ -91,7 +91,7 @@ export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
     const account = response.data.account;
 
     if (!account) {
-      throw new SdkError(`failed to find account address ${accountAddress}`);
+      return { earnings: "0", holdings: "0", earningsAssetData: [], estimatedYearlyYield: "0" };
     }
 
     const assetAddresses = account.vaultPositions.map(position => getAddress(position.vault.id));
@@ -160,9 +160,9 @@ export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
     });
 
     return {
-      earnings: totalEarnings.toFixed(0),
-      holdings: holdings.toFixed(0),
-      estimatedYearlyYield: estimatedYearlyYield.toFixed(0),
+      earnings: BigNumber.max(totalEarnings, 0).toFixed(0),
+      holdings: BigNumber.max(holdings, 0).toFixed(0),
+      estimatedYearlyYield: BigNumber.max(estimatedYearlyYield, 0).toFixed(0),
       earningsAssetData: earningsAssetData
     };
   }
@@ -179,7 +179,7 @@ export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
       .then(response => response.data.vault);
 
     if (!vault) {
-      throw new SdkError(`failed to find asset with address ${assetAddress}`);
+      throw new SdkError(`No asset with address ${assetAddress}`);
     }
 
     const dayData = await Promise.all(
@@ -223,7 +223,7 @@ export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
       .then(response => response.data.account?.vaultPositions);
 
     if (!vaultPositions) {
-      throw new SdkError(`failed to find account with address ${accountAddress}`);
+      throw new SdkError(`No account with address ${accountAddress}`);
     }
 
     interface AccountSnapshot {

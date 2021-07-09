@@ -186,7 +186,6 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
     options: DepositOptions = {},
     overrides: CallOverrides = {}
   ): Promise<TransactionResponse> {
-    console.log(options);
     const [vaultRef] = await this.getStatic([vault], overrides);
     const signer = this.ctx.provider.write.getSigner(account);
     if (vaultRef.token === token) {
@@ -248,7 +247,6 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
     options: WithdrawOptions = {},
     overrides: CallOverrides = {}
   ): Promise<TransactionResponse> {
-    console.log(options);
     const [vaultRef] = await this.getStatic([vault], overrides);
     const signer = this.ctx.provider.write.getSigner(account);
     if (vaultRef.token === token) {
