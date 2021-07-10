@@ -83,7 +83,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     const signer = this.ctx.provider.write.getSigner(from);
     const vaultContract = new Contract(toVault, VaultAbi, signer);
     const underlyingToken = await vaultContract.token();
-    const isZapping = underlyingToken !== getAddress(sellToken);
+    const isZapping = underlyingToken !== sellToken;
 
     if (isZapping) {
       if (slippage === undefined) {
@@ -261,7 +261,11 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
       sourceTokenAddress: sellToken,
       sourceTokenAmount: amount,
       targetTokenAddress: toVault,
-      targetTokenAmount: tokensReceived
+      targetTokenAmount: tokensReceived,
+      targetUnderlyingTokenAddress: toVault,
+      targetUnderlyingTokenAmount: tokensReceived,
+      conversionRate: 1,
+      slippage: 0
     };
 
     return result;
@@ -355,7 +359,11 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
       sourceTokenAddress: fromVault,
       sourceTokenAmount: amount,
       targetTokenAddress: toToken,
-      targetTokenAmount: output
+      targetTokenAmount: output,
+      targetUnderlyingTokenAddress: toToken,
+      targetUnderlyingTokenAmount: output,
+      conversionRate: 1,
+      slippage: 0
     };
 
     return result;
