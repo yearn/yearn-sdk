@@ -5,7 +5,7 @@ import BigNumber from "bignumber.js";
 
 import { ChainId } from "../chain";
 import { ServiceInterface } from "../common";
-import { EthAddress, pickleJars, WethAddress, ZeroAddress } from "../helpers";
+import { EthAddress, PickleJars, WethAddress, ZeroAddress } from "../helpers";
 import { Address, Integer, SdkError, ZapApprovalTransactionOutput, ZapProtocol } from "../types";
 import { TransactionOutcome } from "../types/custom/simulation";
 
@@ -83,7 +83,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     slippage?: number
   ): Promise<TransactionOutcome> {
     const signer = this.ctx.provider.write.getSigner(from);
-    const zapProtocol = pickleJars.includes(toVault) ? ZapProtocol.PICKLE : ZapProtocol.YEARN;
+    const zapProtocol = PickleJars.includes(toVault) ? ZapProtocol.PICKLE : ZapProtocol.YEARN;
     let abi: string[];
     switch (zapProtocol) {
       case ZapProtocol.YEARN:

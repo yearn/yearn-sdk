@@ -6,7 +6,7 @@ export const ZeroAddress = "0x0000000000000000000000000000000000000000";
 export const EthAddress = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";
 export const WethAddress = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2";
 
-export const pickleJars = [
+export const PickleJars = [
   "0x1BB74b5DdC1f4fC91D6f9E7906cf68bc93538e33", // 3poolcrv
   "0x68d14d66B2B0d6E157c06Dc8Fefa3D8ba0e66a89", // scrv
   "0x2E35392F4c36EBa7eCAFE4de34199b2373Af22ec", // renbtccrv
