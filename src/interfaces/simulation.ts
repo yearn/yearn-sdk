@@ -5,8 +5,8 @@ import BigNumber from "bignumber.js";
 
 import { ChainId } from "../chain";
 import { ServiceInterface } from "../common";
-import { EthAddress, WethAddress, ZeroAddress } from "../helpers";
-import { Address, Integer, SdkError, ZapApprovalTransactionOutput } from "../types";
+import { EthAddress, pickleJars, WethAddress, ZeroAddress } from "../helpers";
+import { Address, Integer, SdkError, ZapApprovalTransactionOutput, ZapProtocol } from "../types";
 import { TransactionOutcome } from "../types/custom/simulation";
 
 const baseUrl = "https://simulate.yearn.network";
@@ -18,6 +18,8 @@ const VaultAbi = [
   "function token() view returns (address)",
   "function pricePerShare() view returns (uint256)"
 ];
+
+const PickleJarAbi = ["function token() view returns (address)", "function getRatio() public view returns (uint256)"];
 
 interface SimulationCallTrace {
   output: Integer;
@@ -81,7 +83,17 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     slippage?: number
   ): Promise<TransactionOutcome> {
     const signer = this.ctx.provider.write.getSigner(from);
-    const vaultContract = new Contract(toVault, VaultAbi, signer);
+    const zapProtocol = pickleJars.includes(toVault) ? ZapProtocol.PICKLE : ZapProtocol.YEARN;
+    let abi: string[];
+    switch (zapProtocol) {
+      case ZapProtocol.YEARN:
+        abi = VaultAbi;
+        break;
+      case ZapProtocol.PICKLE:
+        abi = PickleJarAbi;
+        break;
+    }
+    const vaultContract = new Contract(toVault, abi, signer);
     const underlyingToken = await vaultContract.token();
     const isZapping = underlyingToken !== sellToken;
 
@@ -96,12 +108,18 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
         needsApproving = false;
       } else {
         needsApproving = await this.yearn.services.zapper
-          .zapInApprovalState(from, sellToken)
+          .zapInApprovalState(from, sellToken, zapProtocol)
           .then(state => !state.isApproved);
       }
 
       if (needsApproving) {
-        const approvalTransaction = await this.yearn.services.zapper.zapInApprovalTransaction(from, sellToken, "0");
+        const approvalTransaction = await this.yearn.services.zapper.zapInApprovalTransaction(
+          from,
+          sellToken,
+          "0",
+          zapProtocol
+        );
+
         const forkId = await this.createFork();
         const approvalSimulationResponse = await this.simulateZapApprovalTransaction(approvalTransaction, forkId);
         return this.zapIn(
@@ -112,13 +130,14 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
           toVault,
           vaultContract,
           slippage,
+          zapProtocol,
           approvalSimulationResponse.simulation.id,
           forkId
         ).finally(async () => {
           await this.deleteFork(forkId);
         });
       } else {
-        return this.zapIn(from, sellToken, underlyingToken, amount, toVault, vaultContract, slippage);
+        return this.zapIn(from, sellToken, underlyingToken, amount, toVault, vaultContract, slippage, zapProtocol);
       }
     } else {
       const needsApproving = await this.depositNeedsApproving(from, sellToken, toVault, amount, signer);
@@ -279,11 +298,20 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     toVault: Address,
     vaultContract: Contract,
     slippage: number,
+    zapProtocol: ZapProtocol,
     root?: string,
     forkId?: string
   ): Promise<TransactionOutcome> {
     const zapToken = sellToken === EthAddress ? ZeroAddress : sellToken;
-    const zapInParams = await this.yearn.services.zapper.zapIn(from, zapToken, amount, toVault, "0", slippage);
+    const zapInParams = await this.yearn.services.zapper.zapIn(
+      from,
+      zapToken,
+      amount,
+      toVault,
+      "0",
+      slippage,
+      zapProtocol
+    );
     const value = new BigNumber(zapInParams.value).toFixed(0);
 
     const body = {
@@ -302,19 +330,30 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
 
     const simulationResponse: SimulationResponse = await this.makeSimulationRequest(body, forkId);
     const assetTokensReceived = new BigNumber(simulationResponse.transaction.transaction_info.call_trace.output);
-    const pricePerShare = await vaultContract.pricePerShare();
+    const pricePerShare = await this.getPricePerShare(vaultContract, zapProtocol);
     const targetUnderlyingTokensReceived = assetTokensReceived
-      .times(new BigNumber(pricePerShare.toString()))
       .div(new BigNumber(10).pow(18))
+      .multipliedBy(pricePerShare)
       .toFixed(0);
 
-    const oracleToken = sellToken === EthAddress ? WethAddress : sellToken;
-    const zapInAmountUsdc = await this.yearn.services.oracle.getNormalizedValueUsdc(oracleToken, amount);
-
     const amountReceived = assetTokensReceived.toFixed(0);
-    const boughtAssetAmountUsdc = await this.yearn.services.oracle.getNormalizedValueUsdc(toVault, amountReceived);
 
-    const conversionRate = new BigNumber(boughtAssetAmountUsdc).div(new BigNumber(zapInAmountUsdc)).toNumber();
+    let conversionRate: number;
+
+    switch (zapProtocol) {
+      case ZapProtocol.YEARN:
+        const oracleToken = sellToken === EthAddress ? WethAddress : sellToken;
+        const zapInAmountUsdc = await this.yearn.services.oracle.getNormalizedValueUsdc(oracleToken, amount);
+
+        const boughtAssetAmountUsdc = await this.yearn.services.oracle.getNormalizedValueUsdc(toVault, amountReceived);
+
+        conversionRate = new BigNumber(boughtAssetAmountUsdc).div(new BigNumber(zapInAmountUsdc)).toNumber();
+        break;
+      case ZapProtocol.PICKLE:
+        conversionRate = 1;
+        // TODO - find out how to calculate usd value of pickle jars
+        break;
+    }
 
     const result: TransactionOutcome = {
       sourceTokenAddress: sellToken,
@@ -444,6 +483,17 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
 
     const response: SimulationResponse = await this.makeSimulationRequest(body, forkId);
     return response;
+  }
+
+  private async getPricePerShare(vaultContract: Contract, zapProtocol: ZapProtocol): Promise<BigNumber> {
+    switch (zapProtocol) {
+      case ZapProtocol.YEARN:
+        const pps = await vaultContract.pricePerShare();
+        return new BigNumber(pps.toString());
+      case ZapProtocol.PICKLE:
+        const ratio = await vaultContract.getRatio();
+        return new BigNumber(ratio.toString());
+    }
   }
 
   /**
