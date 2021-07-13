@@ -1,5 +1,6 @@
 import { getAddress } from "@ethersproject/address";
 import { BigNumber } from "bignumber.js";
+
 import { Address } from "./types/common";
 
 const hour = 1000 * 60 * 60;
