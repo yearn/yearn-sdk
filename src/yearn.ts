@@ -10,6 +10,7 @@ import { HelperService } from "./services/helper";
 import { IconsService } from "./services/icons";
 import { LensService } from "./services/lens";
 import { OracleService } from "./services/oracle";
+import { PickleService } from "./services/partners/pickle";
 import { SubgraphService } from "./services/subgraph";
 import { VisionService } from "./services/vision";
 import { ZapperService } from "./services/zapper";
@@ -35,6 +36,8 @@ export class Yearn<T extends ChainId> {
     icons: IconsService;
     vision: VisionService;
     subgraph: SubgraphService;
+
+    pickle: PickleService;
 
     helper: HelperService<T>;
   };
@@ -74,6 +77,7 @@ export class Yearn<T extends ChainId> {
       icons: new IconsService(chainId, this.context),
       vision: new VisionService(chainId, this.context),
       subgraph: new SubgraphService(chainId, this.context),
+      pickle: new PickleService(chainId, this.context),
       helper: new HelperService(chainId, this.context)
     };
 

@@ -42,3 +42,8 @@ export interface ZapOutput {
   gasPrice: Integer;
   gas: Integer;
 }
+
+export enum ZapProtocol {
+  PICKLE = "pickle",
+  YEARN = "yearn"
+}
