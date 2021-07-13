@@ -5,8 +5,8 @@ import BigNumber from "bignumber.js";
 
 import { ChainId } from "../chain";
 import { ServiceInterface } from "../common";
-import { EthAddress, PickleJars, WethAddress, ZeroAddress } from "../helpers";
-import { PickleJarPriceProvider } from "../pickle-pricing";
+import { EthAddress, WethAddress, ZeroAddress } from "../helpers";
+import { PickleJars } from "../services/partners/pickle";
 import { Address, Integer, SdkError, ZapApprovalTransactionOutput, ZapProtocol } from "../types";
 import { TransactionOutcome } from "../types/custom/simulation";
 
@@ -51,8 +51,6 @@ interface SimulationResponse {
  * or how many underlying tokens the user will receive upon withdrawing share tokens.
  */
 export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> {
-  private pickleJarPriceProvider = new PickleJarPriceProvider(PickleJars);
-
   /**
    * Simulate a transaction
    * @param from
@@ -350,7 +348,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
           .then(price => new BigNumber(price));
         break;
       case ZapProtocol.PICKLE:
-        boughtAssetAmountUsdc = (await this.pickleJarPriceProvider.getPriceUSD(toVault))
+        boughtAssetAmountUsdc = (await this.yearn.services.pickle.getPriceUsd(toVault))
           .dividedBy(new BigNumber(10).pow(18 - 6))
           .multipliedBy(new BigNumber(amountReceived));
         break;

@@ -1,27 +1,27 @@
 import { getAddress } from "@ethersproject/address";
 import { BigNumber } from "bignumber.js";
 
-import { Address } from "./types/common";
+import { Service } from "../../common";
+import { Address } from "../../types/common";
 
-const hour = 1000 * 60 * 60;
-const pickleApiUrl = "https://stkpowy01i.execute-api.us-west-1.amazonaws.com/prod/protocol/pools";
+const HourInMilliseconds = 1000 * 60 * 60;
+const PickleApiUrl = "https://stkpowy01i.execute-api.us-west-1.amazonaws.com/prod/protocol/pools";
 
-export class PickleJarPriceProvider {
+export const PickleJars = [
+  "0xCeD67a187b923F0E5ebcc77C7f2F7da20099e378" // yvboost-eth
+];
+
+export class PickleService extends Service {
   private pickleJarUSDPrices: Map<Address, BigNumber> = new Map();
   private lastFetchedDate: Date = new Date(0);
-  private pickleJars: Address[];
-
-  constructor(pickleJars: Address[]) {
-    this.pickleJars = pickleJars;
-  }
 
   /**
    * Fetches the USD price of a pickle jar token
    * @param jar the address of the jar to fetch
    * @returns the price of the jar token in USD
    */
-  async getPriceUSD(jar: Address): Promise<BigNumber> {
-    const oneHourAgo = new Date(Date.now() - hour);
+  async getPriceUsd(jar: Address): Promise<BigNumber> {
+    const oneHourAgo = new Date(Date.now() - HourInMilliseconds);
     if (this.lastFetchedDate < oneHourAgo) {
       await this.fetchPickleJarPrices();
     }
@@ -35,12 +35,12 @@ export class PickleJarPriceProvider {
       tokens: number;
     }
 
-    const jarData: JarDatum[] = await fetch(pickleApiUrl).then(res => res.json());
+    const jarData: JarDatum[] = await fetch(PickleApiUrl).then(res => res.json());
 
     this.pickleJarUSDPrices.clear();
     this.lastFetchedDate = new Date();
 
-    const relevantJars = jarData.filter(jar => this.pickleJars.includes(getAddress(jar.jarAddress)));
+    const relevantJars = jarData.filter(jar => PickleJars.includes(getAddress(jar.jarAddress)));
 
     for (const jarDatum of relevantJars) {
       const usdPrice = new BigNumber(jarDatum.liquidity_locked / jarDatum.tokens);

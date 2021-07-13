@@ -6,10 +6,6 @@ export const ZeroAddress = "0x0000000000000000000000000000000000000000";
 export const EthAddress = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";
 export const WethAddress = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2";
 
-export const PickleJars = [
-  "0xCeD67a187b923F0E5ebcc77C7f2F7da20099e378" // yvboost-eth
-];
-
 // handle a non-200 `fetch` response.
 export async function handleHttpError(response: Response): Promise<Response> {
   if (response.status !== 200) {
