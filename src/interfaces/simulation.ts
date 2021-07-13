@@ -257,7 +257,8 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
 
     const simulationResponse: SimulationResponse = await this.makeSimulationRequest(body, forkId);
     const output = simulationResponse.transaction.transaction_info.call_trace.output;
-    const tokensReceived = defaultAbiCoder.decode(["uint256"], output)[0];
+
+    const tokensReceived = defaultAbiCoder.decode(["uint256"], output)[0].toString();
 
     const result: TransactionOutcome = {
       sourceTokenAddress: sellToken,
