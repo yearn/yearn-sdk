@@ -4,7 +4,13 @@ import { Chains } from "../chain";
 import { Service } from "../common";
 import { EthAddress, handleHttpError, usdc, ZeroAddress } from "../helpers";
 import { Address, Balance, BalancesMap, Integer, Token } from "../types";
-import { GasPrice, ZapApprovalStateOutput, ZapApprovalTransactionOutput, ZapOutput } from "../types/custom/zapper";
+import {
+  GasPrice,
+  ZapApprovalStateOutput,
+  ZapApprovalTransactionOutput,
+  ZapOutput,
+  ZapProtocol
+} from "../types/custom/zapper";
 
 /**
  * [[ZapperService]] interacts with the zapper api to gather more insight for
@@ -112,9 +118,14 @@ export class ZapperService extends Service {
    * Fetches the data needed to check token ZapIn contract approval state
    * @param from - the address that is depositing
    * @param token - the token to be sold to pay for the deposit
+   * @param zapProtocol the protocol to use with zapper e.g. Yearn, Pickle
    */
-  async zapInApprovalState(from: Address, token: Address): Promise<ZapApprovalStateOutput> {
-    const url = "https://api.zapper.fi/v1/zap-in/yearn/approval-state";
+  async zapInApprovalState(
+    from: Address,
+    token: Address,
+    zapProtocol: ZapProtocol = ZapProtocol.YEARN
+  ): Promise<ZapApprovalStateOutput> {
+    const url = `https://api.zapper.fi/v1/zap-in/vault/${zapProtocol}/approval-state`;
     const params = new URLSearchParams({
       ownerAddress: from,
       sellTokenAddress: token,
@@ -132,13 +143,15 @@ export class ZapperService extends Service {
    * @param from - the address that is depositing
    * @param token - the token to be sold to pay for the deposit
    * @param gasPrice
+   * @param zapProtocol the protocol to use with zapper e.g. Yearn, Pickle
    */
   async zapInApprovalTransaction(
     from: Address,
     token: Address,
-    gasPrice: Integer
+    gasPrice: Integer,
+    zapProtocol: ZapProtocol = ZapProtocol.YEARN
   ): Promise<ZapApprovalTransactionOutput> {
-    const url = "https://api.zapper.fi/v1/zap-in/yearn/approval-transaction";
+    const url = `https://api.zapper.fi/v1/zap-in/vault/${zapProtocol}/approval-transaction`;
     const params = new URLSearchParams({
       gasPrice,
       ownerAddress: from,
@@ -156,9 +169,14 @@ export class ZapperService extends Service {
    * Fetches the data needed to check token ZapOut contract approval state
    * @param from - the address that is withdrawing
    * @param token - the vault token to be withdrawn
+   * @param zapProtocol the protocol to use with zapper e.g. Yearn, Pickle
    */
-  async zapOutApprovalState(from: Address, token: Address): Promise<ZapApprovalStateOutput> {
-    const url = "https://api.zapper.fi/v1/zap-out/yearn/approval-state";
+  async zapOutApprovalState(
+    from: Address,
+    token: Address,
+    zapProtocol: ZapProtocol = ZapProtocol.YEARN
+  ): Promise<ZapApprovalStateOutput> {
+    const url = `https://api.zapper.fi/v1/zap-out/vault/${zapProtocol}/approval-state`;
     const params = new URLSearchParams({
       ownerAddress: from,
       sellTokenAddress: token,
@@ -176,13 +194,15 @@ export class ZapperService extends Service {
    * @param from - the address that is withdrawing
    * @param token - the vault token to be withdrawn
    * @param gasPrice
+   * @param zapProtocol the protocol to use with zapper e.g. Yearn, Pickle
    */
   async zapOutApprovalTransaction(
     from: Address,
     token: Address,
-    gasPrice: Integer
+    gasPrice: Integer,
+    zapProtocol: ZapProtocol = ZapProtocol.YEARN
   ): Promise<ZapApprovalTransactionOutput> {
-    const url = "https://api.zapper.fi/v1/zap-out/yearn/approval-transaction";
+    const url = `https://api.zapper.fi/v1/zap-out/vault/${zapProtocol}/approval-transaction`;
     const params = new URLSearchParams({
       gasPrice,
       ownerAddress: from,
@@ -204,6 +224,7 @@ export class ZapperService extends Service {
    * @param vault - the vault to zap into
    * @param gasPrice
    * @param slippagePercentage - slippage as a decimal
+   * @param zapProtocol the protocol to use with zapper e.g. Yearn, Pickle
    */
   async zapIn(
     from: Address,
@@ -211,7 +232,8 @@ export class ZapperService extends Service {
     amount: Integer,
     vault: Address,
     gasPrice: Integer,
-    slippagePercentage: number
+    slippagePercentage: number,
+    zapProtocol: ZapProtocol = ZapProtocol.YEARN
   ): Promise<ZapOutput> {
     let sellToken = token;
     if (EthAddress === token) {
@@ -219,7 +241,7 @@ export class ZapperService extends Service {
       sellToken = ZeroAddress;
     }
 
-    const url = "https://api.zapper.fi/v1/zap-in/yearn/transaction";
+    const url = `https://api.zapper.fi/v1/zap-in/vault/${zapProtocol}/transaction`;
     const params = new URLSearchParams({
       ownerAddress: from,
       sellTokenAddress: sellToken,
@@ -246,6 +268,7 @@ export class ZapperService extends Service {
    * @param vault - the vault to zap out of
    * @param gasPrice
    * @param slippagePercentage - slippage as a decimal
+   * @param zapProtocol the protocol to use with zapper e.g. Yearn, Pickle
    */
   async zapOut(
     from: Address,
@@ -253,7 +276,8 @@ export class ZapperService extends Service {
     amount: Integer,
     vault: Address,
     gasPrice: Integer,
-    slippagePercentage: number
+    slippagePercentage: number,
+    zapProtocol: ZapProtocol = ZapProtocol.YEARN
   ): Promise<ZapOutput> {
     let toToken = token;
     if (EthAddress === token) {
@@ -261,7 +285,7 @@ export class ZapperService extends Service {
       toToken = ZeroAddress;
     }
 
-    const url = "https://api.zapper.fi/v1/zap-out/yearn/transaction";
+    const url = `https://api.zapper.fi/v1/zap-out/vault/${zapProtocol}/transaction`;
     const params = new URLSearchParams({
       ownerAddress: from,
       toTokenAddress: toToken,
