@@ -1,3 +1,4 @@
+import { defaultAbiCoder } from "@ethersproject/abi";
 import { getAddress } from "@ethersproject/address";
 import { Contract } from "@ethersproject/contracts";
 import { JsonRpcSigner } from "@ethersproject/providers";
@@ -160,11 +161,11 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
       }
       let needsApproving: boolean;
 
-      if (toToken === EthAddress) {
+      if (fromVault === EthAddress) {
         needsApproving = false;
       } else {
         needsApproving = await this.yearn.services.zapper
-          .zapOutApprovalState(from, toToken)
+          .zapOutApprovalState(from, fromVault)
           .then(state => !state.isApproved);
       }
 
@@ -194,7 +195,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
   }
 
   async approve(from: Address, token: Address, amount: Integer, vault: Address, forkId: string): Promise<string> {
-    const TokenAbi = ["function approve(address spender,uint256 amount) bool"];
+    const TokenAbi = ["function approve(address spender, uint256 amount) returns (bool)"];
     const signer = this.ctx.provider.write.getSigner(from);
     const tokenContract = new Contract(token, TokenAbi, signer);
     const encodedInputData = tokenContract.interface.encodeFunctionData("approve", [vault, amount]);
@@ -223,7 +224,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     amount: Integer,
     signer: JsonRpcSigner
   ): Promise<boolean> {
-    const TokenAbi = ["function allowance(address owner,address spender) view returns (uint256)"];
+    const TokenAbi = ["function allowance(address owner, address spender) view returns (uint256)"];
     const contract = new Contract(token, TokenAbi, signer);
     const result = await contract.allowance(from, vault);
     return new BigNumber(result.toString()).lt(new BigNumber(amount));
@@ -255,7 +256,8 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     };
 
     const simulationResponse: SimulationResponse = await this.makeSimulationRequest(body, forkId);
-    const tokensReceived = new BigNumber(simulationResponse.transaction.transaction_info.call_trace.output).toFixed(0);
+    const output = simulationResponse.transaction.transaction_info.call_trace.output;
+    const tokensReceived = defaultAbiCoder.decode(["uint256"], output)[0];
 
     const result: TransactionOutcome = {
       sourceTokenAddress: sellToken,
@@ -398,7 +400,9 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     };
 
     const simulationResponse: SimulationResponse = await this.makeSimulationRequest(body, forkId);
+
     const output = new BigNumber(simulationResponse.transaction.transaction_info.call_trace.output).toFixed(0);
+
     const pricePerShare = await vaultContract.pricePerShare();
     const targetUnderlyingTokensReceived = new BigNumber(amount)
       .times(new BigNumber(pricePerShare.toString()))
