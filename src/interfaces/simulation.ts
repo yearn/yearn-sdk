@@ -6,6 +6,7 @@ import BigNumber from "bignumber.js";
 import { ChainId } from "../chain";
 import { ServiceInterface } from "../common";
 import { EthAddress, PickleJars, WethAddress, ZeroAddress } from "../helpers";
+import { PickleJarPriceProvider } from "../pickle-pricing";
 import { Address, Integer, SdkError, ZapApprovalTransactionOutput, ZapProtocol } from "../types";
 import { TransactionOutcome } from "../types/custom/simulation";
 
@@ -50,6 +51,8 @@ interface SimulationResponse {
  * or how many underlying tokens the user will receive upon withdrawing share tokens.
  */
 export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> {
+  private pickleJarPriceProvider = new PickleJarPriceProvider(PickleJars);
+
   /**
    * Simulate a transaction
    * @param from
@@ -338,22 +341,25 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
 
     const amountReceived = assetTokensReceived.toFixed(0);
 
-    let conversionRate: number;
+    let boughtAssetAmountUsdc: BigNumber;
 
     switch (zapProtocol) {
       case ZapProtocol.YEARN:
-        const oracleToken = sellToken === EthAddress ? WethAddress : sellToken;
-        const zapInAmountUsdc = await this.yearn.services.oracle.getNormalizedValueUsdc(oracleToken, amount);
-
-        const boughtAssetAmountUsdc = await this.yearn.services.oracle.getNormalizedValueUsdc(toVault, amountReceived);
-
-        conversionRate = new BigNumber(boughtAssetAmountUsdc).div(new BigNumber(zapInAmountUsdc)).toNumber();
+        boughtAssetAmountUsdc = await this.yearn.services.oracle
+          .getNormalizedValueUsdc(toVault, amountReceived)
+          .then(price => new BigNumber(price));
         break;
       case ZapProtocol.PICKLE:
-        conversionRate = 1;
-        // TODO - find out how to calculate usd value of pickle jars
+        boughtAssetAmountUsdc = (await this.pickleJarPriceProvider.getPriceUSD(toVault))
+          .dividedBy(new BigNumber(10).pow(18 - 6))
+          .multipliedBy(new BigNumber(amountReceived));
         break;
     }
+
+    const oracleToken = sellToken === EthAddress ? WethAddress : sellToken;
+    const zapInAmountUsdc = new BigNumber(await this.yearn.services.oracle.getNormalizedValueUsdc(oracleToken, amount));
+
+    const conversionRate = boughtAssetAmountUsdc.div(new BigNumber(zapInAmountUsdc)).toNumber();
 
     const result: TransactionOutcome = {
       sourceTokenAddress: sellToken,
