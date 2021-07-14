@@ -147,6 +147,9 @@ export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
 
     const estimatedYearlyYield = assetsData
       .map(datum => {
+        if (holdings.isEqualTo(BigZero)) {
+          return BigZero;
+        }
         const apy = apys[datum.assetAddress]?.recommended || 0;
         return new BigNumber(apy).times(datum.balanceUsdc).div(holdings);
       })
