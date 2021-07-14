@@ -1,10 +1,12 @@
 import { TransactionRequest, TransactionResponse } from "@ethersproject/abstract-provider";
 import { BigNumber } from "@ethersproject/bignumber";
 import { CallOverrides, Contract } from "@ethersproject/contracts";
+import { JsonRpcSigner } from "@ethersproject/providers";
 
 import { ChainId } from "../chain";
 import { ServiceInterface } from "../common";
 import { EthAddress } from "../helpers";
+import { PickleJars } from "../services/partners/pickle";
 import {
   Address,
   Balance,
@@ -16,7 +18,8 @@ import {
   VaultStatic,
   VaultsUserSummary,
   VaultUserMetadata,
-  WithdrawOptions
+  WithdrawOptions,
+  ZapProtocol
 } from "../types";
 import { Position, Vault } from "../types";
 
@@ -186,8 +189,14 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
     options: DepositOptions = {},
     overrides: CallOverrides = {}
   ): Promise<TransactionResponse> {
-    const [vaultRef] = await this.getStatic([vault], overrides);
     const signer = this.ctx.provider.write.getSigner(account);
+    const isZappingIntoPickleJar = PickleJars.includes(vault);
+
+    if (isZappingIntoPickleJar) {
+      return this.zapIn(vault, token, amount, account, signer, options, ZapProtocol.PICKLE);
+    }
+
+    const [vaultRef] = await this.getStatic([vault], overrides);
     if (vaultRef.token === token) {
       if (token === EthAddress) {
         if (vaultRef.typeId === "VAULT_V1") {
@@ -201,32 +210,7 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
         return vaultContract.deposit(amount, overrides);
       }
     } else {
-      if (options.slippage === undefined) {
-        throw new SdkError("zap operations should have a slippage set");
-      }
-
-      const gasPrice = await this.yearn.services.zapper.gas();
-      const gasPriceSpeed = gasPrice[options.gas ?? "fast"];
-      const gasPriceFastGwei = BigNumber.from(gasPriceSpeed).mul(10 ** 9);
-
-      const zap = await this.yearn.services.zapper.zapIn(
-        account,
-        token,
-        amount,
-        vault,
-        gasPriceFastGwei.toString(),
-        options.slippage
-      );
-
-      const transaction: TransactionRequest = {
-        to: zap.to,
-        from: zap.from,
-        gasPrice: BigNumber.from(zap.gasPrice),
-        data: zap.data,
-        value: BigNumber.from(zap.value)
-      };
-
-      return signer.sendTransaction(transaction);
+      return this.zapIn(vault, token, amount, account, signer, options);
     }
   }
 
@@ -279,5 +263,43 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
 
       return signer.sendTransaction(transaction);
     }
+  }
+
+  private async zapIn(
+    vault: Address,
+    token: Address,
+    amount: Integer,
+    account: Address,
+    signer: JsonRpcSigner,
+    options: DepositOptions = {},
+    zapProtocol: ZapProtocol = ZapProtocol.YEARN
+  ): Promise<TransactionResponse> {
+    if (options.slippage === undefined) {
+      throw new SdkError("zap operations should have a slippage set");
+    }
+
+    const gasPrice = await this.yearn.services.zapper.gas();
+    const gasPriceSpeed = gasPrice[options.gas ?? "fast"];
+    const gasPriceFastGwei = BigNumber.from(gasPriceSpeed).mul(10 ** 9);
+
+    const zap = await this.yearn.services.zapper.zapIn(
+      account,
+      token,
+      amount,
+      vault,
+      gasPriceFastGwei.toString(),
+      options.slippage,
+      zapProtocol
+    );
+
+    const transaction: TransactionRequest = {
+      to: zap.to,
+      from: zap.from,
+      gasPrice: BigNumber.from(zap.gasPrice),
+      data: zap.data,
+      value: BigNumber.from(zap.value)
+    };
+
+    return signer.sendTransaction(transaction);
   }
 }

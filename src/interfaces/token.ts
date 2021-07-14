@@ -5,7 +5,8 @@ import BigNumber from "bignumber.js";
 import { ChainId } from "../chain";
 import { ServiceInterface } from "../common";
 import { EthAddress } from "../helpers";
-import { Address, Integer, TypedMap, Usdc, Vault } from "../types";
+import { PickleJars } from "../services/partners/pickle";
+import { Address, Integer, TypedMap, Usdc, Vault, ZapProtocol } from "../types";
 import { Balance, Icon, IconMap, Token } from "../types";
 
 const TokenAbi = ["function approve(address _spender, uint256 _value) public"];
@@ -94,17 +95,18 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
       const gasPrice = await this.yearn.services.zapper.gas();
       const gasPriceFastGwei = new BigNumber(gasPrice.fast).times(new BigNumber(10 ** 9));
 
-      let sellToken = token;
       if (EthAddress === token) {
         // If Ether is being sent, no need for approval
         return true;
       }
-      const zapInApprovalState = await this.yearn.services.zapper.zapInApprovalState(account, sellToken);
+      const zapProtocol = PickleJars.includes(vault.address) ? ZapProtocol.PICKLE : ZapProtocol.YEARN;
+      const zapInApprovalState = await this.yearn.services.zapper.zapInApprovalState(account, token, zapProtocol);
       if (!zapInApprovalState.isApproved) {
         const zapInApprovalParams = await this.yearn.services.zapper.zapInApprovalTransaction(
           account,
-          sellToken,
-          gasPriceFastGwei.toString()
+          token,
+          gasPriceFastGwei.toString(),
+          zapProtocol
         );
         const transaction: TransactionRequest = {
           to: zapInApprovalParams.to,
