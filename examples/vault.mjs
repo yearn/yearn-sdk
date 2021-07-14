@@ -13,6 +13,11 @@ const yearn = new Yearn(1, {
 });
 
 async function main() {
+  const result = await yearn.vaults.summaryOf("0x25B28EE7f335F0396f41f129039F1583345B21b8");
+
+  console.log(result);
+  return;
+
   const vaults = await yearn.vaults.get();
 
   const vaultsTable = new Table();
