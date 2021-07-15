@@ -20,6 +20,7 @@ export interface WithdrawOptions extends ZapOptions {}
 export interface VaultsUserSummary {
   holdings: Usdc;
   earnings: Usdc;
+  grossApy: number;
   estimatedYearlyYield: Integer;
 }
 
