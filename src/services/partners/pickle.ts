@@ -2,7 +2,8 @@ import { getAddress } from "@ethersproject/address";
 import { BigNumber } from "bignumber.js";
 
 import { Service } from "../../common";
-import { Address } from "../../types/common";
+import { usdc } from "../../helpers";
+import { Address, Usdc } from "../../types/common";
 
 const HourInMilliseconds = 1000 * 60 * 60;
 const PickleApiUrl = "https://stkpowy01i.execute-api.us-west-1.amazonaws.com/prod/protocol/pools";
@@ -20,12 +21,12 @@ export class PickleService extends Service {
    * @param jar the address of the jar to fetch
    * @returns the price of the jar token in USD
    */
-  async getPriceUsd(jar: Address): Promise<BigNumber> {
+  async getPriceUsdc(jar: Address): Promise<Usdc> {
     const oneHourAgo = new Date(Date.now() - HourInMilliseconds);
     if (this.lastFetchedDate < oneHourAgo) {
       await this.fetchPickleJarPrices();
     }
-    return this.pickleJarUSDPrices.get(jar) || new BigNumber(0);
+    return usdc(this.pickleJarUSDPrices.get(jar)?.toFixed(0)) || "0";
   }
 
   private async fetchPickleJarPrices() {
