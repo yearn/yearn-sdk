@@ -16,7 +16,7 @@ async function main() {
   const vaults = await yearn.vaults.get();
 
   const vaultsTable = new Table();
-  vaultsTable.push(...vaults.map(vault => [vault.name, vault.address, vault.typeId]));
+  vaultsTable.push(...vaults.map(vault => [vault.metadata.displayName, vault.address, vault.typeId]));
 
   console.log("V1 & V2 vaults:");
   console.log(vaultsTable.toString());
