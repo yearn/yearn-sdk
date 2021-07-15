@@ -48,6 +48,8 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
             throw new SdkError(`Dynamic asset does not exist for ${asset.address}`);
           }
           dynamic.metadata.apy = assetsApy[asset.address];
+          const alias = this.yearn.services.asset.alias(asset.token);
+          dynamic.metadata.displayName = alias ? alias.symbol : asset.name;
           assets.push({ ...asset, ...dynamic });
         }
         return assets;
@@ -159,7 +161,7 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
       adapters.map(async adapter => {
         const tokenAddresses = await adapter.tokens(overrides);
         const tokens = await this.yearn.services.helper.tokens(tokenAddresses, overrides);
-        const icons = this.yearn.services.icons.get(tokenAddresses);
+        const icons = this.yearn.services.asset.icon(tokenAddresses);
         return Promise.all(
           tokens.map(async token => ({
             ...token,

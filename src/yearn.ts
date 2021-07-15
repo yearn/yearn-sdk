@@ -6,8 +6,8 @@ import { IronBankInterface } from "./interfaces/ironbank";
 import { SimulationInterface } from "./interfaces/simulation";
 import { TokenInterface } from "./interfaces/token";
 import { VaultInterface } from "./interfaces/vault";
+import { AssetService } from "./services/assets";
 import { HelperService } from "./services/helper";
-import { IconsService } from "./services/icons";
 import { LensService } from "./services/lens";
 import { OracleService } from "./services/oracle";
 import { PickleService } from "./services/partners/pickle";
@@ -33,7 +33,7 @@ export class Yearn<T extends ChainId> {
     lens: LensService<T>;
     oracle: OracleService<T>;
     zapper: ZapperService;
-    icons: IconsService;
+    asset: AssetService;
     vision: VisionService;
     subgraph: SubgraphService;
 
@@ -74,7 +74,7 @@ export class Yearn<T extends ChainId> {
       lens: new LensService(chainId, this.context),
       oracle: new OracleService(chainId, this.context),
       zapper: new ZapperService(chainId, this.context),
-      icons: new IconsService(chainId, this.context),
+      asset: new AssetService(chainId, this.context),
       vision: new VisionService(chainId, this.context),
       subgraph: new SubgraphService(chainId, this.context),
       pickle: new PickleService(chainId, this.context),
@@ -88,6 +88,6 @@ export class Yearn<T extends ChainId> {
     this.ironBank = new IronBankInterface(this, chainId, this.context);
     this.simulation = new SimulationInterface(this, chainId, this.context);
 
-    this.ready = Promise.all([this.services.icons.ready]);
+    this.ready = Promise.all([this.services.asset.ready]);
   }
 }

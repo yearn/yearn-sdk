@@ -17,6 +17,7 @@ export interface VaultMetadata {
   totalSupply: Integer;
 
   apy?: Apy;
+  displayName: string;
 }
 
 /**
