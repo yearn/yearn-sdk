@@ -279,12 +279,14 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     const output = simulationResponse.transaction.transaction_info.call_trace.output;
 
     const tokensReceived = defaultAbiCoder.decode(["uint256"], output)[0].toString();
+    const targetTokenAmountUsdc = await this.yearn.services.oracle.getNormalizedValueUsdc(toVault, tokensReceived);
 
     const result: TransactionOutcome = {
       sourceTokenAddress: sellToken,
       sourceTokenAmount: amount,
       targetTokenAddress: toVault,
       targetTokenAmount: tokensReceived,
+      targetTokenAmountUsdc: targetTokenAmountUsdc,
       targetUnderlyingTokenAddress: toVault,
       targetUnderlyingTokenAmount: tokensReceived,
       conversionRate: 1,
@@ -342,16 +344,16 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
 
     const amountReceived = assetTokensReceived.toFixed(0);
 
-    let boughtAssetAmountUsdc: BigNumber;
+    let amountReceivedUsdc: BigNumber;
 
     switch (zapProtocol) {
       case ZapProtocol.YEARN:
-        boughtAssetAmountUsdc = await this.yearn.services.oracle
+        amountReceivedUsdc = await this.yearn.services.oracle
           .getNormalizedValueUsdc(toVault, amountReceived)
           .then(price => new BigNumber(price));
         break;
       case ZapProtocol.PICKLE:
-        boughtAssetAmountUsdc = (await this.yearn.services.pickle.getPriceUsd(toVault))
+        amountReceivedUsdc = (await this.yearn.services.pickle.getPriceUsd(toVault))
           .dividedBy(new BigNumber(10).pow(18 - 6))
           .multipliedBy(new BigNumber(amountReceived));
         break;
@@ -360,13 +362,14 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     const oracleToken = sellToken === EthAddress ? WethAddress : sellToken;
     const zapInAmountUsdc = new BigNumber(await this.yearn.services.oracle.getNormalizedValueUsdc(oracleToken, amount));
 
-    const conversionRate = boughtAssetAmountUsdc.div(new BigNumber(zapInAmountUsdc)).toNumber();
+    const conversionRate = amountReceivedUsdc.div(new BigNumber(zapInAmountUsdc)).toNumber();
 
     const result: TransactionOutcome = {
       sourceTokenAddress: sellToken,
       sourceTokenAmount: amount,
       targetTokenAddress: zapInParams.buyTokenAddress,
       targetTokenAmount: amountReceived,
+      targetTokenAmountUsdc: amountReceivedUsdc.toFixed(0),
       targetUnderlyingTokenAddress: underlyingTokenAddress,
       targetUnderlyingTokenAmount: targetUnderlyingTokensReceived,
       conversionRate: conversionRate,
@@ -400,13 +403,15 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
 
     const simulationResponse: SimulationResponse = await this.makeSimulationRequest(body);
     const output = new BigNumber(simulationResponse.transaction.transaction_info.call_trace.calls[0].output).toFixed(0);
+    const targetTokenAmountUsdc = await this.yearn.services.oracle.getNormalizedValueUsdc(toToken, output);
 
     let result: TransactionOutcome = {
       sourceTokenAddress: fromVault,
       sourceTokenAmount: amount,
       targetTokenAddress: toToken,
       targetTokenAmount: output,
-      targetUnderlyingTokenAddress: toToken,
+      targetTokenAmountUsdc: targetTokenAmountUsdc,
+      targetUnderlyingTokenAddress: targetTokenAmountUsdc,
       targetUnderlyingTokenAmount: output,
       conversionRate: 1,
       slippage: 0
@@ -464,6 +469,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
       sourceTokenAmount: amount,
       targetTokenAddress: toToken,
       targetTokenAmount: output,
+      targetTokenAmountUsdc: zapOutAmountUsdc,
       targetUnderlyingTokenAddress: underlyingTokenAddress,
       targetUnderlyingTokenAmount: targetUnderlyingTokensReceived,
       conversionRate: conversionRate,
