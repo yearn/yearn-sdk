@@ -45,6 +45,7 @@ export interface EarningsDayData {
 export interface EarningsUserData {
   earnings: Usdc;
   holdings: Usdc;
+  grossApy: number;
   estimatedYearlyYield: Usdc;
   earningsAssetData: EarningsAssetData[];
 }

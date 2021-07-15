@@ -107,8 +107,8 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
    * @returns
    */
   async summaryOf(address: Address): Promise<VaultsUserSummary> {
-    const { earnings, holdings, estimatedYearlyYield } = await this.yearn.earnings.accountAssetsData(address);
-    return { earnings, holdings, estimatedYearlyYield };
+    const { earnings, holdings, grossApy, estimatedYearlyYield } = await this.yearn.earnings.accountAssetsData(address);
+    return { earnings, holdings, grossApy, estimatedYearlyYield };
   }
 
   /**
