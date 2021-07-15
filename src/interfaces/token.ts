@@ -68,7 +68,12 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
   async supported(): Promise<Token[]> {
     if (this.chainId === 1 || this.chainId === 1337) {
       // only ETH Main is supported
-      return await this.yearn.services.zapper.supportedTokens();
+      const tokens = await this.yearn.services.zapper.supportedTokens();
+      const icons = this.yearn.services.asset.icon(tokens.map(token => token.address));
+      return tokens.map(token => {
+        const icon = icons[token.address];
+        return icon ? { ...token, icon } : token;
+      });
     }
     return [];
   }
