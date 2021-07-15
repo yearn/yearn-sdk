@@ -145,12 +145,14 @@ export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
     const totalEarnings = assetsData.map(datum => new BigNumber(datum.earned)).reduce((sum, value) => sum.plus(value));
     const holdings = assetsData.map(datum => new BigNumber(datum.balanceUsdc)).reduce((sum, value) => sum.plus(value));
 
-    const grossApy = assetsData
-      .map(datum => {
-        const apy = apys[datum.assetAddress]?.recommended || 0;
-        return new BigNumber(apy).times(datum.balanceUsdc).div(holdings);
-      })
-      .reduce((sum, value) => sum.plus(value));
+    const grossApy = holdings.isEqualTo(BigZero)
+      ? BigZero
+      : assetsData
+          .map(datum => {
+            const apy = apys[datum.assetAddress]?.recommended || 0;
+            return new BigNumber(apy).times(datum.balanceUsdc).div(holdings);
+          })
+          .reduce((sum, value) => sum.plus(value));
 
     const estimatedYearlyYield = grossApy.multipliedBy(holdings);
 
