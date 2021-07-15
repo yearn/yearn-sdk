@@ -10,7 +10,7 @@ import { EthAddress, WethAddress, ZeroAddress } from "../helpers";
 import { PickleJars } from "../services/partners/pickle";
 import { Address, Integer, SdkError, ZapApprovalTransactionOutput, ZapProtocol } from "../types";
 import { TransactionOutcome } from "../types/custom/simulation";
-import { PickleJarContract, VaultContract, YearnVaultContract } from "../vaultContract";
+import { PickleJarContract, VaultContract, YearnVaultContract } from "../vault";
 
 const baseUrl = "https://simulate.yearn.network";
 const latestBlockKey = -1;
