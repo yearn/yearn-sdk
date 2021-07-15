@@ -91,7 +91,7 @@ export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
     const account = response.data.account;
 
     if (!account) {
-      return { earnings: "0", holdings: "0", earningsAssetData: [], estimatedYearlyYield: "0" };
+      return { earnings: "0", holdings: "0", earningsAssetData: [], grossApy: 0, estimatedYearlyYield: "0" };
     }
 
     const assetAddresses = account.vaultPositions.map(position => getAddress(position.vault.id));
@@ -145,12 +145,14 @@ export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
     const totalEarnings = assetsData.map(datum => new BigNumber(datum.earned)).reduce((sum, value) => sum.plus(value));
     const holdings = assetsData.map(datum => new BigNumber(datum.balanceUsdc)).reduce((sum, value) => sum.plus(value));
 
-    const estimatedYearlyYield = assetsData
+    const grossApy = assetsData
       .map(datum => {
         const apy = apys[datum.assetAddress]?.recommended || 0;
         return new BigNumber(apy).times(datum.balanceUsdc).div(holdings);
       })
       .reduce((sum, value) => sum.plus(value));
+
+    const estimatedYearlyYield = grossApy.multipliedBy(holdings);
 
     const earningsAssetData = assetsData.map(datum => {
       return {
@@ -162,6 +164,7 @@ export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
     return {
       earnings: BigNumber.max(totalEarnings, 0).toFixed(0),
       holdings: BigNumber.max(holdings, 0).toFixed(0),
+      grossApy: grossApy.toNumber(),
       estimatedYearlyYield: BigNumber.max(estimatedYearlyYield, 0).toFixed(0),
       earningsAssetData: earningsAssetData
     };
