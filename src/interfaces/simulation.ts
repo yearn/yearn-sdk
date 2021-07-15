@@ -411,7 +411,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
       targetTokenAddress: toToken,
       targetTokenAmount: output,
       targetTokenAmountUsdc: targetTokenAmountUsdc,
-      targetUnderlyingTokenAddress: targetTokenAmountUsdc,
+      targetUnderlyingTokenAddress: toToken,
       targetUnderlyingTokenAmount: output,
       conversionRate: 1,
       slippage: 0
