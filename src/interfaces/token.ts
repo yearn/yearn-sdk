@@ -169,6 +169,6 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
   icon<T extends Address>(addresses: T[]): IconMap<T>;
 
   icon<T extends Address>(address: T | T[]): IconMap<T> | Icon {
-    return this.yearn.services.icons.get(address);
+    return this.yearn.services.asset.icon(address);
   }
 }

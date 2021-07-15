@@ -122,7 +122,7 @@ export class IronBankInterface<T extends ChainId> extends ServiceInterface<T> {
   async tokens(overrides?: CallOverrides): Promise<Token[]> {
     const tokenAddresses = await this.yearn.services.lens.adapters.ironBank.tokens(overrides);
     const tokens = await this.yearn.services.helper.tokens(tokenAddresses, overrides);
-    const icons = this.yearn.services.icons.get(tokenAddresses);
+    const icons = this.yearn.services.asset.icon(tokenAddresses);
     return Promise.all(
       tokens.map(async token => ({
         ...token,
