@@ -10,18 +10,11 @@ import { EthAddress, WethAddress, ZeroAddress } from "../helpers";
 import { PickleJars } from "../services/partners/pickle";
 import { Address, Integer, SdkError, ZapApprovalTransactionOutput, ZapProtocol } from "../types";
 import { TransactionOutcome } from "../types/custom/simulation";
+import { PickleJarContract, VaultContract, YearnVaultContract } from "../vaultContract";
 
 const baseUrl = "https://simulate.yearn.network";
 const latestBlockKey = -1;
 const gasLimit = 8000000;
-const VaultAbi = [
-  "function deposit(uint256 amount) public",
-  "function withdraw(uint256 amount) public",
-  "function token() view returns (address)",
-  "function pricePerShare() view returns (uint256)"
-];
-
-const PickleJarAbi = ["function token() view returns (address)", "function getRatio() public view returns (uint256)"];
 
 interface SimulationCallTrace {
   output: Integer;
@@ -86,21 +79,16 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
   ): Promise<TransactionOutcome> {
     const signer = this.ctx.provider.write.getSigner(from);
     const zapProtocol = PickleJars.includes(toVault) ? ZapProtocol.PICKLE : ZapProtocol.YEARN;
-    let abi: string[];
-    switch (zapProtocol) {
-      case ZapProtocol.YEARN:
-        abi = VaultAbi;
-        break;
-      case ZapProtocol.PICKLE:
-        abi = PickleJarAbi;
-        break;
-    }
-    const vaultContract = new Contract(toVault, abi, signer);
+    let vaultContract =
+      zapProtocol === ZapProtocol.PICKLE
+        ? new PickleJarContract(toVault, signer)
+        : new YearnVaultContract(toVault, signer);
+
     const underlyingToken = await vaultContract.token();
     const isZapping = underlyingToken !== sellToken;
 
     if (isZapping) {
-      if (slippage === undefined) {
+      if (!slippage) {
         throw new SdkError("slippage needs to be specified for a zap");
       }
 
@@ -171,12 +159,12 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     slippage?: number
   ): Promise<TransactionOutcome> {
     const signer = this.ctx.provider.write.getSigner(from);
-    const vaultContract = new Contract(fromVault, VaultAbi, signer);
+    const vaultContract = new YearnVaultContract(fromVault, signer);
     const underlyingToken = await vaultContract.token();
     const isZapping = underlyingToken !== getAddress(toToken);
 
     if (isZapping) {
-      if (slippage === undefined) {
+      if (!slippage) {
         throw new SdkError("slippage needs to be specified for a zap");
       }
       let needsApproving: boolean;
@@ -255,11 +243,11 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     sellToken: Address,
     amount: Integer,
     toVault: Address,
-    vaultContract: Contract,
+    vaultContract: VaultContract,
     root?: string,
     forkId?: string
   ): Promise<TransactionOutcome> {
-    const encodedInputData = vaultContract.interface.encodeFunctionData("deposit", [amount]);
+    const encodedInputData = vaultContract.encodeDeposit(amount);
 
     const body = {
       network_id: this.chainId.toString(),
@@ -279,12 +267,14 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     const output = simulationResponse.transaction.transaction_info.call_trace.output;
 
     const tokensReceived = defaultAbiCoder.decode(["uint256"], output)[0].toString();
+    const targetTokenAmountUsdc = await this.yearn.services.oracle.getNormalizedValueUsdc(toVault, tokensReceived);
 
     const result: TransactionOutcome = {
       sourceTokenAddress: sellToken,
       sourceTokenAmount: amount,
       targetTokenAddress: toVault,
       targetTokenAmount: tokensReceived,
+      targetTokenAmountUsdc: targetTokenAmountUsdc,
       targetUnderlyingTokenAddress: toVault,
       targetUnderlyingTokenAmount: tokensReceived,
       conversionRate: 1,
@@ -300,7 +290,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     underlyingTokenAddress: Address,
     amount: Integer,
     toVault: Address,
-    vaultContract: Contract,
+    vaultContract: VaultContract,
     slippage: number,
     zapProtocol: ZapProtocol,
     root?: string,
@@ -332,27 +322,28 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
       root: root
     };
 
+    const decimals = await vaultContract.decimals();
     const simulationResponse: SimulationResponse = await this.makeSimulationRequest(body, forkId);
     const assetTokensReceived = new BigNumber(simulationResponse.transaction.transaction_info.call_trace.output);
-    const pricePerShare = await this.getPricePerShare(vaultContract, zapProtocol);
+    const pricePerShare = await vaultContract.pricePerShare();
     const targetUnderlyingTokensReceived = assetTokensReceived
-      .div(new BigNumber(10).pow(18))
+      .div(new BigNumber(10).pow(decimals))
       .multipliedBy(pricePerShare)
       .toFixed(0);
 
     const amountReceived = assetTokensReceived.toFixed(0);
 
-    let boughtAssetAmountUsdc: BigNumber;
+    let amountReceivedUsdc: BigNumber;
 
     switch (zapProtocol) {
       case ZapProtocol.YEARN:
-        boughtAssetAmountUsdc = await this.yearn.services.oracle
+        amountReceivedUsdc = await this.yearn.services.oracle
           .getNormalizedValueUsdc(toVault, amountReceived)
           .then(price => new BigNumber(price));
         break;
       case ZapProtocol.PICKLE:
-        boughtAssetAmountUsdc = (await this.yearn.services.pickle.getPriceUsd(toVault))
-          .dividedBy(new BigNumber(10).pow(18 - 6))
+        amountReceivedUsdc = (await this.yearn.services.pickle.getPriceUsdc(toVault).then(usdc => new BigNumber(usdc)))
+          .dividedBy(new BigNumber(10).pow(decimals))
           .multipliedBy(new BigNumber(amountReceived));
         break;
     }
@@ -360,13 +351,14 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     const oracleToken = sellToken === EthAddress ? WethAddress : sellToken;
     const zapInAmountUsdc = new BigNumber(await this.yearn.services.oracle.getNormalizedValueUsdc(oracleToken, amount));
 
-    const conversionRate = boughtAssetAmountUsdc.div(new BigNumber(zapInAmountUsdc)).toNumber();
+    const conversionRate = amountReceivedUsdc.div(new BigNumber(zapInAmountUsdc)).toNumber();
 
     const result: TransactionOutcome = {
       sourceTokenAddress: sellToken,
       sourceTokenAmount: amount,
       targetTokenAddress: zapInParams.buyTokenAddress,
       targetTokenAmount: amountReceived,
+      targetTokenAmountUsdc: amountReceivedUsdc.toFixed(0),
       targetUnderlyingTokenAddress: underlyingTokenAddress,
       targetUnderlyingTokenAmount: targetUnderlyingTokensReceived,
       conversionRate: conversionRate,
@@ -381,9 +373,9 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     toToken: Address,
     amount: Integer,
     fromVault: Address,
-    vaultContract: Contract
+    vaultContract: VaultContract
   ): Promise<TransactionOutcome> {
-    const encodedInputData = vaultContract.interface.encodeFunctionData("withdraw", [amount]);
+    const encodedInputData = vaultContract.encodeWithdraw(amount);
 
     const body = {
       network_id: this.chainId.toString(),
@@ -400,12 +392,14 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
 
     const simulationResponse: SimulationResponse = await this.makeSimulationRequest(body);
     const output = new BigNumber(simulationResponse.transaction.transaction_info.call_trace.calls[0].output).toFixed(0);
+    const targetTokenAmountUsdc = await this.yearn.services.oracle.getNormalizedValueUsdc(toToken, output);
 
     let result: TransactionOutcome = {
       sourceTokenAddress: fromVault,
       sourceTokenAmount: amount,
       targetTokenAddress: toToken,
       targetTokenAmount: output,
+      targetTokenAmountUsdc: targetTokenAmountUsdc,
       targetUnderlyingTokenAddress: toToken,
       targetUnderlyingTokenAmount: output,
       conversionRate: 1,
@@ -421,7 +415,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     underlyingTokenAddress: Address,
     amount: Integer,
     fromVault: Address,
-    vaultContract: Contract,
+    vaultContract: VaultContract,
     slippage: number,
     root?: string,
     forkId?: string
@@ -448,9 +442,10 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     const output = new BigNumber(simulationResponse.transaction.transaction_info.call_trace.output).toFixed(0);
 
     const pricePerShare = await vaultContract.pricePerShare();
+    const decimals = await vaultContract.decimals();
     const targetUnderlyingTokensReceived = new BigNumber(amount)
       .times(new BigNumber(pricePerShare.toString()))
-      .div(new BigNumber(10).pow(18))
+      .div(new BigNumber(10).pow(decimals))
       .toFixed(0);
 
     const oracleToken = toToken === EthAddress ? WethAddress : toToken;
@@ -464,6 +459,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
       sourceTokenAmount: amount,
       targetTokenAddress: toToken,
       targetTokenAmount: output,
+      targetTokenAmountUsdc: zapOutAmountUsdc,
       targetUnderlyingTokenAddress: underlyingTokenAddress,
       targetUnderlyingTokenAmount: targetUnderlyingTokensReceived,
       conversionRate: conversionRate,
@@ -492,17 +488,6 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
 
     const response: SimulationResponse = await this.makeSimulationRequest(body, forkId);
     return response;
-  }
-
-  private async getPricePerShare(vaultContract: Contract, zapProtocol: ZapProtocol): Promise<BigNumber> {
-    switch (zapProtocol) {
-      case ZapProtocol.YEARN:
-        const pps = await vaultContract.pricePerShare();
-        return new BigNumber(pps.toString());
-      case ZapProtocol.PICKLE:
-        const ratio = await vaultContract.getRatio();
-        return new BigNumber(ratio.toString());
-    }
   }
 
   /**
@@ -535,7 +520,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
   }
 
   private async makeSimulationRequest(body: any, forkId?: string): Promise<any> {
-    const constructedPath = forkId === undefined ? `${baseUrl}/simulate` : `${baseUrl}/fork/${forkId}/simulate`;
+    const constructedPath = forkId ? `${baseUrl}/fork/${forkId}/simulate` : `${baseUrl}/simulate`;
     return await fetch(constructedPath, {
       method: "POST",
       headers: {
