@@ -16,26 +16,28 @@ const baseUrl = "https://simulate.yearn.network";
 const latestBlockKey = -1;
 const gasLimit = 8000000;
 
+interface SimulationRequestBody {
+  from: Address;
+  input: string;
+  to: Address;
+  value?: Integer;
+  root?: string;
+}
+
 interface SimulationCallTrace {
   output: Integer;
   calls: SimulationCallTrace[];
 }
 
-interface SimulationTransactionInfo {
-  call_trace: SimulationCallTrace;
-}
-
-interface SimulationTransaction {
-  transaction_info: SimulationTransactionInfo;
-}
-
-interface Simulation {
-  id: string;
-}
-
 interface SimulationResponse {
-  transaction: SimulationTransaction;
-  simulation: Simulation;
+  transaction: {
+    transaction_info: {
+      call_trace: SimulationCallTrace;
+    };
+  };
+  simulation: {
+    id: string;
+  };
 }
 
 /**
@@ -50,21 +52,15 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
    * @param from
    * @param to
    * @param input the encoded input data as per the ethereum abi specification
+   * @param value: the ether value of the transaction
    * @returns data about the simluated transaction
    */
-  async simulateRaw(from: Address, to: Address, input: String): Promise<any> {
+  async simulateRaw(from: Address, to: Address, input: string, value: Integer): Promise<any> {
     const body = {
-      network_id: this.chainId,
-      block_number: latestBlockKey,
-      transaction_index: 0,
       from: from,
       input: input,
       to: to,
-      gas: gasLimit,
-      simulation_type: "quick",
-      gas_price: "0",
-      value: "0",
-      save: true
+      value: value
     };
 
     return await this.makeSimulationRequest(body);
@@ -209,15 +205,9 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     const encodedInputData = tokenContract.interface.encodeFunctionData("approve", [vault, amount]);
 
     const body = {
-      network_id: this.chainId.toString(),
-      block_number: latestBlockKey,
       from: from,
       input: encodedInputData,
       to: token,
-      gas: gasLimit,
-      simulation_type: "quick",
-      gas_price: "0",
-      value: "0",
       save: true
     };
 
@@ -250,16 +240,9 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     const encodedInputData = vaultContract.encodeDeposit(amount);
 
     const body = {
-      network_id: this.chainId.toString(),
-      block_number: latestBlockKey,
       from: from,
       input: encodedInputData,
       to: toVault,
-      gas: gasLimit,
-      simulation_type: "quick",
-      gas_price: "0",
-      value: "0",
-      save: true,
       root: root
     };
 
@@ -309,16 +292,10 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     const value = new BigNumber(zapInParams.value).toFixed(0);
 
     const body = {
-      network_id: this.chainId.toString(),
-      block_number: latestBlockKey,
       from: from,
       input: zapInParams.data,
       to: zapInParams.to,
-      gas: gasLimit,
-      simulation_type: "quick",
-      gas_price: "0",
       value: value,
-      save: true,
       root: root
     };
 
@@ -378,16 +355,9 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     const encodedInputData = vaultContract.encodeWithdraw(amount);
 
     const body = {
-      network_id: this.chainId.toString(),
-      block_number: latestBlockKey,
       from: from,
       input: encodedInputData,
-      to: fromVault,
-      gas: gasLimit,
-      simulation_type: "quick",
-      gas_price: "0",
-      value: "0",
-      save: true
+      to: fromVault
     };
 
     const simulationResponse: SimulationResponse = await this.makeSimulationRequest(body);
@@ -423,17 +393,11 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     const zapToken = toToken === EthAddress ? ZeroAddress : toToken;
     const zapOutParams = await this.yearn.services.zapper.zapOut(from, zapToken, amount, fromVault, "0", slippage);
 
-    const body = {
-      network_id: this.chainId.toString(),
-      block_number: latestBlockKey,
+    const body: SimulationRequestBody = {
       from: from,
       input: zapOutParams.data,
       to: zapOutParams.to,
-      gas: gasLimit,
-      simulation_type: "quick",
-      gas_price: "0",
       value: zapOutParams.value,
-      save: true,
       root: root
     };
 
@@ -474,20 +438,12 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     forkId?: string
   ): Promise<SimulationResponse> {
     const body = {
-      network_id: this.chainId.toString(),
-      block_number: latestBlockKey,
       from: zapApprovalTransaction.from,
       input: zapApprovalTransaction.data,
-      to: zapApprovalTransaction.to,
-      gas: gasLimit,
-      simulation_type: "quick",
-      gas_price: "0",
-      value: "0",
-      save: true
+      to: zapApprovalTransaction.to
     };
 
-    const response: SimulationResponse = await this.makeSimulationRequest(body, forkId);
-    return response;
+    return await this.makeSimulationRequest(body, forkId);
   }
 
   /**
@@ -519,8 +475,20 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     return response.simulation_fork.id;
   }
 
-  private async makeSimulationRequest(body: any, forkId?: string): Promise<any> {
+  private async makeSimulationRequest(simulationRequestBody: SimulationRequestBody, forkId?: string): Promise<any> {
     const constructedPath = forkId ? `${baseUrl}/fork/${forkId}/simulate` : `${baseUrl}/simulate`;
+
+    const body = {
+      ...simulationRequestBody,
+      network_id: this.chainId.toString(),
+      block_number: latestBlockKey,
+      gas: gasLimit,
+      simulation_type: "quick",
+      gas_price: "0",
+      save: true,
+      value: simulationRequestBody.value || "0"
+    };
+
     return await fetch(constructedPath, {
       method: "POST",
       headers: {
