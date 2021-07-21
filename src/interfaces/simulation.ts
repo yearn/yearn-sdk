@@ -34,6 +34,7 @@ interface SimulationResponse {
     transaction_info: {
       call_trace: SimulationCallTrace;
     };
+    error_message?: string;
   };
   simulation: {
     id: string;
@@ -475,7 +476,10 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     return response.simulation_fork.id;
   }
 
-  private async makeSimulationRequest(simulationRequestBody: SimulationRequestBody, forkId?: string): Promise<any> {
+  private async makeSimulationRequest(
+    simulationRequestBody: SimulationRequestBody,
+    forkId?: string
+  ): Promise<SimulationResponse> {
     const constructedPath = forkId ? `${baseUrl}/fork/${forkId}/simulate` : `${baseUrl}/simulate`;
 
     const body = {
@@ -489,13 +493,18 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
       value: simulationRequestBody.value || "0"
     };
 
-    return await fetch(constructedPath, {
+    const simulationResponse: SimulationResponse = await fetch(constructedPath, {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
       },
       body: JSON.stringify(body)
     }).then(res => res.json());
+
+    if (simulationResponse.transaction.error_message) {
+      throw new SdkError(`Simulation Error - ${simulationResponse.transaction.error_message}`);
+    }
+    return simulationResponse;
   }
 
   private async deleteFork(forkId: string): Promise<any> {
