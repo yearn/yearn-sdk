@@ -23,11 +23,6 @@ interface SimulationRequestBody {
   root?: string;
 }
 
-interface SimulationCallTrace {
-  output: Integer;
-  calls: SimulationCallTrace[];
-}
-
 interface SimulationLog {
   raw: {
     address: Address;
@@ -36,23 +31,22 @@ interface SimulationLog {
   };
 }
 
-interface SimulationTransactionInfo {
-  call_trace: SimulationCallTrace;
-  logs: SimulationLog[];
-}
-
-interface SimulationTransaction {
-  transaction_info: SimulationTransactionInfo;
-  error_message?: string;
-}
-
-interface Simulation {
-  id: string;
+interface SimulationCallTrace {
+  output: Integer;
+  calls: SimulationCallTrace[];
 }
 
 interface SimulationResponse {
-  transaction: SimulationTransaction;
-  simulation: Simulation;
+  transaction: {
+    transaction_info: {
+      call_trace: SimulationCallTrace;
+      logs: SimulationLog[];
+    };
+    error_message?: string;
+  };
+  simulation: {
+    id: string;
+  };
 }
 
 /**
