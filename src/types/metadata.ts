@@ -18,6 +18,8 @@ export interface VaultMetadata {
 
   apy?: Apy;
   displayName: string;
+  displayIcon: string;
+  defaultDisplayToken: Address;
 }
 
 /**

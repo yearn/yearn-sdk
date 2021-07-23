@@ -5,7 +5,7 @@ import { JsonRpcSigner } from "@ethersproject/providers";
 
 import { ChainId } from "../chain";
 import { ServiceInterface } from "../common";
-import { EthAddress } from "../helpers";
+import { EthAddress, WethAddress } from "../helpers";
 import { PickleJars } from "../services/partners/pickle";
 import {
   Address,
@@ -35,26 +35,18 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
    * @returns
    */
   async get(addresses?: Address[], overrides?: CallOverrides): Promise<Vault[]> {
-    const adapters = Object.values(this.yearn.services.lens.adapters.vaults);
-    return await Promise.all(
-      adapters.map(async adapter => {
-        const assetsStatic = await adapter.assetsStatic(addresses, overrides);
-        const assetsDynamic = await adapter.assetsDynamic(addresses, overrides);
-        const assetsApy = await this.yearn.services.vision.apy(addresses);
-        const assets = new Array<Vault>();
-        for (const asset of assetsStatic) {
-          const dynamic = assetsDynamic.find(({ address }) => asset.address === address);
-          if (!dynamic) {
-            throw new SdkError(`Dynamic asset does not exist for ${asset.address}`);
-          }
-          dynamic.metadata.apy = assetsApy[asset.address];
-          const alias = this.yearn.services.asset.alias(asset.token);
-          dynamic.metadata.displayName = alias ? alias.symbol : asset.name;
-          assets.push({ ...asset, ...dynamic });
-        }
-        return assets;
-      })
-    ).then(arr => arr.flat());
+    const assetsStatic = await this.getStatic(addresses, overrides);
+    const assetsDynamic = await this.getDynamic(addresses, overrides);
+    const assets = new Array<Vault>();
+    for (const asset of assetsStatic) {
+      const dynamic = assetsDynamic.find(({ address }) => asset.address === address);
+      if (!dynamic) {
+        throw new SdkError(`Dynamic asset does not exist for ${asset.address}`);
+      }
+      dynamic.metadata.displayName = dynamic.metadata.displayName || asset.name;
+      assets.push({ ...asset, ...dynamic });
+    }
+    return assets;
   }
 
   /**
@@ -82,7 +74,24 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
     const adapters = Object.values(this.yearn.services.lens.adapters.vaults);
     return await Promise.all(
       adapters.map(async adapter => {
-        return await adapter.assetsDynamic(addresses, overrides);
+        const data = await adapter.assetsDynamic(addresses, overrides);
+        const assetsApy = await this.yearn.services.vision.apy(data.map(dynamic => dynamic.address));
+        return data.map(dynamic => {
+          dynamic.metadata.apy = assetsApy[dynamic.address];
+          if (dynamic.tokenId === WethAddress) {
+            const icon = this.yearn.services.asset.icon(EthAddress) ?? "";
+            dynamic.metadata.displayIcon = icon;
+            dynamic.metadata.displayName = "ETH";
+            dynamic.metadata.defaultDisplayToken = EthAddress;
+          } else {
+            const icon = this.yearn.services.asset.icon(dynamic.tokenId) ?? "";
+            dynamic.metadata.displayIcon = icon;
+            const alias = this.yearn.services.asset.alias(dynamic.tokenId);
+            dynamic.metadata.displayName = alias ? alias.symbol : "";
+            dynamic.metadata.defaultDisplayToken = dynamic.tokenId;
+          }
+          return dynamic;
+        });
       })
     ).then(arr => arr.flat());
   }
