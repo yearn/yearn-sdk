@@ -24,7 +24,7 @@ export interface ZapApprovalStateOutput {
 }
 
 export interface ZapApprovalTransactionOutput {
-  data: String;
+  data: string;
   to: Address;
   from: Address;
   gasPrice: Integer;
