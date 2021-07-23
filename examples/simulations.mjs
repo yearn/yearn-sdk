@@ -13,7 +13,7 @@ const yearn = new Yearn(1, {
 
 async function main() {
   const usr1 = "0x7A1057E6e9093DA9C1D4C1D049609B6889fC4c67";
-  const usr2 = "0x4f76ff660dc5e37b098de28e6ec32978e4b5beb6";
+  const usr2 = "0x4F76fF660dc5e37b098De28E6ec32978E4b5bEb6";
   const yfiVault = "0xE14d13d8B3b85aF791b2AADD661cDBd5E6097Db1";
   const yfiToken = "0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e";
 
