@@ -1,4 +1,3 @@
-import { defaultAbiCoder } from "@ethersproject/abi";
 import { getAddress } from "@ethersproject/address";
 import { Contract } from "@ethersproject/contracts";
 import { JsonRpcSigner } from "@ethersproject/providers";
@@ -29,16 +28,31 @@ interface SimulationCallTrace {
   calls: SimulationCallTrace[];
 }
 
+interface SimulationLog {
+  raw: {
+    address: Address;
+    topics: string[];
+    data: string;
+  };
+}
+
+interface SimulationTransactionInfo {
+  call_trace: SimulationCallTrace;
+  logs: SimulationLog[];
+}
+
+interface SimulationTransaction {
+  transaction_info: SimulationTransactionInfo;
+  error_message?: string;
+}
+
+interface Simulation {
+  id: string;
+}
+
 interface SimulationResponse {
-  transaction: {
-    transaction_info: {
-      call_trace: SimulationCallTrace;
-    };
-    error_message?: string;
-  };
-  simulation: {
-    id: string;
-  };
+  transaction: SimulationTransaction;
+  simulation: Simulation;
 }
 
 /**
@@ -247,10 +261,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
       root: root
     };
 
-    const simulationResponse: SimulationResponse = await this.makeSimulationRequest(body, forkId);
-    const output = simulationResponse.transaction.transaction_info.call_trace.output;
-
-    const tokensReceived = defaultAbiCoder.decode(["uint256"], output)[0].toString();
+    const tokensReceived = await this.simulateVaultInteraction(body, toVault, from, forkId);
     const targetTokenAmountUsdc = await this.yearn.services.oracle.getNormalizedValueUsdc(toVault, tokensReceived);
 
     const result: TransactionOutcome = {
@@ -301,28 +312,25 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     };
 
     const decimals = await vaultContract.decimals();
-    const simulationResponse: SimulationResponse = await this.makeSimulationRequest(body, forkId);
-    const assetTokensReceived = new BigNumber(simulationResponse.transaction.transaction_info.call_trace.output);
+    const tokensReceived = await this.simulateVaultInteraction(body, toVault, from, forkId);
     const pricePerShare = await vaultContract.pricePerShare();
-    const targetUnderlyingTokensReceived = assetTokensReceived
+    const targetUnderlyingTokensReceived = new BigNumber(tokensReceived)
       .div(new BigNumber(10).pow(decimals))
       .multipliedBy(pricePerShare)
       .toFixed(0);
-
-    const amountReceived = assetTokensReceived.toFixed(0);
 
     let amountReceivedUsdc: BigNumber;
 
     switch (zapProtocol) {
       case ZapProtocol.YEARN:
         amountReceivedUsdc = await this.yearn.services.oracle
-          .getNormalizedValueUsdc(toVault, amountReceived)
+          .getNormalizedValueUsdc(toVault, tokensReceived)
           .then(price => new BigNumber(price));
         break;
       case ZapProtocol.PICKLE:
         amountReceivedUsdc = (await this.yearn.services.pickle.getPriceUsdc(toVault).then(usdc => new BigNumber(usdc)))
           .dividedBy(new BigNumber(10).pow(decimals))
-          .multipliedBy(new BigNumber(amountReceived));
+          .multipliedBy(new BigNumber(tokensReceived));
         break;
     }
 
@@ -335,7 +343,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
       sourceTokenAddress: sellToken,
       sourceTokenAmount: amount,
       targetTokenAddress: zapInParams.buyTokenAddress,
-      targetTokenAmount: amountReceived,
+      targetTokenAmount: tokensReceived,
       targetTokenAmountUsdc: amountReceivedUsdc.toFixed(0),
       targetUnderlyingTokenAddress: underlyingTokenAddress,
       targetUnderlyingTokenAmount: targetUnderlyingTokensReceived,
@@ -361,18 +369,17 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
       to: fromVault
     };
 
-    const simulationResponse: SimulationResponse = await this.makeSimulationRequest(body);
-    const output = new BigNumber(simulationResponse.transaction.transaction_info.call_trace.calls[0].output).toFixed(0);
-    const targetTokenAmountUsdc = await this.yearn.services.oracle.getNormalizedValueUsdc(toToken, output);
+    const tokensReceived = await this.simulateVaultInteraction(body, toToken, from);
+    const targetTokenAmountUsdc = await this.yearn.services.oracle.getNormalizedValueUsdc(toToken, tokensReceived);
 
     let result: TransactionOutcome = {
       sourceTokenAddress: fromVault,
       sourceTokenAmount: amount,
       targetTokenAddress: toToken,
-      targetTokenAmount: output,
+      targetTokenAmount: tokensReceived,
       targetTokenAmountUsdc: targetTokenAmountUsdc,
       targetUnderlyingTokenAddress: toToken,
-      targetUnderlyingTokenAmount: output,
+      targetUnderlyingTokenAmount: tokensReceived,
       conversionRate: 1,
       slippage: 0
     };
@@ -402,9 +409,14 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
       root: root
     };
 
-    const simulationResponse: SimulationResponse = await this.makeSimulationRequest(body, forkId);
-
-    const output = new BigNumber(simulationResponse.transaction.transaction_info.call_trace.output).toFixed(0);
+    const tokensReceived = await (async () => {
+      if (zapToken === ZeroAddress) {
+        let response: SimulationResponse = await this.makeSimulationRequest(body, forkId);
+        return new BigNumber(response.transaction.transaction_info.call_trace.output).toFixed(0);
+      } else {
+        return await this.simulateVaultInteraction(body, toToken, from, forkId);
+      }
+    })();
 
     const pricePerShare = await vaultContract.pricePerShare();
     const decimals = await vaultContract.decimals();
@@ -414,7 +426,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
       .toFixed(0);
 
     const oracleToken = toToken === EthAddress ? WethAddress : toToken;
-    const zapOutAmountUsdc = await this.yearn.services.oracle.getNormalizedValueUsdc(oracleToken, output);
+    const zapOutAmountUsdc = await this.yearn.services.oracle.getNormalizedValueUsdc(oracleToken, tokensReceived);
     const soldAssetAmountUsdc = await this.yearn.services.oracle.getNormalizedValueUsdc(fromVault, amount);
 
     const conversionRate = new BigNumber(zapOutAmountUsdc).div(new BigNumber(soldAssetAmountUsdc)).toNumber();
@@ -423,7 +435,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
       sourceTokenAddress: fromVault,
       sourceTokenAmount: amount,
       targetTokenAddress: toToken,
-      targetTokenAmount: output,
+      targetTokenAmount: tokensReceived,
       targetTokenAmountUsdc: zapOutAmountUsdc,
       targetUnderlyingTokenAddress: underlyingTokenAddress,
       targetUnderlyingTokenAmount: targetUnderlyingTokensReceived,
@@ -505,6 +517,35 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
       throw new SdkError(`Simulation Error - ${simulationResponse.transaction.error_message}`);
     }
     return simulationResponse;
+  }
+
+  private async simulateVaultInteraction(
+    body: any,
+    targetToken: Address,
+    from: Address,
+    forkId?: string
+  ): Promise<Integer> {
+    let response: SimulationResponse = await this.makeSimulationRequest(body, forkId);
+
+    const getAddressFromTopic = (topic: string) => {
+      return getAddress(topic.slice(-40)); // the last 20 bytes of the topic is the address
+    };
+
+    const encodedTransferFunction = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"; // keccak256("Transfer(address,address,uint256)")
+
+    const log = response.transaction.transaction_info.logs.find(
+      log =>
+        getAddress(log.raw.address) === targetToken &&
+        log.raw.topics[0] === encodedTransferFunction &&
+        getAddressFromTopic(log.raw.topics[2]) === from
+    );
+
+    if (!log) {
+      throw new SdkError(`No log of transfering token ${targetToken} to ${from}`);
+    }
+
+    const tokensReceived = new BigNumber(log.raw.data).toFixed(0);
+    return tokensReceived;
   }
 
   private async deleteFork(forkId: string): Promise<any> {
