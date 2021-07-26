@@ -26,6 +26,7 @@
  * - [[VisionService]]: interaction with yearn's product stats aggregator.
  * - [[SubgraphService]]: interaction with yearn's subgraph.
  * - [[SimulationService]]: allows simulation of ethereum transactions.
+ * - [[TelegramService]]: allows sending telegram messages.
  *
  * ### Peer dependencies
  *
@@ -36,6 +37,9 @@
 
 // global fetch polyfill
 import "cross-fetch/polyfill";
+if (process.env.NODE_ENV !== "production") {
+  require("dotenv").config();
+}
 
 export { ChainId } from "./chain";
 export { Context, ContextValue } from "./context";
@@ -50,6 +54,7 @@ export { RegistryV2Adapter } from "./services/adapters/registry";
 export { LensService } from "./services/lens";
 export { OracleService } from "./services/oracle";
 export { SubgraphService } from "./services/subgraph";
+export { TelegramService } from "./services/telegram";
 export { VisionService } from "./services/vision";
 export { ZapperService } from "./services/zapper";
 export * from "./types";
