@@ -12,9 +12,9 @@ import { LensService } from "./services/lens";
 import { OracleService } from "./services/oracle";
 import { PickleService } from "./services/partners/pickle";
 import { SubgraphService } from "./services/subgraph";
+import { TelegramService } from "./services/telegram";
 import { VisionService } from "./services/vision";
 import { ZapperService } from "./services/zapper";
-import { TelegramService } from "./services/telegram";
 
 /**
  * [[Yearn]] is a wrapper for all the services and interfaces of the SDK.
