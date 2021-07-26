@@ -555,7 +555,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
 
       return result;
     } catch (error) {
-      // re-simlate the transaction with `save` set to true so the failure can be analyzed later
+      // re-simulate the transaction with `save` set to true so the failure can be analyzed later
       try {
         simulate(true);
       } catch {}
