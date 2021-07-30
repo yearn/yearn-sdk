@@ -1,7 +1,7 @@
 import { ChainId } from "../chain";
 import { Service } from "../common";
 import { Context } from "../context";
-import { handleHttpError } from "../helpers";
+import { handleHttpError, WethAddress } from "../helpers";
 import { Address, Alias, AliasMap, Icon, IconMap } from "../types";
 
 const YearnAliases = "https://raw.githubusercontent.com/yearn/yearn-assets/master/icons/aliases.json";
@@ -10,6 +10,8 @@ const TrustAssets = "https://raw.githack.com/trustwallet/assets/master/blockchai
 
 const YearnAsset = (address: Address) =>
   `https://raw.githack.com/yearn/yearn-assets/master/icons/tokens/${address}/logo-128.png`;
+const YearnAssetAlt = (address: Address) =>
+  `https://raw.githack.com/yearn/yearn-assets/master/icons/tokens/${address}/logo-alt-128.png`;
 const TrustAsset = (address: Address) =>
   `https://raw.githack.com/trustwallet/assets/master/blockchains/ethereum/assets/${address}/logo.png`;
 
@@ -21,6 +23,8 @@ export class AssetService extends Service {
   ready: Promise<void>;
   supported: Map<Address, string>;
   aliases: Map<Address, Alias>;
+
+  private alts = [WethAddress];
 
   constructor(chainId: ChainId, ctx: Context) {
     super(chainId, ctx);
@@ -67,6 +71,11 @@ export class AssetService extends Service {
 
     for (const token of yearn) {
       this.supported.set(token.name, YearnAsset(token.name));
+      if (this.alts.includes(token.name)) {
+        this.supported.set(token.name, YearnAssetAlt(token.name));
+      } else {
+        this.supported.set(token.name, YearnAsset(token.name));
+      }
     }
   }
 
