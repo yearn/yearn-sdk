@@ -151,20 +151,9 @@ export class SimulationExecutor {
     targetToken: Address,
     save: boolean,
     value?: Integer,
-    options?: SimulationOptions,
-    root?: string,
-    forkId?: string
+    options?: SimulationOptions
   ): Promise<Integer> {
-    let response: SimulationResponse = await this.makeSimulationRequest(
-      from,
-      to,
-      data,
-      save,
-      value,
-      options,
-      root,
-      forkId
-    );
+    let response: SimulationResponse = await this.makeSimulationRequest(from, to, data, save, value, options);
 
     const getAddressFromTopic = (topic: string) => {
       return getAddress(topic.slice(-40)); // the last 20 bytes of the topic is the address
@@ -204,14 +193,12 @@ export class SimulationExecutor {
     data: string,
     save: boolean,
     value?: Integer,
-    options?: SimulationOptions,
-    root?: string,
-    forkId?: string
+    options?: SimulationOptions
   ): Promise<SimulationResponse> {
-    const constructedPath = forkId ? `${baseUrl}/fork/${forkId}/simulate` : `${baseUrl}/simulate`;
+    const constructedPath = options?.forkId ? `${baseUrl}/fork/${options?.forkId}/simulate` : `${baseUrl}/simulate`;
     // console.log(constructedPath);
 
-    const transactionRequest = await this.getPopulatedTransactionRequest(from, to, data, value, forkId, options);
+    const transactionRequest = await this.getPopulatedTransactionRequest(from, to, data, value, options);
 
     const gasLimit = +(transactionRequest.gasLimit?.toString() || "0");
     const gasPrice = transactionRequest.gasPrice?.toString();
@@ -223,7 +210,7 @@ export class SimulationExecutor {
       network_id: this.chainId.toString(),
       block_number: latestBlockKey,
       simulation_type: "quick",
-      root,
+      root: options?.root,
       value: transactionRequest.value?.toString() || "0",
       gas: gasLimit || defaultGasLimit,
       gas_price: gasPrice || deafultGasPrice,
@@ -244,7 +231,7 @@ export class SimulationExecutor {
 
     if (errorMessage) {
       if (save) {
-        this.sendAnomolyMessage(errorMessage, simulationResponse.simulation.id, forkId);
+        this.sendAnomolyMessage(errorMessage, simulationResponse.simulation.id, options?.forkId);
       }
       throw new SdkError(`Simulation Error - ${errorMessage}`);
     } else {
@@ -253,7 +240,7 @@ export class SimulationExecutor {
       const partialRevertError = allCalls.find(call => call.error)?.error;
       if (partialRevertError) {
         const errorMessage = "Partial Revert - " + partialRevertError;
-        this.sendAnomolyMessage(errorMessage, simulationResponse.simulation.id, forkId);
+        this.sendAnomolyMessage(errorMessage, simulationResponse.simulation.id, options?.forkId);
         throw new SdkError(`Simulation Error, ${errorMessage}`);
       }
     }
@@ -315,12 +302,12 @@ export class SimulationExecutor {
     to: Address,
     data: string,
     value?: Integer,
-    forkId?: string,
     options?: SimulationOptions
   ): Promise<TransactionRequest> {
     let signer: JsonRpcSigner;
-    if (forkId) {
-      const provider = new JsonRpcProvider(`https://rpc.tenderly.co/fork/${forkId}`);
+    if (options?.forkId) {
+      const provider = new JsonRpcProvider(`https://rpc.tenderly.co/fork/${options?.forkId}`);
+      console.log(`https://rpc.tenderly.co/fork/${options?.forkId}`);
       signer = provider.getSigner(from);
     } else {
       signer = this.ctx.provider.write.getSigner(from);
@@ -332,14 +319,10 @@ export class SimulationExecutor {
       to,
       data,
       value: value2
-      // gasLimit: "8000000", //options?.gasLimit,
-      // gasPrice: "40000000000" //options?.gasPrice
     };
 
     const result = await signer.populateTransaction(transactionRequest);
 
     return result;
-    console.log(options);
-    console.log(forkId);
   }
 }

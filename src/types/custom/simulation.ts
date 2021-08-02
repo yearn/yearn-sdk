@@ -13,6 +13,9 @@ export interface TransactionOutcome {
 }
 
 export interface SimulationOptions {
+  slippage?: number;
+  root?: string;
+  forkId?: string;
   gasPrice?: Integer;
   gasLimit?: Integer;
 }
