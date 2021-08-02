@@ -129,7 +129,7 @@ export class SimulationExecutor {
     options: SimulationOptions,
     value: Integer = "0"
   ): Promise<SimulationResponse> {
-    const constructedPath = options?.forkId ? `${baseUrl}/fork/${options?.forkId}/simulate` : `${baseUrl}/simulate`;
+    const constructedPath = options?.forkId ? `${baseUrl}/fork/${options.forkId}/simulate` : `${baseUrl}/simulate`;
 
     const transactionRequest = await this.getPopulatedTransactionRequest(from, to, data, options, value);
 
@@ -160,7 +160,7 @@ export class SimulationExecutor {
 
     if (errorMessage) {
       if (options.save) {
-        this.sendAnomolyMessage(errorMessage, simulationResponse.simulation.id, options?.forkId);
+        this.sendAnomolyMessage(errorMessage, simulationResponse.simulation.id, options.forkId);
       }
       throw new SdkError(`Simulation Error - ${errorMessage}`);
     } else {
@@ -242,7 +242,7 @@ export class SimulationExecutor {
   ): Promise<TransactionRequest> {
     let signer: JsonRpcSigner;
     if (options?.forkId) {
-      const provider = new JsonRpcProvider(`https://rpc.tenderly.co/fork/${options?.forkId}`);
+      const provider = new JsonRpcProvider(`https://rpc.tenderly.co/fork/${options.forkId}`);
       signer = provider.getSigner(from);
     } else {
       signer = this.ctx.provider.write.getSigner(from);
@@ -252,7 +252,9 @@ export class SimulationExecutor {
       from,
       to,
       data,
-      value
+      value,
+      gasLimit: options.gasLimit,
+      gasPrice: options.gasPrice
     };
 
     const result = await signer.populateTransaction(transactionRequest);
