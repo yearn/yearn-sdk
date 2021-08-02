@@ -55,8 +55,8 @@ export class SimulationExecutor {
    * @param from
    * @param to
    * @param input the encoded input data as per the ethereum abi specification
-   * @param options simulation options
    * @param value the ether value of the transaction
+   * @param options simulation options
    * @returns data about the simluated transaction
    */
   async simulateRaw(
@@ -73,10 +73,13 @@ export class SimulationExecutor {
    * Simulates an interaction with a vault to see how much of the desired token
    * will be received. This happens by inspecting the logs of the transaction and
    * finding the Transfer event where the desired token is transferred to the user.
-   * @param body the input paramters of the simulation to execute
+   * @param from
+   * @param to
+   * @param data
    * @param targetToken the token being bought by this transaction
    * @param from the address initiating this transaction
-   * @param forkId the optional id of a fork to use if there is necessary previous state
+   * @param options
+   * @param value
    * @returns the amount of tokens simulated to be bought
    */
   async simulateVaultInteraction(
@@ -115,9 +118,8 @@ export class SimulationExecutor {
    * @param from
    * @param to
    * @param data
-   * @param value
    * @param options
-   * @param forkId optional fork to perform this simulation with
+   * @param value
    * @returns the resulting data from the transaction
    */
   async makeSimulationRequest(
@@ -168,7 +170,7 @@ export class SimulationExecutor {
       if (partialRevertError) {
         const errorMessage = "Partial Revert - " + partialRevertError;
         this.sendAnomolyMessage(errorMessage, simulationResponse.simulation.id, options?.forkId);
-        throw new SdkError(`Simulation Error, ${errorMessage}`);
+        throw new SdkError(`Simulation Error - ${errorMessage}`);
       }
     }
 
@@ -204,6 +206,58 @@ export class SimulationExecutor {
 
       throw error;
     }
+  }
+
+  /**
+   * Recursively loops through the simulation call trace, aggregating all calls into a flattened array.
+   * @param callTrace the starting call trace to inspect
+   * @returns a flattened array of call data
+   */
+  private getAllSimulationCalls(callTrace: SimulationCallTrace): SimulationCallTrace[] {
+    let result: SimulationCallTrace[] = [];
+    result = result.concat(callTrace.calls || []);
+    for (const calls of callTrace.calls || []) {
+      const res = this.getAllSimulationCalls(calls);
+      result = result.concat(res);
+    }
+    return result;
+  }
+
+  /**
+   * Creates a transaction object and populates it to fill in paramters such as gas price,
+   * gas limit and nonce for a more accurate simulations
+   * @param from
+   * @param to
+   * @param data
+   * @param value
+   * @param options
+   * @returns A populated TrancactionRequest object
+   */
+  private async getPopulatedTransactionRequest(
+    from: Address,
+    to: Address,
+    data: string,
+    options: SimulationOptions,
+    value: Integer = "0"
+  ): Promise<TransactionRequest> {
+    let signer: JsonRpcSigner;
+    if (options?.forkId) {
+      const provider = new JsonRpcProvider(`https://rpc.tenderly.co/fork/${options?.forkId}`);
+      signer = provider.getSigner(from);
+    } else {
+      signer = this.ctx.provider.write.getSigner(from);
+    }
+
+    const transactionRequest: TransactionRequest = {
+      from,
+      to,
+      data,
+      value
+    };
+
+    const result = await signer.populateTransaction(transactionRequest);
+
+    return result;
   }
 
   /**
@@ -257,57 +311,5 @@ export class SimulationExecutor {
     const message = ["Simulation anomoly", errorMessage, transactionUrl].join("\n\n");
 
     this.telegram.sendMessage(message);
-  }
-
-  /**
-   * Recursively loops through the simulation call trace, aggregating all calls into a flattened array.
-   * @param callTrace the starting call trace to inspect
-   * @returns a flattened array of call data
-   */
-  private getAllSimulationCalls(callTrace: SimulationCallTrace): SimulationCallTrace[] {
-    let result: SimulationCallTrace[] = [];
-    result = result.concat(callTrace.calls || []);
-    for (const calls of callTrace.calls || []) {
-      const res = this.getAllSimulationCalls(calls);
-      result = result.concat(res);
-    }
-    return result;
-  }
-
-  /**
-   * Creates a transaction object and populates it to fill in paramters such as gas price,
-   * gas limit and nonce for a more accurate simulations
-   * @param from
-   * @param to
-   * @param data
-   * @param value
-   * @param options
-   * @returns A populated TrancactionRequest object
-   */
-  private async getPopulatedTransactionRequest(
-    from: Address,
-    to: Address,
-    data: string,
-    options: SimulationOptions,
-    value: Integer = "0"
-  ): Promise<TransactionRequest> {
-    let signer: JsonRpcSigner;
-    if (options?.forkId) {
-      const provider = new JsonRpcProvider(`https://rpc.tenderly.co/fork/${options?.forkId}`);
-      signer = provider.getSigner(from);
-    } else {
-      signer = this.ctx.provider.write.getSigner(from);
-    }
-
-    const transactionRequest: TransactionRequest = {
-      from,
-      to,
-      data,
-      value
-    };
-
-    const result = await signer.populateTransaction(transactionRequest);
-
-    return result;
   }
 }
