@@ -11,3 +11,8 @@ export interface TransactionOutcome {
   conversionRate: number;
   slippage: number;
 }
+
+export interface SimulationOptions {
+  gasPrice?: Integer;
+  gasLimit?: Integer;
+}

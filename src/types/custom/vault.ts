@@ -1,4 +1,5 @@
 import { Address, Integer, TypedMap, Usdc } from "../common";
+import { AssetHistoricEarnings } from "./earnings";
 import { ZapOptions } from "./zapper";
 
 /**
@@ -22,6 +23,20 @@ export interface VaultsUserSummary {
   earnings: Usdc;
   grossApy: number;
   estimatedYearlyYield: Integer;
+}
+
+export interface VaultSummary {
+  vault: Address;
+  holdings: Usdc;
+  earnings: Usdc;
+  grossApy: number;
+  historicData: AssetHistoricEarnings;
+}
+
+export interface StrategyMetadata {
+  name: string;
+  description: string;
+  link: string;
 }
 
 export interface VaultUserMetadata {

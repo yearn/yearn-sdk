@@ -1,22 +1,17 @@
 import { getAddress } from "@ethersproject/address";
+import { JsonRpcProvider, JsonRpcSigner, TransactionRequest } from "@ethersproject/providers";
 import BigNumber from "bignumber.js";
 
 import { ChainId } from "./chain";
+import { Context } from "./context";
 import { TelegramService } from "./services/telegram";
+import { SimulationOptions } from "./types";
 import { Address, Integer, SdkError } from "./types/common";
 
 const baseUrl = "https://simulate.yearn.network";
 const latestBlockKey = -1;
-const gasLimit = 8000000;
-
-export interface SimulationRequestBody {
-  from: Address;
-  input: string;
-  to: Address;
-  save: boolean;
-  value?: Integer;
-  root?: string;
-}
+const defaultGasLimit = 8000000;
+const deafultGasPrice = 0;
 
 export interface SimulationResponse {
   transaction: {
@@ -56,27 +51,27 @@ interface SimulationCallTrace {
  * 3. Simulate the zap in using the approval transaction as the root
  */
 export class SimulationExecutor {
-  constructor(private chainId: ChainId, private telegram: TelegramService) {}
+  constructor(private chainId: ChainId, private telegram: TelegramService, private ctx: Context) {}
 
   /**
    * Simulate a transaction
    * @param from
    * @param to
    * @param input the encoded input data as per the ethereum abi specification
-   * @param save whether to save the simulation so it can be later inspected
-   * @param value: the ether value of the transaction
+   * @param value the ether value of the transaction
+   * @param save whether to save the simulation so it can be later inspected,
+   * @param gasLimit
    * @returns data about the simluated transaction
    */
-  async simulateRaw(from: Address, to: Address, input: string, value: Integer, save: boolean): Promise<any> {
-    const body = {
-      from: from,
-      input: input,
-      to: to,
-      save: save,
-      value: value
-    };
-
-    return await this.makeSimulationRequest(body);
+  async simulateRaw(
+    from: Address,
+    to: Address,
+    input: string,
+    save: boolean,
+    value?: Integer,
+    options?: SimulationOptions
+  ): Promise<any> {
+    return await this.makeSimulationRequest(from, to, input, save, value, options);
   }
 
   /**
@@ -109,57 +104,6 @@ export class SimulationExecutor {
   }
 
   /**
-   * Performs a simulation with preset paramters
-   * @param simulationRequestBody the parameters of the simulation
-   * @param forkId optional fork to perform this simulation with
-   * @returns the resulting data from the transaction
-   */
-  async makeSimulationRequest(
-    simulationRequestBody: SimulationRequestBody,
-    forkId?: string
-  ): Promise<SimulationResponse> {
-    const constructedPath = forkId ? `${baseUrl}/fork/${forkId}/simulate` : `${baseUrl}/simulate`;
-
-    const body = {
-      ...simulationRequestBody,
-      network_id: this.chainId.toString(),
-      block_number: latestBlockKey,
-      gas: gasLimit,
-      simulation_type: "quick",
-      gas_price: "0",
-      value: simulationRequestBody.value || "0"
-    };
-
-    const simulationResponse: SimulationResponse = await fetch(constructedPath, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(body)
-    }).then(res => res.json());
-
-    const errorMessage = simulationResponse.transaction.error_message;
-
-    if (errorMessage) {
-      if (simulationRequestBody.save) {
-        this.sendAnomolyMessage(errorMessage, simulationResponse.simulation.id, forkId);
-      }
-      throw new SdkError(`Simulation Error - ${errorMessage}`);
-    } else {
-      // even though the transaction has been successful one of it's calls could have failed i.e. a partial revert might have happened
-      const allCalls = this.getAllSimulationCalls(simulationResponse.transaction.transaction_info.call_trace);
-      const partialRevertError = allCalls.find(call => call.error)?.error;
-      if (partialRevertError) {
-        const errorMessage = "Partial Revert - " + partialRevertError;
-        this.sendAnomolyMessage(errorMessage, simulationResponse.simulation.id, forkId);
-        throw new SdkError(`Simulation Error, ${errorMessage}`);
-      }
-    }
-
-    return simulationResponse;
-  }
-
-  /**
    * Simulates a transaction, with the `save` parameter initially set to `false`. If this simulation fails then
    * the simulation is re-executed but with `save` set to `true` so the failure can be stored and later analyzed.
    * @param simulate the function which executes the simulation, passing in `save` as an argument.
@@ -182,9 +126,9 @@ export class SimulationExecutor {
       return result;
     } catch (error) {
       // re-simulate the transaction with `save` set to true so the failure can be analyzed later
-      try {
-        simulate(true);
-      } catch {}
+      // try {
+      //   simulate(true);
+      // } catch {}
 
       throw error;
     }
@@ -201,12 +145,26 @@ export class SimulationExecutor {
    * @returns the amount of tokens simulated to be bought
    */
   async simulateVaultInteraction(
-    body: SimulationRequestBody,
-    targetToken: Address,
     from: Address,
+    to: Address,
+    data: string,
+    targetToken: Address,
+    save: boolean,
+    value?: Integer,
+    options?: SimulationOptions,
+    root?: string,
     forkId?: string
   ): Promise<Integer> {
-    let response: SimulationResponse = await this.makeSimulationRequest(body, forkId);
+    let response: SimulationResponse = await this.makeSimulationRequest(
+      from,
+      to,
+      data,
+      save,
+      value,
+      options,
+      root,
+      forkId
+    );
 
     const getAddressFromTopic = (topic: string) => {
       return getAddress(topic.slice(-40)); // the last 20 bytes of the topic is the address
@@ -227,6 +185,80 @@ export class SimulationExecutor {
 
     const tokensReceived = new BigNumber(log.raw.data).toFixed(0);
     return tokensReceived;
+  }
+
+  /**
+   * Performs a simulation with preset paramters
+   * @param from
+   * @param to
+   * @param data
+   * @param value
+   * @param save whether the simulation should be saved e.g. for inspecting later or to use as the root of another simulation
+   * @param options
+   * @param forkId optional fork to perform this simulation with
+   * @returns the resulting data from the transaction
+   */
+  async makeSimulationRequest(
+    from: Address,
+    to: Address,
+    data: string,
+    save: boolean,
+    value?: Integer,
+    options?: SimulationOptions,
+    root?: string,
+    forkId?: string
+  ): Promise<SimulationResponse> {
+    const constructedPath = forkId ? `${baseUrl}/fork/${forkId}/simulate` : `${baseUrl}/simulate`;
+    // console.log(constructedPath);
+
+    const transactionRequest = await this.getPopulatedTransactionRequest(from, to, data, value, forkId, options);
+
+    const gasLimit = +(transactionRequest.gasLimit?.toString() || "0");
+    const gasPrice = transactionRequest.gasPrice?.toString();
+
+    const body = {
+      from,
+      to,
+      input: data,
+      network_id: this.chainId.toString(),
+      block_number: latestBlockKey,
+      simulation_type: "quick",
+      root,
+      value: transactionRequest.value?.toString() || "0",
+      gas: gasLimit || defaultGasLimit,
+      gas_price: gasPrice || deafultGasPrice,
+      // gas: defaultGasLimit,
+      // gas_price: deafultGasPrice,
+      save: true
+    };
+
+    const simulationResponse: SimulationResponse = await fetch(constructedPath, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(body)
+    }).then(res => res.json());
+
+    const errorMessage = simulationResponse.transaction.error_message;
+
+    if (errorMessage) {
+      if (save) {
+        this.sendAnomolyMessage(errorMessage, simulationResponse.simulation.id, forkId);
+      }
+      throw new SdkError(`Simulation Error - ${errorMessage}`);
+    } else {
+      // even though the transaction has been successful one of it's calls could have failed i.e. a partial revert might have happened
+      const allCalls = this.getAllSimulationCalls(simulationResponse.transaction.transaction_info.call_trace);
+      const partialRevertError = allCalls.find(call => call.error)?.error;
+      if (partialRevertError) {
+        const errorMessage = "Partial Revert - " + partialRevertError;
+        this.sendAnomolyMessage(errorMessage, simulationResponse.simulation.id, forkId);
+        throw new SdkError(`Simulation Error, ${errorMessage}`);
+      }
+    }
+
+    return simulationResponse;
   }
 
   /**
@@ -266,5 +298,48 @@ export class SimulationExecutor {
    */
   private async deleteFork(forkId: string) {
     return await fetch(`${baseUrl}/fork/${forkId}`, { method: "DELETE" });
+  }
+
+  /**
+   * Creates a transaction object and populates it to fill in paramters such as gas price,
+   * gas limit and nonce for a more accurate simulations
+   * @param from
+   * @param to
+   * @param data
+   * @param value
+   * @param options
+   * @returns A populated TrancactionRequest object
+   */
+  private async getPopulatedTransactionRequest(
+    from: Address,
+    to: Address,
+    data: string,
+    value?: Integer,
+    forkId?: string,
+    options?: SimulationOptions
+  ): Promise<TransactionRequest> {
+    let signer: JsonRpcSigner;
+    if (forkId) {
+      const provider = new JsonRpcProvider(`https://rpc.tenderly.co/fork/${forkId}`);
+      signer = provider.getSigner(from);
+    } else {
+      signer = this.ctx.provider.write.getSigner(from);
+    }
+
+    const value2 = value || "0";
+    const transactionRequest: TransactionRequest = {
+      from,
+      to,
+      data,
+      value: value2
+      // gasLimit: "8000000", //options?.gasLimit,
+      // gasPrice: "40000000000" //options?.gasPrice
+    };
+
+    const result = await signer.populateTransaction(transactionRequest);
+
+    return result;
+    console.log(options);
+    console.log(forkId);
   }
 }
