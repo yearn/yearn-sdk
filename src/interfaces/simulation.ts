@@ -41,7 +41,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     let simulateDeposit: (save: boolean) => Promise<TransactionOutcome>;
 
     if (isZapping) {
-      if (!options?.slippage) {
+      if (!options.slippage) {
         throw new SdkError("slippage needs to be specified for a zap");
       }
 
@@ -106,7 +106,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     let simulateWithdrawal: (save: boolean) => Promise<TransactionOutcome>;
 
     if (isZapping) {
-      if (!options?.slippage) {
+      if (!options.slippage) {
         throw new SdkError("slippage needs to be specified for a zap");
       }
       let needsApproving: boolean;
@@ -228,7 +228,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
   ): Promise<TransactionOutcome> {
     const zapToken = sellToken === EthAddress ? ZeroAddress : sellToken;
 
-    if (!options?.slippage) {
+    if (!options.slippage) {
       throw new SdkError("slippage needs to be set");
     }
 
@@ -340,7 +340,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     vaultContract: VaultContract,
     options: SimulationOptions
   ): Promise<TransactionOutcome> {
-    if (!options?.slippage) {
+    if (!options.slippage) {
       throw new SdkError("slippage needs to be set");
     }
 
