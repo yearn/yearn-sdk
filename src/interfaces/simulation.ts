@@ -19,14 +19,14 @@ import { PickleJarContract, VaultContract, YearnVaultContract } from "../vault";
  * or how many underlying tokens the user will receive upon withdrawing share tokens.
  */
 export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> {
-  private simulationExecutor = new SimulationExecutor(this.chainId, this.yearn.services.telegram, this.ctx);
+  private simulationExecutor = new SimulationExecutor(this.yearn.services.telegram, this.ctx);
 
   async deposit(
     from: Address,
     sellToken: Address,
     amount: Integer,
     toVault: Address,
-    options?: SimulationOptions
+    options: SimulationOptions = {}
   ): Promise<TransactionOutcome> {
     const signer = this.ctx.provider.write.getSigner(from);
     const zapProtocol = PickleJars.includes(toVault) ? ZapProtocol.PICKLE : ZapProtocol.YEARN;
@@ -57,6 +57,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
 
       forkId = needsApproving ? await this.simulationExecutor.createFork() : undefined;
       options.forkId = forkId;
+
       const approvalTransactionId = needsApproving
         ? await this.yearn.services.zapper
             .zapInApprovalTransaction(from, sellToken, "0", zapProtocol)
@@ -65,24 +66,27 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
             })
             .then(res => res.simulation.id)
         : undefined;
-
       options.root = approvalTransactionId;
-      options.forkId = forkId;
 
-      simulateDeposit = (save: boolean) =>
-        this.zapIn(from, sellToken, underlyingToken, amount, toVault, vaultContract, zapProtocol, save, options);
+      simulateDeposit = (save: boolean) => {
+        options.save = save;
+        return this.zapIn(from, sellToken, underlyingToken, amount, toVault, vaultContract, zapProtocol, options);
+      };
     } else {
       const needsApproving = await this.depositNeedsApproving(from, sellToken, toVault, amount, signer);
+
       forkId = needsApproving ? await this.simulationExecutor.createFork() : undefined;
-      options = { ...options, ...{ forkId } };
+      options.forkId = forkId;
+
       const approvalTransactionId = needsApproving
         ? await this.approve(from, sellToken, amount, toVault, options)
         : undefined;
-
       options.root = approvalTransactionId;
 
-      simulateDeposit = (save: boolean) =>
-        this.directDeposit(from, sellToken, amount, toVault, vaultContract, save, options);
+      simulateDeposit = (save: boolean) => {
+        options.save = save;
+        return this.directDeposit(from, sellToken, amount, toVault, vaultContract, options);
+      };
     }
     return this.simulationExecutor.executeSimulationWithReSimulationOnFailure(simulateDeposit, forkId);
   }
@@ -92,7 +96,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     fromVault: Address,
     amount: Integer,
     toToken: Address,
-    options?: SimulationOptions
+    options: SimulationOptions = {}
   ): Promise<TransactionOutcome> {
     const signer = this.ctx.provider.write.getSigner(from);
     const vaultContract = new YearnVaultContract(fromVault, signer);
@@ -128,11 +132,15 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
 
       options.root = approvalSimulationId;
 
-      simulateWithdrawal = (save: boolean) =>
-        this.zapOut(from, toToken, underlyingToken, amount, fromVault, vaultContract, save, options);
+      simulateWithdrawal = (save: boolean) => {
+        options.save = save;
+        return this.zapOut(from, toToken, underlyingToken, amount, fromVault, vaultContract, options);
+      };
     } else {
-      simulateWithdrawal = (save: boolean) =>
-        this.directWithdraw(from, toToken, amount, fromVault, vaultContract, save, options);
+      simulateWithdrawal = (save: boolean) => {
+        options.save = save;
+        return this.directWithdraw(from, toToken, amount, fromVault, vaultContract, options);
+      };
     }
     return this.simulationExecutor.executeSimulationWithReSimulationOnFailure(simulateWithdrawal, forkId);
   }
@@ -142,19 +150,18 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     token: Address,
     amount: Integer,
     vault: Address,
-    options?: SimulationOptions
+    options: SimulationOptions
   ): Promise<string> {
     const TokenAbi = ["function approve(address spender, uint256 amount) returns (bool)"];
     const signer = this.ctx.provider.write.getSigner(from);
     const tokenContract = new Contract(token, TokenAbi, signer);
     const encodedInputData = tokenContract.interface.encodeFunctionData("approve", [vault, amount]);
+    options.save = true;
 
     const simulationResponse: SimulationResponse = await this.simulationExecutor.makeSimulationRequest(
       from,
       token,
       encodedInputData,
-      true,
-      undefined,
       options
     );
 
@@ -180,8 +187,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     amount: Integer,
     toVault: Address,
     vaultContract: VaultContract,
-    save: boolean,
-    options?: SimulationOptions
+    options: SimulationOptions
   ): Promise<TransactionOutcome> {
     const encodedInputData = vaultContract.encodeDeposit(amount);
 
@@ -190,8 +196,6 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
       toVault,
       encodedInputData,
       toVault,
-      save,
-      undefined,
       options
     );
 
@@ -220,8 +224,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     toVault: Address,
     vaultContract: VaultContract,
     zapProtocol: ZapProtocol,
-    save: boolean,
-    options?: SimulationOptions
+    options: SimulationOptions
   ): Promise<TransactionOutcome> {
     const zapToken = sellToken === EthAddress ? ZeroAddress : sellToken;
 
@@ -249,9 +252,8 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
       zapInParams.to,
       zapInParams.data,
       toVault,
-      save,
-      value,
-      options
+      options,
+      value
     );
     const pricePerShare = await vaultContract.pricePerShare();
     const targetUnderlyingTokensReceived = new BigNumber(tokensReceived)
@@ -300,8 +302,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     amount: Integer,
     fromVault: Address,
     vaultContract: VaultContract,
-    save: boolean,
-    options?: SimulationOptions
+    options: SimulationOptions
   ): Promise<TransactionOutcome> {
     const encodedInputData = vaultContract.encodeWithdraw(amount);
 
@@ -310,8 +311,6 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
       fromVault,
       encodedInputData,
       toToken,
-      save,
-      undefined,
       options
     );
 
@@ -339,8 +338,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     amount: Integer,
     fromVault: Address,
     vaultContract: VaultContract,
-    save: boolean,
-    options?: SimulationOptions
+    options: SimulationOptions
   ): Promise<TransactionOutcome> {
     if (!options?.slippage) {
       throw new SdkError("slippage needs to be set");
@@ -362,9 +360,8 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
           from,
           zapOutParams.to,
           zapOutParams.data,
-          save,
-          zapOutParams.value,
-          options
+          options,
+          zapOutParams.value
         );
         return new BigNumber(response.transaction.transaction_info.call_trace.output).toFixed(0);
       } else {
@@ -373,9 +370,8 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
           zapOutParams.to,
           zapOutParams.data,
           toToken,
-          save,
-          zapOutParams.value,
-          options
+          options,
+          zapOutParams.value
         );
       }
     })();
@@ -410,14 +406,13 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
 
   private async simulateZapApprovalTransaction(
     zapApprovalTransaction: ZapApprovalTransactionOutput,
-    options?: SimulationOptions
+    options: SimulationOptions
   ): Promise<SimulationResponse> {
+    options.save = true;
     return await this.simulationExecutor.makeSimulationRequest(
       zapApprovalTransaction.from,
       zapApprovalTransaction.to,
       zapApprovalTransaction.data,
-      true,
-      undefined,
       options
     );
   }

@@ -18,4 +18,5 @@ export interface SimulationOptions {
   forkId?: string;
   gasPrice?: Integer;
   gasLimit?: Integer;
+  save?: boolean;
 }
