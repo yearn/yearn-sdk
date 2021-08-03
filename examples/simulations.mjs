@@ -22,10 +22,14 @@ async function main() {
   const directDeposit = await yearn.simulation.deposit(usr1, yfiToken, "1000000000000000000", yfiVault);
   console.log(directDeposit);
 
-  const ethWithdraw = await yearn.simulation.withdraw(usr2, yfiVault, "1000000000000000000", ethToken, 0.02);
+  const ethWithdraw = await yearn.simulation.withdraw(usr2, yfiVault, "1000000000000000000", ethToken, {
+    slippage: 0.02
+  });
   console.log(ethWithdraw);
 
-  const directWithdraw = await yearn.simulation.withdraw(usr2, yfiVault, "1000000000000000000", yfiToken, 0.02);
+  const directWithdraw = await yearn.simulation.withdraw(usr2, yfiVault, "1000000000000000000", yfiToken, {
+    slippage: 0.02
+  });
   console.log(directWithdraw);
 }
 
