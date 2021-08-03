@@ -170,11 +170,12 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
       adapters.map(async adapter => {
         const tokenAddresses = await adapter.tokens(overrides);
         const tokens = await this.yearn.services.helper.tokens(tokenAddresses, overrides);
-        const icons = this.yearn.services.asset.icon(tokenAddresses);
+        const icons = this.yearn.services.asset.icon(tokenAddresses.concat(EthAddress));
         return Promise.all(
           tokens.map(async token => ({
             ...token,
-            icon: icons[token.address],
+            // @notice weird icon fix related to the way yearn-assets handles tokens
+            icon: icons[token.address === WethAddress ? EthAddress : token.address],
             supported: {},
             priceUsdc: await this.yearn.services.oracle.getPriceUsdc(token.address, overrides)
           }))
