@@ -19,7 +19,7 @@ export class TelegramService extends Service {
   }
 
   sendMessage(text: string) {
-    const params = new URLSearchParams({ chat_id: this.chatId, text: text });
+    const params = new URLSearchParams({ chat_id: this.chatId, text: text, disable_web_page_preview: "true" });
     const url = `https://api.telegram.org/bot${this.botId}/sendMessage?` + params;
     fetch(url);
   }
