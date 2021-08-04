@@ -148,13 +148,20 @@ export class SimulationExecutor {
       nonce: transactionRequest.nonce
     };
 
-    const simulationResponse = await fetch(constructedPath, {
+    const simulationResponse: SimulationResponse = await fetch(constructedPath, {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
       },
       body: JSON.stringify(body)
-    }).then(res => res.json());
+    })
+      .then(res => res.json())
+      .then(json => {
+        if (!json.transaction) {
+          throw new SdkError(`Repsonse was not a valid simulation object - ${JSON.stringify(json)}`);
+        }
+        return json;
+      });
 
     const errorMessage = simulationResponse.transaction.error_message;
 
@@ -175,6 +182,8 @@ export class SimulationExecutor {
     }
 
     return simulationResponse;
+    console.log(constructedPath);
+    console.log(body);
   }
 
   /**
