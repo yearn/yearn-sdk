@@ -182,8 +182,6 @@ export class SimulationExecutor {
     }
 
     return simulationResponse;
-    console.log(constructedPath);
-    console.log(body);
   }
 
   /**
