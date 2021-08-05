@@ -37,9 +37,6 @@
 
 // global fetch polyfill
 import "cross-fetch/polyfill";
-if (process.env.NODE_ENV !== "production") {
-  require("dotenv").config();
-}
 
 export { ChainId } from "./chain";
 export { Context, ContextValue } from "./context";
