@@ -1,6 +1,6 @@
-import { TransactionRequest, TransactionResponse } from "@ethersproject/providers";
 import { BigNumber } from "@ethersproject/bignumber";
 import { CallOverrides, Contract } from "@ethersproject/contracts";
+import { TransactionRequest, TransactionResponse } from "@ethersproject/providers";
 import { JsonRpcSigner } from "@ethersproject/providers";
 
 import { ChainId } from "../chain";
