@@ -57,7 +57,7 @@ export class SimulationExecutor {
    * @param input the encoded input data as per the ethereum abi specification
    * @param value the ether value of the transaction
    * @param options simulation options
-   * @returns data about the simluated transaction
+   * @returns data about the simulated transaction
    */
   async simulateRaw(
     from: Address,
@@ -106,7 +106,7 @@ export class SimulationExecutor {
     );
 
     if (!log) {
-      throw new SdkError(`No log of transfering token ${targetToken} to ${from}`);
+      throw new SdkError(`No log of transferring token ${targetToken} to ${from}`);
     }
 
     const tokensReceived = new BigNumber(log.raw.data).toFixed(0);
@@ -114,7 +114,7 @@ export class SimulationExecutor {
   }
 
   /**
-   * Performs a simulation with preset paramters
+   * Performs a simulation with preset parameters
    * @param from
    * @param to
    * @param data
@@ -160,7 +160,7 @@ export class SimulationExecutor {
 
     if (errorMessage) {
       if (options.save) {
-        this.sendAnomolyMessage(errorMessage, simulationResponse.simulation.id, options.forkId);
+        this.sendAnomalyMessage(errorMessage, simulationResponse.simulation.id, options.forkId);
       }
       throw new SdkError(`Simulation Error - ${errorMessage}`);
     } else {
@@ -169,7 +169,7 @@ export class SimulationExecutor {
       const partialRevertError = allCalls.find(call => call.error)?.error;
       if (partialRevertError) {
         const errorMessage = "Partial Revert - " + partialRevertError;
-        this.sendAnomolyMessage(errorMessage, simulationResponse.simulation.id, options?.forkId);
+        this.sendAnomalyMessage(errorMessage, simulationResponse.simulation.id, options?.forkId);
         throw new SdkError(`Simulation Error - ${errorMessage}`);
       }
     }
@@ -224,14 +224,14 @@ export class SimulationExecutor {
   }
 
   /**
-   * Creates a transaction object and populates it to fill in paramters such as gas price,
+   * Creates a transaction object and populates it to fill in parameters such as gas price,
    * gas limit and nonce for a more accurate simulations
    * @param from
    * @param to
    * @param data
    * @param value
    * @param options
-   * @returns A populated TrancactionRequest object
+   * @returns A populated TransactionRequest object
    */
   private async getPopulatedTransactionRequest(
     from: Address,
