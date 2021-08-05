@@ -1,4 +1,4 @@
-import { TransactionRequest, TransactionResponse } from "@ethersproject/abstract-provider";
+import { TransactionRequest, TransactionResponse } from "@ethersproject/providers";
 import { CallOverrides, Contract } from "@ethersproject/contracts";
 import BigNumber from "bignumber.js";
 
