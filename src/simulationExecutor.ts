@@ -307,10 +307,14 @@ export class SimulationExecutor {
    * @param forkId the optional id of the fork so the simulation failure can be inspected in the dashboard
    */
   private sendAnomolyMessage(errorMessage: string, simulationId: string, forkId?: string) {
-    const dashboardUrl = process.env.SIMULATION_DASHBOARD_URL || "";
-    const transactionUrl = `${dashboardUrl}/${forkId ? `fork/${forkId}/simulation` : "simulator"}/${simulationId}`;
+    let transactionUrl: string | undefined;
+    if (this.ctx.simulation.dashboardUrl) {
+      transactionUrl = `${this.ctx.simulation.dashboardUrl}/${
+        forkId ? `fork/${forkId}/simulation` : "simulator"
+      }/${simulationId}`;
+    }
 
-    const message = ["Simulation anomoly", errorMessage, transactionUrl].join("\n\n");
+    const message = ["Simulation anomoly", errorMessage, transactionUrl].map(item => item).join("\n\n");
 
     this.telegram.sendMessage(message);
   }
