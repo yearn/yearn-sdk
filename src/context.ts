@@ -24,6 +24,22 @@ export interface ReadWriteProvider {
 }
 
 /**
+ * To provide configuration for simulation error reporting
+ */
+export interface SimulationConfiguration extends TelegramConfiguration {
+  dashboardUrl?: string;
+}
+
+/**
+ * Provides details about sending a message from a telegram bot to a
+ * specific chat
+ */
+export interface TelegramConfiguration {
+  telegramChatId?: string;
+  telegramBotId?: string;
+}
+
+/**
  * Context options that are used to access all the data sources queried by the
  * SDK.
  */
@@ -32,12 +48,15 @@ export interface ContextValue {
   zapper?: string;
   etherscan?: string;
   addresses?: PartialDeep<AddressesOverride>;
+  simulation?: SimulationConfiguration;
 }
 
 const DefaultContext = {
   // Public API key provided by zapper.
   // see https://docs.zapper.fi/zapper-api/endpoints
-  zapper: "96e0cc51-a62e-42ca-acee-910ea7d2a241"
+  zapper: "96e0cc51-a62e-42ca-acee-910ea7d2a241",
+  // The default tenderly dashboard for Yearn
+  simulation: { dashboardUrl: "https://dashboard.tenderly.co/yearn/yearn-web" }
 };
 
 /**
@@ -95,5 +114,10 @@ export class Context implements Required<ContextValue> {
 
   get addresses(): AddressesOverride {
     return Object.assign({ adapters: {} }, this.ctx.addresses);
+  }
+
+  get simulation(): SimulationConfiguration {
+    if (this.ctx.simulation) return this.ctx.simulation;
+    throw new SdkError("simulation configuration must be defined in Context for this feature to work.");
   }
 }
