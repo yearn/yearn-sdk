@@ -160,7 +160,7 @@ export class SimulationExecutor {
 
     if (errorMessage) {
       if (options.save) {
-        this.sendAnomalyMessage(errorMessage, simulationResponse.simulation.id, options.forkId);
+        this.sendAnomolyMessage(errorMessage, simulationResponse.simulation.id, options.forkId);
       }
       throw new SdkError(`Simulation Error - ${errorMessage}`);
     } else {
@@ -169,7 +169,7 @@ export class SimulationExecutor {
       const partialRevertError = allCalls.find(call => call.error)?.error;
       if (partialRevertError) {
         const errorMessage = "Partial Revert - " + partialRevertError;
-        this.sendAnomalyMessage(errorMessage, simulationResponse.simulation.id, options?.forkId);
+        this.sendAnomolyMessage(errorMessage, simulationResponse.simulation.id, options?.forkId);
         throw new SdkError(`Simulation Error - ${errorMessage}`);
       }
     }
