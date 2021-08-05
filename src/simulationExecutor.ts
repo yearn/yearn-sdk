@@ -160,7 +160,7 @@ export class SimulationExecutor {
 
     if (errorMessage) {
       if (options.save) {
-        this.sendAnomolyMessage(errorMessage, simulationResponse.simulation.id, options.forkId);
+        this.sendErrorMessage(errorMessage, simulationResponse.simulation.id, options.forkId);
       }
       throw new SdkError(`Simulation Error - ${errorMessage}`);
     } else {
@@ -169,7 +169,7 @@ export class SimulationExecutor {
       const partialRevertError = allCalls.find(call => call.error)?.error;
       if (partialRevertError) {
         const errorMessage = "Partial Revert - " + partialRevertError;
-        this.sendAnomolyMessage(errorMessage, simulationResponse.simulation.id, options?.forkId);
+        this.sendErrorMessage(errorMessage, simulationResponse.simulation.id, options?.forkId);
         throw new SdkError(`Simulation Error - ${errorMessage}`);
       }
     }
@@ -306,7 +306,7 @@ export class SimulationExecutor {
    * @param simulationId the id of the simulation so the simulation failure can be inspected in the dashboard
    * @param forkId the optional id of the fork so the simulation failure can be inspected in the dashboard
    */
-  private sendAnomolyMessage(errorMessage: string, simulationId: string, forkId?: string) {
+  private sendErrorMessage(errorMessage: string, simulationId: string, forkId?: string) {
     let transactionUrl: string | undefined;
     if (this.ctx.simulation.dashboardUrl) {
       transactionUrl = `${this.ctx.simulation.dashboardUrl}/${
@@ -314,7 +314,7 @@ export class SimulationExecutor {
       }/${simulationId}`;
     }
 
-    const message = ["Simulation anomoly", errorMessage, transactionUrl].map(item => item).join("\n\n");
+    const message = ["Simulation error", errorMessage, transactionUrl].map(item => item).join("\n\n");
 
     this.telegram.sendMessage(message);
   }
