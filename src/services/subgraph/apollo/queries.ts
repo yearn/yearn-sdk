@@ -4,8 +4,7 @@ declare global {
   type YearnSubgraphBigInt = string;
 }
 
-export const VAULT_EARNINGS = gql`
-  query VaultEarnings($vault: ID!) {
+export const VAULT_EARNINGS = `query VaultEarnings($vault: ID!) {
     vault(id: $vault) {
       token {
         id
@@ -18,8 +17,7 @@ export const VAULT_EARNINGS = gql`
   }
 `;
 
-export const PROTOCOL_EARNINGS = gql`
-  query ProtocolEarnings {
+export const PROTOCOL_EARNINGS = `query ProtocolEarnings {
     vaults {
       token {
         id
@@ -32,8 +30,7 @@ export const PROTOCOL_EARNINGS = gql`
   }
 `;
 
-export const ACCOUNT_EARNINGS = gql`
-  query AccountEarnings($id: ID!) {
+export const ACCOUNT_EARNINGS = `query AccountEarnings($id: ID!) {
     account(id: $id) {
       vaultPositions {
         balanceShares
@@ -61,8 +58,7 @@ export const ACCOUNT_EARNINGS = gql`
   }
 `;
 
-export const ASSET_HISTORIC_EARNINGS = gql`
-  query AssetHistoricEarnings($id: ID!, $sinceDate: BigInt!) {
+export const ASSET_HISTORIC_EARNINGS = `query AssetHistoricEarnings($id: ID!, $sinceDate: BigInt!) {
     vault(id: $id) {
       id
       token {
@@ -77,8 +73,7 @@ export const ASSET_HISTORIC_EARNINGS = gql`
   }
 `;
 
-export const ACCOUNT_HISTORIC_EARNINGS = gql`
-  query AccountHistoricEarnings($id: ID!, $shareToken: String!, $sinceDate: BigInt!) {
+export const ACCOUNT_HISTORIC_EARNINGS = `query AccountHistoricEarnings($id: ID!, $shareToken: String!, $sinceDate: BigInt!) {
     account(id: $id) {
       vaultPositions(where: { shareToken: $shareToken }) {
         balanceShares

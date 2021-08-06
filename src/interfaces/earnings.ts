@@ -3,20 +3,7 @@ import { BigNumber } from "bignumber.js";
 
 import { ChainId } from "../chain";
 import { ServiceInterface } from "../common";
-import {
-  AccountEarnings as AccountEarningsQuery,
-  AccountEarningsVariables as AccountEarningsQueryVariables
-} from "../services/subgraph/apollo/generated/AccountEarnings";
-import {
-  AccountHistoricEarnings as AccountHistoricEarningsQuery,
-  AccountHistoricEarningsVariables as AccountHistoricEarningsQueryVariables
-} from "../services/subgraph/apollo/generated/AccountHistoricEarnings";
-import {
-  AssetHistoricEarnings as AssetHistoricEarningsQuery,
-  AssetHistoricEarningsVariables as AssetHistoricEarningsQueryVariables
-} from "../services/subgraph/apollo/generated/AssetHistoricEarnings";
-import { ProtocolEarnings } from "../services/subgraph/apollo/generated/ProtocolEarnings";
-import { VaultEarnings, VaultEarningsVariables } from "../services/subgraph/apollo/generated/VaultEarnings";
+import { YearnSubgraphEndpoint } from "../services/subgraph";
 import {
   ACCOUNT_EARNINGS,
   ACCOUNT_HISTORIC_EARNINGS,
@@ -24,6 +11,13 @@ import {
   PROTOCOL_EARNINGS,
   VAULT_EARNINGS
 } from "../services/subgraph/apollo/queries";
+import {
+  AccountEarningsResponse,
+  AccountHistoricEarningsResponse,
+  AssetHistoricEarningsResponse,
+  ProtocolEarningsResponse,
+  VaultEarningsResponse
+} from "../services/subgraph/responses";
 import { Address, SdkError } from "../types";
 import {
   AccountHistoricEarnings,
@@ -36,13 +30,11 @@ const BigZero = new BigNumber(0);
 
 export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
   async protocolEarnings(): Promise<String> {
-    const response = await this.yearn.services.subgraph.client.query<ProtocolEarnings>({
-      query: PROTOCOL_EARNINGS
-    });
+    const response = (await this.fetchQuery(PROTOCOL_EARNINGS)) as ProtocolEarningsResponse;
 
     let result = BigZero;
     for (const vault of response.data.vaults) {
-      if (vault.latestUpdate === null) {
+      if (!vault.latestUpdate) {
         continue;
       }
       const returnsGenerated = new BigNumber(vault.latestUpdate.returnsGenerated);
@@ -54,12 +46,9 @@ export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
   }
 
   async assetEarnings(assetAddress: Address): Promise<AssetEarnings> {
-    const response = await this.yearn.services.subgraph.client.query<VaultEarnings, VaultEarningsVariables>({
-      query: VAULT_EARNINGS,
-      variables: {
-        vault: assetAddress
-      }
-    });
+    const response = (await this.fetchQuery(VAULT_EARNINGS, {
+      vault: assetAddress
+    })) as VaultEarningsResponse;
 
     const vault = response.data.vault;
 
@@ -78,15 +67,9 @@ export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
   }
 
   async accountAssetsData(accountAddress: Address): Promise<EarningsUserData> {
-    const response = await this.yearn.services.subgraph.client.query<
-      AccountEarningsQuery,
-      AccountEarningsQueryVariables
-    >({
-      query: ACCOUNT_EARNINGS,
-      variables: {
-        id: accountAddress.toLowerCase()
-      }
-    });
+    const response = (await this.fetchQuery(ACCOUNT_EARNINGS, {
+      id: accountAddress
+    })) as AccountEarningsResponse;
 
     const account = response.data.account;
 
@@ -173,15 +156,12 @@ export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
   }
 
   async assetHistoricEarnings(assetAddress: Address, sinceDate: Date): Promise<AssetHistoricEarnings> {
-    const vault = await this.yearn.services.subgraph.client
-      .query<AssetHistoricEarningsQuery, AssetHistoricEarningsQueryVariables>({
-        query: ASSET_HISTORIC_EARNINGS,
-        variables: {
-          id: assetAddress.toLowerCase(),
-          sinceDate: sinceDate.getTime().toString()
-        }
-      })
-      .then(response => response.data.vault);
+    const response = (await this.fetchQuery(ASSET_HISTORIC_EARNINGS, {
+      id: assetAddress,
+      sinceDate: sinceDate.getTime().toString()
+    })) as AssetHistoricEarningsResponse;
+
+    const vault = response.data.vault;
 
     if (!vault) {
       throw new SdkError(`No asset with address ${assetAddress}`);
@@ -216,16 +196,13 @@ export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
     shareTokenAddress: Address,
     sinceDate: Date
   ): Promise<AccountHistoricEarnings> {
-    const vaultPositions = await this.yearn.services.subgraph.client
-      .query<AccountHistoricEarningsQuery, AccountHistoricEarningsQueryVariables>({
-        query: ACCOUNT_HISTORIC_EARNINGS,
-        variables: {
-          id: accountAddress.toLowerCase(),
-          shareToken: shareTokenAddress.toLowerCase(),
-          sinceDate: sinceDate.getTime().toString()
-        }
-      })
-      .then(response => response.data.account?.vaultPositions);
+    const response = (await this.fetchQuery(ACCOUNT_HISTORIC_EARNINGS, {
+      id: accountAddress,
+      shareToken: shareTokenAddress,
+      sinceDate: sinceDate.getTime().toString()
+    })) as AccountHistoricEarningsResponse;
+
+    const vaultPositions = response.data.account?.vaultPositions;
 
     if (!vaultPositions) {
       throw new SdkError(`No account with address ${accountAddress}`);
@@ -335,6 +312,27 @@ export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
       decimals: token.decimals,
       dayData: earningsDayData
     };
+  }
+
+  private async fetchQuery(query: string, variables: { [key: string]: any } = {}): Promise<unknown> {
+    Object.keys(variables).forEach(key => {
+      const variable = variables[key];
+      if (typeof variable === "string") {
+        // the subgraph only works with lowercased addresses
+        variables[key] = variable.toLowerCase();
+      }
+    });
+
+    const body = {
+      query: query,
+      variables: variables
+    };
+
+    return await fetch(YearnSubgraphEndpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body)
+    }).then(res => res.json());
   }
 
   private async tokensValueInUsdc(tokenAmount: BigNumber, tokenAddress: Address, decimals: number): Promise<BigNumber> {
