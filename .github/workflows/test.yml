@@ -27,9 +27,7 @@ jobs:
         uses: bahmutov/npm-install@v1
 
       - name: Build
-        run: |
-          yarn codegen
-          yarn build
+        run: yarn build
 
       - name: Test
         run: yarn test --ci --coverage --maxWorkers=2
