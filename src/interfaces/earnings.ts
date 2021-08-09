@@ -9,7 +9,7 @@ import {
   ASSET_HISTORIC_EARNINGS,
   PROTOCOL_EARNINGS,
   VAULT_EARNINGS
-} from "../services/subgraph/apollo/queries";
+} from "../services/subgraph/queries";
 import {
   AccountEarningsResponse,
   AccountHistoricEarningsResponse,

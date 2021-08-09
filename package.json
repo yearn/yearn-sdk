@@ -18,9 +18,7 @@
     "docs": "typedoc --out docs src/index.ts",
     "size": "size-limit",
     "analyze": "size-limit --why",
-    "version": "tsdx build",
-    "codegen": "yarn codegen:apollo",
-    "codegen:apollo": "apollo client:codegen --target typescript --endpoint=https://api.thegraph.com/subgraphs/name/salazarguille/yearn-vaults-v2-subgraph-mainnet --outputFlat --includes \"src/services/subgraph/apollo/**\" --excludes \"src/services/subgraph/apollo/generated\" --passthroughCustomScalars --customScalarsPrefix YearnSubgraph src/services/subgraph/apollo/generated"
+    "version": "tsdx build"
   },
   "peerDependencies": {
     "@ethersproject/abi": "^5.4.0",
@@ -37,7 +35,6 @@
     "@ethersproject/providers": "^5.4.1",
     "@size-limit/preset-small-lib": "^4.10.1",
     "@solidity-parser/parser": "^0.12.0",
-    "apollo": "^2.33.0",
     "cli-table3": "^0.6.0",
     "eslint-plugin-simple-import-sort": "6",
     "size-limit": "^4.10.1",
@@ -46,15 +43,10 @@
     "typedoc": "^0.20.0"
   },
   "dependencies": {
-    "apollo-cache-inmemory": "^1.6.6",
-    "apollo-client": "^2.6.10",
-    "apollo-link-http": "^1.5.17",
     "bignumber.js": "^9.0.1",
     "cross-fetch": "^3.1.3-alpha.6",
     "dotenv": "^10.0.0",
     "emittery": "^0.8.1",
-    "graphql": "^15.5.0",
-    "graphql-tag": "^2.12.4",
     "type-fest": "^1.1.1"
   },
   "size-limit": [

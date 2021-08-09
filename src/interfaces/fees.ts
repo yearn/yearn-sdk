@@ -2,7 +2,7 @@ import BigNumber from "bignumber.js";
 
 import { ChainId } from "../chain";
 import { ServiceInterface } from "../common";
-import { PROTOCOL_FEES } from "../services/subgraph/apollo/queries";
+import { PROTOCOL_FEES } from "../services/subgraph/queries";
 import { FeesResponse } from "../services/subgraph/responses";
 import { Usdc } from "../types";
 
