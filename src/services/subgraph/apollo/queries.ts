@@ -1,5 +1,3 @@
-import gql from "graphql-tag";
-
 declare global {
   type YearnSubgraphBigInt = string;
 }
@@ -101,8 +99,7 @@ export const ACCOUNT_HISTORIC_EARNINGS = `query AccountHistoricEarnings($id: ID!
   }
 `;
 
-export const PROTOCOL_FEES = gql`
-  query ProtocolFees($sinceDate: BigInt!) {
+export const PROTOCOL_FEES = `query ProtocolFees($sinceDate: BigInt!) {
     transfers(where: { timestamp_gt: $sinceDate }, first: 1000) {
       tokenAmountUsdc
     }

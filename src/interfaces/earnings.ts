@@ -3,7 +3,6 @@ import { BigNumber } from "bignumber.js";
 
 import { ChainId } from "../chain";
 import { ServiceInterface } from "../common";
-import { YearnSubgraphEndpoint } from "../services/subgraph";
 import {
   ACCOUNT_EARNINGS,
   ACCOUNT_HISTORIC_EARNINGS,
@@ -30,7 +29,7 @@ const BigZero = new BigNumber(0);
 
 export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
   async protocolEarnings(): Promise<String> {
-    const response = (await this.fetchQuery(PROTOCOL_EARNINGS)) as ProtocolEarningsResponse;
+    const response = (await this.yearn.services.subgraph.fetchQuery(PROTOCOL_EARNINGS)) as ProtocolEarningsResponse;
 
     let result = BigZero;
     for (const vault of response.data.vaults) {
@@ -46,7 +45,7 @@ export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
   }
 
   async assetEarnings(assetAddress: Address): Promise<AssetEarnings> {
-    const response = (await this.fetchQuery(VAULT_EARNINGS, {
+    const response = (await this.yearn.services.subgraph.fetchQuery(VAULT_EARNINGS, {
       vault: assetAddress
     })) as VaultEarningsResponse;
 
@@ -67,7 +66,7 @@ export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
   }
 
   async accountAssetsData(accountAddress: Address): Promise<EarningsUserData> {
-    const response = (await this.fetchQuery(ACCOUNT_EARNINGS, {
+    const response = (await this.yearn.services.subgraph.fetchQuery(ACCOUNT_EARNINGS, {
       id: accountAddress
     })) as AccountEarningsResponse;
 
@@ -156,7 +155,7 @@ export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
   }
 
   async assetHistoricEarnings(assetAddress: Address, sinceDate: Date): Promise<AssetHistoricEarnings> {
-    const response = (await this.fetchQuery(ASSET_HISTORIC_EARNINGS, {
+    const response = (await this.yearn.services.subgraph.fetchQuery(ASSET_HISTORIC_EARNINGS, {
       id: assetAddress,
       sinceDate: sinceDate.getTime().toString()
     })) as AssetHistoricEarningsResponse;
@@ -196,7 +195,7 @@ export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
     shareTokenAddress: Address,
     sinceDate: Date
   ): Promise<AccountHistoricEarnings> {
-    const response = (await this.fetchQuery(ACCOUNT_HISTORIC_EARNINGS, {
+    const response = (await this.yearn.services.subgraph.fetchQuery(ACCOUNT_HISTORIC_EARNINGS, {
       id: accountAddress,
       shareToken: shareTokenAddress,
       sinceDate: sinceDate.getTime().toString()
@@ -312,27 +311,6 @@ export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
       decimals: token.decimals,
       dayData: earningsDayData
     };
-  }
-
-  private async fetchQuery(query: string, variables: { [key: string]: any } = {}): Promise<unknown> {
-    Object.keys(variables).forEach(key => {
-      const variable = variables[key];
-      if (typeof variable === "string") {
-        // the subgraph only works with lowercased addresses
-        variables[key] = variable.toLowerCase();
-      }
-    });
-
-    const body = {
-      query: query,
-      variables: variables
-    };
-
-    return await fetch(YearnSubgraphEndpoint, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body)
-    }).then(res => res.json());
   }
 
   private async tokensValueInUsdc(tokenAmount: BigNumber, tokenAddress: Address, decimals: number): Promise<BigNumber> {

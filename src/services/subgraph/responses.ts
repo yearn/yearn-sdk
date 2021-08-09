@@ -103,7 +103,9 @@ export interface AccountHistoricEarningsResponse {
 }
 
 export interface FeesResponse {
-  transfers: {
-    tokenAmountUsdc: Integer;
-  }[];
+  data: {
+    transfers: {
+      tokenAmountUsdc: Integer;
+    }[];
+  };
 }
