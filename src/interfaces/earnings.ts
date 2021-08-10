@@ -149,7 +149,7 @@ export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
       ? BigZero
       : assetsData
           .map(datum => {
-            const apy = apys[datum.assetAddress]?.recommended || 0;
+            const apy = apys[datum.assetAddress]?.net_apy || 0;
             return new BigNumber(apy).times(datum.balanceUsdc).div(holdings);
           })
           .reduce((sum, value) => sum.plus(value));
