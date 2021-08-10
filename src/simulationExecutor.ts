@@ -256,6 +256,10 @@ export class SimulationExecutor {
       gasLimit: options.gasLimit,
       gasPrice: options.gasPrice
     };
+    if (!options.gasPrice) {
+      transactionRequest.maxFeePerGas = options.maxFeePerGas || "0";
+      transactionRequest.maxPriorityFeePerGas = options.maxPriorityFeePerGas || "0";
+    }
 
     const result = await signer.populateTransaction(transactionRequest);
 

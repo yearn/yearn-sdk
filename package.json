@@ -25,16 +25,16 @@
   "peerDependencies": {
     "@ethersproject/abi": "^5.4.0",
     "@ethersproject/address": "^5.4.0",
-    "@ethersproject/bignumber": "^5.4.0",
-    "@ethersproject/contracts": "^5.4.0",
-    "@ethersproject/providers": "^5.4.1"
+    "@ethersproject/bignumber": "^5.4.1",
+    "@ethersproject/contracts": "^5.4.1",
+    "@ethersproject/providers": "^5.4.3"
   },
   "devDependencies": {
     "@ethersproject/abi": "^5.4.0",
     "@ethersproject/address": "^5.4.0",
-    "@ethersproject/bignumber": "^5.4.0",
-    "@ethersproject/contracts": "^5.4.0",
-    "@ethersproject/providers": "^5.4.1",
+    "@ethersproject/bignumber": "^5.4.1",
+    "@ethersproject/contracts": "^5.4.1",
+    "@ethersproject/providers": "^5.4.3",
     "@size-limit/preset-small-lib": "^4.10.1",
     "@solidity-parser/parser": "^0.12.0",
     "apollo": "^2.33.0",

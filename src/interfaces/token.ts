@@ -1,5 +1,5 @@
-import { TransactionRequest, TransactionResponse } from "@ethersproject/abstract-provider";
 import { CallOverrides, Contract } from "@ethersproject/contracts";
+import { TransactionRequest, TransactionResponse } from "@ethersproject/providers";
 import BigNumber from "bignumber.js";
 
 import { ChainId } from "../chain";
