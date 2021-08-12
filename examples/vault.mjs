@@ -13,6 +13,12 @@ const yearn = new Yearn(1, {
 });
 
 async function main() {
+  // const result = await yearn.services.meta.token("0x0000000000085d4780B73119b644AE5ecd22b376");
+  // const result = await yearn.services.zapper.supportedTokens();
+  const result = await yearn.vaults.tokens();
+  // console.log(result);
+  return;
+
   const vaults = await yearn.vaults.get();
 
   const vaultsTable = new Table();

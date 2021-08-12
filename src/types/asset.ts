@@ -1,5 +1,5 @@
 import { Address, Integer, Usdc } from "./common";
-import { Metadata, TypeId } from "./metadata";
+import { Metadata, TokenMetadata, TypeId } from "./metadata";
 
 export interface Allowance {
   owner: Address;
@@ -25,6 +25,7 @@ export interface Token extends ERC20 {
   supported: {
     zapper?: boolean;
   };
+  metadata?: TokenMetadata;
 }
 
 /**
