@@ -4,7 +4,7 @@ import { Address, TokenMetadata } from "../types";
 const MetaURL = "https://raw.githubusercontent.com/yearn/yearn-meta/master/data/";
 
 /**
- * [[Meta]] fetches meta data about things such as vaults and tokens
+ * [[MetaService]] fetches meta data about things such as vaults and tokens
  * from yearn-meta
  */
 export class MetaService extends Service {
