@@ -52,3 +52,12 @@ export type Metadata = {
  * Union type of all the existing Metadata types.
  */
 export type TypeId = keyof Metadata;
+
+/**
+ * Token metadata from yearn-meta
+ */
+export interface TokenMetadata {
+  categories?: string[];
+  description?: string;
+  website?: string;
+}
