@@ -177,7 +177,8 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
             // @notice weird icon fix related to the way yearn-assets handles tokens
             icon: icons[token.address === WethAddress ? EthAddress : token.address],
             supported: {},
-            priceUsdc: await this.yearn.services.oracle.getPriceUsdc(token.address, overrides)
+            priceUsdc: await this.yearn.services.oracle.getPriceUsdc(token.address, overrides),
+            metadata: await this.yearn.services.meta.token(token.address)
           }))
         );
       })

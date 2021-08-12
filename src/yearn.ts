@@ -9,6 +9,7 @@ import { VaultInterface } from "./interfaces/vault";
 import { AssetService } from "./services/assets";
 import { HelperService } from "./services/helper";
 import { LensService } from "./services/lens";
+import { MetaService } from "./services/meta";
 import { OracleService } from "./services/oracle";
 import { PickleService } from "./services/partners/pickle";
 import { SubgraphService } from "./services/subgraph";
@@ -38,6 +39,7 @@ export class Yearn<T extends ChainId> {
     vision: VisionService;
     subgraph: SubgraphService;
     telegram: TelegramService;
+    meta: MetaService;
 
     pickle: PickleService;
 
@@ -81,7 +83,8 @@ export class Yearn<T extends ChainId> {
       subgraph: new SubgraphService(chainId, this.context),
       pickle: new PickleService(chainId, this.context),
       helper: new HelperService(chainId, this.context),
-      telegram: new TelegramService(chainId, this.context)
+      telegram: new TelegramService(chainId, this.context),
+      meta: new MetaService(chainId, this.context)
     };
 
     this.vaults = new VaultInterface(this, chainId, this.context);
