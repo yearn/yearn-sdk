@@ -248,6 +248,10 @@ export class SimulationExecutor {
       signer = this.ctx.provider.write.getSigner(from);
     }
 
+    if (options.maxFeePerGas && options.maxPriorityFeePerGas) {
+      delete options.gasPrice;
+    }
+
     const transactionRequest: TransactionRequest = {
       from,
       to,
@@ -257,7 +261,7 @@ export class SimulationExecutor {
       gasPrice: options.gasPrice,
       maxFeePerGas: options.maxFeePerGas,
       maxPriorityFeePerGas: options.maxPriorityFeePerGas,
-      type: options.gasPrice ? 0 : 2
+      type: options.gasPrice ? 0 : undefined
     };
 
     const result = await signer.populateTransaction(transactionRequest);
