@@ -248,18 +248,21 @@ export class SimulationExecutor {
       signer = this.ctx.provider.write.getSigner(from);
     }
 
+    if (options.maxFeePerGas && options.maxPriorityFeePerGas) {
+      delete options.gasPrice;
+    }
+
     const transactionRequest: TransactionRequest = {
       from,
       to,
       data,
       value,
       gasLimit: options.gasLimit,
-      gasPrice: options.gasPrice
+      gasPrice: options.gasPrice,
+      maxFeePerGas: options.maxFeePerGas,
+      maxPriorityFeePerGas: options.maxPriorityFeePerGas,
+      type: options.gasPrice ? 0 : undefined
     };
-    if (!options.gasPrice) {
-      transactionRequest.maxFeePerGas = options.maxFeePerGas || "0";
-      transactionRequest.maxPriorityFeePerGas = options.maxPriorityFeePerGas || "0";
-    }
 
     const result = await signer.populateTransaction(transactionRequest);
 
