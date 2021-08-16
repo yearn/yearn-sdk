@@ -35,9 +35,7 @@ jobs:
       uses: bahmutov/npm-install@v1
 
     - name: Build
-      run: |
-        yarn codegen
-        yarn build
+      run: yarn build
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v1
