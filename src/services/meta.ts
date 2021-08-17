@@ -1,7 +1,7 @@
 import { Service } from "../common";
-import { Address, TokenMetadata } from "../types";
+import { Address, StrategyMetadata, TokenMetadata } from "../types";
 
-const MetaURL = "https://raw.githubusercontent.com/yearn/yearn-meta/master/data/";
+const MetaURL = "http://meta.yearn.network";
 
 /**
  * [[MetaService]] fetches meta data about things such as vaults and tokens
@@ -9,8 +9,16 @@ const MetaURL = "https://raw.githubusercontent.com/yearn/yearn-meta/master/data/
  */
 export class MetaService extends Service {
   async token(address: Address): Promise<TokenMetadata | undefined> {
+    return this.fetchMetadataItem(`${MetaURL}/tokens/${address}`);
+  }
+
+  async strategy(address: Address): Promise<StrategyMetadata | undefined> {
+    return this.fetchMetadataItem(`${MetaURL}/strategies/${address}`);
+  }
+
+  private async fetchMetadataItem<T>(url: string): Promise<T | undefined> {
     try {
-      return await fetch(`${MetaURL}/tokens/${address}.json`).then(res => res.json());
+      return await fetch(url).then(res => res.json());
     } catch (error) {
       return undefined;
     }

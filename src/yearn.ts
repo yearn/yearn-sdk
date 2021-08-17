@@ -4,6 +4,7 @@ import { EarningsInterface } from "./interfaces/earnings";
 import { FeesInterface } from "./interfaces/fees";
 import { IronBankInterface } from "./interfaces/ironbank";
 import { SimulationInterface } from "./interfaces/simulation";
+import { StrategyInterface } from "./interfaces/strategy";
 import { TokenInterface } from "./interfaces/token";
 import { VaultInterface } from "./interfaces/vault";
 import { AssetService } from "./services/assets";
@@ -52,6 +53,7 @@ export class Yearn<T extends ChainId> {
   fees: FeesInterface<T>;
   ironBank: IronBankInterface<T>;
   simulation: SimulationInterface<T>;
+  strategies: StrategyInterface<T>;
 
   context: Context;
 
@@ -93,6 +95,7 @@ export class Yearn<T extends ChainId> {
     this.fees = new FeesInterface(this, chainId, this.context);
     this.ironBank = new IronBankInterface(this, chainId, this.context);
     this.simulation = new SimulationInterface(this, chainId, this.context);
+    this.strategies = new StrategyInterface(this, chainId, this.context);
 
     this.ready = Promise.all([this.services.asset.ready]);
   }
