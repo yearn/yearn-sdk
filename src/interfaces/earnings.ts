@@ -154,10 +154,23 @@ export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
     };
   }
 
-  async assetHistoricEarnings(assetAddress: Address, sinceDate: Date): Promise<AssetHistoricEarnings> {
+  async assetHistoricEarnings(
+    assetAddress: Address,
+    fromDaysAgo: number,
+    toDaysAgo?: number
+  ): Promise<AssetHistoricEarnings> {
+    if (toDaysAgo && toDaysAgo > fromDaysAgo) {
+      throw new SdkError("fromDaysAgo must be greater than toDaysAgo");
+    }
+
     const response = (await this.yearn.services.subgraph.fetchQuery(ASSET_HISTORIC_EARNINGS, {
       id: assetAddress,
-      sinceDate: sinceDate.getTime().toString()
+      fromDate: this.getDate(fromDaysAgo)
+        .getTime()
+        .toString(),
+      toDate: this.getDate(toDaysAgo || 0)
+        .getTime()
+        .toString()
     })) as AssetHistoricEarningsResponse;
 
     const vault = response.data.vault;
@@ -193,12 +206,22 @@ export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
   async accountHistoricEarnings(
     accountAddress: Address,
     shareTokenAddress: Address,
-    sinceDate: Date
+    fromDaysAgo: number,
+    toDaysAgo?: number
   ): Promise<AccountHistoricEarnings> {
+    if (toDaysAgo && toDaysAgo > fromDaysAgo) {
+      throw new SdkError("fromDaysAgo must be greater than toDaysAgo");
+    }
+
     const response = (await this.yearn.services.subgraph.fetchQuery(ACCOUNT_HISTORIC_EARNINGS, {
       id: accountAddress,
       shareToken: shareTokenAddress,
-      sinceDate: sinceDate.getTime().toString()
+      fromDate: this.getDate(fromDaysAgo)
+        .getTime()
+        .toString(),
+      toDate: this.getDate(toDaysAgo || 0)
+        .getTime()
+        .toString()
     })) as AccountHistoricEarningsResponse;
 
     const vaultPositions = response.data.account?.vaultPositions;
@@ -316,5 +339,11 @@ export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
   private async tokensValueInUsdc(tokenAmount: BigNumber, tokenAddress: Address, decimals: number): Promise<BigNumber> {
     const tokenUsdcPrice = await this.yearn.services.oracle.getPriceUsdc(tokenAddress);
     return new BigNumber(tokenUsdcPrice).multipliedBy(tokenAmount).div(10 ** decimals);
+  }
+
+  private getDate(daysAgo: number) {
+    let date = new Date();
+    date.setDate(date.getDate() - daysAgo);
+    return date;
   }
 }
