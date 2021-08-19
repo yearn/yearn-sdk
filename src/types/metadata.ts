@@ -20,6 +20,7 @@ export interface VaultMetadata {
   displayName: string;
   displayIcon: string;
   defaultDisplayToken: Address;
+  strategies: StrategyMetadata[];
 }
 
 /**
@@ -60,4 +61,9 @@ export interface TokenMetadata {
   categories?: string[];
   description?: string;
   website?: string;
+}
+
+export interface StrategyMetadata {
+  name: string;
+  description: string;
 }
