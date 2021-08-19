@@ -1,4 +1,5 @@
 import { Address, Integer, Usdc } from "./common";
+import { AssetHistoricEarnings } from "./custom/earnings";
 import { Metadata, TokenMetadata, TypeId } from "./metadata";
 
 export interface Allowance {
@@ -66,6 +67,7 @@ export interface AssetDynamic<T extends TypeId> {
   tokenId: Address;
   underlyingTokenBalance: TokenAmount;
   metadata: Metadata[T];
+  historicEarnings?: AssetHistoricEarnings;
 }
 
 /**

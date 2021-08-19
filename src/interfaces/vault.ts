@@ -9,6 +9,7 @@ import { EthAddress, WethAddress } from "../helpers";
 import { PickleJars } from "../services/partners/pickle";
 import {
   Address,
+  AssetHistoricEarnings,
   Balance,
   DepositOptions,
   Integer,
@@ -44,8 +45,13 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
       if (!dynamic) {
         throw new SdkError(`Dynamic asset does not exist for ${asset.address}`);
       }
+      let historicEarnings: AssetHistoricEarnings | undefined;
+      try {
+        historicEarnings = await this.yearn.earnings.assetHistoricEarnings(asset.address, 30);
+      } catch (error) {}
       dynamic.metadata.displayName = dynamic.metadata.displayName || asset.name;
       dynamic.metadata.strategies = strategiesMetadata.get(asset.address) || [];
+      dynamic.historicEarnings = historicEarnings;
       assets.push({ ...asset, ...dynamic });
     }
     return assets;
