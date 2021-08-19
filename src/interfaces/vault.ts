@@ -51,7 +51,7 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
       } catch (error) {}
       dynamic.metadata.displayName = dynamic.metadata.displayName || asset.name;
       dynamic.metadata.strategies = strategiesMetadata.get(asset.address) || [];
-      dynamic.historicEarnings = historicEarnings;
+      dynamic.metadata.historicEarnings = historicEarnings;
       assets.push({ ...asset, ...dynamic });
     }
     return assets;
