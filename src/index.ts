@@ -44,6 +44,7 @@ export { EarningsInterface } from "./interfaces/earnings";
 export { FeesInterface } from "./interfaces/fees";
 export { IronBankInterface } from "./interfaces/ironbank";
 export { SimulationInterface } from "./interfaces/simulation";
+export { StrategyInterface } from "./interfaces/strategy";
 export { TokenInterface } from "./interfaces/token";
 export { VaultInterface } from "./interfaces/vault";
 export { IronBankAdapter } from "./services/adapters/ironbank";

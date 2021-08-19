@@ -37,6 +37,7 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
   async get(addresses?: Address[], overrides?: CallOverrides): Promise<Vault[]> {
     const assetsStatic = await this.getStatic(addresses, overrides);
     const assetsDynamic = await this.getDynamic(addresses, overrides);
+    const strategiesMetadata = await this.yearn.strategies.dataForVaults(assetsStatic.map(asset => asset.address));
     const assets = new Array<Vault>();
     for (const asset of assetsStatic) {
       const dynamic = assetsDynamic.find(({ address }) => asset.address === address);
@@ -44,6 +45,7 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
         throw new SdkError(`Dynamic asset does not exist for ${asset.address}`);
       }
       dynamic.metadata.displayName = dynamic.metadata.displayName || asset.name;
+      dynamic.metadata.strategies = strategiesMetadata.get(asset.address) || [];
       assets.push({ ...asset, ...dynamic });
     }
     return assets;
