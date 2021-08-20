@@ -154,17 +154,17 @@ export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
     };
   }
 
-  async assetHistoricEarnings(
-    assetAddress: Address,
+  async assetsHistoricEarnings(
+    assetAddresses: Address[],
     fromDaysAgo: number,
     toDaysAgo?: number
-  ): Promise<AssetHistoricEarnings> {
+  ): Promise<AssetHistoricEarnings[]> {
     if (toDaysAgo && toDaysAgo > fromDaysAgo) {
       throw new SdkError("fromDaysAgo must be greater than toDaysAgo");
     }
 
     const response = (await this.yearn.services.subgraph.fetchQuery(ASSET_HISTORIC_EARNINGS, {
-      id: assetAddress,
+      ids: assetAddresses,
       fromDate: this.getDate(fromDaysAgo)
         .getTime()
         .toString(),
@@ -173,34 +173,31 @@ export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
         .toString()
     })) as AssetHistoricEarningsResponse;
 
-    const vault = response.data.vault;
+    return await Promise.all(
+      response.data.vaults.map(async vault => {
+        const dayData = await Promise.all(
+          vault.vaultDayData.map(async vaultDayDatum => {
+            const amountUsdc = new BigNumber(vaultDayDatum.tokenPriceUSDC)
+              .multipliedBy(new BigNumber(vaultDayDatum.totalReturnsGenerated))
+              .dividedBy(new BigNumber(10).pow(new BigNumber(vault.token.decimals)));
 
-    if (!vault) {
-      throw new SdkError(`No asset with address ${assetAddress}`);
-    }
-
-    const dayData = await Promise.all(
-      vault.vaultDayData.map(async vaultDayDatum => {
-        const amountUsdc = await this.tokensValueInUsdc(
-          new BigNumber(vaultDayDatum.dayReturnsGenerated),
-          getAddress(vault.token.id),
-          vault.token.decimals
+            return {
+              earnings: {
+                amountUsdc: amountUsdc.toFixed(0),
+                amount: vaultDayDatum.totalReturnsGenerated
+              },
+              date: new Date(+vaultDayDatum.timestamp)
+            };
+          })
         );
+
         return {
-          earnings: {
-            amountUsdc: amountUsdc.toFixed(0),
-            amount: vaultDayDatum.dayReturnsGenerated
-          },
-          date: new Date(+vaultDayDatum.timestamp)
+          decimals: vault.token.decimals,
+          assetAddress: getAddress(vault.id),
+          dayData: dayData
         };
       })
     );
-
-    return {
-      decimals: vault.token.decimals,
-      assetAddress: assetAddress,
-      dayData: dayData
-    };
   }
 
   async accountHistoricEarnings(

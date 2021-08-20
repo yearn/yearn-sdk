@@ -52,16 +52,17 @@ export const ACCOUNT_EARNINGS = `query AccountEarnings($id: ID!) {
   }
 `;
 
-export const ASSET_HISTORIC_EARNINGS = `query AssetHistoricEarnings($id: ID!, $fromDate: BigInt!, $toDate: BigInt!) {
-    vault(id: $id) {
+export const ASSET_HISTORIC_EARNINGS = `query AssetHistoricEarnings($ids: [ID!]!, $fromDate: BigInt!, $toDate: BigInt!) {
+    vaults(where: { id_in: $ids} ) {
       id
       token {
         id
         decimals
       }
       vaultDayData(where: { timestamp_gte: $fromDate, timestamp_lte: $toDate }, first: 1000) {
-        dayReturnsGenerated
+        totalReturnsGenerated
         timestamp
+        tokenPriceUSDC
       }
     }
   }

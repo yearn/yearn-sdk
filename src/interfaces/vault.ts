@@ -14,6 +14,7 @@ import {
   DepositOptions,
   Integer,
   SdkError,
+  StrategyMetadata,
   Token,
   VaultDynamic,
   VaultStatic,
@@ -38,20 +39,34 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
   async get(addresses?: Address[], overrides?: CallOverrides): Promise<Vault[]> {
     const assetsStatic = await this.getStatic(addresses, overrides);
     const assetsDynamic = await this.getDynamic(addresses, overrides);
-    const strategiesMetadata = await this.yearn.strategies.dataForVaults(assetsStatic.map(asset => asset.address));
+
+    let strategiesMetadata: Map<Address, StrategyMetadata[]>;
+    try {
+      strategiesMetadata = await this.yearn.strategies.dataForVaults(assetsStatic.map(asset => asset.address));
+    } catch {
+      strategiesMetadata = new Map();
+    }
+
+    let assetsHistoricEarnings: AssetHistoricEarnings[];
+    try {
+      assetsHistoricEarnings = await this.yearn.earnings.assetsHistoricEarnings(
+        assetsDynamic.map(asset => asset.address),
+        30
+      );
+    } catch {
+      assetsHistoricEarnings = [];
+    }
+
     const assets = new Array<Vault>();
     for (const asset of assetsStatic) {
       const dynamic = assetsDynamic.find(({ address }) => asset.address === address);
       if (!dynamic) {
         throw new SdkError(`Dynamic asset does not exist for ${asset.address}`);
       }
-      let historicEarnings: AssetHistoricEarnings | undefined;
-      try {
-        historicEarnings = await this.yearn.earnings.assetHistoricEarnings(asset.address, 30);
-      } catch (error) {}
       dynamic.metadata.displayName = dynamic.metadata.displayName || asset.name;
       dynamic.metadata.strategies = strategiesMetadata.get(asset.address) || [];
-      dynamic.metadata.historicEarnings = historicEarnings;
+      const historicEarnings = assetsHistoricEarnings.find(earnings => earnings.assetAddress === asset.address);
+      dynamic.metadata.historicEarnings = historicEarnings?.dayData;
       assets.push({ ...asset, ...dynamic });
     }
     return assets;
