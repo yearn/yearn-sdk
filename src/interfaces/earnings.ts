@@ -173,31 +173,27 @@ export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
         .toString()
     })) as AssetHistoricEarningsResponse;
 
-    return await Promise.all(
-      response.data.vaults.map(async vault => {
-        const dayData = await Promise.all(
-          vault.vaultDayData.map(async vaultDayDatum => {
-            const amountUsdc = new BigNumber(vaultDayDatum.tokenPriceUSDC)
-              .multipliedBy(new BigNumber(vaultDayDatum.totalReturnsGenerated))
-              .dividedBy(new BigNumber(10).pow(new BigNumber(vault.token.decimals)));
-
-            return {
-              earnings: {
-                amountUsdc: amountUsdc.toFixed(0),
-                amount: vaultDayDatum.totalReturnsGenerated
-              },
-              date: new Date(+vaultDayDatum.timestamp)
-            };
-          })
-        );
+    return response.data.vaults.map(vault => {
+      const dayData = vault.vaultDayData.map(vaultDayDatum => {
+        const amountUsdc = new BigNumber(vaultDayDatum.tokenPriceUSDC)
+          .multipliedBy(new BigNumber(vaultDayDatum.totalReturnsGenerated))
+          .dividedBy(new BigNumber(10).pow(new BigNumber(vault.token.decimals)));
 
         return {
-          decimals: vault.token.decimals,
-          assetAddress: getAddress(vault.id),
-          dayData: dayData
+          earnings: {
+            amountUsdc: amountUsdc.toFixed(0),
+            amount: vaultDayDatum.totalReturnsGenerated
+          },
+          date: new Date(+vaultDayDatum.timestamp)
         };
-      })
-    );
+      });
+
+      return {
+        decimals: vault.token.decimals,
+        assetAddress: getAddress(vault.id),
+        dayData: dayData
+      };
+    });
   }
 
   async accountHistoricEarnings(
