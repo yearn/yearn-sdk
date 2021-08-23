@@ -36,6 +36,11 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
    * @returns
    */
   async get(addresses?: Address[], overrides?: CallOverrides): Promise<Vault[]> {
+    const cached = await this.yearn.services.cache.call("/v1/chains/1/vaults/get");
+    if (cached) {
+      return cached as Vault[];
+    }
+
     const assetsStatic = await this.getStatic(addresses, overrides);
     const assetsDynamic = await this.getDynamic(addresses, overrides);
 

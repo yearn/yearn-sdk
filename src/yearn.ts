@@ -8,6 +8,7 @@ import { StrategyInterface } from "./interfaces/strategy";
 import { TokenInterface } from "./interfaces/token";
 import { VaultInterface } from "./interfaces/vault";
 import { AssetService } from "./services/assets";
+import { CacheService } from "./services/cache";
 import { HelperService } from "./services/helper";
 import { LensService } from "./services/lens";
 import { MetaService } from "./services/meta";
@@ -41,6 +42,7 @@ export class Yearn<T extends ChainId> {
     subgraph: SubgraphService;
     telegram: TelegramService;
     meta: MetaService;
+    cache: CacheService;
 
     pickle: PickleService;
 
@@ -86,7 +88,8 @@ export class Yearn<T extends ChainId> {
       pickle: new PickleService(chainId, this.context),
       helper: new HelperService(chainId, this.context),
       telegram: new TelegramService(chainId, this.context),
-      meta: new MetaService(chainId, this.context)
+      meta: new MetaService(chainId, this.context),
+      cache: new CacheService(chainId, this.context)
     };
 
     this.vaults = new VaultInterface(this, chainId, this.context);
