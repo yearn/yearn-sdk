@@ -13,6 +13,7 @@ import {
   DepositOptions,
   Integer,
   SdkError,
+  StrategyMetadata,
   Token,
   VaultDynamic,
   VaultStatic,
@@ -37,7 +38,19 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
   async get(addresses?: Address[], overrides?: CallOverrides): Promise<Vault[]> {
     const assetsStatic = await this.getStatic(addresses, overrides);
     const assetsDynamic = await this.getDynamic(addresses, overrides);
-    const strategiesMetadata = await this.yearn.strategies.dataForVaults(assetsStatic.map(asset => asset.address));
+
+    let strategiesMetadata: Map<Address, StrategyMetadata[]> = await this.yearn.strategies
+      .dataForVaults(assetsStatic.map(asset => asset.address))
+      .catch(error => {
+        console.error(error);
+        return Promise.resolve(new Map());
+      });
+
+    let assetsHistoricEarnings = await this.yearn.earnings.assetsHistoricEarnings().catch(error => {
+      console.error(error);
+      return Promise.resolve([]);
+    });
+
     const assets = new Array<Vault>();
     for (const asset of assetsStatic) {
       const dynamic = assetsDynamic.find(({ address }) => asset.address === address);
@@ -46,6 +59,9 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
       }
       dynamic.metadata.displayName = dynamic.metadata.displayName || asset.name;
       dynamic.metadata.strategies = strategiesMetadata.get(asset.address) || [];
+      dynamic.metadata.historicEarnings = assetsHistoricEarnings.find(
+        earnings => earnings.assetAddress === asset.address
+      )?.dayData;
       assets.push({ ...asset, ...dynamic });
     }
     return assets;
