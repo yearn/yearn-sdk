@@ -1,4 +1,5 @@
 import { Address, Integer } from "./common";
+import { EarningsDayData } from "./custom/earnings";
 import { Apy } from "./custom/vault";
 
 /**
@@ -21,6 +22,7 @@ export interface VaultMetadata {
   displayIcon: string;
   defaultDisplayToken: Address;
   strategies: StrategyMetadata[];
+  historicEarnings?: EarningsDayData[];
 }
 
 /**

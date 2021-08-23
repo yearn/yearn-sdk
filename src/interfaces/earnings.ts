@@ -154,51 +154,80 @@ export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
     };
   }
 
-  async assetHistoricEarnings(assetAddress: Address, sinceDate: Date): Promise<AssetHistoricEarnings> {
-    const response = (await this.yearn.services.subgraph.fetchQuery(ASSET_HISTORIC_EARNINGS, {
-      id: assetAddress,
-      sinceDate: sinceDate.getTime().toString()
-    })) as AssetHistoricEarningsResponse;
-
-    const vault = response.data.vault;
-
-    if (!vault) {
-      throw new SdkError(`No asset with address ${assetAddress}`);
+  async assetsHistoricEarnings(
+    assetAddresses?: Address[],
+    fromDaysAgo: number = 30,
+    toDaysAgo?: number
+  ): Promise<AssetHistoricEarnings[]> {
+    if (toDaysAgo && toDaysAgo > fromDaysAgo) {
+      throw new SdkError("fromDaysAgo must be greater than toDaysAgo");
     }
 
-    const dayData = await Promise.all(
-      vault.vaultDayData.map(async vaultDayDatum => {
-        const amountUsdc = await this.tokensValueInUsdc(
-          new BigNumber(vaultDayDatum.dayReturnsGenerated),
-          getAddress(vault.token.id),
-          vault.token.decimals
-        );
+    if (fromDaysAgo < 0) {
+      throw new SdkError("fromDays ago must be positive");
+    }
+
+    if (toDaysAgo && toDaysAgo < 0) {
+      throw new SdkError("toDays ago must be positive");
+    }
+
+    if (!assetAddresses) {
+      const assetsStatic = await this.yearn.services.lens.adapters.vaults.v2.assetsStatic();
+      assetAddresses = assetsStatic.map(asset => asset.address);
+    }
+
+    const response = (await this.yearn.services.subgraph.fetchQuery(ASSET_HISTORIC_EARNINGS, {
+      ids: assetAddresses,
+      fromDate: this.getDate(fromDaysAgo)
+        .getTime()
+        .toString(),
+      toDate: this.getDate(toDaysAgo || 0)
+        .getTime()
+        .toString()
+    })) as AssetHistoricEarningsResponse;
+
+    return response.data.vaults.map(vault => {
+      const dayData = vault.vaultDayData.map(vaultDayDatum => {
+        const amountUsdc = new BigNumber(vaultDayDatum.tokenPriceUSDC)
+          .multipliedBy(new BigNumber(vaultDayDatum.totalReturnsGenerated))
+          .dividedBy(new BigNumber(10).pow(new BigNumber(vault.token.decimals)));
+
         return {
           earnings: {
             amountUsdc: amountUsdc.toFixed(0),
-            amount: vaultDayDatum.dayReturnsGenerated
+            amount: vaultDayDatum.totalReturnsGenerated
           },
           date: new Date(+vaultDayDatum.timestamp)
         };
-      })
-    );
+      });
 
-    return {
-      decimals: vault.token.decimals,
-      assetAddress: assetAddress,
-      dayData: dayData
-    };
+      return {
+        decimals: vault.token.decimals,
+        assetAddress: getAddress(vault.id),
+        dayData: dayData
+      };
+    });
   }
 
   async accountHistoricEarnings(
     accountAddress: Address,
     shareTokenAddress: Address,
-    sinceDate: Date
+    fromDaysAgo: number,
+    toDaysAgo?: number
   ): Promise<AccountHistoricEarnings> {
+    if (toDaysAgo && toDaysAgo > fromDaysAgo) {
+      throw new SdkError("fromDaysAgo must be greater than toDaysAgo");
+    }
+
     const response = (await this.yearn.services.subgraph.fetchQuery(ACCOUNT_HISTORIC_EARNINGS, {
       id: accountAddress,
       shareToken: shareTokenAddress,
-      sinceDate: sinceDate.getTime().toString()
+      fromDate: this.getDate(fromDaysAgo)
+        .getTime()
+        .toString(),
+      toDate: this.getDate(toDaysAgo || 0)
+        .getTime()
+        .toString()
     })) as AccountHistoricEarningsResponse;
 
     const vaultPositions = response.data.account?.vaultPositions;
@@ -316,5 +345,11 @@ export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
   private async tokensValueInUsdc(tokenAmount: BigNumber, tokenAddress: Address, decimals: number): Promise<BigNumber> {
     const tokenUsdcPrice = await this.yearn.services.oracle.getPriceUsdc(tokenAddress);
     return new BigNumber(tokenUsdcPrice).multipliedBy(tokenAmount).div(10 ** decimals);
+  }
+
+  private getDate(daysAgo: number) {
+    let date = new Date();
+    date.setDate(date.getDate() - daysAgo);
+    return date;
   }
 }

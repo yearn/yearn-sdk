@@ -52,22 +52,23 @@ export const ACCOUNT_EARNINGS = `query AccountEarnings($id: ID!) {
   }
 `;
 
-export const ASSET_HISTORIC_EARNINGS = `query AssetHistoricEarnings($id: ID!, $sinceDate: BigInt!) {
-    vault(id: $id) {
+export const ASSET_HISTORIC_EARNINGS = `query AssetHistoricEarnings($ids: [ID!]!, $fromDate: BigInt!, $toDate: BigInt!) {
+    vaults(where: { id_in: $ids} ) {
       id
       token {
         id
         decimals
       }
-      vaultDayData(where: { timestamp_gte: $sinceDate }, first: 1000) {
-        dayReturnsGenerated
+      vaultDayData(where: { timestamp_gte: $fromDate, timestamp_lte: $toDate }, first: 1000) {
+        totalReturnsGenerated
         timestamp
+        tokenPriceUSDC
       }
     }
   }
 `;
 
-export const ACCOUNT_HISTORIC_EARNINGS = `query AccountHistoricEarnings($id: ID!, $shareToken: String!, $sinceDate: BigInt!) {
+export const ACCOUNT_HISTORIC_EARNINGS = `query AccountHistoricEarnings($id: ID!, $fromDate: String!, $sinceDate: BigInt!, $toDate: BigInt!) {
     account(id: $id) {
       vaultPositions(where: { shareToken: $shareToken }) {
         balanceShares
@@ -76,7 +77,7 @@ export const ACCOUNT_HISTORIC_EARNINGS = `query AccountHistoricEarnings($id: ID!
           decimals
         }
         vault {
-          vaultDayData(where: { timestamp_gte: $sinceDate }, orderBy: timestamp, orderDirection: asc, first: 1000) {
+          vaultDayData(where: { timestamp_gte: $fromDate, timestamp_lte: $toDate }, orderBy: timestamp, orderDirection: asc, first: 1000) {
             pricePerShare
             timestamp
             tokenPriceUSDC
