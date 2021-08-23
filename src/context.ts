@@ -130,6 +130,6 @@ export class Context implements Required<ContextValue> {
 
   get cache(): CacheConfiguration {
     if (this.ctx.cache) return this.ctx.cache;
-    throw new SdkError("cacheUrl must be defined in Context for this feature to work.");
+    throw new SdkError("cache must be defined in Context for this feature to work.");
   }
 }
