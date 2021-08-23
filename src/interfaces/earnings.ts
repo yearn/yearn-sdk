@@ -155,12 +155,25 @@ export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
   }
 
   async assetsHistoricEarnings(
-    assetAddresses: Address[],
-    fromDaysAgo: number,
+    assetAddresses?: Address[],
+    fromDaysAgo: number = 30,
     toDaysAgo?: number
   ): Promise<AssetHistoricEarnings[]> {
     if (toDaysAgo && toDaysAgo > fromDaysAgo) {
       throw new SdkError("fromDaysAgo must be greater than toDaysAgo");
+    }
+
+    if (fromDaysAgo < 0) {
+      throw new SdkError("fromDays ago must be positive");
+    }
+
+    if (toDaysAgo && toDaysAgo < 0) {
+      throw new SdkError("toDays ago must be positive");
+    }
+
+    if (!assetAddresses) {
+      const assetsStatic = await this.yearn.services.lens.adapters.vaults.v2.assetsStatic();
+      assetAddresses = assetsStatic.map(asset => asset.address);
     }
 
     const response = (await this.yearn.services.subgraph.fetchQuery(ASSET_HISTORIC_EARNINGS, {
