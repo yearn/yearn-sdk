@@ -9,7 +9,6 @@ import { EthAddress, WethAddress } from "../helpers";
 import { PickleJars } from "../services/partners/pickle";
 import {
   Address,
-  AssetHistoricEarnings,
   Balance,
   DepositOptions,
   Integer,
@@ -40,22 +39,17 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
     const assetsStatic = await this.getStatic(addresses, overrides);
     const assetsDynamic = await this.getDynamic(addresses, overrides);
 
-    let strategiesMetadata: Map<Address, StrategyMetadata[]>;
-    try {
-      strategiesMetadata = await this.yearn.strategies.dataForVaults(assetsStatic.map(asset => asset.address));
-    } catch {
-      strategiesMetadata = new Map();
-    }
+    let strategiesMetadata: Map<Address, StrategyMetadata[]> = await this.yearn.strategies
+      .dataForVaults(assetsStatic.map(asset => asset.address))
+      .catch(error => {
+        console.error(error);
+        return Promise.resolve(new Map());
+      });
 
-    let assetsHistoricEarnings: AssetHistoricEarnings[];
-    try {
-      assetsHistoricEarnings = await this.yearn.earnings.assetsHistoricEarnings(
-        assetsDynamic.map(asset => asset.address),
-        30
-      );
-    } catch {
-      assetsHistoricEarnings = [];
-    }
+    let assetsHistoricEarnings = await this.yearn.earnings.assetsHistoricEarnings().catch(error => {
+      console.error(error);
+      return Promise.resolve([]);
+    });
 
     const assets = new Array<Vault>();
     for (const asset of assetsStatic) {
