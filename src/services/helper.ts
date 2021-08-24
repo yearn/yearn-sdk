@@ -87,6 +87,6 @@ export class HelperService<T extends ChainId> extends ContractService<T> {
     spenders: Address[],
     overrides: CallOverrides = {}
   ): Promise<TokenAllowance[]> {
-    return await this.contract.read.allowance(address, tokens, spenders, overrides).then(structArray);
+    return await this.contract.read.allowances(address, tokens, spenders, overrides).then(structArray);
   }
 }
