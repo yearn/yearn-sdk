@@ -41,7 +41,7 @@ export interface TelegramConfiguration {
 
 export interface CacheConfiguration {
   useCache: boolean;
-  url: string;
+  url?: string;
 }
 
 /**
