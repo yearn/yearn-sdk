@@ -36,7 +36,7 @@ export class ZapperService extends Service {
           address: address,
           name: token.symbol,
           symbol: token.symbol,
-          icon: `https://zapper.fi/images/networks/${network}/${token.address}.png`,
+          icon: `https://assets.yearn.network/tokens/${network}/${token.address}.png`,
           decimals: token.decimals,
           priceUsdc: usdc(token.price),
           supported: { zapper: true }
