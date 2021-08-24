@@ -7,6 +7,8 @@ export class CacheService extends Service {
     }
     const cachedCall = await fetch(`${this.ctx.cache.url}/v1/chains/${this.chainId}/${path}`);
     if (cachedCall.status !== 200) {
+      const { url, status, statusText } = cachedCall;
+      console.warn(`Call to cache failed at ${url} (status ${status} ${statusText})`);
       return undefined;
     }
     return await cachedCall.json();
