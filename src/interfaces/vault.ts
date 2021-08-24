@@ -37,7 +37,7 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
    */
   async get(addresses?: Address[], overrides?: CallOverrides): Promise<Vault[]> {
     const cached = await this.yearn.services.cache.call(
-      "/v1/chains/1/vaults/get" + (addresses ? `?addresses=${addresses?.join(",")}` : "")
+      "vaults/get" + (addresses ? `?addresses=${addresses?.join(",")}` : "")
     );
     if (cached) {
       return cached as Vault[];
@@ -190,6 +190,11 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
    * @returns
    */
   async tokens(overrides?: CallOverrides): Promise<Token[]> {
+    const cached = await this.yearn.services.cache.call("vaults/tokens");
+    if (cached) {
+      return cached as Token[];
+    }
+
     const adapters = Object.values(this.yearn.services.lens.adapters.vaults);
     return await Promise.all(
       adapters.map(async adapter => {

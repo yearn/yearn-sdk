@@ -5,7 +5,7 @@ export class CacheService extends Service {
     if (!this.ctx.cache.useCache) {
       return undefined;
     }
-    const cachedCall = await fetch(this.ctx.cache.url + path);
+    const cachedCall = await fetch(`${this.ctx.cache.url}/v1/chains/${this.chainId}/${path}`);
     if (cachedCall.status !== 200) {
       return undefined;
     }
