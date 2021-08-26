@@ -35,10 +35,14 @@ export class StrategyInterface<T extends ChainId> extends ServiceInterface<T> {
         return this.fetchDataForVault(vault, vaultDatum);
       });
     } else {
-      fetchData = vaultData.map(async vaultData => this.fetchDataForVault(vaultData.address, vaultData));
+      fetchData = vaultData.map(async vaultData => {
+        return this.fetchDataForVault(vaultData.address, vaultData);
+      });
     }
 
-    return Promise.all(fetchData).then(vaultsStrategyData => vaultsStrategyData.flatMap(data => (data ? [data] : [])));
+    return Promise.all(fetchData).then(vaultsStrategyData => {
+      return vaultsStrategyData.flatMap(data => (data ? [data] : []));
+    });
   }
 
   async dataForVault(vault: Address): Promise<VaultStrategyData | undefined> {
@@ -53,7 +57,7 @@ export class StrategyInterface<T extends ChainId> extends ServiceInterface<T> {
     const provider = this.ctx.provider.read;
     const vaultContract = new Contract(vault, VaultAbi, provider);
 
-    if (!vaultData.strategies) {
+    if (vaultData.strategies.length === 0) {
       return undefined;
     }
 
@@ -65,7 +69,6 @@ export class StrategyInterface<T extends ChainId> extends ServiceInterface<T> {
           const struct = await vaultContract.strategies(strategy.address);
           debtRatio = struct.debtRatio as BigNumber;
         } catch (error) {
-          console.warn(error);
           return undefined;
         }
 
@@ -85,7 +88,7 @@ export class StrategyInterface<T extends ChainId> extends ServiceInterface<T> {
       })
     ).then(metadatas => metadatas.flatMap(metadata => (metadata ? [metadata] : [])));
 
-    if (!metadata) {
+    if (metadata.length === 0) {
       return undefined;
     }
 
