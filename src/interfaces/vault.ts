@@ -13,7 +13,6 @@ import {
   DepositOptions,
   Integer,
   SdkError,
-  StrategyMetadata,
   Token,
   VaultDynamic,
   VaultStatic,
@@ -39,13 +38,7 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
     const assetsStatic = await this.getStatic(addresses, overrides);
     const assetsDynamic = await this.getDynamic(addresses, overrides);
 
-    let strategiesMetadata: Map<Address, StrategyMetadata[]> = await this.yearn.strategies
-      .dataForVaults(assetsStatic.map(asset => asset.address))
-      .catch(error => {
-        console.error(error);
-        return Promise.resolve(new Map());
-      });
-
+    const strategiesMetadata = await this.yearn.strategies.dataForVaults(assetsDynamic.map(asset => asset.address));
     let assetsHistoricEarnings = await this.yearn.earnings.assetsHistoricEarnings().catch(error => {
       console.error(error);
       return Promise.resolve([]);
@@ -58,7 +51,7 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
         throw new SdkError(`Dynamic asset does not exist for ${asset.address}`);
       }
       dynamic.metadata.displayName = dynamic.metadata.displayName || asset.name;
-      dynamic.metadata.strategies = strategiesMetadata.get(asset.address) || [];
+      dynamic.metadata.strategies = strategiesMetadata.find(data => data.address === asset.address);
       dynamic.metadata.historicEarnings = assetsHistoricEarnings.find(
         earnings => earnings.assetAddress === asset.address
       )?.dayData;

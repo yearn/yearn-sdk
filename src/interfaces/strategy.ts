@@ -4,7 +4,7 @@ import { Contract } from "@ethersproject/contracts";
 import { ChainId } from "../chain";
 import { ServiceInterface } from "../common";
 import { Address } from "../types";
-import { StrategyData } from "../types/strategy";
+import { VaultStrategyData } from "../types/strategy";
 
 interface VaultData {
   address: Address;
@@ -22,45 +22,31 @@ const VaultAbi = [
 ];
 
 export class StrategyInterface<T extends ChainId> extends ServiceInterface<T> {
-  async dataForVaults(vaults: Address[]): Promise<Map<Address, StrategyData[]>> {
-    let vaultData: VaultData[];
-    try {
-      vaultData = await this.fetchVaultData();
-    } catch (error) {
-      return new Map();
-    }
+  async dataForVaults(vaults: Address[]): Promise<VaultStrategyData[]> {
+    const vaultData = await this.fetchVaultData();
 
-    const containers = await Promise.all(
+    return Promise.all(
       vaults.map(async vault => {
         const vaultDatum = vaultData.find(data => data.address === vault);
         if (!vaultDatum) {
           return undefined;
         }
-        const metadata = await this.fetchDataForVault(vault, vaultDatum);
-        if (metadata) {
-          return { vault, metadata };
-        }
-        return undefined;
+        return await this.fetchDataForVault(vault, vaultDatum);
       })
-    );
-
-    return containers
-      .flatMap(container => (container ? [container] : []))
-      .reduce((map, container) => {
-        map.set(container.vault, container.metadata);
-        return map;
-      }, new Map<Address, StrategyData[]>());
+    ).then(vaultsStrategyData => {
+      return vaultsStrategyData.flatMap(data => (data ? [data] : []));
+    });
   }
 
-  async dataForVault(vault: Address): Promise<StrategyData[]> {
+  async dataForVault(vault: Address): Promise<VaultStrategyData | undefined> {
     const vaultData = await this.fetchVaultData().then(vaultData => vaultData.find(data => data.address === vault));
     if (!vaultData) {
-      return [];
+      return undefined;
     }
     return this.fetchDataForVault(vault, vaultData);
   }
 
-  private async fetchDataForVault(vault: Address, vaultData: VaultData): Promise<StrategyData[]> {
+  private async fetchDataForVault(vault: Address, vaultData: VaultData): Promise<VaultStrategyData | undefined> {
     const provider = this.ctx.provider.read;
     const vaultContract = new Contract(vault, VaultAbi, provider);
 
@@ -91,7 +77,10 @@ export class StrategyInterface<T extends ChainId> extends ServiceInterface<T> {
     ).then(metadatas => metadatas.flatMap(metadata => (metadata ? [metadata] : [])));
 
     metadata.sort((lhs, rhs) => parseInt(rhs.debtRatio) - parseInt(lhs.debtRatio));
-    return metadata;
+    return {
+      address: vault,
+      data: metadata
+    };
   }
 
   private async fetchVaultData(): Promise<VaultData[]> {
