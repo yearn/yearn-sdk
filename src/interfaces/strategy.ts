@@ -25,15 +25,22 @@ export class StrategyInterface<T extends ChainId> extends ServiceInterface<T> {
   async dataForVaults(vaults: Address[]): Promise<VaultStrategyData[]> {
     const vaultData = await this.fetchVaultData();
 
-    return Promise.all(
-      vaults.map(async vault => {
+    let fetchData: Promise<VaultStrategyData | undefined>[];
+    if (vaults) {
+      fetchData = vaults.map(async vault => {
         const vaultDatum = vaultData.find(data => data.address === vault);
         if (!vaultDatum) {
           return undefined;
         }
-        return await this.fetchDataForVault(vault, vaultDatum);
-      })
-    ).then(vaultsStrategyData => {
+        return this.fetchDataForVault(vault, vaultDatum);
+      });
+    } else {
+      fetchData = vaultData.map(async vaultData => {
+        return this.fetchDataForVault(vaultData.address, vaultData);
+      });
+    }
+
+    return Promise.all(fetchData).then(vaultsStrategyData => {
       return vaultsStrategyData.flatMap(data => (data ? [data] : []));
     });
   }
@@ -50,14 +57,19 @@ export class StrategyInterface<T extends ChainId> extends ServiceInterface<T> {
     const provider = this.ctx.provider.read;
     const vaultContract = new Contract(vault, VaultAbi, provider);
 
+    if (!vaultData.strategies) {
+      return undefined;
+    }
+
     let metadata = await Promise.all(
       vaultData.strategies.map(async strategy => {
-        let debtRatio;
+        let debtRatio: BigNumber;
 
         try {
           const struct = await vaultContract.strategies(strategy.address);
           debtRatio = struct.debtRatio as BigNumber;
         } catch (error) {
+          console.warn(error);
           return undefined;
         }
 
@@ -65,16 +77,21 @@ export class StrategyInterface<T extends ChainId> extends ServiceInterface<T> {
           return undefined;
         }
 
-        const metadata = await this.yearn.services.meta.strategy(strategy.address);
-        const description = metadata?.description.replaceAll("{{token}}", vaultData.token.symbol);
+        return this.yearn.services.meta.strategy(strategy.address).then(metadata => {
+          const description = metadata?.description.replace(/{{token}}/g, vaultData.token.symbol);
 
-        return {
-          name: metadata?.name || strategy.name,
-          description: description || "I don't have a description for this strategy yet",
-          debtRatio: debtRatio.toString()
-        };
+          return {
+            name: metadata?.name || strategy.name,
+            description: description || "I don't have a description for this strategy yet",
+            debtRatio: debtRatio.toString()
+          };
+        });
       })
     ).then(metadatas => metadatas.flatMap(metadata => (metadata ? [metadata] : [])));
+
+    if (!metadata) {
+      return undefined;
+    }
 
     metadata.sort((lhs, rhs) => parseInt(rhs.debtRatio) - parseInt(lhs.debtRatio));
     return {
