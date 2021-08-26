@@ -40,9 +40,7 @@ export class StrategyInterface<T extends ChainId> extends ServiceInterface<T> {
       });
     }
 
-    return Promise.all(fetchData).then(vaultsStrategyData => {
-      return vaultsStrategyData.flatMap(data => (data ? [data] : []));
-    });
+    return Promise.all(fetchData).then(vaultsStrategyData => vaultsStrategyData.flatMap(data => (data ? [data] : [])));
   }
 
   async dataForVault(vault: Address): Promise<VaultStrategyData | undefined> {
