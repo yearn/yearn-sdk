@@ -35,9 +35,7 @@ export class StrategyInterface<T extends ChainId> extends ServiceInterface<T> {
         return this.fetchDataForVault(vault, vaultDatum);
       });
     } else {
-      fetchData = vaultData.map(async vaultData => {
-        return this.fetchDataForVault(vaultData.address, vaultData);
-      });
+      fetchData = vaultData.map(async vaultData => this.fetchDataForVault(vaultData.address, vaultData));
     }
 
     return Promise.all(fetchData).then(vaultsStrategyData => vaultsStrategyData.flatMap(data => (data ? [data] : [])));
