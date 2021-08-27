@@ -4,7 +4,7 @@ import { Contract } from "@ethersproject/contracts";
 import { ChainId } from "../chain";
 import { ServiceInterface } from "../common";
 import { Address } from "../types";
-import { VaultStrategyData } from "../types/strategy";
+import { VaultStrategiesMetadata } from "../types/strategy";
 
 interface VaultData {
   address: Address;
@@ -22,47 +22,39 @@ const VaultAbi = [
 ];
 
 export class StrategyInterface<T extends ChainId> extends ServiceInterface<T> {
-  async dataForVaults(vaults: Address[]): Promise<VaultStrategyData[]> {
-    const vaultData = await this.fetchVaultData();
+  async vaultsStrategiesMetadata(vaultAddresses: Address[]): Promise<VaultStrategiesMetadata[]> {
+    const vaultsData = await this.fetchVaultsData();
 
-    let fetchData: Promise<VaultStrategyData | undefined>[];
-    if (vaults) {
-      fetchData = vaults.map(async vault => {
-        const vaultDatum = vaultData.find(data => data.address === vault);
+    let fetchAllVaultStrategiesMetadata: Promise<VaultStrategiesMetadata | undefined>[];
+    if (vaultAddresses) {
+      fetchAllVaultStrategiesMetadata = vaultAddresses.map(async vaultAddress => {
+        const vaultDatum = vaultsData.find(datum => datum.address === vaultAddress);
         if (!vaultDatum) {
           return undefined;
         }
-        return this.fetchDataForVault(vault, vaultDatum);
+        return this.fetchVaultStrategiesMetadata(vaultDatum);
       });
     } else {
-      fetchData = vaultData.map(async vaultData => {
-        return this.fetchDataForVault(vaultData.address, vaultData);
+      fetchAllVaultStrategiesMetadata = vaultsData.map(async vaultDatum => {
+        return this.fetchVaultStrategiesMetadata(vaultDatum);
       });
     }
 
-    return Promise.all(fetchData).then(vaultsStrategyData => {
+    return Promise.all(fetchAllVaultStrategiesMetadata).then(vaultsStrategyData => {
       return vaultsStrategyData.flatMap(data => (data ? [data] : []));
     });
   }
 
-  async dataForVault(vault: Address): Promise<VaultStrategyData | undefined> {
-    const vaultData = await this.fetchVaultData().then(vaultData => vaultData.find(data => data.address === vault));
-    if (!vaultData) {
-      return undefined;
-    }
-    return this.fetchDataForVault(vault, vaultData);
-  }
-
-  private async fetchDataForVault(vault: Address, vaultData: VaultData): Promise<VaultStrategyData | undefined> {
+  private async fetchVaultStrategiesMetadata(vaultDatum: VaultData): Promise<VaultStrategiesMetadata | undefined> {
     const provider = this.ctx.provider.read;
-    const vaultContract = new Contract(vault, VaultAbi, provider);
+    const vaultContract = new Contract(vaultDatum.address, VaultAbi, provider);
 
-    if (vaultData.strategies.length === 0) {
+    if (vaultDatum.strategies.length === 0) {
       return undefined;
     }
 
     let metadata = await Promise.all(
-      vaultData.strategies.map(async strategy => {
+      vaultDatum.strategies.map(async strategy => {
         let debtRatio: BigNumber;
 
         try {
@@ -77,7 +69,7 @@ export class StrategyInterface<T extends ChainId> extends ServiceInterface<T> {
         }
 
         return this.yearn.services.meta.strategy(strategy.address).then(metadata => {
-          const description = metadata?.description.replace(/{{token}}/g, vaultData.token.symbol);
+          const description = metadata?.description.replace(/{{token}}/g, vaultDatum.token.symbol);
 
           return {
             name: metadata?.name || strategy.name,
@@ -94,12 +86,12 @@ export class StrategyInterface<T extends ChainId> extends ServiceInterface<T> {
 
     metadata.sort((lhs, rhs) => parseInt(rhs.debtRatio) - parseInt(lhs.debtRatio));
     return {
-      address: vault,
-      data: metadata
+      vaultAddress: vaultDatum.address,
+      metadata
     };
   }
 
-  private async fetchVaultData(): Promise<VaultData[]> {
-    return await fetch("https://d28fcsszptni1s.cloudfront.net/v1/chains/1/vaults/all").then(res => res.json());
+  private async fetchVaultsData(): Promise<VaultData[]> {
+    return fetch("https://d28fcsszptni1s.cloudfront.net/v1/chains/1/vaults/all").then(res => res.json());
   }
 }

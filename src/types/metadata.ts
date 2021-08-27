@@ -1,7 +1,7 @@
 import { Address, Integer } from "./common";
 import { EarningsDayData } from "./custom/earnings";
 import { Apy } from "./custom/vault";
-import { VaultStrategyData } from "./strategy";
+import { VaultStrategiesMetadata } from "./strategy";
 
 /**
  * Lens-defined metadata for Yearn Vaults (v1 & v2)
@@ -22,7 +22,7 @@ export interface VaultMetadata {
   displayName: string;
   displayIcon: string;
   defaultDisplayToken: Address;
-  strategies: VaultStrategyData | undefined;
+  strategies?: VaultStrategiesMetadata;
   historicEarnings?: EarningsDayData[];
 }
 
