@@ -1,6 +1,7 @@
 import { getAddress } from "@ethersproject/address";
 import { BigNumber } from "bignumber.js";
 
+import { CachedFetcher } from "../cache";
 import { ChainId } from "../chain";
 import { ServiceInterface } from "../common";
 import {
@@ -154,11 +155,24 @@ export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
     };
   }
 
+  private assetHistoricEarningsCache = new CachedFetcher<AssetHistoricEarnings[]>(
+    "vaults/earnings/get",
+    this.ctx,
+    this.chainId
+  );
+
   async assetsHistoricEarnings(
     assetAddresses?: Address[],
     fromDaysAgo: number = 30,
     toDaysAgo?: number
   ): Promise<AssetHistoricEarnings[]> {
+    if (fromDaysAgo === 30 && !toDaysAgo && !assetAddresses) {
+      const cached = await this.assetHistoricEarningsCache.fetch();
+      if (cached) {
+        return cached;
+      }
+    }
+
     if (toDaysAgo && toDaysAgo > fromDaysAgo) {
       throw new SdkError("fromDaysAgo must be greater than toDaysAgo");
     }
