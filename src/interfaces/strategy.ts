@@ -1,6 +1,8 @@
 import { BigNumber } from "@ethersproject/bignumber";
 import { Contract } from "@ethersproject/contracts";
+import fetch from "cross-fetch";
 
+import { CachedFetcher } from "../cache";
 import { ChainId } from "../chain";
 import { ServiceInterface } from "../common";
 import { Address } from "../types";
@@ -22,7 +24,18 @@ const VaultAbi = [
 ];
 
 export class StrategyInterface<T extends ChainId> extends ServiceInterface<T> {
+  private cachedFetcher = new CachedFetcher<VaultStrategiesMetadata[]>(
+    "strategies/metadata/get",
+    this.ctx,
+    this.chainId
+  );
+
   async vaultsStrategiesMetadata(vaultAddresses: Address[]): Promise<VaultStrategiesMetadata[]> {
+    const cached = await this.cachedFetcher.fetch();
+    if (cached) {
+      return cached;
+    }
+
     const vaultsData = await this.fetchVaultsData();
 
     let vaultsStrategiesMetadataPromises: Promise<VaultStrategiesMetadata | undefined>[];
