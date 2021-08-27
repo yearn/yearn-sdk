@@ -25,9 +25,9 @@ export class StrategyInterface<T extends ChainId> extends ServiceInterface<T> {
   async vaultsStrategiesMetadata(vaultAddresses: Address[]): Promise<VaultStrategiesMetadata[]> {
     const vaultsData = await this.fetchVaultsData();
 
-    let fetchAllVaultStrategiesMetadata: Promise<VaultStrategiesMetadata | undefined>[];
+    let vaultsStrategiesMetadataPromises: Promise<VaultStrategiesMetadata | undefined>[];
     if (vaultAddresses) {
-      fetchAllVaultStrategiesMetadata = vaultAddresses.map(async vaultAddress => {
+      vaultsStrategiesMetadataPromises = vaultAddresses.map(async vaultAddress => {
         const vaultDatum = vaultsData.find(datum => datum.address === vaultAddress);
         if (!vaultDatum) {
           return undefined;
@@ -35,12 +35,12 @@ export class StrategyInterface<T extends ChainId> extends ServiceInterface<T> {
         return this.fetchVaultStrategiesMetadata(vaultDatum);
       });
     } else {
-      fetchAllVaultStrategiesMetadata = vaultsData.map(async vaultDatum => {
+      vaultsStrategiesMetadataPromises = vaultsData.map(async vaultDatum => {
         return this.fetchVaultStrategiesMetadata(vaultDatum);
       });
     }
 
-    return Promise.all(fetchAllVaultStrategiesMetadata).then(vaultsStrategyData => {
+    return Promise.all(vaultsStrategiesMetadataPromises).then(vaultsStrategyData => {
       return vaultsStrategyData.flatMap(data => (data ? [data] : []));
     });
   }
