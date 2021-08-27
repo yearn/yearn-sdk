@@ -4,7 +4,7 @@ import { Contract } from "@ethersproject/contracts";
 import { ChainId } from "../chain";
 import { ServiceInterface } from "../common";
 import { Address } from "../types";
-import { VaultStrategiesMetadata } from "../types/strategy";
+import { StrategyDetailedMetadata, VaultStrategiesMetadata } from "../types/strategy";
 
 interface VaultData {
   address: Address;
@@ -53,7 +53,7 @@ export class StrategyInterface<T extends ChainId> extends ServiceInterface<T> {
       return undefined;
     }
 
-    let metadata = await Promise.all(
+    let metadata: StrategyDetailedMetadata[] = await Promise.all(
       vaultDatum.strategies.map(async strategy => {
         let debtRatio: BigNumber;
 
@@ -85,10 +85,13 @@ export class StrategyInterface<T extends ChainId> extends ServiceInterface<T> {
     }
 
     metadata.sort((lhs, rhs) => parseInt(rhs.debtRatio) - parseInt(lhs.debtRatio));
-    return {
+
+    const result: VaultStrategiesMetadata = {
       vaultAddress: vaultDatum.address,
       metadata
     };
+
+    return result;
   }
 
   private async fetchVaultsData(): Promise<VaultData[]> {
