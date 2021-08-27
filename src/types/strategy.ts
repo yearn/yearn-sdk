@@ -1,6 +1,12 @@
-import { Integer } from "./common";
+import { Address, Integer } from "./common";
 import { StrategyMetadata } from "./metadata";
 
-export interface StrategyData extends StrategyMetadata {
+export interface VaultStrategiesMetadata {
+  vaultAddress: Address;
+  strategiesMetadata: StrategyDetailedMetadata[];
+}
+
+export interface StrategyDetailedMetadata extends StrategyMetadata {
+  address: Address;
   debtRatio: Integer;
 }
