@@ -72,6 +72,7 @@ export class StrategyInterface<T extends ChainId> extends ServiceInterface<T> {
           const description = metadata?.description.replace(/{{token}}/g, vaultDatum.token.symbol);
 
           return {
+            address: strategy.address,
             name: metadata?.name || strategy.name,
             description: description || "I don't have a description for this strategy yet",
             debtRatio: debtRatio.toString()
@@ -88,7 +89,7 @@ export class StrategyInterface<T extends ChainId> extends ServiceInterface<T> {
 
     const result: VaultStrategiesMetadata = {
       vaultAddress: vaultDatum.address,
-      metadata
+      strategiesMetadata: metadata
     };
 
     return result;

@@ -3,9 +3,10 @@ import { StrategyMetadata } from "./metadata";
 
 export interface VaultStrategiesMetadata {
   vaultAddress: Address;
-  metadata: StrategyDetailedMetadata[];
+  strategiesMetadata: StrategyDetailedMetadata[];
 }
 
 export interface StrategyDetailedMetadata extends StrategyMetadata {
+  address: Address;
   debtRatio: Integer;
 }
