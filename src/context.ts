@@ -39,6 +39,11 @@ export interface TelegramConfiguration {
   telegramBotId?: string;
 }
 
+export interface CacheConfiguration {
+  useCache: boolean;
+  url?: string;
+}
+
 /**
  * Context options that are used to access all the data sources queried by the
  * SDK.
@@ -49,6 +54,7 @@ export interface ContextValue {
   etherscan?: string;
   addresses?: PartialDeep<AddressesOverride>;
   simulation?: SimulationConfiguration;
+  cache?: CacheConfiguration;
 }
 
 const DefaultContext = {
@@ -56,7 +62,8 @@ const DefaultContext = {
   // see https://docs.zapper.fi/zapper-api/endpoints
   zapper: "96e0cc51-a62e-42ca-acee-910ea7d2a241",
   // The default tenderly dashboard for Yearn
-  simulation: { dashboardUrl: "https://dashboard.tenderly.co/yearn/yearn-web" }
+  simulation: { dashboardUrl: "https://dashboard.tenderly.co/yearn/yearn-web" },
+  cache: { useCache: true, url: "https://test-api.yearn.network" }
 };
 
 /**
@@ -119,5 +126,10 @@ export class Context implements Required<ContextValue> {
   get simulation(): SimulationConfiguration {
     if (this.ctx.simulation) return this.ctx.simulation;
     throw new SdkError("simulation configuration must be defined in Context for this feature to work.");
+  }
+
+  get cache(): CacheConfiguration {
+    if (this.ctx.cache) return this.ctx.cache;
+    throw new SdkError("cache must be defined in Context for this feature to work.");
   }
 }
