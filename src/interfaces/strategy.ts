@@ -24,7 +24,11 @@ const VaultAbi = [
 ];
 
 export class StrategyInterface<T extends ChainId> extends ServiceInterface<T> {
-  cachedFetcher = new CachedFetcher<VaultStrategiesMetadata[]>("strategies/metadata/get", this.ctx, this.chainId);
+  private cachedFetcher = new CachedFetcher<VaultStrategiesMetadata[]>(
+    "strategies/metadata/get",
+    this.ctx,
+    this.chainId
+  );
 
   async vaultsStrategiesMetadata(vaultAddresses: Address[]): Promise<VaultStrategiesMetadata[]> {
     const cached = await this.cachedFetcher.fetch();
