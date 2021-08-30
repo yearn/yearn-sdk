@@ -343,7 +343,7 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
         const combinedParams = { ...transactionRequest, ...overrides };
         combinedParams.maxFeePerGas = undefined;
         combinedParams.maxPriorityFeePerGas = undefined;
-        combinedParams.gasPrice = fallbackGasPrice;
+        combinedParams.gasPrice = overrides.gasPrice || fallbackGasPrice;
         const tx = await signer.sendTransaction(combinedParams);
         return tx;
       }
