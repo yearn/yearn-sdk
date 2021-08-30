@@ -24,8 +24,6 @@ import {
 import { Position, Vault } from "../types";
 
 const VaultAbi = ["function deposit(uint256 amount) public", "function withdraw(uint256 amount) public"];
-const VaultV1Abi = VaultAbi.concat(["function depositETH(uint256 amount) payable public"]);
-// const VaultV2Abi = VaultAbi.concat([]);
 
 export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
   /**
@@ -225,12 +223,7 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
     const [vaultRef] = await this.getStatic([vault], overrides);
     if (vaultRef.token === token) {
       if (token === EthAddress) {
-        if (vaultRef.typeId === "VAULT_V1") {
-          const vaultContract = new Contract(vault, VaultV1Abi, signer);
-          return vaultContract.depositETH(amount, overrides);
-        } else {
-          throw new SdkError("deposit:v2:eth not implemented");
-        }
+        throw new SdkError("deposit:v2:eth not implemented");
       } else {
         const vaultContract = new Contract(vault, VaultAbi, signer);
         const makeTransaction = (overrides: CallOverrides) => vaultContract.deposit(amount, overrides);
@@ -264,7 +257,6 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
       const vaultContract = new Contract(vault, VaultAbi, signer);
       const makeTransaction = (overrides: CallOverrides) => vaultContract.withdraw(amount, overrides);
       return this.executeVaultContractTransaction(makeTransaction, overrides);
-      return vaultContract.withdraw(amount, overrides);
     } else {
       if (options.slippage === undefined) {
         throw new SdkError("zap operations should have a slippage set");
