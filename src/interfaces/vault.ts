@@ -233,7 +233,8 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
         }
       } else {
         const vaultContract = new Contract(vault, VaultAbi, signer);
-        return vaultContract.deposit(amount, overrides);
+        const makeTransaction = (overrides: CallOverrides) => vaultContract.deposit(amount, overrides);
+        return this.executeVaultContractTransaction(makeTransaction, overrides);
       }
     } else {
       return this.zapIn(vault, token, amount, account, signer, options, ZapProtocol.YEARN, overrides);
@@ -261,6 +262,8 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
     const signer = this.ctx.provider.write.getSigner(account);
     if (vaultRef.token === token) {
       const vaultContract = new Contract(vault, VaultAbi, signer);
+      const makeTransaction = (overrides: CallOverrides) => vaultContract.withdraw(amount, overrides);
+      return this.executeVaultContractTransaction(makeTransaction, overrides);
       return vaultContract.withdraw(amount, overrides);
     } else {
       if (options.slippage === undefined) {
@@ -345,6 +348,28 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
         combinedParams.maxPriorityFeePerGas = undefined;
         combinedParams.gasPrice = overrides.gasPrice || fallbackGasPrice;
         const tx = await signer.sendTransaction(combinedParams);
+        return tx;
+      }
+
+      throw error;
+    }
+  }
+
+  private async executeVaultContractTransaction(
+    makeTransaction: (overrides: CallOverrides) => Promise<TransactionResponse>,
+    overrides: CallOverrides
+  ): Promise<TransactionResponse> {
+    const originalGasPrice = overrides.gasPrice;
+    try {
+      overrides.gasPrice = undefined;
+      const tx = await makeTransaction(overrides);
+      return tx;
+    } catch (error) {
+      if (error.code === -32602) {
+        overrides.maxFeePerGas = undefined;
+        overrides.maxPriorityFeePerGas = undefined;
+        overrides.gasPrice = originalGasPrice;
+        const tx = await makeTransaction(overrides);
         return tx;
       }
 
