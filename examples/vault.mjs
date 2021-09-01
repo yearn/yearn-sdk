@@ -13,6 +13,12 @@ const yearn = new Yearn(1, {
 });
 
 async function main() {
+  // const result = await yearn.ironBank.tokens();
+  // const result = await yearn.tokens.supported();
+  const result = await yearn.vaults.tokens();
+  console.log(result.find(token => token.address === "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"));
+  // console.log(result);
+  return;
   const vaults = await yearn.vaults.get();
 
   const vaultsTable = new Table();
