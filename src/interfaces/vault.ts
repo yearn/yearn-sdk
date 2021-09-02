@@ -182,13 +182,14 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
         const tokenAddresses = await adapter.tokens(overrides);
         const tokens = await this.yearn.services.helper.tokens(tokenAddresses, overrides);
         const icons = this.yearn.services.asset.icon(tokenAddresses.concat(EthAddress));
+        const tokensMetadata = await this.yearn.tokens.metadata(tokenAddresses);
         return Promise.all(
           tokens.map(async token => ({
             ...token,
             icon: icons[token.address],
             supported: {},
             priceUsdc: await this.yearn.services.oracle.getPriceUsdc(token.address, overrides),
-            metadata: await this.yearn.services.meta.token(token.address)
+            metadata: tokensMetadata.find(metadata => metadata.address === token.address)
           }))
         );
       })
