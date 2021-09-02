@@ -185,8 +185,7 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
         return Promise.all(
           tokens.map(async token => ({
             ...token,
-            // @notice weird icon fix related to the way yearn-assets handles tokens
-            icon: icons[token.address === WethAddress ? EthAddress : token.address],
+            icon: icons[token.address],
             supported: {},
             priceUsdc: await this.yearn.services.oracle.getPriceUsdc(token.address, overrides),
             metadata: await this.yearn.services.meta.token(token.address)
