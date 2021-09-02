@@ -180,7 +180,7 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
     return this.yearn.services.asset.icon(address);
   }
 
-  private cachedFetcher = new CachedFetcher<TokenMetadata[]>("tokens/metadata/get", this.ctx, this.chainId);
+  private cachedFetcher = new CachedFetcher<TokenMetadata[]>("tokens/metadata", this.ctx, this.chainId);
 
   async metadata(addresses?: Address[]): Promise<TokenMetadata[]> {
     if (!addresses) {
