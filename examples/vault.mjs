@@ -13,9 +13,6 @@ const yearn = new Yearn(1, {
 });
 
 async function main() {
-  const result = await yearn.vaults.tokens();
-  console.log(result);
-  return;
   const vaults = await yearn.vaults.get();
 
   const vaultsTable = new Table();
