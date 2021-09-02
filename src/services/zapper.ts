@@ -32,6 +32,7 @@ export class ZapperService extends Service {
     return tokens.map(
       (token: Record<string, string>): Token => {
         const address = token.address === ZeroAddress ? EthAddress : getAddress(String(token.address));
+        const supported = token.hide ? !token.hide : true;
         return {
           address: address,
           name: token.symbol,
@@ -39,7 +40,7 @@ export class ZapperService extends Service {
           icon: `https://assets.yearn.network/tokens/${network}/${token.address}.png`,
           decimals: token.decimals,
           priceUsdc: usdc(token.price),
-          supported: { zapper: true }
+          supported: { zapper: supported }
         };
       }
     );
