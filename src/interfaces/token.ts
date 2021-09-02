@@ -1,12 +1,13 @@
 import { CallOverrides, Contract } from "@ethersproject/contracts";
 import { TransactionRequest, TransactionResponse } from "@ethersproject/providers";
 import BigNumber from "bignumber.js";
+import { CachedFetcher } from "../cache";
 
 import { ChainId } from "../chain";
 import { ServiceInterface } from "../common";
 import { EthAddress } from "../helpers";
 import { PickleJars } from "../services/partners/pickle";
-import { Address, Integer, TypedMap, Usdc, Vault, ZapProtocol } from "../types";
+import { Address, Integer, TokenMetadata, TypedMap, Usdc, Vault, ZapProtocol } from "../types";
 import { Balance, Icon, IconMap, Token } from "../types";
 
 const TokenAbi = ["function approve(address _spender, uint256 _value) public"];
@@ -177,5 +178,22 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
 
   icon<T extends Address>(address: T | T[]): IconMap<T> | Icon {
     return this.yearn.services.asset.icon(address);
+  }
+
+  private cachedFetcher = new CachedFetcher<TokenMetadata[]>("tokens/metadata/get", this.ctx, this.chainId);
+
+  async metadata(addresses?: Address[]): Promise<TokenMetadata[]> {
+    if (!addresses) {
+      addresses = await this.yearn.services.lens.adapters.vaults.v2.tokens();
+    }
+
+    const cached = await this.cachedFetcher.fetch();
+    if (cached) {
+      return cached.filter(metadata => addresses?.includes(metadata.address));
+    }
+
+    return Promise.all(
+      addresses.map(async addresses => this.yearn.services.meta.token(addresses).catch(() => undefined))
+    ).then(result => result.flatMap(metadata => (metadata ? [metadata] : [])));
   }
 }

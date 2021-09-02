@@ -9,7 +9,14 @@ const MetaURL = "http://meta.yearn.network";
  */
 export class MetaService extends Service {
   async token(address: Address): Promise<TokenMetadata | undefined> {
-    return this.fetchMetadataItem(`${MetaURL}/tokens/${address}`);
+    const metadata = await this.fetchMetadataItem<any>(`${MetaURL}/tokens/${address}`);
+    const result: TokenMetadata = {
+      address: address,
+      categories: metadata.categories,
+      description: metadata.description,
+      website: metadata.website
+    };
+    return result;
   }
 
   async strategy(address: Address): Promise<StrategyMetadata | undefined> {
