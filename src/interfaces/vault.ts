@@ -177,6 +177,7 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
    */
   async tokens(overrides?: CallOverrides): Promise<Token[]> {
     const adapters = Object.values(this.yearn.services.lens.adapters.vaults);
+    await this.yearn.services.asset.ready;
     return await Promise.all(
       adapters.map(async adapter => {
         const tokenAddresses = await adapter.tokens(overrides);
@@ -184,13 +185,20 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
         const icons = this.yearn.services.asset.icon(tokenAddresses.concat(EthAddress));
         const tokensMetadata = await this.yearn.tokens.metadata(tokenAddresses);
         return Promise.all(
-          tokens.map(async token => ({
-            ...token,
-            icon: icons[token.address],
-            supported: {},
-            priceUsdc: await this.yearn.services.oracle.getPriceUsdc(token.address, overrides),
-            metadata: tokensMetadata.find(metadata => metadata.address === token.address)
-          }))
+          tokens.map(async token => {
+            const result = {
+              ...token,
+              icon: icons[token.address],
+              supported: {},
+              priceUsdc: await this.yearn.services.oracle.getPriceUsdc(token.address, overrides),
+              metadata: tokensMetadata.find(metadata => metadata.address === token.address)
+            };
+            const symbolOverride = this.yearn.services.asset.alias(token.address)?.symbol;
+            if (symbolOverride) {
+              result.symbol = symbolOverride;
+            }
+            return result;
+          })
         );
       })
     ).then(arr => arr.flat());
