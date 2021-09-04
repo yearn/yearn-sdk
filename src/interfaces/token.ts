@@ -58,7 +58,13 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
    * @param address
    */
   async balances(address: Address): Promise<Balance[]> {
-    return this.yearn.services.zapper.balances(address);
+    let zapperBalances = await this.yearn.services.zapper.balances(address);
+    const vaultBalances = await this.yearn.vaults
+      .balances(address)
+      .then(balances => balances.filter(token => token.balance !== "0"));
+    const vaultBalanceAddresses = new Set(vaultBalances.map(balance => balance.address));
+    zapperBalances = zapperBalances.filter(balance => !vaultBalanceAddresses.has(balance.address));
+    return zapperBalances.concat(vaultBalances);
   }
 
   /**
