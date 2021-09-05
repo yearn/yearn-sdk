@@ -5,7 +5,7 @@ import fetch from "cross-fetch";
 import { CachedFetcher } from "../cache";
 import { ChainId } from "../chain";
 import { ServiceInterface } from "../common";
-import { Address } from "../types";
+import { Address, StrategiesMetadata } from "../types";
 import { StrategyDetailedMetadata, VaultStrategiesMetadata } from "../types/strategy";
 
 interface VaultData {
@@ -38,6 +38,8 @@ export class StrategyInterface<T extends ChainId> extends ServiceInterface<T> {
 
     const vaultsData = await this.fetchVaultsData();
 
+    const strategiesMetadata = await this.yearn.services.meta.strategies();
+
     let vaultsStrategiesMetadataPromises: Promise<VaultStrategiesMetadata | undefined>[];
     if (vaultAddresses) {
       vaultsStrategiesMetadataPromises = vaultAddresses.map(async vaultAddress => {
@@ -45,11 +47,11 @@ export class StrategyInterface<T extends ChainId> extends ServiceInterface<T> {
         if (!vaultDatum) {
           return undefined;
         }
-        return this.fetchVaultStrategiesMetadata(vaultDatum);
+        return this.fetchVaultStrategiesMetadata(vaultDatum, strategiesMetadata);
       });
     } else {
       vaultsStrategiesMetadataPromises = vaultsData.map(async vaultDatum => {
-        return this.fetchVaultStrategiesMetadata(vaultDatum);
+        return this.fetchVaultStrategiesMetadata(vaultDatum, strategiesMetadata);
       });
     }
 
@@ -58,7 +60,10 @@ export class StrategyInterface<T extends ChainId> extends ServiceInterface<T> {
     });
   }
 
-  private async fetchVaultStrategiesMetadata(vaultDatum: VaultData): Promise<VaultStrategiesMetadata | undefined> {
+  private async fetchVaultStrategiesMetadata(
+    vaultDatum: VaultData,
+    strategiesMetadata: StrategiesMetadata[]
+  ): Promise<VaultStrategiesMetadata | undefined> {
     const provider = this.ctx.provider.read;
     const vaultContract = new Contract(vaultDatum.address, VaultAbi, provider);
 
@@ -81,16 +86,18 @@ export class StrategyInterface<T extends ChainId> extends ServiceInterface<T> {
           return undefined;
         }
 
-        return this.yearn.services.meta.strategy(strategy.address).then(metadata => {
-          const description = metadata?.description.replace(/{{token}}/g, vaultDatum.token.symbol);
-
-          return {
-            address: strategy.address,
-            name: metadata?.name || strategy.name,
-            description: description || "I don't have a description for this strategy yet",
-            debtRatio: debtRatio.toString()
-          };
+        const metadata = strategiesMetadata.find(strategyMetadata => {
+          return strategyMetadata.addresses.includes(strategy.address);
         });
+
+        const description = metadata?.description.replace(/{{token}}/g, vaultDatum.token.symbol);
+
+        return {
+          address: strategy.address,
+          name: metadata?.name || strategy.name,
+          description: description || "I don't have a description for this strategy yet",
+          debtRatio: debtRatio.toString()
+        };
       })
     ).then(metadatas => metadatas.flatMap(metadata => (metadata ? [metadata] : [])));
 
