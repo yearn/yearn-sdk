@@ -1,5 +1,5 @@
 import { Service } from "../common";
-import { Address, StrategyMetadata, TokenMetadata } from "../types";
+import { Address, StrategiesMetadata, TokenMetadata } from "../types";
 
 const MetaURL = "http://meta.yearn.network";
 
@@ -19,8 +19,10 @@ export class MetaService extends Service {
     return result;
   }
 
-  async strategy(address: Address): Promise<StrategyMetadata | undefined> {
-    return this.fetchMetadataItem(`${MetaURL}/strategies/${address}`);
+  async strategies(): Promise<StrategiesMetadata[]> {
+    const filesRes = await fetch(`${MetaURL}/strategies/index`).then(res => res.json());
+    const files: string[] = filesRes.files.filter((file: string) => !file.startsWith("0x"));
+    return Promise.all(files.map(async file => fetch(`${MetaURL}/strategies/${file}`).then(res => res.json())));
   }
 
   private async fetchMetadataItem<T>(url: string): Promise<T | undefined> {
