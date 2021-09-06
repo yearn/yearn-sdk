@@ -5,8 +5,8 @@ import fetch from "cross-fetch";
 import { CachedFetcher } from "../cache";
 import { ChainId } from "../chain";
 import { ServiceInterface } from "../common";
-import { Address, StrategiesMetadata } from "../types";
-import { StrategyMetadata, VaultStrategiesMetadata } from "../types/strategy";
+import { Address, StrategiesMetadata, StrategyMetadata } from "../types";
+import { VaultStrategiesMetadata } from "../types/strategy";
 
 interface VaultData {
   address: Address;
