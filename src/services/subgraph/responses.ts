@@ -1,4 +1,4 @@
-import { Integer, Usdc } from "../../types/common";
+import { Integer } from "../../types/common";
 
 export interface ProtocolEarningsResponse {
   data: {
