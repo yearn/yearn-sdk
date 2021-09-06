@@ -1,4 +1,4 @@
-import { Integer, Usdc } from "../../types/common";
+import { Integer } from "../../types/common";
 
 export interface ProtocolEarningsResponse {
   data: {
@@ -54,23 +54,6 @@ export interface AccountEarningsResponse {
         };
       }[];
     };
-  };
-}
-
-export interface AssetHistoricEarningsResponse {
-  data: {
-    vaults: {
-      id: string;
-      token: {
-        id: string;
-        decimals: number;
-      };
-      vaultDayData: {
-        totalReturnsGenerated: Integer;
-        timestamp: Integer;
-        tokenPriceUSDC: Usdc;
-      }[];
-    }[];
   };
 }
 

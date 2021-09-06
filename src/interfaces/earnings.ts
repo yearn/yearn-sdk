@@ -14,7 +14,6 @@ import {
 import {
   AccountEarningsResponse,
   AccountHistoricEarningsResponse,
-  AssetHistoricEarningsResponse,
   ProtocolEarningsResponse,
   VaultEarningsResponse
 } from "../services/subgraph/responses";
@@ -23,6 +22,7 @@ import {
   AccountHistoricEarnings,
   AssetEarnings,
   AssetHistoricEarnings,
+  EarningsDayData,
   EarningsUserData
 } from "../types/custom/earnings";
 
@@ -161,66 +161,100 @@ export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
     this.chainId
   );
 
-  async assetsHistoricEarnings(
-    assetAddresses?: Address[],
-    fromDaysAgo: number = 30,
-    toDaysAgo?: number
-  ): Promise<AssetHistoricEarnings[]> {
-    if (fromDaysAgo === 30 && !toDaysAgo && !assetAddresses) {
+  async assetsHistoricEarnings(fromDaysAgo: number = 30): Promise<AssetHistoricEarnings[]> {
+    if (fromDaysAgo === 30) {
       const cached = await this.assetHistoricEarningsCache.fetch();
       if (cached) {
         return cached;
       }
     }
 
-    if (toDaysAgo && toDaysAgo > fromDaysAgo) {
-      throw new SdkError("fromDaysAgo must be greater than toDaysAgo");
+    const assetsStatic = await this.yearn.services.lens.adapters.vaults.v2.assetsStatic();
+    const assetAddresses = assetsStatic.map(asset => asset.address);
+
+    const latestBlockNumber = await this.ctx.provider.read.getBlockNumber();
+
+    const resolvedPromises = await Promise.allSettled(
+      assetAddresses.map(async address => this.assetHistoricEarnings(address, fromDaysAgo, latestBlockNumber))
+    );
+
+    let result = [];
+
+    for (const resolvedPromise of resolvedPromises) {
+      if (resolvedPromise.status === "fulfilled") {
+        result.push(resolvedPromise.value);
+      }
     }
 
-    if (fromDaysAgo < 0) {
-      throw new SdkError("fromDays ago must be positive");
-    }
+    return result;
+  }
 
-    if (toDaysAgo && toDaysAgo < 0) {
-      throw new SdkError("toDays ago must be positive");
-    }
-
-    if (!assetAddresses) {
-      const assetsStatic = await this.yearn.services.lens.adapters.vaults.v2.assetsStatic();
-      assetAddresses = assetsStatic.map(asset => asset.address);
-    }
-
-    const response = (await this.yearn.services.subgraph.fetchQuery(ASSET_HISTORIC_EARNINGS, {
-      ids: assetAddresses,
-      fromDate: this.getDate(fromDaysAgo)
-        .getTime()
-        .toString(),
-      toDate: this.getDate(toDaysAgo || 0)
-        .getTime()
-        .toString()
-    })) as AssetHistoricEarningsResponse;
-
-    return response.data.vaults.map(vault => {
-      const dayData = vault.vaultDayData.map(vaultDayDatum => {
-        const amountUsdc = new BigNumber(vaultDayDatum.tokenPriceUSDC)
-          .multipliedBy(new BigNumber(vaultDayDatum.totalReturnsGenerated))
-          .dividedBy(new BigNumber(10).pow(new BigNumber(vault.token.decimals)));
-
-        return {
-          earnings: {
-            amountUsdc: amountUsdc.toFixed(0),
-            amount: vaultDayDatum.totalReturnsGenerated
-          },
-          date: new Date(+vaultDayDatum.timestamp)
-        };
-      });
-
-      return {
-        decimals: vault.token.decimals,
-        assetAddress: getAddress(vault.id),
-        dayData: dayData
+  async assetHistoricEarnings(
+    vault: Address,
+    fromDaysAgo: number,
+    latestBlockNumber?: number
+  ): Promise<AssetHistoricEarnings> {
+    interface StrategiesResponse {
+      latestReport?: {
+        totalGain: string;
+        totalLoss: string;
       };
+    }
+
+    let blockNumber: number;
+    if (latestBlockNumber) {
+      blockNumber = latestBlockNumber;
+    } else {
+      blockNumber = await this.ctx.provider.read.getBlockNumber();
+    }
+
+    blockNumber -= 100; // subgraph might be slightly behind latest block
+
+    const blocksPerDay = 6500;
+    const blocks = Array.from(Array(fromDaysAgo).keys()).map(day => blockNumber - day * blocksPerDay);
+
+    const response = (await this.yearn.services.subgraph.fetchQuery(ASSET_HISTORIC_EARNINGS(blocks), {
+      id: vault
+    })) as any;
+
+    const data = response.data;
+
+    const labels = blocks.map(block => `block_${block}`);
+
+    const earningsDayData = labels.map(label => {
+      const strategies: StrategiesResponse[] = data[label].strategies;
+      const totalGain = strategies
+        .map(strategy => (strategy.latestReport ? new BigNumber(strategy.latestReport.totalGain) : new BigNumber(0)))
+        .reduce((sum, value) => sum.plus(value));
+
+      const totalLoss = strategies
+        .map(strategy => (strategy.latestReport ? new BigNumber(strategy.latestReport.totalLoss) : new BigNumber(0)))
+        .reduce((sum, value) => sum.plus(value));
+
+      const amountEarnt = totalGain.minus(totalLoss);
+
+      const amountUsdc = new BigNumber(data[label].vaultDayData[0].tokenPriceUSDC)
+        .multipliedBy(amountEarnt)
+        .dividedBy(new BigNumber(10).pow(new BigNumber(data.vault.token.decimals)));
+
+      const dayData: EarningsDayData = {
+        earnings: {
+          amountUsdc: amountUsdc.toFixed(0),
+          amount: amountEarnt.toFixed(0)
+        },
+        date: new Date(+data[label].vaultDayData[0].timestamp).toJSON()
+      };
+
+      return dayData;
     });
+
+    const result: AssetHistoricEarnings = {
+      assetAddress: vault,
+      dayData: earningsDayData,
+      decimals: data.vault.token.decimals
+    };
+
+    return result;
   }
 
   async accountHistoricEarnings(
@@ -334,7 +368,7 @@ export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
               amount: earnings.toFixed(0),
               amountUsdc: amountUsdc.toFixed(0)
             },
-            date: date
+            date: date.toJSON()
           };
         } else {
           return {
@@ -342,7 +376,7 @@ export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
               amount: "0",
               amountUsdc: "0"
             },
-            date: date
+            date: date.toJSON()
           };
         }
       })
