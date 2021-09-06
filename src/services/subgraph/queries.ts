@@ -52,21 +52,38 @@ export const ACCOUNT_EARNINGS = `query AccountEarnings($id: ID!) {
   }
 `;
 
-export const ASSET_HISTORIC_EARNINGS = `query AssetHistoricEarnings($ids: [ID!]!, $fromDate: BigInt!, $toDate: BigInt!) {
-    vaults(where: { id_in: $ids} ) {
-      id
-      token {
-        id
-        decimals
-      }
-      vaultDayData(where: { timestamp_gte: $fromDate, timestamp_lte: $toDate }, first: 1000) {
-        totalReturnsGenerated
+export const ASSET_HISTORIC_EARNINGS = (blocks: number[]) => {
+  const makeBlockQuery = (block: number) => {
+    return `
+    block_${block}: vault(id: $id, block: { number: ${block} } ) {
+      vaultDayData(orderBy: timestamp, orderDirection: desc, first: 1) {
         timestamp
         tokenPriceUSDC
       }
+      strategies {
+        latestReport {
+          totalGain
+          totalLoss
+        }
+      }
     }
+    `;
+  };
+
+  const historicQueries = blocks.map(block => makeBlockQuery(block));
+
+  const result = `query AssetHistoricEarnings($id: ID!) {
+    vault(id: $id) {
+      token {
+        decimals
+      }
+    }
+    ${historicQueries.join("")}
   }
-`;
+  `;
+
+  return result;
+};
 
 export const ACCOUNT_HISTORIC_EARNINGS = `query AccountHistoricEarnings($id: ID!, $fromDate: String!, $sinceDate: BigInt!, $toDate: BigInt!) {
     account(id: $id) {

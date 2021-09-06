@@ -57,23 +57,6 @@ export interface AccountEarningsResponse {
   };
 }
 
-export interface AssetHistoricEarningsResponse {
-  data: {
-    vaults: {
-      id: string;
-      token: {
-        id: string;
-        decimals: number;
-      };
-      vaultDayData: {
-        totalReturnsGenerated: Integer;
-        timestamp: Integer;
-        tokenPriceUSDC: Usdc;
-      }[];
-    }[];
-  };
-}
-
 export interface AccountHistoricEarningsResponse {
   data: {
     account?: {
