@@ -66,7 +66,6 @@ export interface TokenMetadata {
   description?: string;
   website?: string;
 }
-
 export interface StrategiesMetadata {
   name: string;
   description: string;
