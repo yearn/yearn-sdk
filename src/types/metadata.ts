@@ -66,9 +66,17 @@ export interface TokenMetadata {
   description?: string;
   website?: string;
 }
+
 export interface StrategiesMetadata {
   name: string;
   description: string;
   addresses: Address[];
   protocols: string[];
+}
+
+export interface StrategyMetadata {
+  address: Address;
+  debtRatio: Integer;
+  name: string;
+  description: string;
 }
