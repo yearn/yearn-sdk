@@ -39,7 +39,7 @@ export interface HistoricEarnings {
 
 export interface EarningsDayData {
   earnings: TokenAmount;
-  date: Date;
+  date: string;
 }
 
 export interface EarningsUserData {
