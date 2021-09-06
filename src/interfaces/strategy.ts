@@ -5,8 +5,8 @@ import fetch from "cross-fetch";
 import { CachedFetcher } from "../cache";
 import { ChainId } from "../chain";
 import { ServiceInterface } from "../common";
-import { Address, StrategiesMetadata } from "../types";
-import { StrategyDetailedMetadata, VaultStrategiesMetadata } from "../types/strategy";
+import { Address, StrategiesMetadata, StrategyMetadata } from "../types";
+import { VaultStrategiesMetadata } from "../types/strategy";
 
 interface VaultData {
   address: Address;
@@ -71,7 +71,7 @@ export class StrategyInterface<T extends ChainId> extends ServiceInterface<T> {
       return undefined;
     }
 
-    let metadata: StrategyDetailedMetadata[] = await Promise.all(
+    let metadata: StrategyMetadata[] = await Promise.all(
       vaultDatum.strategies.map(async strategy => {
         let debtRatio: BigNumber;
 
