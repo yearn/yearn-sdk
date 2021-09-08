@@ -342,7 +342,7 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
       const tx = await signer.sendTransaction(combinedParams);
       return tx;
     } catch (error) {
-      if (error.code === -32602) {
+      if ((error as any).code === -32602) {
         const combinedParams = { ...transactionRequest, ...overrides };
         combinedParams.maxFeePerGas = undefined;
         combinedParams.maxPriorityFeePerGas = undefined;
@@ -365,7 +365,7 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
       const tx = await makeTransaction(overrides);
       return tx;
     } catch (error) {
-      if (error.code === -32602) {
+      if ((error as any).code === -32602) {
         overrides.maxFeePerGas = undefined;
         overrides.maxPriorityFeePerGas = undefined;
         overrides.gasPrice = originalGasPrice;
