@@ -211,7 +211,9 @@ export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
     blockNumber -= 100; // subgraph might be slightly behind latest block
 
     const blocksPerDay = 6500;
-    const blocks = Array.from(Array(fromDaysAgo).keys()).map(day => blockNumber - day * blocksPerDay);
+    const blocks = Array.from(Array(fromDaysAgo).keys())
+      .reverse()
+      .map(day => blockNumber - day * blocksPerDay);
 
     const response = (await this.yearn.services.subgraph.fetchQuery(ASSET_HISTORIC_EARNINGS(blocks), {
       id: vault
