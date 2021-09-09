@@ -80,3 +80,17 @@ export interface StrategyMetadata {
   name: string;
   description: string;
 }
+
+export interface VaultMetadataOverrides {
+  address: Address;
+  comment?: string;
+  hideAlways?: boolean;
+  depositsDisabled?: boolean;
+  withdrawalsDisabled?: boolean;
+  apyOverride?: string;
+  order?: number;
+  migrationAvailable?: boolean;
+  allowZapIn?: boolean;
+  allowZapOut?: boolean;
+  latestVaultAddress?: Address;
+}
