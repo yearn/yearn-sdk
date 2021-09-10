@@ -24,3 +24,12 @@ export function usdc(usd: any): Usdc {
 export function int(value: BigNumber): Integer {
   return value.toString();
 }
+
+export function chunkArray<T>(array: T[], size: number) {
+  let result = [];
+  for (let i = 0; i < array.length; i += size) {
+    let chunk = array.slice(i, i + size);
+    result.push(chunk);
+  }
+  return result;
+}
