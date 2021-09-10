@@ -5,7 +5,7 @@ import { JsonRpcSigner } from "@ethersproject/providers";
 
 import { ChainId } from "../chain";
 import { ServiceInterface } from "../common";
-import { EthAddress, WethAddress } from "../helpers";
+import { chunkArray, EthAddress, WethAddress } from "../helpers";
 import { PickleJars } from "../services/partners/pickle";
 import {
   Address,
@@ -34,7 +34,15 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
    */
   async get(addresses?: Address[], overrides?: CallOverrides): Promise<Vault[]> {
     const assetsStatic = await this.getStatic(addresses, overrides);
-    const assetsDynamic = await this.getDynamic(addresses, overrides);
+    let assetsDynamic: VaultDynamic[] = [];
+    try {
+      assetsDynamic = await this.getDynamic();
+    } catch {
+      const allAddresses = assetsStatic.map(asset => asset.address);
+      const chunks = chunkArray(allAddresses, 4);
+      const promises = chunks.map(async chunk => this.getDynamic(chunk, overrides));
+      assetsDynamic = await Promise.all(promises).then(chunks => chunks.flat());
+    }
 
     const strategiesMetadata = await this.yearn.strategies.vaultsStrategiesMetadata(
       assetsDynamic.map(asset => asset.address)
