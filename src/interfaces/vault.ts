@@ -15,6 +15,7 @@ import {
   SdkError,
   Token,
   VaultDynamic,
+  VaultMetadataOverrides,
   VaultStatic,
   VaultsUserSummary,
   VaultUserMetadata,
@@ -44,28 +45,57 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
       assetsDynamic = await Promise.all(promises).then(chunks => chunks.flat());
     }
 
-    const strategiesMetadata = await this.yearn.strategies.vaultsStrategiesMetadata(
-      assetsDynamic.map(asset => asset.address)
-    );
-    let assetsHistoricEarnings = await this.yearn.earnings.assetsHistoricEarnings().catch(error => {
+    const vaultMetadataOverridesPromise = this.yearn.services.meta.vaults().catch(error => {
       console.error(error);
       return Promise.resolve([]);
     });
 
-    const assets = new Array<Vault>();
+    const strategiesMetadataPromise = this.yearn.strategies
+      .vaultsStrategiesMetadata(assetsDynamic.map(asset => asset.address))
+      .catch(error => {
+        console.error(error);
+        return Promise.resolve([]);
+      });
+
+    let assetsHistoricEarningsPromise = this.yearn.earnings.assetsHistoricEarnings().catch(error => {
+      console.error(error);
+      return Promise.resolve([]);
+    });
+
+    const [vaultMetadataOverrides, strategiesMetadata, assetsHistoricEarnings] = [
+      await vaultMetadataOverridesPromise,
+      await strategiesMetadataPromise,
+      await assetsHistoricEarningsPromise
+    ];
+
+    const assetsWithMetadataOverrides = new Array<[Vault, VaultMetadataOverrides | undefined]>();
+
     for (const asset of assetsStatic) {
       const dynamic = assetsDynamic.find(({ address }) => asset.address === address);
       if (!dynamic) {
         throw new SdkError(`Dynamic asset does not exist for ${asset.address}`);
       }
+      const override = vaultMetadataOverrides.find(override => override.address === asset.address);
+      if (override?.hideAlways) {
+        continue;
+      }
+
       dynamic.metadata.displayName = dynamic.metadata.displayName || asset.name;
       dynamic.metadata.strategies = strategiesMetadata.find(metadata => metadata.vaultAddress === asset.address);
       dynamic.metadata.historicEarnings = assetsHistoricEarnings.find(
         earnings => earnings.assetAddress === asset.address
       )?.dayData;
-      assets.push({ ...asset, ...dynamic });
+      dynamic.metadata.depositsDisabled = override?.depositsDisabled;
+      dynamic.metadata.withdrawalsDisabled = override?.withdrawalsDisabled;
+      dynamic.metadata.allowZapIn = override?.allowZapIn;
+      dynamic.metadata.allowZapOut = override?.allowZapOut;
+
+      assetsWithMetadataOverrides.push([{ ...asset, ...dynamic }, override]);
     }
-    return assets;
+
+    return assetsWithMetadataOverrides
+      .sort((lhs, rhs) => (lhs[1]?.order ?? Math.max()) - (rhs[1]?.order ?? Math.max()))
+      .map(assetsWithMetadataOverrides => assetsWithMetadataOverrides[0]);
   }
 
   /**

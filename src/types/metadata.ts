@@ -24,6 +24,10 @@ export interface VaultMetadata {
   defaultDisplayToken: Address;
   strategies?: VaultStrategiesMetadata;
   historicEarnings?: EarningsDayData[];
+  depositsDisabled?: boolean;
+  withdrawalsDisabled?: boolean;
+  allowZapIn?: boolean;
+  allowZapOut?: boolean;
 }
 
 /**
