@@ -68,15 +68,20 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
       await assetsHistoricEarningsPromise
     ];
 
-    const assetsWithMetadataOverrides = new Array<[Vault, VaultMetadataOverrides | undefined]>();
+    interface AssetWithMetadataOverrides {
+      vault: Vault;
+      overrides?: VaultMetadataOverrides;
+    }
+
+    const assetsWithMetadataOverrides: AssetWithMetadataOverrides[] = [];
 
     for (const asset of assetsStatic) {
       const dynamic = assetsDynamic.find(({ address }) => asset.address === address);
       if (!dynamic) {
         throw new SdkError(`Dynamic asset does not exist for ${asset.address}`);
       }
-      const override = vaultMetadataOverrides.find(override => override.address === asset.address);
-      if (override?.hideAlways) {
+      const overrides = vaultMetadataOverrides.find(override => override.address === asset.address);
+      if (overrides?.hideAlways) {
         continue;
       }
 
@@ -85,17 +90,17 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
       dynamic.metadata.historicEarnings = assetsHistoricEarnings.find(
         earnings => earnings.assetAddress === asset.address
       )?.dayData;
-      dynamic.metadata.depositsDisabled = override?.depositsDisabled;
-      dynamic.metadata.withdrawalsDisabled = override?.withdrawalsDisabled;
-      dynamic.metadata.allowZapIn = override?.allowZapIn;
-      dynamic.metadata.allowZapOut = override?.allowZapOut;
+      dynamic.metadata.depositsDisabled = overrides?.depositsDisabled;
+      dynamic.metadata.withdrawalsDisabled = overrides?.withdrawalsDisabled;
+      dynamic.metadata.allowZapIn = overrides?.allowZapIn;
+      dynamic.metadata.allowZapOut = overrides?.allowZapOut;
 
-      assetsWithMetadataOverrides.push([{ ...asset, ...dynamic }, override]);
+      assetsWithMetadataOverrides.push({ vault: { ...asset, ...dynamic }, overrides });
     }
 
     return assetsWithMetadataOverrides
-      .sort((lhs, rhs) => (lhs[1]?.order ?? Math.max()) - (rhs[1]?.order ?? Math.max()))
-      .map(assetsWithMetadataOverrides => assetsWithMetadataOverrides[0]);
+      .sort((lhs, rhs) => (lhs.overrides?.order ?? Math.max()) - (rhs.overrides?.order ?? Math.max()))
+      .map(assetsWithMetadataOverrides => assetsWithMetadataOverrides.vault);
   }
 
   /**
