@@ -2,8 +2,8 @@ import { BigNumber } from "@ethersproject/bignumber";
 import { CallOverrides, Contract } from "@ethersproject/contracts";
 import { TransactionRequest, TransactionResponse } from "@ethersproject/providers";
 import { JsonRpcSigner } from "@ethersproject/providers";
-import { CachedFetcher } from "../cache";
 
+import { CachedFetcher } from "../cache";
 import { ChainId } from "../chain";
 import { ServiceInterface } from "../common";
 import { chunkArray, EthAddress, WethAddress } from "../helpers";
