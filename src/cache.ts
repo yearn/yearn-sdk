@@ -14,7 +14,7 @@ export class CachedFetcher<T> {
     this.chainId = chainId;
   }
 
-  async fetch(): Promise<T | undefined> {
+  async fetch(queryParameters?: string): Promise<T | undefined> {
     if (!this.ctx.cache.useCache || !this.ctx.cache.url) {
       return undefined;
     }
@@ -24,7 +24,12 @@ export class CachedFetcher<T> {
       return cached;
     }
 
-    const call = await fetch(`${this.ctx.cache.url}/v1/chains/${this.chainId}/${this.path}`);
+    let path = `${this.ctx.cache.url}/v1/chains/${this.chainId}/${this.path}`;
+    if (queryParameters) {
+      path += `?${queryParameters}`;
+    }
+
+    const call = await fetch(path);
     if (call.status !== 200) {
       const { url, status, statusText } = call;
       console.warn(`Call to cache failed at ${url} (status ${status} ${statusText})`);
