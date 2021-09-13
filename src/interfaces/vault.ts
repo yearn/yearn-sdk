@@ -2,6 +2,7 @@ import { BigNumber } from "@ethersproject/bignumber";
 import { CallOverrides, Contract } from "@ethersproject/contracts";
 import { TransactionRequest, TransactionResponse } from "@ethersproject/providers";
 import { JsonRpcSigner } from "@ethersproject/providers";
+import { CachedFetcher } from "../cache";
 
 import { ChainId } from "../chain";
 import { ServiceInterface } from "../common";
@@ -27,6 +28,8 @@ import { Position, Vault } from "../types";
 const VaultAbi = ["function deposit(uint256 amount) public", "function withdraw(uint256 amount) public"];
 
 export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
+  private cachedFetcher = new CachedFetcher<Vault[]>("vaults/get", this.ctx, this.chainId);
+
   /**
    * Get all yearn vaults.
    * @param addresses filter, if not provided all positions are returned
@@ -34,6 +37,11 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
    * @returns
    */
   async get(addresses?: Address[], overrides?: CallOverrides): Promise<Vault[]> {
+    const cached = await this.cachedFetcher.fetch(addresses ? `addresses=${addresses.join()}` : undefined);
+    if (cached) {
+      return cached;
+    }
+
     const assetsStatic = await this.getStatic(addresses, overrides);
     let assetsDynamic: VaultDynamic[] = [];
     try {
