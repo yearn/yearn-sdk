@@ -168,8 +168,22 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
   async positionsOf(address: Address, addresses?: Address[], overrides?: CallOverrides): Promise<Position[]> {
     const adapters = Object.values(this.yearn.services.lens.adapters.vaults);
     return await Promise.all(
-      adapters.map(adapter => {
-        return adapter.positionsOf(address, addresses, overrides);
+      adapters.map(async adapter => {
+        try {
+          return await adapter.positionsOf(address, addresses, overrides);
+        } catch {
+          let allAddresses: Address[];
+          if (addresses) {
+            allAddresses = addresses;
+          } else {
+            allAddresses = await this.getStatic(addresses, overrides).then(assets =>
+              assets.map(asset => asset.address)
+            );
+          }
+          const chunks = chunkArray(allAddresses, 40);
+          const promises = chunks.map(async chunk => adapter.positionsOf(address, chunk, overrides));
+          return await Promise.all(promises).then(chunks => chunks.flat());
+        }
       })
     ).then(arr => arr.flat());
   }
