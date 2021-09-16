@@ -33,7 +33,12 @@ export class LensService<T extends ChainId> extends ContractService<T> {
   get adapters(): Adapters<T> {
     switch (this.chainId) {
       case 1: // FIXME: doesn't actually exist
-      case 250: // ditto
+      case 250:
+        return {
+          vaults: {
+            v2: new RegistryV2Adapter(this.chainId, this.ctx)
+          }
+        } as Adapters<T>;
       case 1337: // ditto
         return {
           vaults: {
