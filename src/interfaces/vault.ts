@@ -37,9 +37,13 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
    * @returns
    */
   async get(addresses?: Address[], overrides?: CallOverrides): Promise<Vault[]> {
-    const cached = await this.cachedFetcher.fetch(addresses ? `addresses=${addresses.join()}` : undefined);
+    const cached = await this.cachedFetcher.fetch();
     if (cached) {
-      return cached;
+      if (addresses) {
+        return cached.filter(cachedVault => addresses.includes(cachedVault.address));
+      } else {
+        return cached;
+      }
     }
 
     const assetsStatic = await this.getStatic(addresses, overrides);
