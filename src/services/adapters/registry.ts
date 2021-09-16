@@ -41,8 +41,8 @@ export class RegistryV2Adapter<T extends ChainId> extends ContractService<T> imp
       case 1:
       case 1337:
         return "0x240315db938d44bb124ae619f5fd0269a02d1271";
-      case 250: // FIXME: doesn't actually exist
-        return "0x240315db938d44bb124ae619f5fd0269a02d1271";
+      case 250:
+        return "0xf900ea42c55D165Ca5d5f50883CddD352AE48F40";
     }
   }
 
