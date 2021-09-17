@@ -65,8 +65,8 @@ export class IronBankAdapter<T extends ChainId> extends ContractService<T> {
       case 1:
       case 1337:
         return "0xFF0bd2d0C7E9424ccB149ED3757155eEf41a793D";
-      case 250: // FIXME: doesn't actually exist
-        return "0xFF0bd2d0C7E9424ccB149ED3757155eEf41a793D";
+      case 250:
+        return "0x738b247e9b89003f2BCbc543Ad268305736f1629";
     }
   }
 
