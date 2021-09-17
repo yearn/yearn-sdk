@@ -37,7 +37,8 @@ export class LensService<T extends ChainId> extends ContractService<T> {
         return {
           vaults: {
             v2: new RegistryV2Adapter(this.chainId, this.ctx)
-          }
+          },
+          ironBank: new IronBankAdapter(this.chainId, this.ctx)
         } as Adapters<T>;
       case 1337: // ditto
         return {
