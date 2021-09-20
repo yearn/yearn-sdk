@@ -99,4 +99,29 @@ export class Yearn<T extends ChainId> {
 
     this.ready = Promise.all([this.services.asset.ready]);
   }
+
+  setChainId(chainId: ChainId) {
+    this.services = {
+      lens: new LensService(chainId, this.context),
+      oracle: new OracleService(chainId, this.context),
+      zapper: new ZapperService(chainId, this.context),
+      asset: new AssetService(chainId, this.context),
+      vision: new VisionService(chainId, this.context),
+      subgraph: new SubgraphService(chainId, this.context),
+      pickle: new PickleService(chainId, this.context),
+      helper: new HelperService(chainId, this.context),
+      telegram: new TelegramService(chainId, this.context),
+      meta: new MetaService(chainId, this.context)
+    };
+
+    this.vaults = new VaultInterface(this, chainId, this.context);
+    this.tokens = new TokenInterface(this, chainId, this.context);
+    this.earnings = new EarningsInterface(this, chainId, this.context);
+    this.fees = new FeesInterface(this, chainId, this.context);
+    this.ironBank = new IronBankInterface(this, chainId, this.context);
+    this.simulation = new SimulationInterface(this, chainId, this.context);
+    this.strategies = new StrategyInterface(this, chainId, this.context);
+
+    this.ready = Promise.all([this.services.asset.ready]);
+  }
 }
