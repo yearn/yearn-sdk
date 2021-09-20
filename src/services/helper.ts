@@ -35,8 +35,9 @@ export class HelperService<T extends ChainId> extends ContractService<T> {
     switch (chainId) {
       case 1:
       case 1337:
-      case 250: // FIXME: doesn't actually exist
         return "0x5AACD0D03096039aC4381CD814637e9FB7C34a6f";
+      case 250:
+        return "0xE55Dd55b3355c261A048B3f310706C7478657d74";
     }
   }
 
