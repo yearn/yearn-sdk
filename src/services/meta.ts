@@ -8,13 +8,15 @@ interface IPFSIndex {
   directories: string[];
 }
 
+const CHAIN_ID_KEY = "{chain_id}";
+
 /**
  * [[MetaService]] fetches meta data about things such as vaults and tokens
  * from yearn-meta
  */
 export class MetaService extends Service {
   async token(address: Address): Promise<TokenMetadata | undefined> {
-    const metadata = await this.fetchMetadataItem<any>(`${MetaURL}/tokens/${address}`);
+    const metadata = await this.fetchMetadataItem<any>(this.buildUrl(`tokens/${CHAIN_ID_KEY}/${address}`));
     const result: TokenMetadata = {
       address: address,
       categories: metadata.categories,
@@ -25,16 +27,16 @@ export class MetaService extends Service {
   }
 
   async strategies(): Promise<StrategiesMetadata[]> {
-    const filesRes = await fetch(`${MetaURL}/strategies/index`).then(res => res.json());
+    const filesRes = await fetch(this.buildUrl(`strategies/index`)).then(res => res.json());
     const files: string[] = filesRes.files.filter((file: string) => !file.startsWith("0x"));
     return Promise.all(files.map(async file => fetch(`${MetaURL}/strategies/${file}`).then(res => res.json())));
   }
 
   async vaults(): Promise<VaultMetadataOverrides[]> {
-    const index: IPFSIndex = await fetch(`${MetaURL}/vaults/index`).then(res => res.json());
+    const index: IPFSIndex = await fetch(this.buildUrl(`vaults/${CHAIN_ID_KEY}/index`)).then(res => res.json());
 
     const promises = index.files.map(async file => {
-      const metadata = await fetch(`${MetaURL}/vaults/${file}`).then(res => res.json());
+      const metadata = await fetch(this.buildUrl(`vaults/${CHAIN_ID_KEY}/${file}`)).then(res => res.json());
       const vaultMetadata: VaultMetadataOverrides = {
         address: file,
         comment: metadata.comment,
@@ -60,5 +62,9 @@ export class MetaService extends Service {
     } catch (error) {
       return undefined;
     }
+  }
+
+  private buildUrl(path: string): string {
+    return `${MetaURL}/${path}`.replace(CHAIN_ID_KEY, this.chainId.toString());
   }
 }
