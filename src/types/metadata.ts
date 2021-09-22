@@ -98,3 +98,8 @@ export interface VaultMetadataOverrides {
   allowZapOut?: boolean;
   latestVaultAddress?: Address;
 }
+
+export interface ChainMetadata {
+  zapsEnabled: boolean;
+  simulationsEnabled: boolean;
+}
