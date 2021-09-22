@@ -44,6 +44,7 @@ export class MetaService extends Service {
         depositsDisabled: metadata.depositsDisabled,
         withdrawalsDisabled: metadata.withdrawalsDisabled,
         apyOverride: metadata.apyOverride,
+        apyTypeOverride: metadata.apyTypeOverride,
         order: metadata.order,
         migrationAvailable: metadata.migrationAvailable,
         allowZapIn: metadata.allowZapIn,
@@ -57,9 +58,7 @@ export class MetaService extends Service {
   }
 
   async chain(): Promise<ChainMetadata> {
-    console.log(this.buildUrl(`chain-settings/${CHAIN_ID_KEY}`));
     const chainSettings: any = await fetch(this.buildUrl(`chain-settings/${CHAIN_ID_KEY}`)).then(res => res.json());
-    console.log(chainSettings);
     const metadata: ChainMetadata = {
       zapsEnabled: chainSettings.zapsEnabled,
       simulationsEnabled: chainSettings.simulationsEnabled

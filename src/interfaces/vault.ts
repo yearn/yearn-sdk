@@ -108,20 +108,16 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
       dynamic.metadata.allowZapIn = overrides?.allowZapIn;
       dynamic.metadata.allowZapOut = overrides?.allowZapOut;
       if (overrides?.apyOverride) {
-        if (dynamic.metadata.apy) {
-          dynamic.metadata.apy.type = "manual_override";
-          dynamic.metadata.apy.net_apy = overrides.apyOverride;
-        } else {
-          const apy: Apy = {
-            type: "manual_override",
-            gross_apr: 0,
-            net_apy: overrides.apyOverride,
-            fees: { performance: null, withdrawal: null, management: null, keep_crv: null, cvx_keep_crv: null },
-            points: null,
-            composite: null
-          };
-          dynamic.metadata.apy = apy;
+        if (!dynamic.metadata.apy) {
+          dynamic.metadata.apy = this.makeEmptyApy();
         }
+        dynamic.metadata.apy.net_apy = overrides.apyOverride;
+      }
+      if (overrides?.apyTypeOverride) {
+        if (!dynamic.metadata.apy) {
+          dynamic.metadata.apy = this.makeEmptyApy();
+        }
+        dynamic.metadata.apy.type = overrides.apyTypeOverride;
       }
 
       assetsWithMetadataOverrides.push({ vault: { ...asset, ...dynamic }, overrides });
@@ -461,5 +457,17 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
 
       throw error;
     }
+  }
+
+  private makeEmptyApy(): Apy {
+    const apy: Apy = {
+      type: "manual_override",
+      gross_apr: 0,
+      net_apy: 0,
+      fees: { performance: null, withdrawal: null, management: null, keep_crv: null, cvx_keep_crv: null },
+      points: null,
+      composite: null
+    };
+    return apy;
   }
 }

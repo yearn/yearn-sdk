@@ -91,7 +91,8 @@ export interface VaultMetadataOverrides {
   hideAlways?: boolean;
   depositsDisabled?: boolean;
   withdrawalsDisabled?: boolean;
-  apyOverride?: string;
+  apyOverride?: number;
+  apyTypeOverride?: string;
   order?: number;
   migrationAvailable?: boolean;
   allowZapIn?: boolean;
