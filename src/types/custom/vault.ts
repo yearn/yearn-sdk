@@ -7,7 +7,7 @@ import { ZapOptions } from "./zapper";
 export interface Apy {
   type: string;
   gross_apr: number;
-  net_apy: number;
+  net_apy: number | string;
   fees: {
     performance: number | null;
     withdrawal: number | null;
