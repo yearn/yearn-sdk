@@ -61,8 +61,8 @@ export class MetaService extends Service {
     const chainSettings: any = await fetch(this.buildUrl(`chain-settings/${CHAIN_ID_KEY}`)).then(res => res.json());
     console.log(chainSettings);
     const metadata: ChainMetadata = {
-      zapsEnabled: chainSettings.zaps_enabled,
-      simulationsEnabled: chainSettings.simulations_enabled
+      zapsEnabled: chainSettings.zapsEnabled,
+      simulationsEnabled: chainSettings.simulationsEnabled
     };
     return metadata;
   }
