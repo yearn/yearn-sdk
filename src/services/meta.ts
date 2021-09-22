@@ -1,7 +1,7 @@
 import { Service } from "../common";
-import { Address, StrategiesMetadata, TokenMetadata, VaultMetadataOverrides } from "../types";
+import { Address, ChainMetadata, StrategiesMetadata, TokenMetadata, VaultMetadataOverrides } from "../types";
 
-const MetaURL = "http://meta.yearn.network";
+const MetaURL = "https://meta.yearn.network";
 
 interface IPFSIndex {
   files: string[];
@@ -54,6 +54,17 @@ export class MetaService extends Service {
     });
 
     return Promise.all(promises);
+  }
+
+  async chain(): Promise<ChainMetadata> {
+    console.log(this.buildUrl(`chain-settings/${CHAIN_ID_KEY}`));
+    const chainSettings: any = await fetch(this.buildUrl(`chain-settings/${CHAIN_ID_KEY}`)).then(res => res.json());
+    console.log(chainSettings);
+    const metadata: ChainMetadata = {
+      zapsEnabled: chainSettings.zapsEnabled,
+      simulationsEnabled: chainSettings.simulationsEnabled
+    };
+    return metadata;
   }
 
   private async fetchMetadataItem<T>(url: string): Promise<T | undefined> {
