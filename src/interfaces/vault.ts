@@ -16,6 +16,7 @@ import {
   Integer,
   SdkError,
   Token,
+  TokenMetadata,
   VaultDynamic,
   VaultMetadataOverrides,
   VaultStatic,
@@ -284,21 +285,28 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
     return await Promise.all(
       adapters.map(async adapter => {
         const tokenAddresses = await adapter.tokens(overrides);
-        const tokens = await this.yearn.services.helper.tokens(tokenAddresses, overrides);
         const icons = this.yearn.services.asset.icon(tokenAddresses.concat(EthAddress));
-        const tokensMetadata = await this.yearn.tokens.metadata(tokenAddresses);
+        const tokensPromise = this.yearn.services.helper.tokens(tokenAddresses, overrides);
+        const tokensMetadataPromise = this.yearn.tokens.metadata(tokenAddresses);
+
+        const [tokens, tokensMetadata] = await Promise.all([tokensPromise, tokensMetadataPromise]);
+
         return Promise.all(
           tokens.map(async token => {
-            const result = {
+            const tokenMetadata = tokensMetadata.find(metadata => metadata.address === token.address);
+            const result: Token = {
               ...token,
               icon: icons[token.address],
               supported: {},
               priceUsdc: await this.yearn.services.oracle.getPriceUsdc(token.address, overrides),
-              metadata: tokensMetadata.find(metadata => metadata.address === token.address)
+              metadata: tokenMetadata
             };
             const symbolOverride = this.yearn.services.asset.alias(token.address)?.symbol;
             if (symbolOverride) {
               result.symbol = symbolOverride;
+            }
+            if (tokenMetadata) {
+              this.fillTokenMetadataOverrides(result, tokenMetadata);
             }
             return result;
           })
@@ -477,6 +485,18 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
       }
 
       throw error;
+    }
+  }
+
+  private fillTokenMetadataOverrides(token: Token, overrides: TokenMetadata) {
+    if (overrides.tokenIconOverride) {
+      token.icon = overrides.tokenIconOverride;
+    }
+    if (overrides.tokenSymbolOverride) {
+      token.symbol = overrides.tokenSymbolOverride;
+    }
+    if (overrides.tokenNameOverride) {
+      token.name = overrides.tokenNameOverride;
     }
   }
 
