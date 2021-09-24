@@ -16,6 +16,7 @@ import {
   Integer,
   SdkError,
   Token,
+  TokenMetadata,
   VaultDynamic,
   VaultMetadataOverrides,
   VaultStatic,
@@ -266,9 +267,12 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
         const tokens = await this.yearn.services.helper.tokens(tokenAddresses, overrides);
         const icons = this.yearn.services.asset.icon(tokenAddresses.concat(EthAddress));
         const tokensMetadata = await this.yearn.tokens.metadata(tokenAddresses);
+        const metadataOverrides = await Promise.all(
+          tokenAddresses.map(address => this.yearn.services.meta.token(address))
+        );
         return Promise.all(
           tokens.map(async token => {
-            const result = {
+            const result: Token = {
               ...token,
               icon: icons[token.address],
               supported: {},
@@ -278,6 +282,10 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
             const symbolOverride = this.yearn.services.asset.alias(token.address)?.symbol;
             if (symbolOverride) {
               result.symbol = symbolOverride;
+            }
+            const tokenMetadataOverrides = metadataOverrides.find(override => override?.address === token.address);
+            if (tokenMetadataOverrides) {
+              this.fillTokenMetadataOverrides(result, tokenMetadataOverrides);
             }
             return result;
           })
@@ -456,6 +464,18 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
       }
 
       throw error;
+    }
+  }
+
+  private fillTokenMetadataOverrides(token: Token, overrides: TokenMetadata) {
+    if (overrides.tokenIconOverride) {
+      token.icon = overrides.tokenIconOverride;
+    }
+    if (overrides.tokenSymbolOverride) {
+      token.symbol = overrides.tokenSymbolOverride;
+    }
+    if (overrides.tokenNameOverride) {
+      token.name = overrides.tokenNameOverride;
     }
   }
 

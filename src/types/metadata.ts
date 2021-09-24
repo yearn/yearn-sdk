@@ -69,6 +69,9 @@ export interface TokenMetadata {
   categories?: string[];
   description?: string;
   website?: string;
+  tokenIconOverride?: string;
+  tokenSymbolOverride?: string;
+  tokenNameOverride?: string;
 }
 
 export interface StrategiesMetadata {

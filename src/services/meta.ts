@@ -17,11 +17,17 @@ const CHAIN_ID_KEY = "{chain_id}";
 export class MetaService extends Service {
   async token(address: Address): Promise<TokenMetadata | undefined> {
     const metadata = await this.fetchMetadataItem<any>(this.buildUrl(`tokens/${CHAIN_ID_KEY}/${address}`));
+    if (!metadata) {
+      return undefined;
+    }
     const result: TokenMetadata = {
       address: address,
       categories: metadata.categories,
       description: metadata.description,
-      website: metadata.website
+      website: metadata.website,
+      tokenIconOverride: metadata.tokenIconOverride,
+      tokenSymbolOverride: metadata.tokenSymbolOverride,
+      tokenNameOverride: metadata.tokenNameOverride
     };
     return result;
   }
