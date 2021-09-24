@@ -268,7 +268,7 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
         const tokensPromise = this.yearn.services.helper.tokens(tokenAddresses, overrides);
         const tokensMetadataPromise = this.yearn.tokens.metadata(tokenAddresses);
 
-        const [tokens, tokensMetadata] = [await tokensPromise, await tokensMetadataPromise];
+        const [tokens, tokensMetadata] = await Promise.all([tokensPromise, tokensMetadataPromise]);
 
         return Promise.all(
           tokens.map(async token => {
