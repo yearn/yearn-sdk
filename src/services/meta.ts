@@ -49,7 +49,13 @@ export class MetaService extends Service {
         migrationAvailable: metadata.migrationAvailable,
         allowZapIn: metadata.allowZapIn,
         allowZapOut: metadata.allowZapOut,
-        latestVaultAddress: metadata.latestVaultAddress
+        displayName: metadata.displayName,
+        migrationContract: metadata.migrationContract,
+        migrationTargetVault: metadata.migrationTargetVault,
+        vaultIconOverride: metadata.vaultIconOverride,
+        vaultSymbolOverride: metadata.vaultSymbolOverride,
+        vaultNameOverride: metadata.vaultNameOverride,
+        vaultDetailPageAssets: metadata.vaultDetailPageAssets
       };
       return vaultMetadata;
     });
