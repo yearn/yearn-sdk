@@ -103,21 +103,9 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
       dynamic.metadata.historicEarnings = assetsHistoricEarnings.find(
         earnings => earnings.assetAddress === asset.address
       )?.dayData;
-      dynamic.metadata.depositsDisabled = overrides?.depositsDisabled;
-      dynamic.metadata.withdrawalsDisabled = overrides?.withdrawalsDisabled;
-      dynamic.metadata.allowZapIn = overrides?.allowZapIn;
-      dynamic.metadata.allowZapOut = overrides?.allowZapOut;
-      if (overrides?.apyOverride) {
-        if (!dynamic.metadata.apy) {
-          dynamic.metadata.apy = this.makeEmptyApy();
-        }
-        dynamic.metadata.apy.net_apy = overrides.apyOverride;
-      }
-      if (overrides?.apyTypeOverride) {
-        if (!dynamic.metadata.apy) {
-          dynamic.metadata.apy = this.makeEmptyApy();
-        }
-        dynamic.metadata.apy.type = overrides.apyTypeOverride;
+
+      if (overrides) {
+        this.fillMetadataOverrides(dynamic, overrides);
       }
 
       assetsWithMetadataOverrides.push({ vault: { ...asset, ...dynamic }, overrides });
@@ -126,6 +114,39 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
     return assetsWithMetadataOverrides
       .sort((lhs, rhs) => (lhs.overrides?.order ?? Math.max()) - (rhs.overrides?.order ?? Math.max()))
       .map(assetsWithMetadataOverrides => assetsWithMetadataOverrides.vault);
+  }
+
+  private fillMetadataOverrides(dynamic: VaultDynamic, overrides: VaultMetadataOverrides) {
+    if (overrides.displayName) {
+      dynamic.metadata.displayName = overrides.displayName;
+    }
+    if (overrides?.vaultSymbolOverride) {
+      dynamic.metadata.symbol = overrides.vaultSymbolOverride;
+    }
+    if (overrides?.vaultIconOverride) {
+      dynamic.metadata.displayIcon = overrides.vaultIconOverride;
+    }
+    if (overrides?.apyOverride) {
+      if (!dynamic.metadata.apy) {
+        dynamic.metadata.apy = this.makeEmptyApy();
+      }
+      dynamic.metadata.apy.net_apy = overrides.apyOverride;
+    }
+    if (overrides?.apyTypeOverride) {
+      if (!dynamic.metadata.apy) {
+        dynamic.metadata.apy = this.makeEmptyApy();
+      }
+      dynamic.metadata.apy.type = overrides.apyTypeOverride;
+    }
+
+    dynamic.metadata.depositsDisabled = overrides?.depositsDisabled;
+    dynamic.metadata.withdrawalsDisabled = overrides?.withdrawalsDisabled;
+    dynamic.metadata.allowZapIn = overrides?.allowZapIn;
+    dynamic.metadata.allowZapOut = overrides?.allowZapOut;
+    dynamic.metadata.migrationContract = overrides?.migrationContract;
+    dynamic.metadata.migrationTargetVault = overrides?.migrationTargetVault;
+    dynamic.metadata.vaultNameOverride = overrides?.vaultNameOverride;
+    dynamic.metadata.vaultDetailPageAssets = overrides?.vaultDetailPageAssets;
   }
 
   /**

@@ -28,6 +28,10 @@ export interface VaultMetadata {
   withdrawalsDisabled?: boolean;
   allowZapIn?: boolean;
   allowZapOut?: boolean;
+  migrationContract?: Address;
+  migrationTargetVault?: Address;
+  vaultNameOverride?: string;
+  vaultDetailPageAssets?: string[];
 }
 
 /**
@@ -97,7 +101,13 @@ export interface VaultMetadataOverrides {
   migrationAvailable?: boolean;
   allowZapIn?: boolean;
   allowZapOut?: boolean;
-  latestVaultAddress?: Address;
+  migrationContract?: Address;
+  migrationTargetVault?: Address;
+  displayName?: string;
+  vaultIconOverride?: string;
+  vaultSymbolOverride?: string;
+  vaultNameOverride?: string;
+  vaultDetailPageAssets?: string[];
 }
 
 export interface ChainMetadata {
