@@ -189,13 +189,17 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
   private cachedFetcher = new CachedFetcher<TokenMetadata[]>("tokens/metadata", this.ctx, this.chainId);
 
   async metadata(addresses?: Address[]): Promise<TokenMetadata[]> {
-    if (!addresses) {
-      addresses = await this.yearn.services.lens.adapters.vaults.v2.tokens();
-    }
-
     const cached = await this.cachedFetcher.fetch();
     if (cached) {
-      return cached.filter(metadata => addresses?.includes(metadata.address));
+      if (addresses) {
+        return cached.filter(metadata => addresses?.includes(metadata.address));
+      } else {
+        return cached;
+      }
+    }
+
+    if (!addresses) {
+      addresses = await this.yearn.services.lens.adapters.vaults.v2.tokens();
     }
 
     return Promise.all(

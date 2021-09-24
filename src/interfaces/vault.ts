@@ -264,28 +264,28 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
     return await Promise.all(
       adapters.map(async adapter => {
         const tokenAddresses = await adapter.tokens(overrides);
-        const tokens = await this.yearn.services.helper.tokens(tokenAddresses, overrides);
         const icons = this.yearn.services.asset.icon(tokenAddresses.concat(EthAddress));
-        const tokensMetadata = await this.yearn.tokens.metadata(tokenAddresses);
-        const metadataOverrides = await Promise.all(
-          tokenAddresses.map(address => this.yearn.services.meta.token(address))
-        );
+        const tokensPromise = this.yearn.services.helper.tokens(tokenAddresses, overrides);
+        const tokensMetadataPromise = this.yearn.tokens.metadata(tokenAddresses);
+
+        const [tokens, tokensMetadata] = [await tokensPromise, await tokensMetadataPromise];
+
         return Promise.all(
           tokens.map(async token => {
+            const tokenMetadata = tokensMetadata.find(metadata => metadata.address === token.address);
             const result: Token = {
               ...token,
               icon: icons[token.address],
               supported: {},
               priceUsdc: await this.yearn.services.oracle.getPriceUsdc(token.address, overrides),
-              metadata: tokensMetadata.find(metadata => metadata.address === token.address)
+              metadata: tokenMetadata
             };
             const symbolOverride = this.yearn.services.asset.alias(token.address)?.symbol;
             if (symbolOverride) {
               result.symbol = symbolOverride;
             }
-            const tokenMetadataOverrides = metadataOverrides.find(override => override?.address === token.address);
-            if (tokenMetadataOverrides) {
-              this.fillTokenMetadataOverrides(result, tokenMetadataOverrides);
+            if (tokenMetadata) {
+              this.fillTokenMetadataOverrides(result, tokenMetadata);
             }
             return result;
           })
