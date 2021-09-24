@@ -7,7 +7,7 @@ import { ChainId } from "../chain";
 import { ServiceInterface } from "../common";
 import { EthAddress } from "../helpers";
 import { PickleJars } from "../services/partners/pickle";
-import { Address, Integer, TokenMetadata, TypedMap, Usdc, Vault, ZapProtocol } from "../types";
+import { Address, Integer, SdkError, TokenMetadata, TypedMap, Usdc, Vault, ZapProtocol } from "../types";
 import { Balance, Icon, IconMap, Token } from "../types";
 
 const TokenAbi = ["function approve(address _spender, uint256 _value) public"];
@@ -58,13 +58,20 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
    * @param address
    */
   async balances(address: Address): Promise<Balance[]> {
-    let zapperBalances = await this.yearn.services.zapper.balances(address);
     const vaultBalances = await this.yearn.vaults
       .balances(address)
       .then(balances => balances.filter(token => token.balance !== "0"));
-    const vaultBalanceAddresses = new Set(vaultBalances.map(balance => balance.address));
-    zapperBalances = zapperBalances.filter(balance => !vaultBalanceAddresses.has(balance.address));
-    return zapperBalances.concat(vaultBalances);
+
+    if (this.chainId === 1 || this.chainId === 1337) {
+      let zapperBalances = await this.yearn.services.zapper.balances(address);
+      const vaultBalanceAddresses = new Set(vaultBalances.map(balance => balance.address));
+      zapperBalances = zapperBalances.filter(balance => !vaultBalanceAddresses.has(balance.address));
+      return zapperBalances.concat(vaultBalances);
+    } else if (this.chainId === 250) {
+      return vaultBalances;
+    } else {
+      throw new SdkError(`the chain ${this.chainId} hasn't been implemented yet`);
+    }
   }
 
   /**
