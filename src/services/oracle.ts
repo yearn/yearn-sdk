@@ -6,6 +6,12 @@ import { Context } from "../context";
 import { int, usdc } from "../helpers";
 import { Address, Integer, Usdc } from "../types";
 
+interface CoinGeckoPriceResponse {
+  [key: string]: {
+    usd: number;
+  };
+}
+
 export const OracleAbi = [
   // Oracle general
   "function calculations() external view returns (address[] memory)",
@@ -41,13 +47,6 @@ const ftmTokenOverrides: { address: Address; id: string }[] = [
   }
 ];
 
-interface CoinGeckoPriceResponse {
-  [key: string]: {
-    usd: number;
-  };
-}
-
-// const ftmTokenOverridePriceCache = new Map<string, { price: Usdc; expiry: Date }>();
 let ftmTokenOverridePriceCache: { response: CoinGeckoPriceResponse; expiry: Date };
 
 /**
