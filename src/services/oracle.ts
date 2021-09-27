@@ -3,7 +3,7 @@ import { CallOverrides } from "@ethersproject/contracts";
 import { ChainId } from "../chain";
 import { ContractService } from "../common";
 import { Context } from "../context";
-import { int } from "../helpers";
+import { int, usdc } from "../helpers";
 import { Address, Integer, Usdc } from "../types";
 
 export const OracleAbi = [
@@ -29,6 +29,26 @@ export const OracleAbi = [
   "function getLpTokenTotalLiquidityUsdc(address) public view returns (uint256)",
   "function getLpTokenPriceUsdc(address) public view returns (uint256)"
 ];
+
+const ftmTokenOverrides: { address: Address; id: string }[] = [
+  {
+    address: "0x44B26E839eB3572c5E959F994804A5De66600349",
+    id: "hegic"
+  },
+  {
+    address: "0x29b0Da86e484E1C0029B56e817912d778aC0EC69",
+    id: "yearn-finance"
+  }
+];
+
+interface CoinGeckoPriceResponse {
+  [key: string]: {
+    usd: number;
+  };
+}
+
+// const ftmTokenOverridePriceCache = new Map<string, { price: Usdc; expiry: Date }>();
+let ftmTokenOverridePriceCache: { response: CoinGeckoPriceResponse; expiry: Date };
 
 /**
  * [[OracleService]] is the main pricing engine, used by all price calculations.
@@ -74,6 +94,12 @@ export class OracleService<T extends ChainId> extends ContractService<T> {
    * @returns Usdc exchange rate (6 decimals)
    */
   async getPriceUsdc(token: Address, overrides: CallOverrides = {}): Promise<Usdc> {
+    if (this.chainId === 250) {
+      const override = await this.ftmOverridePrice(token);
+      if (override) {
+        return override;
+      }
+    }
     return await this.contract.read.getPriceUsdcRecommended(token, overrides).then(int);
   }
 
@@ -231,5 +257,31 @@ export class OracleService<T extends ChainId> extends ContractService<T> {
    */
   async getLpTokenPriceUsdc(token: Address, overrides: CallOverrides = {}): Promise<Integer> {
     return await this.contract.read.getLpTokenPriceUsdc(token, overrides).then(int);
+  }
+
+  /**
+   *
+   * @param token a token from the override list that's price will be fetched from CoinGecko
+   * @returns price in usdc from CoinGecko
+   */
+  private async ftmOverridePrice(token: Address): Promise<Usdc | undefined> {
+    const override = ftmTokenOverrides.find(override => override.address === token);
+    if (!override) {
+      return undefined;
+    }
+    let response: CoinGeckoPriceResponse;
+    if (ftmTokenOverridePriceCache && ftmTokenOverridePriceCache.expiry < new Date()) {
+      response = ftmTokenOverridePriceCache.response;
+    } else {
+      const ids = ftmTokenOverrides.map(override => override.id).join();
+      const coingeckoResponse = await fetch(
+        `https://api.coingecko.com/api/v3/simple/price?ids=${ids}&vs_currencies=usd`
+      ).then(res => res.json());
+      const expiry = new Date();
+      expiry.setSeconds(new Date().getSeconds() + 30);
+      ftmTokenOverridePriceCache = { response: coingeckoResponse, expiry: expiry };
+      response = coingeckoResponse;
+    }
+    return usdc(response[override.id].usd);
   }
 }
