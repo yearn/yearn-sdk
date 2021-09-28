@@ -42,7 +42,7 @@ export class RegistryV2Adapter<T extends ChainId> extends ContractService<T> imp
       case 1337:
         return "0x240315db938d44bb124ae619f5fd0269a02d1271";
       case 250:
-        return "0x04ae7863a378BaCBb239A0841AEd94998A8A1463";
+        return "0xa9B4C00Fd62BeC69d5DC9102d8d3DDCD9A532C48";
     }
   }
 
