@@ -48,21 +48,25 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
       }
     }
 
-    const assetsStatic = await this.getStatic(addresses, overrides);
+    const vaultMetadataOverridesPromise = this.yearn.services.meta.vaults().catch(error => {
+      console.error(error);
+      return Promise.resolve([]);
+    });
+
+    const [vaultMetadataOverrides, assetsStatic] = await Promise.all([
+      vaultMetadataOverridesPromise,
+      this.getStatic(addresses, overrides)
+    ]);
+
     let assetsDynamic: VaultDynamic[] = [];
     try {
       assetsDynamic = await this.getDynamic();
     } catch {
       const allAddresses = assetsStatic.map(asset => asset.address);
       const chunks = chunkArray(allAddresses, 4);
-      const promises = chunks.map(async chunk => this.getDynamic(chunk, overrides));
+      const promises = chunks.map(async chunk => this.getDynamic(chunk, vaultMetadataOverrides, overrides));
       assetsDynamic = await Promise.all(promises).then(chunks => chunks.flat());
     }
-
-    const vaultMetadataOverridesPromise = this.yearn.services.meta.vaults().catch(error => {
-      console.error(error);
-      return Promise.resolve([]);
-    });
 
     const strategiesMetadataPromise = this.yearn.strategies
       .vaultsStrategiesMetadata(assetsDynamic.map(asset => asset.address))
@@ -76,18 +80,17 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
       return Promise.resolve([]);
     });
 
-    const [vaultMetadataOverrides, strategiesMetadata, assetsHistoricEarnings] = [
-      await vaultMetadataOverridesPromise,
-      await strategiesMetadataPromise,
-      await assetsHistoricEarningsPromise
-    ];
+    const [strategiesMetadata, assetsHistoricEarnings] = await Promise.all([
+      strategiesMetadataPromise,
+      assetsHistoricEarningsPromise
+    ]);
 
-    interface AssetWithMetadataOverrides {
+    interface OrderedAsset {
       vault: Vault;
-      overrides?: VaultMetadataOverrides;
+      order: number;
     }
 
-    const assetsWithMetadataOverrides: AssetWithMetadataOverrides[] = [];
+    const assetsWithMetadataOverrides: OrderedAsset[] = [];
 
     for (const asset of assetsStatic) {
       const dynamic = assetsDynamic.find(({ address }) => asset.address === address);
@@ -98,6 +101,7 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
       if (overrides?.hideAlways) {
         continue;
       }
+      const order = overrides?.order ?? Math.max();
 
       dynamic.metadata.displayName = dynamic.metadata.displayName || asset.name;
       dynamic.metadata.strategies = strategiesMetadata.find(metadata => metadata.vaultAddress === asset.address);
@@ -105,49 +109,12 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
         earnings => earnings.assetAddress === asset.address
       )?.dayData;
 
-      if (overrides) {
-        this.fillMetadataOverrides(dynamic, overrides);
-      }
-
-      assetsWithMetadataOverrides.push({ vault: { ...asset, ...dynamic }, overrides });
+      assetsWithMetadataOverrides.push({ vault: { ...asset, ...dynamic }, order });
     }
 
     return assetsWithMetadataOverrides
-      .sort((lhs, rhs) => (lhs.overrides?.order ?? Math.max()) - (rhs.overrides?.order ?? Math.max()))
+      .sort((lhs, rhs) => lhs.order - rhs.order)
       .map(assetsWithMetadataOverrides => assetsWithMetadataOverrides.vault);
-  }
-
-  private fillMetadataOverrides(dynamic: VaultDynamic, overrides: VaultMetadataOverrides) {
-    if (overrides.displayName) {
-      dynamic.metadata.displayName = overrides.displayName;
-    }
-    if (overrides?.vaultSymbolOverride) {
-      dynamic.metadata.symbol = overrides.vaultSymbolOverride;
-    }
-    if (overrides?.vaultIconOverride) {
-      dynamic.metadata.displayIcon = overrides.vaultIconOverride;
-    }
-    if (overrides?.apyOverride) {
-      if (!dynamic.metadata.apy) {
-        dynamic.metadata.apy = this.makeEmptyApy();
-      }
-      dynamic.metadata.apy.net_apy = overrides.apyOverride;
-    }
-    if (overrides?.apyTypeOverride) {
-      if (!dynamic.metadata.apy) {
-        dynamic.metadata.apy = this.makeEmptyApy();
-      }
-      dynamic.metadata.apy.type = overrides.apyTypeOverride;
-    }
-
-    dynamic.metadata.depositsDisabled = overrides?.depositsDisabled;
-    dynamic.metadata.withdrawalsDisabled = overrides?.withdrawalsDisabled;
-    dynamic.metadata.allowZapIn = overrides?.allowZapIn;
-    dynamic.metadata.allowZapOut = overrides?.allowZapOut;
-    dynamic.metadata.migrationContract = overrides?.migrationContract;
-    dynamic.metadata.migrationTargetVault = overrides?.migrationTargetVault;
-    dynamic.metadata.vaultNameOverride = overrides?.vaultNameOverride;
-    dynamic.metadata.vaultDetailPageAssets = overrides?.vaultDetailPageAssets;
   }
 
   /**
@@ -171,13 +138,25 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
    * @param overrides
    * @returns
    */
-  async getDynamic(addresses?: Address[], overrides?: CallOverrides): Promise<VaultDynamic[]> {
+  async getDynamic(
+    addresses?: Address[],
+    vaultMetadataOverrides?: VaultMetadataOverrides[],
+    overrides?: CallOverrides
+  ): Promise<VaultDynamic[]> {
+    let metadataOverrides = vaultMetadataOverrides
+      ? vaultMetadataOverrides
+      : await this.yearn.services.meta.vaults().catch(error => {
+          console.error(error);
+          return Promise.resolve([]);
+        });
+
     const adapters = Object.values(this.yearn.services.lens.adapters.vaults);
     return await Promise.all(
       adapters.map(async adapter => {
         const data = await adapter.assetsDynamic(addresses, overrides);
         const assetsApy = await this.yearn.services.vision.apy(data.map(dynamic => dynamic.address));
         return data.map(dynamic => {
+          const overrides = metadataOverrides.find(override => override.address === dynamic.address);
           dynamic.metadata.apy = assetsApy[dynamic.address];
           if (dynamic.tokenId === WethAddress) {
             const icon = this.yearn.services.asset.icon(EthAddress) ?? "";
@@ -190,6 +169,9 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
             const alias = this.yearn.services.asset.alias(dynamic.tokenId);
             dynamic.metadata.displayName = alias ? alias.symbol : "";
             dynamic.metadata.defaultDisplayToken = dynamic.tokenId;
+          }
+          if (overrides) {
+            this.fillMetadataOverrides(dynamic, overrides);
           }
           return dynamic;
         });
@@ -498,6 +480,39 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
     if (overrides.tokenNameOverride) {
       token.name = overrides.tokenNameOverride;
     }
+  }
+
+  private fillMetadataOverrides(dynamic: VaultDynamic, overrides: VaultMetadataOverrides) {
+    if (overrides.displayName) {
+      dynamic.metadata.displayName = overrides.displayName;
+    }
+    if (overrides?.vaultSymbolOverride) {
+      dynamic.metadata.symbol = overrides.vaultSymbolOverride;
+    }
+    if (overrides?.vaultIconOverride) {
+      dynamic.metadata.displayIcon = overrides.vaultIconOverride;
+    }
+    if (overrides?.apyOverride) {
+      if (!dynamic.metadata.apy) {
+        dynamic.metadata.apy = this.makeEmptyApy();
+      }
+      dynamic.metadata.apy.net_apy = overrides.apyOverride;
+    }
+    if (overrides?.apyTypeOverride) {
+      if (!dynamic.metadata.apy) {
+        dynamic.metadata.apy = this.makeEmptyApy();
+      }
+      dynamic.metadata.apy.type = overrides.apyTypeOverride;
+    }
+
+    dynamic.metadata.depositsDisabled = overrides?.depositsDisabled;
+    dynamic.metadata.withdrawalsDisabled = overrides?.withdrawalsDisabled;
+    dynamic.metadata.allowZapIn = overrides?.allowZapIn;
+    dynamic.metadata.allowZapOut = overrides?.allowZapOut;
+    dynamic.metadata.migrationContract = overrides?.migrationContract;
+    dynamic.metadata.migrationTargetVault = overrides?.migrationTargetVault;
+    dynamic.metadata.vaultNameOverride = overrides?.vaultNameOverride;
+    dynamic.metadata.vaultDetailPageAssets = overrides?.vaultDetailPageAssets;
   }
 
   private makeEmptyApy(): Apy {
