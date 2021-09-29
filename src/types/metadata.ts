@@ -112,8 +112,3 @@ export interface VaultMetadataOverrides {
   vaultNameOverride?: string;
   vaultDetailPageAssets?: string[];
 }
-
-export interface ChainMetadata {
-  zapsEnabled: boolean;
-  simulationsEnabled: boolean;
-}
