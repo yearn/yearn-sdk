@@ -513,6 +513,9 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
     dynamic.metadata.migrationTargetVault = overrides?.migrationTargetVault;
     dynamic.metadata.vaultNameOverride = overrides?.vaultNameOverride;
     dynamic.metadata.vaultDetailPageAssets = overrides?.vaultDetailPageAssets;
+
+    dynamic.metadata.hideIfNoDeposits =
+      dynamic.metadata.emergencyShutdown || overrides.retired || overrides.migrationAvailable || false;
   }
 
   private makeEmptyApy(): Apy {

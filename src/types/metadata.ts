@@ -32,6 +32,7 @@ export interface VaultMetadata {
   migrationTargetVault?: Address;
   vaultNameOverride?: string;
   vaultDetailPageAssets?: string[];
+  hideIfNoDeposits: boolean;
 }
 
 /**
@@ -111,6 +112,7 @@ export interface VaultMetadataOverrides {
   vaultSymbolOverride?: string;
   vaultNameOverride?: string;
   vaultDetailPageAssets?: string[];
+  retired?: boolean;
 }
 
 export interface ChainMetadata {
