@@ -61,7 +61,8 @@ export class MetaService extends Service {
         vaultIconOverride: metadata.vaultIconOverride,
         vaultSymbolOverride: metadata.vaultSymbolOverride,
         vaultNameOverride: metadata.vaultNameOverride,
-        vaultDetailPageAssets: metadata.vaultDetailPageAssets
+        vaultDetailPageAssets: metadata.vaultDetailPageAssets,
+        retired: metadata.retired
       };
       return vaultMetadata;
     });
