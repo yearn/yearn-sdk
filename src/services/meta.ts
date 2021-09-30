@@ -1,5 +1,5 @@
 import { Service } from "../common";
-import { Address, ChainMetadata, StrategiesMetadata, TokenMetadata, VaultMetadataOverrides } from "../types";
+import { Address, StrategiesMetadata, TokenMetadata, VaultMetadataOverrides } from "../types";
 
 const MetaURL = "https://meta.yearn.network";
 
@@ -33,8 +33,9 @@ export class MetaService extends Service {
   }
 
   async strategies(): Promise<StrategiesMetadata[]> {
-    const filesRes = await fetch(this.buildUrl(`strategies/index`)).then(res => res.json());
-    const files: string[] = filesRes.files.filter((file: string) => !file.startsWith("0x"));
+    const files: string[] = await fetch(this.buildUrl(`strategies/${CHAIN_ID_KEY}/index`))
+      .then(res => res.json())
+      .then(json => json.files);
     return Promise.all(files.map(async file => fetch(`${MetaURL}/strategies/${file}`).then(res => res.json())));
   }
 
@@ -68,15 +69,6 @@ export class MetaService extends Service {
     });
 
     return Promise.all(promises);
-  }
-
-  async chain(): Promise<ChainMetadata> {
-    const chainSettings: any = await fetch(this.buildUrl(`chain-settings/${CHAIN_ID_KEY}`)).then(res => res.json());
-    const metadata: ChainMetadata = {
-      zapsEnabled: chainSettings.zapsEnabled,
-      simulationsEnabled: chainSettings.simulationsEnabled
-    };
-    return metadata;
   }
 
   private async fetchMetadataItem<T>(url: string): Promise<T | undefined> {
