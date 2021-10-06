@@ -225,6 +225,7 @@ export class ZapperService extends Service {
    * @param vault - the vault to zap into
    * @param gasPrice
    * @param slippagePercentage - slippage as a decimal
+   * @param skipGasEstimate - provide the gasLimit in the response. Should be set to true when simulating a zap without approval
    * @param zapProtocol the protocol to use with zapper e.g. Yearn, Pickle
    */
   async zapIn(
@@ -234,6 +235,7 @@ export class ZapperService extends Service {
     vault: Address,
     gasPrice: Integer,
     slippagePercentage: number,
+    skipGasEstimate: boolean,
     zapProtocol: ZapProtocol = ZapProtocol.YEARN
   ): Promise<ZapOutput> {
     let sellToken = token;
@@ -251,7 +253,7 @@ export class ZapperService extends Service {
       gasPrice: gasPrice,
       slippagePercentage: slippagePercentage.toString(),
       api_key: this.ctx.zapper,
-      skipGasEstimate: "true"
+      skipGasEstimate: skipGasEstimate ? "true" : "false"
     });
 
     const response: ZapOutput = await fetch(`${url}?${params}`)
@@ -269,6 +271,7 @@ export class ZapperService extends Service {
    * @param vault - the vault to zap out of
    * @param gasPrice
    * @param slippagePercentage - slippage as a decimal
+   * @param skipGasEstimate - provide the gasLimit in the response. Should be set to true when simulating a zap without approval
    * @param zapProtocol the protocol to use with zapper e.g. Yearn, Pickle
    */
   async zapOut(
@@ -278,6 +281,7 @@ export class ZapperService extends Service {
     vault: Address,
     gasPrice: Integer,
     slippagePercentage: number,
+    skipGasEstimate: boolean,
     zapProtocol: ZapProtocol = ZapProtocol.YEARN
   ): Promise<ZapOutput> {
     let toToken = token;
@@ -295,7 +299,8 @@ export class ZapperService extends Service {
       gasPrice: gasPrice,
       slippagePercentage: slippagePercentage.toString(),
       api_key: this.ctx.zapper,
-      skipGasEstimate: "true"
+      shouldSellEntireBalance: "true",
+      skipGasEstimate: skipGasEstimate ? "true" : "false"
     });
     const response: ZapOutput = await fetch(`${url}?${params}`)
       .then(handleHttpError)

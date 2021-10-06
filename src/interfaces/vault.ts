@@ -369,13 +369,15 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
         amount,
         vault,
         "0",
-        options.slippage
+        options.slippage,
+        false
       );
 
       const transactionRequest: TransactionRequest = {
         to: zapOutParams.to,
         from: zapOutParams.from,
         gasPrice: BigNumber.from(zapOutParams.gasPrice),
+        gasLimit: BigNumber.from(zapOutParams.gas),
         data: zapOutParams.data,
         value: BigNumber.from(zapOutParams.value)
       };
@@ -410,6 +412,7 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
       vault,
       "0",
       options.slippage,
+      false,
       zapProtocol
     );
 
@@ -417,7 +420,8 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
       to: zapInParams.to,
       from: zapInParams.from,
       data: zapInParams.data,
-      value: BigNumber.from(zapInParams.value)
+      value: BigNumber.from(zapInParams.value),
+      gasLimit: BigNumber.from(zapInParams.gas)
     };
 
     return this.executeZapperTransaction(transactionRequest, overrides, BigNumber.from(zapInParams.gasPrice), signer);
