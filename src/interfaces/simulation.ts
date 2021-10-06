@@ -70,7 +70,17 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
 
       simulateDeposit = (save: boolean) => {
         options.save = save;
-        return this.zapIn(from, sellToken, underlyingToken, amount, toVault, vaultContract, zapProtocol, options);
+        return this.zapIn(
+          from,
+          sellToken,
+          underlyingToken,
+          amount,
+          toVault,
+          vaultContract,
+          zapProtocol,
+          needsApproving,
+          options
+        );
       };
     } else {
       const needsApproving = await this.depositNeedsApproving(from, sellToken, toVault, amount, signer);
@@ -134,7 +144,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
 
       simulateWithdrawal = (save: boolean) => {
         options.save = save;
-        return this.zapOut(from, toToken, underlyingToken, amount, fromVault, vaultContract, options);
+        return this.zapOut(from, toToken, underlyingToken, amount, fromVault, vaultContract, needsApproving, options);
       };
     } else {
       simulateWithdrawal = (save: boolean) => {
@@ -224,6 +234,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     toVault: Address,
     vaultContract: VaultContract,
     zapProtocol: ZapProtocol,
+    skipGasEstimate: boolean,
     options: SimulationOptions
   ): Promise<TransactionOutcome> {
     const zapToken = sellToken === EthAddress ? ZeroAddress : sellToken;
@@ -239,6 +250,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
       toVault,
       options.gasPrice || "0",
       options.slippage,
+      skipGasEstimate,
       zapProtocol
     );
     const value = new BigNumber(zapInParams.value).toFixed(0);
@@ -246,6 +258,9 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     const decimals = await vaultContract.decimals();
 
     options.gasPrice = options.gasPrice || zapInParams.gasPrice;
+    if (!skipGasEstimate) {
+      options.gasLimit = zapInParams.gas;
+    }
 
     const tokensReceived = await this.simulationExecutor.simulateVaultInteraction(
       from,
@@ -338,6 +353,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     amount: Integer,
     fromVault: Address,
     vaultContract: VaultContract,
+    skipGasEstimate: boolean,
     options: SimulationOptions
   ): Promise<TransactionOutcome> {
     if (!options.slippage) {
@@ -351,8 +367,13 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
       amount,
       fromVault,
       "0",
-      options.slippage
+      options.slippage,
+      skipGasEstimate
     );
+
+    if (!skipGasEstimate) {
+      options.gasLimit = zapOutParams.gas;
+    }
 
     const tokensReceived = await (async () => {
       if (zapToken === ZeroAddress) {
