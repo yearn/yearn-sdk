@@ -85,12 +85,7 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
       assetsHistoricEarningsPromise
     ]);
 
-    interface OrderedAsset {
-      vault: Vault;
-      order: number;
-    }
-
-    const assetsWithMetadataOverrides: OrderedAsset[] = [];
+    const assetsWithOrder: { vault: Vault; order: number }[] = [];
 
     for (const asset of assetsStatic) {
       const dynamic = assetsDynamic.find(({ address }) => asset.address === address);
@@ -109,12 +104,10 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
         earnings => earnings.assetAddress === asset.address
       )?.dayData;
 
-      assetsWithMetadataOverrides.push({ vault: { ...asset, ...dynamic }, order });
+      assetsWithOrder.push({ vault: { ...asset, ...dynamic }, order });
     }
 
-    return assetsWithMetadataOverrides
-      .sort((lhs, rhs) => lhs.order - rhs.order)
-      .map(assetsWithMetadataOverrides => assetsWithMetadataOverrides.vault);
+    return assetsWithOrder.sort((lhs, rhs) => lhs.order - rhs.order).map(asset => asset.vault);
   }
 
   /**
