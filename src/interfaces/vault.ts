@@ -513,6 +513,7 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
 
     dynamic.metadata.hideIfNoDeposits =
       dynamic.metadata.emergencyShutdown || overrides.retired || overrides.migrationAvailable || false;
+    dynamic.metadata.migrationAvailable = dynamic.metadata.migrationAvailable || overrides?.migrationAvailable || false;
   }
 
   private makeEmptyApy(): Apy {
