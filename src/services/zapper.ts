@@ -12,6 +12,8 @@ import {
   ZapProtocol
 } from "../types/custom/zapper";
 
+const ZAPPER_AFFILIATE_ADDRESS = "0xFEB4acf3df3cDEA7399794D0869ef76A6EfAff52";
+
 /**
  * [[ZapperService]] interacts with the zapper api to gather more insight for
  * tokens and user positions.
@@ -246,6 +248,7 @@ export class ZapperService extends Service {
 
     const url = `https://api.zapper.fi/v1/zap-in/vault/${zapProtocol}/transaction`;
     const params = new URLSearchParams({
+      affiliateAddress: ZAPPER_AFFILIATE_ADDRESS,
       ownerAddress: from,
       sellTokenAddress: sellToken,
       sellAmount: amount,
@@ -292,6 +295,7 @@ export class ZapperService extends Service {
 
     const url = `https://api.zapper.fi/v1/zap-out/vault/${zapProtocol}/transaction`;
     const params = new URLSearchParams({
+      affiliateAddress: ZAPPER_AFFILIATE_ADDRESS,
       ownerAddress: from,
       toTokenAddress: toToken,
       sellAmount: amount,
