@@ -1,9 +1,26 @@
+import { ChainId } from "../../chain";
 import { Service } from "../../common";
+import { Context } from "../../context";
 import { SdkError } from "../../types";
 
-const YearnSubgraphEndpoint = "https://api.thegraph.com/subgraphs/name/salazarguille/yearn-vaults-v2-subgraph-mainnet";
-
 export class SubgraphService extends Service {
+  yearnSubgraphEndpoint: string;
+
+  constructor(chainId: ChainId, ctx: Context) {
+    super(chainId, ctx);
+
+    let subgraphName: string;
+    if (chainId === 1 || chainId === 1337) {
+      subgraphName = "salazarguille/yearn-vaults-v2-subgraph-mainnet";
+    } else if (chainId === 250) {
+      subgraphName = "yearn/yearn-vaults-v2-fantom";
+    } else {
+      throw new SdkError(`No subgraph name for chain ${chainId}`);
+    }
+
+    this.yearnSubgraphEndpoint = `https://api.thegraph.com/subgraphs/name/${subgraphName}`;
+  }
+
   async fetchQuery(query: string, variables: { [key: string]: any } = {}): Promise<unknown> {
     // the subgraph only works with lowercased addresses
     Object.keys(variables).forEach(key => {
@@ -24,7 +41,7 @@ export class SubgraphService extends Service {
       variables: variables
     };
 
-    return await fetch(YearnSubgraphEndpoint, {
+    return await fetch(this.yearnSubgraphEndpoint, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body)
