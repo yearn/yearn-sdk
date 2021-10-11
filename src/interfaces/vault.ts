@@ -483,36 +483,37 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
     if (overrides.displayName) {
       dynamic.metadata.displayName = overrides.displayName;
     }
-    if (overrides?.vaultSymbolOverride) {
+    if (overrides.vaultSymbolOverride) {
       dynamic.metadata.symbol = overrides.vaultSymbolOverride;
     }
-    if (overrides?.vaultIconOverride) {
+    if (overrides.vaultIconOverride) {
       dynamic.metadata.displayIcon = overrides.vaultIconOverride;
     }
-    if (overrides?.apyOverride) {
+    if (overrides.apyOverride) {
       if (!dynamic.metadata.apy) {
         dynamic.metadata.apy = this.makeEmptyApy();
       }
       dynamic.metadata.apy.net_apy = overrides.apyOverride;
     }
-    if (overrides?.apyTypeOverride) {
+    if (overrides.apyTypeOverride) {
       if (!dynamic.metadata.apy) {
         dynamic.metadata.apy = this.makeEmptyApy();
       }
       dynamic.metadata.apy.type = overrides.apyTypeOverride;
     }
 
-    dynamic.metadata.depositsDisabled = overrides?.depositsDisabled;
-    dynamic.metadata.withdrawalsDisabled = overrides?.withdrawalsDisabled;
-    dynamic.metadata.allowZapIn = overrides?.allowZapIn;
-    dynamic.metadata.allowZapOut = overrides?.allowZapOut;
-    dynamic.metadata.migrationContract = overrides?.migrationContract;
-    dynamic.metadata.migrationTargetVault = overrides?.migrationTargetVault;
-    dynamic.metadata.vaultNameOverride = overrides?.vaultNameOverride;
-    dynamic.metadata.vaultDetailPageAssets = overrides?.vaultDetailPageAssets;
+    dynamic.metadata.depositsDisabled = overrides.depositsDisabled;
+    dynamic.metadata.withdrawalsDisabled = overrides.withdrawalsDisabled;
+    dynamic.metadata.allowZapIn = overrides.allowZapIn;
+    dynamic.metadata.allowZapOut = overrides.allowZapOut;
+    dynamic.metadata.migrationContract = overrides.migrationContract;
+    dynamic.metadata.migrationTargetVault = overrides.migrationTargetVault;
+    dynamic.metadata.vaultNameOverride = overrides.vaultNameOverride;
+    dynamic.metadata.vaultDetailPageAssets = overrides.vaultDetailPageAssets;
 
     dynamic.metadata.hideIfNoDeposits =
       dynamic.metadata.emergencyShutdown || overrides.retired || overrides.migrationAvailable || false;
+    dynamic.metadata.migrationAvailable = dynamic.metadata.migrationAvailable || overrides.migrationAvailable || false;
   }
 
   private makeEmptyApy(): Apy {
