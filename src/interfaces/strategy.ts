@@ -20,8 +20,12 @@ interface VaultData {
 }
 
 const VaultAbi = [
-  "function strategies(address) view returns (uint256 performanceFee, uint256 activation, uint256 debtRatio, uint256 rateLimit, uint256 lastReport, uint256 totalDebt, uint256 totalGain, uint256 totalLoss)"
+  "function strategies(address) view returns (uint256 performanceFee, uint256 activation, uint256 debtRatio, uint256 rateLimit, uint256 lastReport, uint256 totalDebt, uint256 totalGain, uint256 totalLoss)",
+  "function token() view returns (address)",
+  "event StrategyAdded(address indexed strategy, uint256 debtRatio, uint256 minDebtPerHarvest, uint256 maxDebtPerHarvest, uint256 performanceFee)"
 ];
+
+const TokenAbi = ["function symbol() view returns (string)"];
 
 export class StrategyInterface<T extends ChainId> extends ServiceInterface<T> {
   private cachedFetcher = new CachedFetcher<VaultStrategiesMetadata[]>(
@@ -30,30 +34,85 @@ export class StrategyInterface<T extends ChainId> extends ServiceInterface<T> {
     this.chainId
   );
 
-  async vaultsStrategiesMetadata(vaultAddresses: Address[]): Promise<VaultStrategiesMetadata[]> {
+  async vaultsStrategiesMetadata(vaultAddresses?: Address[]): Promise<VaultStrategiesMetadata[]> {
     const cached = await this.cachedFetcher.fetch();
     if (cached) {
       return cached;
     }
 
+    let vaults: Address[];
+    if (vaultAddresses) {
+      vaults = vaultAddresses;
+    } else {
+      vaults = await this.yearn.services.lens.adapters.vaults.v2
+        .assetsStatic()
+        .then(assets => assets.map(asset => asset.address));
+    }
+
+    // Read from the api if it's available, as it's quicker.
+    // Otherwise read from chain
+    if (this.chainId === 1 || this.chainId === 1337) {
+      return this.fetchMetadataFromApi(vaults);
+    } else {
+      return this.fetchMetadataFromChain(vaults);
+    }
+  }
+
+  async fetchMetadataFromApi(vaultAddresses: Address[]): Promise<VaultStrategiesMetadata[]> {
     const vaultsData = await this.fetchVaultsData();
 
     const strategiesMetadata = await this.yearn.services.meta.strategies();
 
     let vaultsStrategiesMetadataPromises: Promise<VaultStrategiesMetadata | undefined>[];
-    if (vaultAddresses) {
-      vaultsStrategiesMetadataPromises = vaultAddresses.map(async vaultAddress => {
-        const vaultDatum = vaultsData.find(datum => datum.address === vaultAddress);
-        if (!vaultDatum) {
-          return undefined;
-        }
-        return this.fetchVaultStrategiesMetadata(vaultDatum, strategiesMetadata);
-      });
-    } else {
-      vaultsStrategiesMetadataPromises = vaultsData.map(async vaultDatum => {
-        return this.fetchVaultStrategiesMetadata(vaultDatum, strategiesMetadata);
-      });
-    }
+    vaultsStrategiesMetadataPromises = vaultAddresses.map(async vaultAddress => {
+      const vaultDatum = vaultsData.find(datum => datum.address === vaultAddress);
+      if (!vaultDatum) {
+        return undefined;
+      }
+      const vaultContract = new Contract(vaultDatum.address, VaultAbi, this.ctx.provider.read);
+      return this.fetchVaultStrategiesMetadata(
+        vaultDatum.strategies,
+        strategiesMetadata,
+        vaultContract,
+        vaultDatum.token.symbol
+      );
+    });
+
+    return Promise.all(vaultsStrategiesMetadataPromises).then(vaultsStrategyData => {
+      return vaultsStrategyData.flatMap(data => (data ? [data] : []));
+    });
+  }
+
+  async fetchMetadataFromChain(vaultAddresses: Address[]): Promise<VaultStrategiesMetadata[]> {
+    const strategiesMetadata = await this.yearn.services.meta.strategies();
+    const provider = this.ctx.provider.read;
+
+    let vaultsStrategiesMetadataPromises: Promise<VaultStrategiesMetadata | undefined>[];
+    vaultsStrategiesMetadataPromises = vaultAddresses.map(async vaultAddress => {
+      const vaultContract = new Contract(vaultAddress, VaultAbi, provider);
+      const strategyFilter = vaultContract.filters.StrategyAdded();
+      return vaultContract
+        .queryFilter(strategyFilter)
+        .then(events => events.map(event => event.args?.[0]))
+        .then(async addedStrategies => {
+          const strategies = addedStrategies.map(strat => {
+            return {
+              address: strat
+            };
+          });
+
+          const underlyingTokenAddress = await vaultContract.token();
+          const underlyingTokenContract = new Contract(underlyingTokenAddress, TokenAbi, provider);
+          const underlyingTokenSymbol = await underlyingTokenContract.symbol();
+
+          return this.fetchVaultStrategiesMetadata(
+            strategies,
+            strategiesMetadata,
+            vaultContract,
+            underlyingTokenSymbol
+          );
+        });
+    });
 
     return Promise.all(vaultsStrategiesMetadataPromises).then(vaultsStrategyData => {
       return vaultsStrategyData.flatMap(data => (data ? [data] : []));
@@ -61,18 +120,17 @@ export class StrategyInterface<T extends ChainId> extends ServiceInterface<T> {
   }
 
   private async fetchVaultStrategiesMetadata(
-    vaultDatum: VaultData,
-    strategiesMetadata: StrategiesMetadata[]
+    strategies: { address: Address; name?: string }[],
+    strategiesMetadata: StrategiesMetadata[],
+    vaultContract: Contract,
+    underlyingTokenSymbol: string
   ): Promise<VaultStrategiesMetadata | undefined> {
-    const provider = this.ctx.provider.read;
-    const vaultContract = new Contract(vaultDatum.address, VaultAbi, provider);
-
-    if (vaultDatum.strategies.length === 0) {
+    if (strategies.length === 0) {
       return undefined;
     }
 
     let metadata: StrategyMetadata[] = await Promise.all(
-      vaultDatum.strategies.map(async strategy => {
+      strategies.map(async strategy => {
         let debtRatio: BigNumber;
 
         try {
@@ -90,11 +148,11 @@ export class StrategyInterface<T extends ChainId> extends ServiceInterface<T> {
           return strategyMetadata.addresses.includes(strategy.address);
         });
 
-        const description = metadata?.description.replace(/{{token}}/g, vaultDatum.token.symbol);
+        const description = metadata?.description.replace(/{{token}}/g, underlyingTokenSymbol);
 
         return {
           address: strategy.address,
-          name: metadata?.name || strategy.name,
+          name: metadata?.name || strategy.name || "Strategy",
           description: description || "I don't have a description for this strategy yet",
           debtRatio: debtRatio.toString()
         };
@@ -108,7 +166,7 @@ export class StrategyInterface<T extends ChainId> extends ServiceInterface<T> {
     metadata.sort((lhs, rhs) => parseInt(rhs.debtRatio) - parseInt(lhs.debtRatio));
 
     const result: VaultStrategiesMetadata = {
-      vaultAddress: vaultDatum.address,
+      vaultAddress: vaultContract.address,
       strategiesMetadata: metadata
     };
 
