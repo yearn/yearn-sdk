@@ -98,12 +98,12 @@ export class SimulationExecutor {
 
     const encodedTransferFunction = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"; // keccak256("Transfer(address,address,uint256)")
 
-    const log = response.transaction.transaction_info.logs.find(
-      log =>
-        getAddress(log.raw.address) === targetToken &&
-        log.raw.topics[0] === encodedTransferFunction &&
-        getAddressFromTopic(log.raw.topics[2]) === from
-    );
+    const log = response.transaction.transaction_info.logs
+      .reverse()
+      .find(
+        log =>
+          log.raw.topics[0] === encodedTransferFunction && getAddressFromTopic(log.raw.topics[2]) === getAddress(from)
+      );
 
     if (!log) {
       throw new SdkError(`No log of transferring token ${targetToken} to ${from}`);
