@@ -93,10 +93,12 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
         : undefined;
       options.root = approvalTransactionId;
 
-      simulateDeposit = (save: boolean) => {
-        options.save = save;
-        return this.directDeposit(from, sellToken, amount, toVault, vaultContract, options);
-      };
+      return this.directDeposit(from, sellToken, amount, toVault, vaultContract, options);
+
+      // simulateDeposit = (save: boolean) => {
+      //   options.save = save;
+      //   return this.directDeposit(from, sellToken, amount, toVault, vaultContract, options);
+      // };
     }
     return this.simulationExecutor.executeSimulationWithReSimulationOnFailure(simulateDeposit, forkId);
   }

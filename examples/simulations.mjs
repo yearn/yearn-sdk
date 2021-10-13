@@ -12,25 +12,15 @@ const yearn = new Yearn(1, {
 });
 
 async function main() {
-  const usr1 = "0x7A1057E6e9093DA9C1D4C1D049609B6889fC4c67";
-  const usr2 = "0x4F76fF660dc5e37b098De28E6ec32978E4b5bEb6";
-  const yfiVault = "0xE14d13d8B3b85aF791b2AADD661cDBd5E6097Db1";
-  const yfiToken = "0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e";
-
-  const ethToken = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";
-
-  const directDeposit = await yearn.simulation.deposit(usr1, yfiToken, "1000000000000000000", yfiVault);
-  console.log(directDeposit);
-
-  const ethWithdraw = await yearn.simulation.withdraw(usr2, yfiVault, "1000000000000000000", ethToken, {
-    slippage: 0.02
-  });
-  console.log(ethWithdraw);
-
-  const directWithdraw = await yearn.simulation.withdraw(usr2, yfiVault, "1000000000000000000", yfiToken, {
-    slippage: 0.02
-  });
-  console.log(directWithdraw);
+  const usr = "0xEab23c1E3776fAd145e2E3dc56bcf739f6e0a393";
+  const result = await yearn.simulation.deposit(
+    usr,
+    "0x111111111117dC0aa78b770fA6A738034120C302",
+    "1000000000000000000000",
+    "0xB8C3B7A2A618C552C23B1E4701109a9E756Bab67",
+    { slippage: 0.03 }
+  );
+  console.log(result);
 }
 
 main();

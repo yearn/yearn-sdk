@@ -258,7 +258,7 @@ export class SimulationExecutor {
       data,
       value,
       gasLimit: options.gasLimit,
-      gasPrice: options.gasPrice,
+      gasPrice: options.gasPrice, // replace this with something high like "8000000" and the simulation will succeed
       maxFeePerGas: options.maxFeePerGas,
       maxPriorityFeePerGas: options.maxPriorityFeePerGas,
       type: options.gasPrice ? 0 : undefined
