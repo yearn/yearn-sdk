@@ -5,7 +5,7 @@ import fetch from "cross-fetch";
 import { CachedFetcher } from "../cache";
 import { ChainId } from "../chain";
 import { ServiceInterface } from "../common";
-import { Address, StrategiesMetadata, StrategyMetadata } from "../types";
+import { Address, StrategyMetadata } from "../types";
 import { VaultStrategiesMetadata } from "../types/strategy";
 
 interface VaultData {
@@ -121,7 +121,7 @@ export class StrategyInterface<T extends ChainId> extends ServiceInterface<T> {
 
   private async fetchVaultStrategiesMetadata(
     strategies: { address: Address; name?: string }[],
-    strategiesMetadata: StrategiesMetadata[],
+    strategiesMetadata: StrategyMetadata[],
     vaultContract: Contract,
     underlyingTokenSymbol: string
   ): Promise<VaultStrategiesMetadata | undefined> {
@@ -131,39 +131,42 @@ export class StrategyInterface<T extends ChainId> extends ServiceInterface<T> {
 
     let metadata: StrategyMetadata[] = await Promise.all(
       strategies.map(async strategy => {
-        let debtRatio: BigNumber;
+        let debtRatio: number;
 
         try {
           const struct = await vaultContract.strategies(strategy.address);
-          debtRatio = struct.debtRatio as BigNumber;
+          debtRatio = parseInt((struct.debtRatio as BigNumber).toString());
         } catch (error) {
           return undefined;
         }
 
-        if (debtRatio.lte(BigNumber.from("0"))) {
+        if (debtRatio <= 0) {
           return undefined;
         }
 
-        const metadata = strategiesMetadata.find(strategyMetadata => {
-          return strategyMetadata.addresses.includes(strategy.address);
-        });
-
-        const description = metadata?.description.replace(/{{token}}/g, underlyingTokenSymbol);
-
-        return {
+        const emptyMetadata: StrategyMetadata = {
           address: strategy.address,
-          name: metadata?.name || strategy.name || "Strategy",
-          description: description || "I don't have a description for this strategy yet",
-          debtRatio: debtRatio.toString()
+          name: strategy.name || "Strategy",
+          description: "I don't have a description for this strategy yet",
+          protocols: []
         };
+
+        const metadata = strategiesMetadata.find(meta => meta.address === strategy.address) ?? emptyMetadata;
+
+        metadata.description = metadata?.description.replace(/{{token}}/g, underlyingTokenSymbol);
+
+        return { data: metadata, debtRatio };
       })
-    ).then(metadatas => metadatas.flatMap(metadata => (metadata ? [metadata] : [])));
+    ).then(metadataAndDebtRatio =>
+      metadataAndDebtRatio
+        .flatMap(data => (data ? [data] : []))
+        .sort((lhs, rhs) => rhs.debtRatio - lhs.debtRatio)
+        .map(metadata => metadata.data)
+    );
 
     if (metadata.length === 0) {
       return undefined;
     }
-
-    metadata.sort((lhs, rhs) => parseInt(rhs.debtRatio) - parseInt(lhs.debtRatio));
 
     const result: VaultStrategiesMetadata = {
       vaultAddress: vaultContract.address,
