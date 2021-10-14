@@ -169,9 +169,7 @@ export class StrategyInterface<T extends ChainId> extends ServiceInterface<T> {
             return -1;
           }
         })
-        .map(metadata => {
-          return metadata.data;
-        })
+        .map(metadata => metadata.data)
     );
 
     if (metadata.length === 0) {
