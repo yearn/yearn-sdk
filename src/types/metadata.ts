@@ -79,18 +79,11 @@ export interface TokenMetadata {
   tokenNameOverride?: string;
 }
 
-export interface StrategiesMetadata {
-  name: string;
-  description: string;
-  addresses: Address[];
-  protocols: string[];
-}
-
 export interface StrategyMetadata {
-  address: Address;
-  debtRatio: Integer;
   name: string;
   description: string;
+  address: Address;
+  protocols: string[];
 }
 
 export interface VaultMetadataOverrides {
