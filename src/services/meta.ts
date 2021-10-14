@@ -1,5 +1,5 @@
 import { Service } from "../common";
-import { Address, StrategiesMetadata, TokenMetadata, VaultMetadataOverrides } from "../types";
+import { Address, StrategyMetadata, TokenMetadata, VaultMetadataOverrides } from "../types";
 
 const MetaURL = "https://meta.yearn.network";
 
@@ -32,11 +32,26 @@ export class MetaService extends Service {
     return result;
   }
 
-  async strategies(): Promise<StrategiesMetadata[]> {
+  async strategies(): Promise<StrategyMetadata[]> {
     const files: string[] = await fetch(this.buildUrl(`strategies/${CHAIN_ID_KEY}/index`))
       .then(res => res.json())
       .then(json => json.files);
-    return Promise.all(files.map(async file => fetch(`${MetaURL}/strategies/${file}`).then(res => res.json())));
+
+    return Promise.all(
+      files.map(file =>
+        fetch(this.buildUrl(`strategies/${CHAIN_ID_KEY}/${file}`))
+          .then(res => res.json())
+          .then(json => {
+            const metadata: StrategyMetadata = {
+              name: json.name,
+              description: json.description,
+              address: json.address,
+              protocols: json.protocols
+            };
+            return metadata;
+          })
+      )
+    );
   }
 
   async vaults(): Promise<VaultMetadataOverrides[]> {
