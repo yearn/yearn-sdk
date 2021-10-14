@@ -131,16 +131,16 @@ export class StrategyInterface<T extends ChainId> extends ServiceInterface<T> {
 
     let metadata: StrategyMetadata[] = await Promise.all(
       strategies.map(async strategy => {
-        let debtRatio: number;
+        let debtRatio: BigNumber;
 
         try {
           const struct = await vaultContract.strategies(strategy.address);
-          debtRatio = parseInt((struct.debtRatio as BigNumber).toString());
+          debtRatio = struct.debtRatio as BigNumber;
         } catch (error) {
           return undefined;
         }
 
-        if (debtRatio <= 0) {
+        if (debtRatio.lte(BigNumber.from("0"))) {
           return undefined;
         }
 
@@ -160,8 +160,18 @@ export class StrategyInterface<T extends ChainId> extends ServiceInterface<T> {
     ).then(metadataAndDebtRatio =>
       metadataAndDebtRatio
         .flatMap(data => (data ? [data] : []))
-        .sort((lhs, rhs) => rhs.debtRatio - lhs.debtRatio)
-        .map(metadata => metadata.data)
+        .sort((lhs, rhs) => {
+          if (lhs.debtRatio.lt(rhs.debtRatio)) {
+            return 1;
+          } else if (lhs.debtRatio.eq(rhs.debtRatio)) {
+            return 0;
+          } else {
+            return -1;
+          }
+        })
+        .map(metadata => {
+          return metadata.data;
+        })
     );
 
     if (metadata.length === 0) {
