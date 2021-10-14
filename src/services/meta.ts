@@ -38,19 +38,18 @@ export class MetaService extends Service {
       .then(json => json.files);
 
     return Promise.all(
-      files.map(
-        async file =>
-          await fetch(this.buildUrl(`strategies/${CHAIN_ID_KEY}/${file}`))
-            .then(res => res.json())
-            .then(json => {
-              const metadata: StrategyMetadata = {
-                name: json.name,
-                description: json.description,
-                address: json.address,
-                protocols: json.protocols
-              };
-              return metadata;
-            })
+      files.map(file =>
+        fetch(this.buildUrl(`strategies/${CHAIN_ID_KEY}/${file}`))
+          .then(res => res.json())
+          .then(json => {
+            const metadata: StrategyMetadata = {
+              name: json.name,
+              description: json.description,
+              address: json.address,
+              protocols: json.protocols
+            };
+            return metadata;
+          })
       )
     );
   }
