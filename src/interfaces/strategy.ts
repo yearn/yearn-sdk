@@ -54,6 +54,7 @@ export class StrategyInterface<T extends ChainId> extends ServiceInterface<T> {
     if (this.chainId === 1 || this.chainId === 1337) {
       return this.fetchMetadataFromApi(vaults);
     } else {
+      // TODO - fetch from strategies helper for this
       return this.fetchMetadataFromChain(vaults);
     }
   }
