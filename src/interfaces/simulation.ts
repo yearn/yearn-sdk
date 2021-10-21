@@ -144,7 +144,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
 
       simulateWithdrawal = (save: boolean) => {
         options.save = save;
-        return this.zapOut(from, toToken, underlyingToken, amount, fromVault, vaultContract, needsApproving, options);
+        return this.zapOut(from, toToken, underlyingToken, amount, fromVault, needsApproving, options);
       };
     } else {
       simulateWithdrawal = (save: boolean) => {
@@ -211,6 +211,12 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
 
     const targetTokenAmountUsdc = await this.yearn.services.oracle.getNormalizedValueUsdc(toVault, tokensReceived);
 
+    const [decimals, pricePerShare] = await Promise.all([vaultContract.decimals(), vaultContract.pricePerShare()]);
+    const targetUnderlyingTokensReceived = new BigNumber(tokensReceived)
+      .div(new BigNumber(10).pow(decimals))
+      .multipliedBy(pricePerShare)
+      .toFixed(0);
+
     const result: TransactionOutcome = {
       sourceTokenAddress: sellToken,
       sourceTokenAmount: amount,
@@ -218,7 +224,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
       targetTokenAmount: tokensReceived,
       targetTokenAmountUsdc: targetTokenAmountUsdc,
       targetUnderlyingTokenAddress: toVault,
-      targetUnderlyingTokenAmount: tokensReceived,
+      targetUnderlyingTokenAmount: targetUnderlyingTokensReceived,
       conversionRate: 1,
       slippage: 0
     };
@@ -255,8 +261,6 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     );
     const value = new BigNumber(zapInParams.value).toFixed(0);
 
-    const decimals = await vaultContract.decimals();
-
     options.gasPrice = options.gasPrice || zapInParams.gasPrice;
     if (!skipGasEstimate) {
       options.gasLimit = zapInParams.gas;
@@ -270,7 +274,8 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
       options,
       value
     );
-    const pricePerShare = await vaultContract.pricePerShare();
+
+    const [decimals, pricePerShare] = await Promise.all([vaultContract.decimals(), vaultContract.pricePerShare()]);
     const targetUnderlyingTokensReceived = new BigNumber(tokensReceived)
       .div(new BigNumber(10).pow(decimals))
       .multipliedBy(pricePerShare)
@@ -352,7 +357,6 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     underlyingTokenAddress: Address,
     amount: Integer,
     fromVault: Address,
-    vaultContract: VaultContract,
     skipGasEstimate: boolean,
     options: SimulationOptions
   ): Promise<TransactionOutcome> {
@@ -397,13 +401,6 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
       }
     })();
 
-    const pricePerShare = await vaultContract.pricePerShare();
-    const decimals = await vaultContract.decimals();
-    const targetUnderlyingTokensReceived = new BigNumber(amount)
-      .times(new BigNumber(pricePerShare.toString()))
-      .div(new BigNumber(10).pow(decimals))
-      .toFixed(0);
-
     const oracleToken = toToken === EthAddress ? WethAddress : toToken;
     const zapOutAmountUsdc = await this.yearn.services.oracle.getNormalizedValueUsdc(oracleToken, tokensReceived);
     const soldAssetAmountUsdc = await this.yearn.services.oracle.getNormalizedValueUsdc(fromVault, amount);
@@ -417,7 +414,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
       targetTokenAmount: tokensReceived,
       targetTokenAmountUsdc: zapOutAmountUsdc,
       targetUnderlyingTokenAddress: underlyingTokenAddress,
-      targetUnderlyingTokenAmount: targetUnderlyingTokensReceived,
+      targetUnderlyingTokenAmount: tokensReceived,
       conversionRate: conversionRate,
       slippage: 1 - conversionRate
     };
