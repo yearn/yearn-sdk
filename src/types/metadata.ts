@@ -41,6 +41,8 @@ export interface VaultMetadata {
 export interface IronBankMarketMetadata {
   totalSuppliedUsdc: Integer;
   totalBorrowedUsdc: Integer;
+  lendAprBips: Integer;
+  borrowAprBips: Integer;
   lendApyBips: Integer;
   borrowApyBips: Integer;
   liquidity: Integer;

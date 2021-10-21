@@ -1,4 +1,6 @@
+import { BigNumber as EthersBigNumber } from "@ethersproject/bignumber";
 import { CallOverrides } from "@ethersproject/contracts";
+import { BigNumber } from "bignumber.js";
 
 import { AdapterAbi } from "../../abi";
 import { ChainId } from "../../chain";
@@ -8,6 +10,7 @@ import { struct, structArray } from "../../struct";
 import {
   Address,
   CyTokenUserMetadata,
+  Integer,
   IronBankMarketDynamic,
   IronBankMarketStatic,
   IronBankUserSummary,
@@ -17,8 +20,8 @@ import {
 const CyTokenMetadataAbi = `tuple(
   uint256 totalSuppliedUsdc,
   uint256 totalBorrowedUsdc,
-  uint256 lendApyBips,
-  uint256 borrowApyBips,
+  uint256 lendAprBips,
+  uint256 borrowAprBips,
   uint256 liquidity,
   uint256 liquidityUsdc,
   uint256 collateralFactor,
@@ -44,7 +47,8 @@ const IronBankUserSummaryAbi = `tuple(
 
 const CustomAbi = [
   `function adapterPositionOf(address) external view returns (${IronBankUserSummaryAbi} memory)`,
-  `function assetsUserMetadata(address) public view returns (${CyTokenUserMetadataAbi}[] memory)`
+  `function assetsUserMetadata(address) public view returns (${CyTokenUserMetadataAbi}[] memory)`,
+  `function blocksPerYear() public view returns (uint256)`
 ];
 
 export class IronBankAdapter<T extends ChainId> extends ContractService<T> {
@@ -90,10 +94,16 @@ export class IronBankAdapter<T extends ChainId> extends ContractService<T> {
    * @returns dynamic
    */
   async assetsDynamic(addresses?: Address[], overrides: CallOverrides = {}): Promise<IronBankMarketDynamic[]> {
-    if (addresses) {
-      return await this.contract.read["assetsDynamic(address[])"](addresses, overrides).then(structArray);
+    const assetsPromise: Promise<IronBankMarketDynamic[]> = addresses
+      ? this.contract.read["assetsDynamic(address[])"](addresses, overrides).then(structArray)
+      : this.contract.read["assetsDynamic()"](overrides).then(structArray);
+
+    const [assets, blocksPerYear] = await Promise.all([assetsPromise, this.blocksPerYear()]);
+    for (const asset of assets) {
+      asset.metadata.lendApyBips = this.aprBipsToApyBips(asset.metadata.lendAprBips, blocksPerYear);
+      asset.metadata.borrowApyBips = this.aprBipsToApyBips(asset.metadata.borrowAprBips, blocksPerYear);
     }
-    return await this.contract.read["assetsDynamic()"](overrides).then(structArray);
+    return assets;
   }
 
   /**
@@ -148,5 +158,24 @@ export class IronBankAdapter<T extends ChainId> extends ContractService<T> {
    */
   async tokens(overrides: CallOverrides = {}): Promise<Address[]> {
     return await this.contract.read.assetsTokensAddresses(overrides);
+  }
+
+  async blocksPerYear(overrides: CallOverrides = {}): Promise<Integer> {
+    const blocks: EthersBigNumber = await this.contract.read["blocksPerYear"](overrides);
+    return blocks.toString();
+  }
+
+  private aprBipsToApyBips(aprBips: Integer, period: Integer): Integer {
+    const bn = BigNumber.clone({ POW_PRECISION: 6 });
+    const apy = new bn(aprBips)
+      .div(new bn(10).pow(4))
+      .div(period)
+      .plus(1)
+      .pow(period)
+      .minus(1)
+      .multipliedBy(new bn(10).pow(4))
+      .toFixed(0);
+
+    return apy;
   }
 }
