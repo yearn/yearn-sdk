@@ -11,7 +11,8 @@ const HelperAbi = [
   `function tokensMetadata(address[] memory) public view returns (${TokenAbi}[] memory)`,
   `function tokensPrices(address[] memory) public view returns (${TokenPriceAbi}[] memory)`,
   `function tokensBalances(address, address[] memory) public view returns (${TokenBalanceAbi}[] memory)`,
-  `function allowances(address, address[] memory, address[] memory) external view returns (${AllowanceAbi}[] memory)`
+  `function allowances(address, address[] memory, address[] memory) external view returns (${AllowanceAbi}[] memory)`,
+  "function assetStrategiesAddresses(address) public view returns (address[])"
 ];
 
 /**
@@ -91,5 +92,9 @@ export class HelperService<T extends ChainId> extends ContractService<T> {
     overrides: CallOverrides = {}
   ): Promise<TokenAllowance[]> {
     return await this.contract.read.allowances(address, tokens, spenders, overrides).then(structArray);
+  }
+
+  async assetStrategiesAddresses(address: Address, overrides: CallOverrides = {}): Promise<Address[]> {
+    return this.contract.read.assetStrategiesAddresses(address, overrides);
   }
 }
