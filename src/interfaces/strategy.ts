@@ -91,33 +91,25 @@ export class StrategyInterface<T extends ChainId> extends ServiceInterface<T> {
     let vaultsStrategiesMetadataPromises: Promise<VaultStrategiesMetadata | undefined>[];
     vaultsStrategiesMetadataPromises = vaultAddresses.map(async vaultAddress => {
       const vaultContract = new Contract(vaultAddress, VaultAbi, provider);
-      const strategyFilter = vaultContract.filters.StrategyAdded();
-      return vaultContract
-        .queryFilter(strategyFilter)
-        .then(events => events.map(event => event.args?.[0]))
-        .then(async addedStrategies => {
-          const strategies = addedStrategies.map(strat => {
-            return {
-              address: strat
-            };
-          });
 
-          const underlyingTokenAddress = await vaultContract.token();
-          const underlyingTokenContract = new Contract(underlyingTokenAddress, TokenAbi, provider);
-          const underlyingTokenSymbol = await underlyingTokenContract.symbol();
+      const strategiesPromise = this.yearn.services.helper.assetStrategiesAddresses(vaultAddress).then(addresses =>
+        addresses.map(strat => {
+          return {
+            address: strat
+          };
+        })
+      );
 
-          return this.fetchVaultStrategiesMetadata(
-            strategies,
-            strategiesMetadata,
-            vaultContract,
-            underlyingTokenSymbol
-          );
-        });
+      const [strategies, underlyingTokenAddress] = await Promise.all([strategiesPromise, vaultContract.token()]);
+      const underlyingTokenContract = new Contract(underlyingTokenAddress, TokenAbi, provider);
+      const underlyingTokenSymbol = await underlyingTokenContract.symbol();
+
+      return this.fetchVaultStrategiesMetadata(strategies, strategiesMetadata, vaultContract, underlyingTokenSymbol);
     });
 
-    return Promise.all(vaultsStrategiesMetadataPromises).then(vaultsStrategyData => {
-      return vaultsStrategyData.flatMap(data => (data ? [data] : []));
-    });
+    return Promise.all(vaultsStrategiesMetadataPromises).then(vaultsStrategyData =>
+      vaultsStrategyData.flatMap(data => (data ? [data] : []))
+    );
   }
 
   private async fetchVaultStrategiesMetadata(
