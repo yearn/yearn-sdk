@@ -4,7 +4,7 @@ import { ChainId } from "../chain";
 import { ContractService } from "../common";
 import { Context } from "../context";
 import { structArray } from "../struct";
-import { Address, GenericAsset, Position, SdkError } from "../types";
+import { Address, GenericAsset, Position } from "../types";
 import { IronBankAdapter } from "./adapters/ironbank";
 import { IRegistryAdapter, RegistryV2Adapter } from "./adapters/registry";
 
@@ -31,24 +31,12 @@ export class LensService<T extends ChainId> extends ContractService<T> {
   }
 
   get adapters(): Adapters<T> {
-    switch (this.chainId) {
-      case 1: // FIXME: doesn't actually exist
-      case 250:
-        return {
-          vaults: {
-            v2: new RegistryV2Adapter(this.chainId, this.ctx)
-          },
-          ironBank: new IronBankAdapter(this.chainId, this.ctx)
-        } as Adapters<T>;
-      case 1337: // ditto
-        return {
-          vaults: {
-            v2: new RegistryV2Adapter(this.chainId, this.ctx)
-          },
-          ironBank: new IronBankAdapter(this.chainId, this.ctx)
-        } as Adapters<T>; // FIXME: missing adapters
-    }
-    throw new SdkError(`No lens adapter for chainId "${this.chainId}".`);
+    return {
+      vaults: {
+        v2: new RegistryV2Adapter(this.chainId, this.ctx)
+      },
+      ironBank: new IronBankAdapter(this.chainId, this.ctx)
+    } as Adapters<T>;
   }
 
   /**
@@ -61,6 +49,7 @@ export class LensService<T extends ChainId> extends ContractService<T> {
       case 1: // FIXME: doesn't actually exist
       case 250: // ditto
       case 1337: // ditto
+      case 42161: // ditto
         return "0xFa58130BE296EDFA23C42a1d15549fA91449F979";
     }
   }

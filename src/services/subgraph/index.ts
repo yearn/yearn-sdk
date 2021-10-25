@@ -10,12 +10,19 @@ export class SubgraphService extends Service {
     super(chainId, ctx);
 
     let subgraphName: string;
-    if (chainId === 1 || chainId === 1337) {
-      subgraphName = "salazarguille/yearn-vaults-v2-subgraph-mainnet";
-    } else if (chainId === 250) {
-      subgraphName = "yearn/yearn-vaults-v2-fantom";
-    } else {
-      throw new SdkError(`No subgraph name for chain ${chainId}`);
+    switch (chainId) {
+      case 1:
+      case 1337:
+        subgraphName = "salazarguille/yearn-vaults-v2-subgraph-mainnet";
+        break;
+      case 250:
+        subgraphName = "yearn/yearn-vaults-v2-fantom";
+        break;
+      case 42161:
+        subgraphName = "yearn/yearn-vaults-v2-arbitrum";
+        break;
+      default:
+        throw new SdkError(`No subgraph name for chain ${chainId}`);
     }
 
     this.yearnSubgraphEndpoint = `https://api.thegraph.com/subgraphs/name/${subgraphName}`;
