@@ -5,7 +5,7 @@ import fetch from "cross-fetch";
 import { CachedFetcher } from "../cache";
 import { ChainId } from "../chain";
 import { ServiceInterface } from "../common";
-import { Address, StrategyMetadata } from "../types";
+import { Address, StrategiesMetadata, StrategyMetadata } from "../types";
 import { VaultStrategiesMetadata } from "../types/strategy";
 
 interface VaultData {
@@ -54,12 +54,11 @@ export class StrategyInterface<T extends ChainId> extends ServiceInterface<T> {
     if (this.chainId === 1 || this.chainId === 1337) {
       return this.fetchMetadataFromApi(vaults);
     } else {
-      // TODO - fetch from strategies helper for this
       return this.fetchMetadataFromChain(vaults);
     }
   }
 
-  async fetchMetadataFromApi(vaultAddresses: Address[]): Promise<VaultStrategiesMetadata[]> {
+  private async fetchMetadataFromApi(vaultAddresses: Address[]): Promise<VaultStrategiesMetadata[]> {
     const vaultsData = await this.fetchVaultsData();
 
     const strategiesMetadata = await this.yearn.services.meta.strategies();
@@ -84,7 +83,7 @@ export class StrategyInterface<T extends ChainId> extends ServiceInterface<T> {
     });
   }
 
-  async fetchMetadataFromChain(vaultAddresses: Address[]): Promise<VaultStrategiesMetadata[]> {
+  private async fetchMetadataFromChain(vaultAddresses: Address[]): Promise<VaultStrategiesMetadata[]> {
     const strategiesMetadata = await this.yearn.services.meta.strategies();
     const provider = this.ctx.provider.read;
 
@@ -114,7 +113,7 @@ export class StrategyInterface<T extends ChainId> extends ServiceInterface<T> {
 
   private async fetchVaultStrategiesMetadata(
     strategies: { address: Address; name?: string }[],
-    strategiesMetadata: StrategyMetadata[],
+    strategiesMetadata: StrategiesMetadata[],
     vaultContract: Contract,
     underlyingTokenSymbol: string
   ): Promise<VaultStrategiesMetadata | undefined> {
@@ -137,14 +136,16 @@ export class StrategyInterface<T extends ChainId> extends ServiceInterface<T> {
           return undefined;
         }
 
-        const emptyMetadata: StrategyMetadata = {
-          address: strategy.address,
-          name: strategy.name || "Strategy",
-          description: "I don't have a description for this strategy yet",
-          protocols: []
-        };
+        const metadatum = strategiesMetadata.find(strategiesMetadata =>
+          strategiesMetadata.addresses.includes(strategy.address)
+        );
 
-        const metadata = strategiesMetadata.find(meta => meta.address === strategy.address) ?? emptyMetadata;
+        const metadata: StrategyMetadata = {
+          address: strategy.address,
+          name: metadatum?.name || strategy.name || "Strategy",
+          description: metadatum?.description ?? "I don't have a description for this strategy yet",
+          protocols: metadatum?.protocols ?? []
+        };
 
         metadata.description = metadata?.description.replace(/{{token}}/g, underlyingTokenSymbol);
 

@@ -88,6 +88,13 @@ export interface StrategyMetadata {
   protocols: string[];
 }
 
+export interface StrategiesMetadata {
+  name: string;
+  description: string;
+  addresses: Address[];
+  protocols: string[];
+}
+
 export interface VaultMetadataOverrides {
   address: Address;
   comment?: string;
