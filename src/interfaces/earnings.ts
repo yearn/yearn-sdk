@@ -208,12 +208,11 @@ export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
       blockNumber = await this.ctx.provider.read.getBlockNumber();
     }
 
-    blockNumber -= 100; // subgraph might be slightly behind latest block
+    blockNumber -= this.blockOffset(); // subgraph might be slightly behind latest block
 
-    const blocksPerDay = 6500;
     const blocks = Array.from(Array(fromDaysAgo).keys())
       .reverse()
-      .map(day => blockNumber - day * blocksPerDay);
+      .map(day => blockNumber - day * this.blocksPerDay());
 
     const response = (await this.yearn.services.subgraph.fetchQuery(ASSET_HISTORIC_EARNINGS(blocks), {
       id: vault
@@ -401,5 +400,27 @@ export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
     let date = new Date();
     date.setDate(date.getDate() - daysAgo);
     return date;
+  }
+
+  private blocksPerDay(): number {
+    switch (this.chainId) {
+      case 1:
+      case 1337:
+      case 42161:
+        return 5760;
+      case 250:
+        return 86400;
+    }
+  }
+
+  private blockOffset(): number {
+    switch (this.chainId) {
+      case 1:
+      case 1337:
+      case 42161:
+        return 100;
+      case 250:
+        return 1000;
+    }
   }
 }
