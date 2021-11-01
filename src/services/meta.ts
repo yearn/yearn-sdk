@@ -1,12 +1,7 @@
 import { Service } from "../common";
-import { Address, StrategiesMetadata, TokenMetadata, VaultMetadataOverrides } from "../types";
+import { StrategiesMetadata, TokenMetadata, VaultMetadataOverrides } from "../types";
 
 const MetaURL = "https://meta.yearn.network";
-
-interface IPFSIndex {
-  files: string[];
-  directories: string[];
-}
 
 const CHAIN_ID_KEY = "{chain_id}";
 
@@ -15,21 +10,8 @@ const CHAIN_ID_KEY = "{chain_id}";
  * from yearn-meta
  */
 export class MetaService extends Service {
-  async token(address: Address): Promise<TokenMetadata | undefined> {
-    const metadata = await this.fetchMetadataItem<any>(this.buildUrl(`tokens/${CHAIN_ID_KEY}/${address}`));
-    if (!metadata) {
-      return undefined;
-    }
-    const result: TokenMetadata = {
-      address: address,
-      categories: metadata.categories,
-      description: metadata.description,
-      website: metadata.website,
-      tokenIconOverride: metadata.tokenIconOverride,
-      tokenSymbolOverride: metadata.tokenSymbolOverride,
-      tokenNameOverride: metadata.tokenNameOverride
-    };
-    return result;
+  async tokens(): Promise<TokenMetadata[]> {
+    return fetch(this.buildUrl(`tokens/${CHAIN_ID_KEY}/all`)).then(res => res.json());
   }
 
   async strategies(): Promise<StrategiesMetadata[]> {
@@ -43,43 +25,7 @@ export class MetaService extends Service {
   }
 
   async vaults(): Promise<VaultMetadataOverrides[]> {
-    const index: IPFSIndex = await fetch(this.buildUrl(`vaults/${CHAIN_ID_KEY}/index`)).then(res => res.json());
-
-    const promises = index.files.map(async file => {
-      const metadata = await fetch(this.buildUrl(`vaults/${CHAIN_ID_KEY}/${file}`)).then(res => res.json());
-      const vaultMetadata: VaultMetadataOverrides = {
-        address: file,
-        comment: metadata.comment,
-        hideAlways: metadata.hideAlways,
-        depositsDisabled: metadata.depositsDisabled,
-        withdrawalsDisabled: metadata.withdrawalsDisabled,
-        apyOverride: metadata.apyOverride,
-        apyTypeOverride: metadata.apyTypeOverride,
-        order: metadata.order,
-        migrationAvailable: metadata.migrationAvailable,
-        allowZapIn: metadata.allowZapIn,
-        allowZapOut: metadata.allowZapOut,
-        displayName: metadata.displayName,
-        migrationContract: metadata.migrationContract,
-        migrationTargetVault: metadata.migrationTargetVault,
-        vaultIconOverride: metadata.vaultIconOverride,
-        vaultSymbolOverride: metadata.vaultSymbolOverride,
-        vaultNameOverride: metadata.vaultNameOverride,
-        vaultDetailPageAssets: metadata.vaultDetailPageAssets,
-        retired: metadata.retired
-      };
-      return vaultMetadata;
-    });
-
-    return Promise.all(promises);
-  }
-
-  private async fetchMetadataItem<T>(url: string): Promise<T | undefined> {
-    try {
-      return await fetch(url).then(res => res.json());
-    } catch (error) {
-      return undefined;
-    }
+    return fetch(this.buildUrl(`vaults/${CHAIN_ID_KEY}/all`)).then(res => res.json());
   }
 
   private buildUrl(path: string): string {
