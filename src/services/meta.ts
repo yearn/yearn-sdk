@@ -15,13 +15,7 @@ export class MetaService extends Service {
   }
 
   async strategies(): Promise<StrategiesMetadata[]> {
-    const files: string[] = await fetch(this.buildUrl(`strategies/${CHAIN_ID_KEY}/index`))
-      .then(res => res.json())
-      .then(json => json.files.filter((file: string) => !file.startsWith("0x")));
-
-    return Promise.all(
-      files.map(file => fetch(this.buildUrl(`strategies/${CHAIN_ID_KEY}/${file}`)).then(res => res.json()))
-    );
+    return fetch(this.buildUrl(`strategies/${CHAIN_ID_KEY}/all`)).then(res => res.json());
   }
 
   async vaults(): Promise<VaultMetadataOverrides[]> {
