@@ -13,6 +13,8 @@ import { Balance, Icon, IconMap, Token } from "../types";
 const TokenAbi = ["function approve(address _spender, uint256 _value) public"];
 
 export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
+  private cachedFetcherSupported = new CachedFetcher<Token[]>("tokens/supported", this.ctx, this.chainId);
+
   /**
    * Get exchange rate between two tokens.
    * @param from
@@ -83,6 +85,11 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
    * @returns list of tokens supported by the zapper protocol.
    */
   async supported(): Promise<Token[]> {
+    const cached = await this.cachedFetcherSupported.fetch();
+    if (cached) {
+      return cached;
+    }
+
     if (this.chainId === 1 || this.chainId === 1337) {
       // only ETH Main is supported
       const tokens = await this.yearn.services.zapper.supportedTokens();

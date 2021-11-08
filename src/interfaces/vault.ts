@@ -30,7 +30,9 @@ import { Position, Vault } from "../types";
 const VaultAbi = ["function deposit(uint256 amount) public", "function withdraw(uint256 amount) public"];
 
 export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
-  private cachedFetcher = new CachedFetcher<Vault[]>("vaults/get", this.ctx, this.chainId);
+  private cachedFetcherGet = new CachedFetcher<Vault[]>("vaults/get", this.ctx, this.chainId);
+  private cachedFetcherGetDynamic = new CachedFetcher<VaultDynamic[]>("vaults/getDynamic", this.ctx, this.chainId);
+  private cachedFetcherTokens = new CachedFetcher<Token[]>("vaults/tokens", this.ctx, this.chainId);
 
   /**
    * Get all yearn vaults.
@@ -39,13 +41,9 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
    * @returns
    */
   async get(addresses?: Address[], overrides?: CallOverrides): Promise<Vault[]> {
-    const cached = await this.cachedFetcher.fetch();
+    const cached = await this.cachedFetcherGet.fetch(addresses ? `addresses=${addresses.join()}` : undefined);
     if (cached) {
-      if (addresses) {
-        return cached.filter(cachedVault => addresses.includes(cachedVault.address));
-      } else {
-        return cached;
-      }
+      return cached;
     }
 
     const vaultMetadataOverridesPromise = this.yearn.services.meta.vaults().catch(error => {
@@ -136,6 +134,11 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
     vaultMetadataOverrides?: VaultMetadataOverrides[],
     overrides?: CallOverrides
   ): Promise<VaultDynamic[]> {
+    const cached = await this.cachedFetcherGetDynamic.fetch(addresses ? `addresses=${addresses.join()}` : undefined);
+    if (cached) {
+      return cached;
+    }
+
     let metadataOverrides = vaultMetadataOverrides
       ? vaultMetadataOverrides
       : await this.yearn.services.meta.vaults().catch(error => {
@@ -255,6 +258,11 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
    * @returns
    */
   async tokens(overrides?: CallOverrides): Promise<Token[]> {
+    const cached = await this.cachedFetcherTokens.fetch();
+    if (cached) {
+      return cached;
+    }
+
     const adapters = Object.values(this.yearn.services.lens.adapters.vaults);
     await this.yearn.services.asset.ready;
     return await Promise.all(

@@ -1,4 +1,5 @@
 import { CallOverrides } from "@ethersproject/contracts";
+import { CachedFetcher } from "../cache";
 
 import { ChainId } from "../chain";
 import { ServiceInterface } from "../common";
@@ -16,6 +17,14 @@ import {
 } from "../types";
 
 export class IronBankInterface<T extends ChainId> extends ServiceInterface<T> {
+  private cachedFetcherGet = new CachedFetcher<IronBankMarket[]>("ironbank/get", this.ctx, this.chainId);
+  private cachedFetcherGetDynamic = new CachedFetcher<IronBankMarketDynamic[]>(
+    "ironbank/getDynamic",
+    this.ctx,
+    this.chainId
+  );
+  private cachedFetcherTokens = new CachedFetcher<Token[]>("ironbank/tokens", this.ctx, this.chainId);
+
   /**
    * Get all IronBank markets.
    * @param addresses filter, if not provided all positions are returned
@@ -23,6 +32,11 @@ export class IronBankInterface<T extends ChainId> extends ServiceInterface<T> {
    * @returns
    */
   async get(addresses?: Address[], overrides?: CallOverrides): Promise<IronBankMarket[]> {
+    const cached = await this.cachedFetcherGet.fetch(addresses ? `addresses=${addresses.join()}` : undefined);
+    if (cached) {
+      return cached;
+    }
+
     const assetsStatic = await this.yearn.services.lens.adapters.ironBank.assetsStatic(addresses, overrides);
     const assetsDynamic = await this.yearn.services.lens.adapters.ironBank.assetsDynamic(addresses, overrides);
     const assets = new Array<IronBankMarket>();
@@ -53,6 +67,11 @@ export class IronBankInterface<T extends ChainId> extends ServiceInterface<T> {
    * @returns
    */
   async getDynamic(addresses?: Address[], overrides?: CallOverrides): Promise<IronBankMarketDynamic[]> {
+    const cached = await this.cachedFetcherGetDynamic.fetch(addresses ? `addresses=${addresses.join()}` : undefined);
+    if (cached) {
+      return cached;
+    }
+
     return await this.yearn.services.lens.adapters.ironBank.assetsDynamic(addresses, overrides);
   }
 
@@ -120,6 +139,11 @@ export class IronBankInterface<T extends ChainId> extends ServiceInterface<T> {
    * @returns
    */
   async tokens(overrides?: CallOverrides): Promise<Token[]> {
+    const cached = await this.cachedFetcherTokens.fetch();
+    if (cached) {
+      return cached;
+    }
+
     const tokenAddresses = await this.yearn.services.lens.adapters.ironBank.tokens(overrides);
     const tokens = await this.yearn.services.helper.tokens(tokenAddresses, overrides);
     const icons = this.yearn.services.asset.icon(tokenAddresses);
