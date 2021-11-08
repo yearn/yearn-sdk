@@ -1,6 +1,6 @@
 import { CallOverrides } from "@ethersproject/contracts";
-import { CachedFetcher } from "../cache";
 
+import { CachedFetcher } from "../cache";
 import { ChainId } from "../chain";
 import { ServiceInterface } from "../common";
 import {
