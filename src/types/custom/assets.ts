@@ -14,3 +14,8 @@ export interface Alias {
 }
 
 export type AliasMap<T extends Address> = TypedMap<T, Alias>;
+
+export interface AssetServiceState {
+  supported: Map<Address, string>;
+  aliases: Map<Address, Alias>;
+}

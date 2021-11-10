@@ -27,6 +27,7 @@
  * - [[SubgraphService]]: interaction with yearn's subgraph.
  * - [[SimulationService]]: allows simulation of ethereum transactions.
  * - [[TelegramService]]: allows sending telegram messages.
+ * - [[AssetService]]: fetching icons of assets supported by yearn.
  *
  * ### Peer dependencies
  *
@@ -49,6 +50,7 @@ export { TokenInterface } from "./interfaces/token";
 export { VaultInterface } from "./interfaces/vault";
 export { IronBankAdapter } from "./services/adapters/ironbank";
 export { RegistryV2Adapter } from "./services/adapters/registry";
+export { AssetService } from "./services/assets";
 export { LensService } from "./services/lens";
 export { OracleService } from "./services/oracle";
 export { SubgraphService } from "./services/subgraph";

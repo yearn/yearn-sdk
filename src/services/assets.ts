@@ -2,7 +2,7 @@ import { ChainId } from "../chain";
 import { Service } from "../common";
 import { Context } from "../context";
 import { handleHttpError, WethAddress } from "../helpers";
-import { Address, Alias, AliasMap, Icon, IconMap } from "../types";
+import { Address, Alias, AliasMap, AssetServiceState, Icon, IconMap } from "../types";
 
 const YearnAliases = "https://raw.githubusercontent.com/yearn/yearn-assets/master/icons/aliases.json";
 const YearnAssets = (chainId: ChainId) =>
@@ -21,17 +21,37 @@ const TrustAsset = (address: Address) =>
  * from trusted asset sources
  */
 export class AssetService extends Service {
+  static deserializeState(data: string): AssetServiceState {
+    const obj = JSON.parse(data);
+    const supported = new Map<Address, string>(JSON.parse(obj.supported));
+    const aliases = new Map<Address, Alias>(JSON.parse(obj.aliases));
+    return { supported, aliases };
+  }
+
   ready: Promise<void>;
   supported: Map<Address, string>;
   aliases: Map<Address, Alias>;
 
   private alts = [WethAddress];
 
-  constructor(chainId: ChainId, ctx: Context) {
+  constructor(chainId: ChainId, ctx: Context, state?: AssetServiceState) {
     super(chainId, ctx);
-    this.supported = new Map();
-    this.aliases = new Map();
-    this.ready = this.initialize();
+    if (state) {
+      this.supported = state.supported;
+      this.aliases = state.aliases;
+      this.ready = Promise.resolve();
+    } else {
+      this.supported = new Map();
+      this.aliases = new Map();
+      this.ready = this.initialize();
+    }
+  }
+
+  async makeSerializedState(): Promise<string> {
+    await this.ready;
+    const supportedJson = JSON.stringify(Array.from(this.supported.entries()));
+    const aliasesJson = JSON.stringify(Array.from(this.aliases.entries()));
+    return JSON.stringify({ supported: supportedJson, aliases: aliasesJson });
   }
 
   private async initialize(): Promise<void> {
