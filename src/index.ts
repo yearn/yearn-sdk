@@ -27,6 +27,7 @@
  * - [[SubgraphService]]: interaction with yearn's subgraph.
  * - [[SimulationService]]: allows simulation of ethereum transactions.
  * - [[TelegramService]]: allows sending telegram messages.
+ * - [[AssetService]]: fetching icons of assets supported by yearn.
  *
  * ### Peer dependencies
  *
@@ -55,5 +56,6 @@ export { SubgraphService } from "./services/subgraph";
 export { TelegramService } from "./services/telegram";
 export { VisionService } from "./services/vision";
 export { ZapperService } from "./services/zapper";
+export { AssetService } from "./services/assets";
 export * from "./types";
 export { Yearn } from "./yearn";
