@@ -17,6 +17,7 @@ import { SubgraphService } from "./services/subgraph";
 import { TelegramService } from "./services/telegram";
 import { VisionService } from "./services/vision";
 import { ZapperService } from "./services/zapper";
+import { AssetServiceState } from "./types/custom/assets";
 
 /**
  * [[Yearn]] is a wrapper for all the services and interfaces of the SDK.
@@ -72,15 +73,16 @@ export class Yearn<T extends ChainId> {
    * Create a new SDK instance.
    * @param chainId
    * @param context plain object containing all the optional configuration
+   * @param assetServiceState the asset service does some expensive computation at initialization, passing the state from a previous sdk instance can prevent this
    */
-  constructor(chainId: T, context: ContextValue) {
+  constructor(chainId: T, context: ContextValue, assetServiceState?: AssetServiceState) {
     this.context = new Context(context);
 
     this.services = {
       lens: new LensService(chainId, this.context),
       oracle: new OracleService(chainId, this.context),
       zapper: new ZapperService(chainId, this.context),
-      asset: new AssetService(chainId, this.context),
+      asset: new AssetService(chainId, this.context, assetServiceState),
       vision: new VisionService(chainId, this.context),
       subgraph: new SubgraphService(chainId, this.context),
       pickle: new PickleService(chainId, this.context),
