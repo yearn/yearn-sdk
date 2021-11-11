@@ -5,7 +5,7 @@ import BigNumber from "bignumber.js";
 import { CachedFetcher } from "../cache";
 import { ChainId } from "../chain";
 import { ServiceInterface } from "../common";
-import { EthAddress } from "../helpers";
+import { EthAddress, WftmAddress, ZeroAddress } from "../helpers";
 import { PickleJars } from "../services/partners/pickle";
 import { Address, Integer, SdkError, TokenMetadata, TypedMap, Usdc, Vault, ZapProtocol } from "../types";
 import { Balance, Icon, IconMap, Token } from "../types";
@@ -100,6 +100,18 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
         const icon = icons[token.address];
         return icon ? { ...token, icon } : token;
       });
+    } else if (this.chainId === 250) {
+      const price = await this.yearn.services.oracle.getPriceUsdc(WftmAddress);
+      const ftm: Token = {
+        address: ZeroAddress,
+        icon: this.yearn.services.asset.icon(ZeroAddress),
+        priceUsdc: price,
+        name: "Fantom",
+        symbol: "FTM",
+        decimals: "18",
+        supported: { wftm: true }
+      };
+      return [ftm];
     }
     return [];
   }

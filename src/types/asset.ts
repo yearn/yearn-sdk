@@ -24,6 +24,7 @@ export interface Token extends ERC20 {
   priceUsdc: Usdc;
   supported: {
     zapper?: boolean;
+    wftm?: boolean;
   };
   metadata?: TokenMetadata;
 }
