@@ -41,9 +41,13 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
    * @returns
    */
   async get(addresses?: Address[], overrides?: CallOverrides): Promise<Vault[]> {
-    const cached = await this.cachedFetcherGet.fetch(addresses ? `addresses=${addresses.join()}` : undefined);
+    const cached = await this.cachedFetcherGet.fetch();
     if (cached) {
-      return cached;
+      if (addresses) {
+        return cached.filter(vault => addresses.includes(vault.address));
+      } else {
+        return cached;
+      }
     }
 
     const vaultMetadataOverridesPromise = this.yearn.services.meta.vaults().catch(error => {
@@ -134,9 +138,13 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
     vaultMetadataOverrides?: VaultMetadataOverrides[],
     overrides?: CallOverrides
   ): Promise<VaultDynamic[]> {
-    const cached = await this.cachedFetcherGetDynamic.fetch(addresses ? `addresses=${addresses.join()}` : undefined);
+    const cached = await this.cachedFetcherGetDynamic.fetch();
     if (cached) {
-      return cached;
+      if (addresses) {
+        return cached.filter(vault => addresses.includes(vault.address));
+      } else {
+        return cached;
+      }
     }
 
     let metadataOverrides = vaultMetadataOverrides
