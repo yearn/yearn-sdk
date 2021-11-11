@@ -32,9 +32,13 @@ export class IronBankInterface<T extends ChainId> extends ServiceInterface<T> {
    * @returns
    */
   async get(addresses?: Address[], overrides?: CallOverrides): Promise<IronBankMarket[]> {
-    const cached = await this.cachedFetcherGet.fetch(addresses ? `addresses=${addresses.join()}` : undefined);
+    const cached = await this.cachedFetcherGet.fetch();
     if (cached) {
-      return cached;
+      if (addresses) {
+        return cached.filter(market => addresses.includes(market.address));
+      } else {
+        return cached;
+      }
     }
 
     const assetsStatic = await this.yearn.services.lens.adapters.ironBank.assetsStatic(addresses, overrides);
@@ -67,9 +71,13 @@ export class IronBankInterface<T extends ChainId> extends ServiceInterface<T> {
    * @returns
    */
   async getDynamic(addresses?: Address[], overrides?: CallOverrides): Promise<IronBankMarketDynamic[]> {
-    const cached = await this.cachedFetcherGetDynamic.fetch(addresses ? `addresses=${addresses.join()}` : undefined);
+    const cached = await this.cachedFetcherGetDynamic.fetch();
     if (cached) {
-      return cached;
+      if (addresses) {
+        return cached.filter(market => addresses.includes(market.address));
+      } else {
+        return cached;
+      }
     }
 
     return await this.yearn.services.lens.adapters.ironBank.assetsDynamic(addresses, overrides);
