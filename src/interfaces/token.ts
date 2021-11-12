@@ -5,12 +5,17 @@ import BigNumber from "bignumber.js";
 import { CachedFetcher } from "../cache";
 import { ChainId } from "../chain";
 import { ServiceInterface } from "../common";
-import { EthAddress, WftmAddress, ZeroAddress } from "../helpers";
+import { EthAddress, ZeroAddress } from "../helpers";
 import { PickleJars } from "../services/partners/pickle";
 import { Address, Integer, SdkError, TokenMetadata, TypedMap, Usdc, Vault, ZapProtocol } from "../types";
 import { Balance, Icon, IconMap, Token } from "../types";
 
-const TokenAbi = ["function approve(address _spender, uint256 _value) public"];
+const TokenAbi = [
+  "function approve(address _spender, uint256 _value) public",
+  "function name() public view returns (string)",
+  "function symbol() public view returns (string)",
+  "function decimals() public view returns (uint8)"
+];
 
 export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
   private cachedFetcherSupported = new CachedFetcher<Token[]>("tokens/supported", this.ctx, this.chainId);
@@ -101,17 +106,37 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
         return icon ? { ...token, icon } : token;
       });
     } else if (this.chainId === 250) {
-      const price = await this.yearn.services.oracle.getPriceUsdc(WftmAddress);
-      const ftm: Token = {
-        address: ZeroAddress,
-        icon: this.yearn.services.asset.icon(ZeroAddress),
-        priceUsdc: price,
-        name: "Fantom",
-        symbol: "FTM",
-        decimals: "18",
-        supported: { wftm: true }
-      };
-      return [ftm];
+      const metadata = await this.yearn.services.meta.tokens();
+
+      const promises = this.zapTokenAddresses().map(async token => {
+        const price = await this.yearn.services.oracle.getPriceUsdc(token);
+        const metadatum = metadata.find(metadatum => metadatum.address === token);
+
+        let name, symbol, decimals: string;
+
+        if (token === ZeroAddress) {
+          name = "Fantom";
+          symbol = "FTM";
+          decimals = "18";
+        } else {
+          const contract = new Contract(token, TokenAbi, this.ctx.provider.read);
+          // TODO - add multicall and use it for these
+          [name, symbol, decimals] = await Promise.all([contract.name(), contract.symbol(), contract.decimals()]);
+        }
+
+        const result: Token = {
+          address: token,
+          icon: this.yearn.services.asset.icon(token),
+          priceUsdc: price,
+          name: name,
+          symbol: symbol,
+          decimals: decimals.toString(),
+          supported: metadatum?.supportedZaps ?? {}
+        };
+        return result;
+      });
+
+      return Promise.all(promises);
     }
     return [];
   }
@@ -232,5 +257,17 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
     } else {
       return result;
     }
+  }
+
+  /**
+   * Tokens that can be used to zap into or out of a vault. Supplementary to those fetched from zapper's api
+   */
+  private zapTokenAddresses(): Address[] {
+    if (this.chainId === 250) {
+      return [
+        ZeroAddress // ftm
+      ];
+    }
+    return [];
   }
 }

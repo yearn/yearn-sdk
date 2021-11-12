@@ -79,6 +79,10 @@ export interface TokenMetadata {
   tokenIconOverride?: string;
   tokenSymbolOverride?: string;
   tokenNameOverride?: string;
+  supportedZaps?: {
+    ftmApeZap?: boolean;
+    zapper?: boolean;
+  };
 }
 
 export interface StrategyMetadata {
