@@ -5,7 +5,6 @@ import { Integer, SdkError, Usdc } from "./types";
 export const ZeroAddress = "0x0000000000000000000000000000000000000000";
 export const EthAddress = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";
 export const WethAddress = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2";
-export const WftmAddress = "0x21be370D5312f44cB42ce377BC9b8a0cEF1A4C83";
 
 // handle a non-200 `fetch` response.
 export async function handleHttpError(response: Response): Promise<Response> {
