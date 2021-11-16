@@ -29,7 +29,14 @@ export class CachedFetcher<T> {
       path += `?${queryParameters}`;
     }
 
-    const call = await fetch(path);
+    let call: Response;
+    try {
+      const timeout = 5000;
+      call = await this.fetchWithTimeout(path, timeout);
+    } catch {
+      console.warn(`Call to cache at ${path} timed out`);
+      return undefined;
+    }
     if (call.status !== 200) {
       const { url, status, statusText } = call;
       console.warn(`Call to cache failed at ${url} (status ${status} ${statusText})`);
@@ -48,6 +55,13 @@ export class CachedFetcher<T> {
     this.cachedValue = json;
 
     return json as T;
+  }
+
+  private async fetchWithTimeout(url: string, timeout: number): Promise<Response> {
+    return Promise.race([
+      fetch(url),
+      new Promise<Response>((_, reject) => setTimeout(() => reject("timeout"), timeout))
+    ]);
   }
 
   private get currentValue(): T | undefined {
