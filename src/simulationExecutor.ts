@@ -4,8 +4,8 @@ import BigNumber from "bignumber.js";
 
 import { Context } from "./context";
 import { TelegramService } from "./services/telegram";
-import { SimulationOptions } from "./types";
-import { Address, Integer, SdkError } from "./types/common";
+import { EthersError, SimulationError, SimulationOptions, TenderlyError } from "./types";
+import { Address, Integer } from "./types/common";
 
 const baseUrl = "https://simulate.yearn.network";
 const latestBlockKey = -1;
@@ -106,7 +106,7 @@ export class SimulationExecutor {
       );
 
     if (!log) {
-      throw new SdkError(`No log of transferring token ${targetToken} to ${from}`);
+      throw new SimulationError(`No log of transferring token ${targetToken} to ${from}`);
     }
 
     const tokensReceived = new BigNumber(log.raw.data).toFixed(0);
@@ -154,7 +154,11 @@ export class SimulationExecutor {
         "Content-Type": "application/json"
       },
       body: JSON.stringify(body)
-    }).then(res => res.json());
+    })
+      .then(res => res.json())
+      .catch(() => {
+        throw new TenderlyError("simulation call to Tenderly failed");
+      });
 
     const errorMessage = simulationResponse.transaction.error_message;
 
@@ -162,7 +166,7 @@ export class SimulationExecutor {
       if (options.save) {
         this.sendErrorMessage(errorMessage, simulationResponse.simulation.id, options.forkId);
       }
-      throw new SdkError(`Simulation Error - ${errorMessage}`);
+      throw new SimulationError(errorMessage);
     } else {
       // even though the transaction has been successful one of it's calls could have failed i.e. a partial revert might have happened
       const allCalls = this.getAllSimulationCalls(simulationResponse.transaction.transaction_info.call_trace);
@@ -170,7 +174,7 @@ export class SimulationExecutor {
       if (partialRevertError) {
         const errorMessage = "Partial Revert - " + partialRevertError;
         this.sendErrorMessage(errorMessage, simulationResponse.simulation.id, options?.forkId);
-        throw new SdkError(`Simulation Error - ${errorMessage}`);
+        throw new SimulationError(errorMessage);
       }
     }
 
@@ -264,7 +268,9 @@ export class SimulationExecutor {
       type: options.gasPrice ? 0 : undefined
     };
 
-    const result = await signer.populateTransaction(transactionRequest);
+    const result = await signer.populateTransaction(transactionRequest).catch(() => {
+      throw new EthersError("error populating transaction");
+    });
 
     return result;
   }
@@ -293,7 +299,11 @@ export class SimulationExecutor {
         "Content-Type": "application/json"
       },
       body: JSON.stringify(body)
-    }).then(res => res.json());
+    })
+      .then(res => res.json())
+      .catch(() => {
+        throw new TenderlyError("failed to create fork");
+      });
 
     return response.simulation_fork.id;
   }
