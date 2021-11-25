@@ -1,4 +1,10 @@
-import { Address, Integer, Usdc } from "../common";
+import { Address, Integer, SdkError, Usdc } from "../common";
+
+export class SimulationError extends SdkError {}
+export class ZapperError extends SdkError {}
+export class EthersError extends SdkError {}
+export class TenderlyError extends SdkError {}
+export class PriceFetchingError extends SdkError {}
 
 export interface TransactionOutcome {
   sourceTokenAddress: Address;
