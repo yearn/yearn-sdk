@@ -244,7 +244,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
       vaultContract.decimals(),
       vaultContract.pricePerShare()
     ]).catch(() => {
-      throw new EthersError("direct deposit");
+      throw new EthersError("no decimals or pricePerShare");
     });
     const targetUnderlyingTokensReceived = new BigNumber(tokensReceived)
       .div(new BigNumber(10).pow(decimals))
@@ -308,7 +308,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
       vaultContract.decimals(),
       vaultContract.pricePerShare()
     ]).catch(() => {
-      throw new EthersError("zap in");
+      throw new EthersError("no decimals or pricePerShare");
     });
     const targetUnderlyingTokensReceived = new BigNumber(tokensReceived)
       .div(new BigNumber(10).pow(decimals))
