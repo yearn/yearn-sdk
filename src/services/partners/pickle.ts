@@ -6,7 +6,8 @@ import { usdc } from "../../helpers";
 import { Address, Usdc } from "../../types/common";
 
 const HourInMilliseconds = 1000 * 60 * 60;
-const PickleApiUrl = "https://stkpowy01i.execute-api.us-west-1.amazonaws.com/prod/protocol/pools";
+const PickleApiUrl = "https://api.pickle.finance/prod/protocol/pools";
+const PickleApiBackupUrl = "https://f8wgg18t1h.execute-api.us-west-1.amazonaws.com/prod/protocol/pools";
 
 export const PickleJars = [
   "0xCeD67a187b923F0E5ebcc77C7f2F7da20099e378" // yvboost-eth
@@ -36,7 +37,11 @@ export class PickleService extends Service {
       tokens: number;
     }
 
-    const jarData: JarDatum[] = await fetch(PickleApiUrl).then(res => res.json());
+    const jarData: JarDatum[] = await fetch(PickleApiUrl)
+      .catch(() => {
+        return fetch(PickleApiBackupUrl);
+      })
+      .then(res => res.json());
 
     this.pickleJarUSDPrices.clear();
     this.lastFetchedDate = new Date();
