@@ -222,6 +222,9 @@ export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
 
     const labels = blocks.map(block => `block_${block}`);
 
+    const token = data.vault.token.id as string;
+    const priceUsdc = await this.yearn.services.oracle.getPriceUsdc(token).then(price => new BigNumber(price));
+
     const earningsDayData = labels.map(label => {
       const strategies: StrategiesResponse[] = data[label].strategies;
       const totalGain = strategies
@@ -234,7 +237,7 @@ export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
 
       const amountEarnt = totalGain.minus(totalLoss);
 
-      const amountUsdc = new BigNumber(data[label].vaultDayData[0].tokenPriceUSDC)
+      const amountUsdc = priceUsdc
         .multipliedBy(amountEarnt)
         .dividedBy(new BigNumber(10).pow(new BigNumber(data.vault.token.decimals)));
 

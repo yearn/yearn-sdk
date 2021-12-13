@@ -58,7 +58,6 @@ export const ASSET_HISTORIC_EARNINGS = (blocks: number[]) => {
     block_${block}: vault(id: $id, block: { number: ${block} } ) {
       vaultDayData(orderBy: timestamp, orderDirection: desc, first: 1) {
         timestamp
-        tokenPriceUSDC
       }
       strategies {
         latestReport {
@@ -75,6 +74,7 @@ export const ASSET_HISTORIC_EARNINGS = (blocks: number[]) => {
   const result = `query AssetHistoricEarnings($id: ID!) {
     vault(id: $id) {
       token {
+        id
         decimals
       }
     }
