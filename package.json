@@ -37,6 +37,7 @@
     "@solidity-parser/parser": "^0.12.0",
     "cli-table3": "^0.6.0",
     "eslint-plugin-simple-import-sort": "6",
+    "events": "3.3.0",
     "size-limit": "7.0.4",
     "tsdx": "^0.14.1",
     "tslib": "^2.1.0",
