@@ -350,6 +350,7 @@ export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
 
     const vaultDayData = vaultPositions[0].vault.vaultDayData;
     const token = vaultPositions[0].token;
+    const usdcPrice = await this.yearn.services.oracle.getPriceUsdc(token.id).then(id => new BigNumber(id));
 
     const earningsDayData = await Promise.all(
       vaultDayData.map(async vaultDayDatum => {
@@ -363,9 +364,7 @@ export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
           let negatives = snapshot.deposits.plus(snapshot.tokensReceived);
           let earnings = positives.minus(negatives);
 
-          const amountUsdc = new BigNumber(vaultDayDatum.tokenPriceUSDC)
-            .multipliedBy(earnings)
-            .dividedBy(token.decimals);
+          const amountUsdc = usdcPrice.multipliedBy(earnings).dividedBy(new BigNumber(10).pow(token.decimals));
 
           return {
             earnings: {
