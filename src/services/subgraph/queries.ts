@@ -85,8 +85,8 @@ export const ASSET_HISTORIC_EARNINGS = (blocks: number[]) => {
   return result;
 };
 
-export const ACCOUNT_HISTORIC_EARNINGS = `query AccountHistoricEarnings($id: ID!, $fromDate: String!, $sinceDate: BigInt!, $toDate: BigInt!) {
-    account(id: $id) {
+export const ACCOUNT_HISTORIC_EARNINGS = `query AccountHistoricEarnings($id: ID!, $shareToken: String!, $fromDate: String!, $toDate: BigInt!) {
+  account(id: $id) {
       vaultPositions(where: { shareToken: $shareToken }) {
         balanceShares
         token {
