@@ -97,7 +97,6 @@ export const ACCOUNT_HISTORIC_EARNINGS = `query AccountHistoricEarnings($id: ID!
           vaultDayData(where: { timestamp_gte: $fromDate, timestamp_lte: $toDate }, orderBy: timestamp, orderDirection: asc, first: 1000) {
             pricePerShare
             timestamp
-            tokenPriceUSDC
           }
         }
         updates(orderBy: timestamp, orderDirection: asc, first: 1000) {
