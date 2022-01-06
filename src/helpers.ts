@@ -35,22 +35,26 @@ export function chunkArray<T>(array: T[], size: number) {
 }
 
 export function oldApyToSnakeCase(apy: Apy | undefined): Apy | undefined {
-  return apy ? {
-    ...apy,
-    composite: apy.composite ? {
-      ...apy.composite,
-      boost: apy.composite.boost
-        ? apy.composite.boost
-        : (apy.composite as unknown as BackscracherApyComposite).currentBoost,
-      pool_apy: apy.composite.pool_apy
-        ? apy.composite.pool_apy
-        : (apy.composite as unknown as BackscracherApyComposite).poolApy,
-      boosted_apr: apy.composite.boosted_apr
-        ? apy.composite.boosted_apr
-        : (apy.composite as unknown as BackscracherApyComposite).boostedApy,
-      base_apr: apy.composite.base_apr
-        ? apy.composite.base_apr
-        : (apy.composite as unknown as BackscracherApyComposite).baseApy,
-    }: null,
-  } : undefined
+  return apy
+    ? {
+        ...apy,
+        composite: apy.composite
+          ? {
+              ...apy.composite,
+              boost: apy.composite.boost
+                ? apy.composite.boost
+                : ((apy.composite as unknown) as BackscracherApyComposite).currentBoost,
+              pool_apy: apy.composite.pool_apy
+                ? apy.composite.pool_apy
+                : ((apy.composite as unknown) as BackscracherApyComposite).poolApy,
+              boosted_apr: apy.composite.boosted_apr
+                ? apy.composite.boosted_apr
+                : ((apy.composite as unknown) as BackscracherApyComposite).boostedApy,
+              base_apr: apy.composite.base_apr
+                ? apy.composite.base_apr
+                : ((apy.composite as unknown) as BackscracherApyComposite).baseApy
+            }
+          : null
+      }
+    : undefined;
 }

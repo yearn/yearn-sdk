@@ -11,7 +11,6 @@ import { PickleJars } from "../services/partners/pickle";
 import {
   Address,
   Apy,
-  BackscracherApyComposite,
   Balance,
   DepositOptions,
   Integer,
@@ -45,14 +44,16 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
     const cached = await this.cachedFetcherGet.fetch();
     if (cached) {
       if (addresses) {
-        return cached.filter(vault => addresses.includes(vault.address)).map(vault => ({
-          ...vault,
-          apy: oldApyToSnakeCase(vault.metadata.apy),
-        }));
+        return cached
+          .filter(vault => addresses.includes(vault.address))
+          .map(vault => ({
+            ...vault,
+            apy: oldApyToSnakeCase(vault.metadata.apy)
+          }));
       } else {
         return cached.map(vault => ({
           ...vault,
-          apy: oldApyToSnakeCase(vault.metadata.apy),
+          apy: oldApyToSnakeCase(vault.metadata.apy)
         }));
       }
     }
@@ -114,7 +115,7 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
       )?.dayData;
 
       // workaround for api.yearn.finance returning different attributes for backscracher vaults
-      dynamic.metadata.apy = oldApyToSnakeCase(dynamic.metadata.apy)
+      dynamic.metadata.apy = oldApyToSnakeCase(dynamic.metadata.apy);
 
       assetsWithOrder.push({ vault: { ...asset, ...dynamic }, order });
     }
