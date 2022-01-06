@@ -6,11 +6,12 @@ import { JsonRpcSigner } from "@ethersproject/providers";
 import { CachedFetcher } from "../cache";
 import { ChainId } from "../chain";
 import { ServiceInterface } from "../common";
-import { chunkArray, EthAddress, WethAddress } from "../helpers";
+import { chunkArray, EthAddress, oldApyToSnakeCase, WethAddress } from "../helpers";
 import { PickleJars } from "../services/partners/pickle";
 import {
   Address,
   Apy,
+  BackscracherApyComposite,
   Balance,
   DepositOptions,
   Integer,
@@ -44,9 +45,15 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
     const cached = await this.cachedFetcherGet.fetch();
     if (cached) {
       if (addresses) {
-        return cached.filter(vault => addresses.includes(vault.address));
+        return cached.filter(vault => addresses.includes(vault.address)).map(vault => ({
+          ...vault,
+          apy: oldApyToSnakeCase(vault.metadata.apy),
+        }));
       } else {
-        return cached;
+        return cached.map(vault => ({
+          ...vault,
+          apy: oldApyToSnakeCase(vault.metadata.apy),
+        }));
       }
     }
 
@@ -105,6 +112,9 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
       dynamic.metadata.historicEarnings = assetsHistoricEarnings.find(
         earnings => earnings.assetAddress === asset.address
       )?.dayData;
+
+      // workaround for api.yearn.finance returning different attributes for backscracher vaults
+      dynamic.metadata.apy = oldApyToSnakeCase(dynamic.metadata.apy)
 
       assetsWithOrder.push({ vault: { ...asset, ...dynamic }, order });
     }
