@@ -12,6 +12,7 @@ export interface AddressesOverride {
     ironBank?: Address;
   };
   helper?: Address;
+  allowList?: Address;
 }
 
 /**

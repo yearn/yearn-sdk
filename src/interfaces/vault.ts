@@ -1,5 +1,5 @@
 import { BigNumber } from "@ethersproject/bignumber";
-import { CallOverrides, Contract } from "@ethersproject/contracts";
+import { CallOverrides, Contract, PopulatedTransaction } from "@ethersproject/contracts";
 import { TransactionRequest, TransactionResponse } from "@ethersproject/providers";
 import { JsonRpcSigner } from "@ethersproject/providers";
 
@@ -336,8 +336,8 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
         throw new SdkError("deposit:v2:eth not implemented");
       } else {
         const vaultContract = new Contract(vault, VaultAbi, signer);
-        const makeTransaction = (overrides: CallOverrides) => vaultContract.deposit(amount, overrides);
-        return this.executeVaultContractTransaction(makeTransaction, overrides);
+        const populatedTx = await vaultContract.populateTransaction.deposit(amount, overrides);
+        return this.executeVaultContractTransaction(populatedTx, signer);
       }
     } else {
       return this.zapIn(vault, token, amount, account, signer, options, ZapProtocol.YEARN, overrides);
@@ -365,8 +365,8 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
     const signer = this.ctx.provider.write.getSigner(account);
     if (vaultRef.token === token) {
       const vaultContract = new Contract(vault, VaultAbi, signer);
-      const makeTransaction = (overrides: CallOverrides) => vaultContract.withdraw(amount, overrides);
-      return this.executeVaultContractTransaction(makeTransaction, overrides);
+      const populatedTx = await vaultContract.populateTransaction.withdraw(amount, overrides);
+      return this.executeVaultContractTransaction(populatedTx, signer);
     } else {
       if (options.slippage === undefined) {
         throw new SdkError("zap operations should have a slippage set");
@@ -442,19 +442,17 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
     fallbackGasPrice: BigNumber,
     signer: JsonRpcSigner
   ): Promise<TransactionResponse> {
+    const combinedParams = { ...transactionRequest, ...overrides };
+    await this.yearn.services.allowList.validateCalldata(combinedParams.to, combinedParams.data);
     try {
-      const combinedParams = { ...transactionRequest, ...overrides };
       combinedParams.gasPrice = undefined;
-      const tx = await signer.sendTransaction(combinedParams);
-      return tx;
+      return await signer.sendTransaction(combinedParams);
     } catch (error) {
       if ((error as any).code === -32602) {
-        const combinedParams = { ...transactionRequest, ...overrides };
         combinedParams.maxFeePerGas = undefined;
         combinedParams.maxPriorityFeePerGas = undefined;
         combinedParams.gasPrice = overrides.gasPrice || fallbackGasPrice;
-        const tx = await signer.sendTransaction(combinedParams);
-        return tx;
+        return await signer.sendTransaction(combinedParams);
       }
 
       throw error;
@@ -462,21 +460,20 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
   }
 
   private async executeVaultContractTransaction(
-    makeTransaction: (overrides: CallOverrides) => Promise<TransactionResponse>,
-    overrides: CallOverrides
+    populatedTx: PopulatedTransaction,
+    signer: JsonRpcSigner
   ): Promise<TransactionResponse> {
-    const originalGasPrice = overrides.gasPrice;
+    await this.yearn.services.allowList.validateTx(populatedTx);
+    const originalGasPrice = populatedTx.gasPrice;
     try {
-      overrides.gasPrice = undefined;
-      const tx = await makeTransaction(overrides);
-      return tx;
+      populatedTx.gasPrice = undefined;
+      return await signer.sendTransaction(populatedTx);
     } catch (error) {
       if ((error as any).code === -32602) {
-        overrides.maxFeePerGas = undefined;
-        overrides.maxPriorityFeePerGas = undefined;
-        overrides.gasPrice = originalGasPrice;
-        const tx = await makeTransaction(overrides);
-        return tx;
+        populatedTx.maxFeePerGas = undefined;
+        populatedTx.maxPriorityFeePerGas = undefined;
+        populatedTx.gasPrice = originalGasPrice;
+        return await signer.sendTransaction(populatedTx);
       }
 
       throw error;

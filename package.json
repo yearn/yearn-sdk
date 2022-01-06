@@ -33,6 +33,7 @@
     "@ethersproject/bignumber": "^5.4.1",
     "@ethersproject/contracts": "^5.4.1",
     "@ethersproject/providers": "^5.4.3",
+    "@ethersproject/bytes": "^5.4.0",
     "@size-limit/preset-small-lib": "7.0.4",
     "@solidity-parser/parser": "^0.12.0",
     "cli-table3": "^0.6.0",
