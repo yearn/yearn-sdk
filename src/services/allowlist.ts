@@ -1,9 +1,10 @@
-import { ChainId } from "../chain";
-import { ContractService } from "../common";
 import { BytesLike } from "@ethersproject/bytes";
 import { TransactionRequest } from "@ethersproject/providers";
-import { Address, SdkError } from "../types/common";
+
+import { ChainId } from "../chain";
+import { ContractService } from "../common";
 import { Context } from "../context";
+import { Address, SdkError } from "../types/common";
 
 export class AllowListService<T extends ChainId> extends ContractService<T> {
   static abi = ["function validateCalldata(string memory, targetAddress, data) public view returns (bool)"];
