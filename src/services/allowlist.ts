@@ -8,6 +8,8 @@ import { Context } from "../context";
 export class AllowListService<T extends ChainId> extends ContractService<T> {
   static abi = ["function validateCalldata(string memory, targetAddress, data) public view returns (bool)"];
 
+  private static originName = "yearn.finance";
+
   /**
    * Get most up-to-date address of the Allow List Factory contract for a particular chain
    * id.
@@ -42,7 +44,7 @@ export class AllowListService<T extends ChainId> extends ContractService<T> {
     }
 
     try {
-      const valid = await this.contract.read.validateCalldata("yearn.finance", targetAddress, callData);
+      const valid = await this.contract.read.validateCalldata(AllowListService.originName, targetAddress, callData);
       if (!valid) {
         throw new SdkError("tx is not permitted by the allow list");
       }
