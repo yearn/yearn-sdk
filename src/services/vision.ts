@@ -1,6 +1,6 @@
 import { Service } from "../common";
 import { handleHttpError } from "../helpers";
-import { Address, Apy, ApyMap } from "../types";
+import { Address, Apy, ApyMap, BackscracherApyComposite } from "../types";
 
 /**
  * Internal representation of a vault returned by the vaults.finance/all API.
@@ -8,6 +8,34 @@ import { Address, Apy, ApyMap } from "../types";
 interface ApiVault {
   address: string;
   apy?: Apy;
+}
+
+/**
+ * Fix for backscratcher vaults returning different casing and property names so it's all normalized.
+ */
+export function convertCompositeApyToSnakeCase(apy: Apy | undefined): Apy | undefined {
+  return apy
+    ? {
+        ...apy,
+        composite: apy.composite
+          ? {
+              ...apy.composite,
+              boost: apy.composite.boost
+                ? apy.composite.boost
+                : ((apy.composite as unknown) as BackscracherApyComposite).currentBoost,
+              pool_apy: apy.composite.pool_apy
+                ? apy.composite.pool_apy
+                : ((apy.composite as unknown) as BackscracherApyComposite).poolApy,
+              boosted_apr: apy.composite.boosted_apr
+                ? apy.composite.boosted_apr
+                : ((apy.composite as unknown) as BackscracherApyComposite).boostedApy,
+              base_apr: apy.composite.base_apr
+                ? apy.composite.base_apr
+                : ((apy.composite as unknown) as BackscracherApyComposite).baseApy
+            }
+          : null
+      }
+    : undefined;
 }
 
 /**
@@ -37,15 +65,17 @@ export class VisionService extends Service {
       const map = new Map<T, Apy | undefined>();
       for (const address of addresses) {
         const vault = vaults.find(vault => vault.address === address);
-        map.set(address, vault ? vault.apy : undefined);
+        map.set(address, vault ? convertCompositeApyToSnakeCase(vault.apy) : undefined);
       }
       return Object.fromEntries(map) as ApyMap<T>;
     } else if (addresses) {
       const vault = vaults.find(vault => vault.address === addresses);
       if (!vault) return undefined;
-      return vault.apy;
+      return convertCompositeApyToSnakeCase(vault.apy);
     } else {
-      return Object.fromEntries(vaults.map(vault => [vault.address, vault.apy])) as ApyMap<T>;
+      return Object.fromEntries(
+        vaults.map(vault => [vault.address, convertCompositeApyToSnakeCase(vault.apy)])
+      ) as ApyMap<T>;
     }
   }
 }
