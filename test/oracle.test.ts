@@ -10,8 +10,8 @@ describe("oracle", () => {
   let tokenAddress: string;
   beforeAll(async () => {
     const chainId = 1;
-    const rpcUrl = "https://mainnet.infura.io/v3/45d81b2f73574dfd8219e41106d0f821";
-    const oracleAddress = "0x83d95e0D5f402511dB06817Aff3f9eA88224B030";
+    const rpcUrl = "";
+    const oracleAddress = "0x83d95e0D5f402511dB06817Aff3f9eA88224B030"; // mainnet deployment
     yearn = new Yearn(chainId, {
       provider: new JsonRpcProvider(rpcUrl),
       addresses: {
