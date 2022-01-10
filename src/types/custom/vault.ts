@@ -1,5 +1,15 @@
 import { Address, Integer, TypedMap, Usdc } from "../common";
 import { ZapOptions } from "./zapper";
+/**
+ * Annual Percentage Yield of a particular for backscratcher vaults coming from api.yearn.finance.
+ */
+export interface BackscracherApyComposite {
+  currentBoost: number;
+  boostedApy: number;
+  totalApy: number;
+  poolApy: number;
+  baseApy: number;
+}
 
 /**
  * Annual Percentage Yield of a particular vault.
