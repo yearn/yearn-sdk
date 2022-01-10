@@ -58,24 +58,28 @@ export class VisionService extends Service {
 
   async apy<T extends Address>(addresses?: T | T[]): Promise<ApyMap<T> | Apy | undefined> {
     const url = `https://d28fcsszptni1s.cloudfront.net/v1/chains/${this.chainId}/vaults/all`;
-    const vaults: ApiVault[] = await fetch(url)
+    let vaults: ApiVault[] = await fetch(url)
       .then(handleHttpError)
       .then(res => res.json());
+
+    // fix backscratcher apys
+    vaults = vaults.map(vault =>
+      vault.apy?.type === "backscratcher" ? { ...vault, apy: convertCompositeApyToSnakeCase(vault.apy) } : vault
+    );
+
     if (Array.isArray(addresses)) {
       const map = new Map<T, Apy | undefined>();
       for (const address of addresses) {
         const vault = vaults.find(vault => vault.address === address);
-        map.set(address, vault ? convertCompositeApyToSnakeCase(vault.apy) : undefined);
+        map.set(address, vault ? vault.apy : undefined);
       }
       return Object.fromEntries(map) as ApyMap<T>;
     } else if (addresses) {
       const vault = vaults.find(vault => vault.address === addresses);
       if (!vault) return undefined;
-      return convertCompositeApyToSnakeCase(vault.apy);
+      return vault.apy;
     } else {
-      return Object.fromEntries(
-        vaults.map(vault => [vault.address, convertCompositeApyToSnakeCase(vault.apy)])
-      ) as ApyMap<T>;
+      return Object.fromEntries(vaults.map(vault => [vault.address, vault.apy])) as ApyMap<T>;
     }
   }
 }
