@@ -8,7 +8,6 @@ export interface CyTokenUserMetadata {
   enteredMarket: boolean;
   supplyBalanceUsdc: Integer;
   borrowBalanceUsdc: Integer;
-  collateralBalanceUsdc: Integer;
   borrowLimitUsdc: Integer;
 }
 

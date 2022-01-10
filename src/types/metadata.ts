@@ -47,9 +47,7 @@ export interface IronBankMarketMetadata {
   borrowApyBips: Integer;
   liquidity: Integer;
   liquidityUsdc: Integer;
-  totalCollateralTokens: Integer;
   collateralFactor: Integer;
-  collateralCap: Integer;
   isActive: boolean;
   reserveFactor: Integer;
   exchangeRate: Integer;
