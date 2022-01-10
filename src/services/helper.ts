@@ -4,6 +4,7 @@ import { AllowanceAbi, TokenAbi, TokenBalanceAbi, TokenPriceAbi } from "../abi";
 import { ChainId } from "../chain";
 import { ContractService } from "../common";
 import { Context } from "../context";
+import { chunkArray } from "../helpers";
 import { structArray } from "../struct";
 import { Address, ERC20, TokenAllowance, TokenBalance, TokenPrice } from "../types";
 
@@ -73,7 +74,11 @@ export class HelperService<T extends ChainId> extends ContractService<T> {
    * @returns list of token balances
    */
   async tokenBalances(address: Address, tokens: Address[], overrides: CallOverrides = {}): Promise<TokenBalance[]> {
-    return await this.contract.read.tokensBalances(address, tokens, overrides).then(structArray);
+    const chunks = chunkArray(tokens, 25);
+    const promises = chunks.map(async chunk =>
+      this.contract.read.tokensBalances(address, chunk, overrides).then(structArray)
+    );
+    return Promise.all(promises).then(chunks => chunks.flat());
   }
 
   /**
