@@ -64,7 +64,9 @@ export class VisionService extends Service {
 
     // fix backscratcher apys
     vaults = vaults.map(vault =>
-      vault.apy?.type === "backscratcher" ? { ...vault, apy: convertCompositeApyToSnakeCase(vault.apy) } : vault
+      vault.apy && vault.apy.type === "backscratcher"
+        ? { ...vault, apy: convertCompositeApyToSnakeCase(vault.apy) }
+        : vault
     );
 
     if (Array.isArray(addresses)) {
