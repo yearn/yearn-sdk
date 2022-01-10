@@ -91,6 +91,21 @@ export class OracleService<T extends ChainId> extends ContractService<T> {
   }
 
   /**
+   * Get the normalized Usdc value for a list of tokens and corresponding quantities.
+   * @param tokens
+   * @param amounts
+   * @param overrides
+   * @returns Usdc exchange rate (6 decimals)
+   */
+  async getNormalizedValuesUsdc(tokens: Address[], amounts: Integer[], overrides: CallOverrides = {}): Promise<Usdc[]> {
+    return await Promise.all(
+      tokens.map((_, i) => {
+        return this.contract.read.getNormalizedValueUsdc(tokens[i], amounts[i], overrides).then(int);
+      })
+    );
+  }
+
+  /**
    * Get the token address that lens considers Usdc.
    * @param overrides
    * @returns address
