@@ -10,7 +10,7 @@ describe("oracle", () => {
   let tokenAddress: string;
   beforeAll(async () => {
     const chainId = 1;
-    const rpcUrl = "";
+    const rpcUrl = process.env.WEB3_PROVIDER;
     const oracleAddress = "0x83d95e0D5f402511dB06817Aff3f9eA88224B030"; // mainnet deployment
     yearn = new Yearn(chainId, {
       provider: new JsonRpcProvider(rpcUrl),
