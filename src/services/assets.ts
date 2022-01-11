@@ -1,3 +1,5 @@
+import fetch from "cross-fetch";
+
 import { ChainId } from "../chain";
 import { Service } from "../common";
 import { Context } from "../context";
