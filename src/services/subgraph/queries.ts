@@ -1,3 +1,9 @@
+const YVBOOST = "0x9d409a0a012cfba9b15f6d4b36ac57a46966ab9a";
+const YVECRV = "0xc5bddf9843308380375a611c18b50fb9341f502a";
+const PSLPYVBOOSTETH = "0xced67a187b923f0e5ebcc77c7f2f7da20099e378";
+
+const LAB_ADDRESSESS = [YVBOOST, YVECRV, PSLPYVBOOSTETH];
+
 export const VAULT_EARNINGS = `query VaultEarnings($vault: ID!) {
     vault(id: $vault) {
       token {
@@ -24,9 +30,15 @@ export const PROTOCOL_EARNINGS = `query ProtocolEarnings {
   }
 `;
 
-export const ACCOUNT_EARNINGS = `query AccountEarnings($id: ID!) {
+export const buildAccountEarningsVariables = (id: string) => ({
+  id,
+  ignoredVaults: LAB_ADDRESSESS
+});
+
+export const ACCOUNT_EARNINGS = `
+  query AccountEarnings($id: ID!, $ignoredVaults: [String!]) {
     account(id: $id) {
-      vaultPositions {
+      vaultPositions(where: { vault_not_in: $ignoredVaults } ) {
         balanceShares
         token {
           id

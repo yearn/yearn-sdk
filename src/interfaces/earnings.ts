@@ -8,6 +8,7 @@ import {
   ACCOUNT_EARNINGS,
   ACCOUNT_HISTORIC_EARNINGS,
   ASSET_HISTORIC_EARNINGS,
+  buildAccountEarningsVariables,
   PROTOCOL_EARNINGS,
   VAULT_EARNINGS
 } from "../services/subgraph/queries";
@@ -67,9 +68,10 @@ export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
   }
 
   async accountAssetsData(accountAddress: Address): Promise<EarningsUserData> {
-    const response = (await this.yearn.services.subgraph.fetchQuery(ACCOUNT_EARNINGS, {
-      id: accountAddress
-    })) as AccountEarningsResponse;
+    const response = (await this.yearn.services.subgraph.fetchQuery(
+      ACCOUNT_EARNINGS,
+      buildAccountEarningsVariables(accountAddress)
+    )) as AccountEarningsResponse;
 
     const account = response.data.account;
 
