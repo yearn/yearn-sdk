@@ -8,11 +8,11 @@ if (!rpcUrl) {
   throw new Error("Please set WEB3_PROVIDER url in a .env file");
 }
 
-const _chainId = +process.env.CHAIN_ID;
+const _chainId: string | undefined = process.env.CHAIN_ID;
 if (!_chainId) {
   throw new Error("Please set CHAIN_ID in a .env file");
 }
-if (!(_chainId in Chains)) {
+if (!(parseInt(_chainId) in Chains)) {
   throw new Error("Please set CHAIN_ID to one of 1, 250, 1337 or 42161");
 }
-export const chainId: ChainId = _chainId as ChainId;
+export const chainId: ChainId = parseInt(_chainId) as ChainId;
