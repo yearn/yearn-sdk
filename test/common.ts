@@ -1,4 +1,5 @@
 import { config } from "dotenv";
+
 import { ChainId, Chains } from "../src/chain";
 
 config();

@@ -106,7 +106,7 @@ export class OracleService<T extends ChainId> extends ContractService<T> {
       inputs.push({
         target: this.contract.address,
         function: "getNormalizedValueUsdc",
-        args: [tokens[i], amounts[i]]//, overrides]
+        args: [tokens[i], amounts[i]]
       });
     }
     console.log("overrides: ", overrides);
