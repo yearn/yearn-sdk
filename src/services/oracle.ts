@@ -1,4 +1,6 @@
 import { CallOverrides } from "@ethersproject/contracts";
+import { MultiCall } from "@indexed-finance/multicall";
+import { ethers } from "ethers";
 
 import { ChainId } from "../chain";
 import { ContractService } from "../common";
@@ -97,12 +99,19 @@ export class OracleService<T extends ChainId> extends ContractService<T> {
    * @param overrides
    * @returns Usdc exchange rate (6 decimals)
    */
-  async getNormalizedValuesUsdc(tokens: Address[], amounts: Integer[], overrides: CallOverrides = {}): Promise<Usdc[]> {
-    return await Promise.all(
-      tokens.map((_, i) => {
-        return this.contract.read.getNormalizedValueUsdc(tokens[i], amounts[i], overrides).then(int);
-      })
-    );
+  async getNormalizedValuesUsdc(tokens: Address[], amounts: Integer[], overrides: CallOverrides = {}): Promise<any> {
+    const multi = new MultiCall(this.ctx.provider.read);
+    const inputs = [];
+    for (var i = 0, size = tokens.length; i < size; i++) {
+      inputs.push({
+        target: this.contract.address,
+        function: "getNormalizedValueUsdc",
+        args: [tokens[i], amounts[i]]//, overrides]
+      });
+    }
+    console.log("overrides: ", overrides);
+    const iface = new ethers.utils.Interface(OracleAbi);
+    return await multi.multiCall(iface, inputs).then(data => data[1]);
   }
 
   /**

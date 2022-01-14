@@ -4,13 +4,12 @@ import { BigNumber } from "bignumber.js";
 import { Yearn } from "../src";
 import { ChainId } from "../src/chain";
 import { Integer, Usdc } from "../src/types";
+import { chainId, rpcUrl } from "./common";
 
 describe("oracle", () => {
   let yearn: Yearn<ChainId>;
   let tokenAddress: string;
   beforeAll(async () => {
-    const chainId = 1;
-    const rpcUrl = process.env.WEB3_PROVIDER;
     const oracleAddress = "0x83d95e0D5f402511dB06817Aff3f9eA88224B030"; // mainnet deployment
     yearn = new Yearn(chainId, {
       provider: new JsonRpcProvider(rpcUrl),
@@ -31,6 +30,7 @@ describe("oracle", () => {
       [tokenAddress, tokenAddress],
       [amount, amount]
     );
+    console.log(normValues);
     expect(+normValues[0]).toBeGreaterThan(0);
     expect(+normValues[1]).toBeGreaterThan(0);
   });
