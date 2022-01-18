@@ -122,8 +122,16 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
     if (vault.token === token) {
       const tokenContract = new Contract(token, TokenAbi, signer);
       const populatedTx = await tokenContract.populateTransaction.approve(vault.address, amount);
-      await this.yearn.services.allowList.validateTx(populatedTx);
-      return signer.sendTransaction(populatedTx);
+      if (this.yearn.services.allowList) {
+        const txValid = await this.yearn.services.allowList.validateTx(populatedTx);
+        if (txValid) {
+          return signer.sendTransaction(populatedTx);
+        } else {
+          throw new SdkError("transaction is not valid");
+        }
+      } else {
+        return signer.sendTransaction(populatedTx);
+      }
     } else {
       const gasPrice = await this.yearn.services.zapper.gas();
       const gasPriceFastGwei = new BigNumber(gasPrice.fast).times(new BigNumber(10 ** 9));
@@ -147,8 +155,16 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
           gasPrice: zapInApprovalParams.gasPrice,
           data: zapInApprovalParams.data as string
         };
-        await this.yearn.services.allowList.validateTx(transaction);
-        return signer.sendTransaction(transaction);
+        if (this.yearn.services.allowList) {
+          const txValid = await this.yearn.services.allowList.validateTx(transaction);
+          if (txValid) {
+            return signer.sendTransaction(transaction);
+          } else {
+            throw new SdkError("transaction is not valid");
+          }
+        } else {
+          return signer.sendTransaction(transaction);
+        }
       } else {
         return true;
       }
@@ -183,8 +199,16 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
           gasPrice: zapOutApprovalParams.gasPrice,
           data: zapOutApprovalParams.data as string
         };
-        await this.yearn.services.allowList.validateTx(transaction);
-        return signer.sendTransaction(transaction);
+        if (this.yearn.services.allowList) {
+          const txValid = await this.yearn.services.allowList.validateTx(transaction);
+          if (txValid) {
+            return signer.sendTransaction(transaction);
+          } else {
+            throw new SdkError("transaction is not valid");
+          }
+        } else {
+          return signer.sendTransaction(transaction);
+        }
       }
     }
     return false;
