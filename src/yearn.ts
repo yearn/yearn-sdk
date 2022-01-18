@@ -43,7 +43,7 @@ export class Yearn<T extends ChainId> {
     subgraph: SubgraphService;
     telegram: TelegramService;
     meta: MetaService;
-    allowList: AllowListService<T>;
+    allowList?: AllowListService<T>;
 
     pickle: PickleService;
 
@@ -80,6 +80,8 @@ export class Yearn<T extends ChainId> {
   constructor(chainId: T, context: ContextValue, assetServiceState?: AssetServiceState) {
     this.context = new Context(context);
 
+    const allowlistAddress = AllowListService.addressByChain(chainId);
+
     this.services = {
       lens: new LensService(chainId, this.context),
       oracle: new OracleService(chainId, this.context),
@@ -91,7 +93,7 @@ export class Yearn<T extends ChainId> {
       helper: new HelperService(chainId, this.context),
       telegram: new TelegramService(chainId, this.context),
       meta: new MetaService(chainId, this.context),
-      allowList: new AllowListService(chainId, this.context)
+      allowList: allowlistAddress ? new AllowListService(chainId, this.context, allowlistAddress) : undefined
     };
 
     this.vaults = new VaultInterface(this, chainId, this.context);
@@ -106,6 +108,8 @@ export class Yearn<T extends ChainId> {
   }
 
   setChainId(chainId: ChainId) {
+    const allowlistAddress = AllowListService.addressByChain(chainId);
+
     this.services = {
       lens: new LensService(chainId, this.context),
       oracle: new OracleService(chainId, this.context),
@@ -117,7 +121,7 @@ export class Yearn<T extends ChainId> {
       helper: new HelperService(chainId, this.context),
       telegram: new TelegramService(chainId, this.context),
       meta: new MetaService(chainId, this.context),
-      allowList: new AllowListService(chainId, this.context)
+      allowList: allowlistAddress ? new AllowListService(chainId, this.context, allowlistAddress) : undefined
     };
 
     this.vaults = new VaultInterface(this, chainId, this.context);

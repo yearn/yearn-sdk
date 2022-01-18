@@ -4,7 +4,7 @@ import { TransactionRequest } from "@ethersproject/providers";
 import { ChainId } from "../chain";
 import { ContractService } from "../common";
 import { Context } from "../context";
-import { Address, SdkError } from "../types/common";
+import { Address } from "../types/common";
 
 /**
  * [[AllowListService]] is used to interface with yearn's deployed AllowList contract. The purpose of it is to be able to
@@ -14,7 +14,9 @@ import { Address, SdkError } from "../types/common";
  * Similiarly, for a deposit transaction, it can be used to check whether the vault is a valid yearn vault
  */
 export class AllowListService<T extends ChainId> extends ContractService<T> {
-  static abi = ["function validateCalldata(string memory, targetAddress, data) public view returns (bool)"];
+  static abi = [
+    "function validateCalldataByOrigin(string memory originName, address targetAddress, bytes calldata data) public view returns (bool)"
+  ];
 
   /**
    * This is used by the AllowListFactory to resolve which set of rules are applicable to which organization
@@ -26,19 +28,19 @@ export class AllowListService<T extends ChainId> extends ContractService<T> {
    * @param chainId
    * @returns address
    */
-  static addressByChain(chainId: ChainId): string {
+  static addressByChain(chainId: ChainId): string | null {
     switch (chainId) {
+      case 250:
+        return "0xD2322468e5Aa331381200754f6daAD3dF923539e";
       case 1:
       case 1337:
-        return "0xef01bC08cf155098bDa7A2efBC7CceF632D03440";
-      case 250:
       case 42161:
-        throw new SdkError("Not yet implemented for this chain");
+        return null;
     }
   }
 
-  constructor(chainId: T, ctx: Context) {
-    super(ctx.addresses.allowList ?? AllowListService.addressByChain(chainId), chainId, ctx);
+  constructor(chainId: T, ctx: Context, address: string) {
+    super(address, chainId, ctx);
   }
 
   /**
@@ -46,8 +48,8 @@ export class AllowListService<T extends ChainId> extends ContractService<T> {
    * including token approvals. This method will raise an error if the transaction is not valid.
    * @param tx The transaction that is about to be written to the network
    */
-  async validateTx(tx: TransactionRequest) {
-    this.validateCalldata(tx.to, tx.data);
+  async validateTx(tx: TransactionRequest): Promise<boolean> {
+    return await this.validateCalldata(tx.to, tx.data);
   }
 
   /**
@@ -57,21 +59,30 @@ export class AllowListService<T extends ChainId> extends ContractService<T> {
    *                      For depositing/withdrawing from a vault it'd be the vault contract itself
    * @param callData The data from the tx that should be validated. This should be from a tx that has been populated and is about to be sent
    */
-  async validateCalldata(targetAddress: Address | undefined, callData: BytesLike | undefined) {
+  async validateCalldata(targetAddress: Address | undefined, callData: BytesLike | undefined): Promise<boolean> {
     if (!targetAddress) {
-      throw new SdkError("can't validate a tx that isn't targeting an address");
+      console.error("can't validate a tx that isn't targeting an address");
+      return false;
     }
     if (!callData) {
-      throw new SdkError("can't validate a tx that has no call data");
+      console.error("can't validate a tx that isn't targeting an address");
+      return false;
     }
 
     try {
-      const valid = await this.contract.read.validateCalldata(AllowListService.originName, targetAddress, callData);
+      const valid = await this.contract.read.validateCalldataByOrigin(
+        AllowListService.originName,
+        targetAddress,
+        callData
+      );
       if (!valid) {
-        throw new SdkError("tx is not permitted by the allow list");
+        console.error("tx is not permitted by the allow list");
+        return false;
       }
+      return true;
     } catch {
-      throw new SdkError("tx is not permitted by the allow list");
+      console.error("tx is not permitted by the allow list");
+      return false;
     }
   }
 }

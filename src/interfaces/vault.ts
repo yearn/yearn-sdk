@@ -337,7 +337,16 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
       } else {
         const vaultContract = new Contract(vault, VaultAbi, signer);
         const populatedTx = await vaultContract.populateTransaction.deposit(amount, overrides);
-        return this.executeVaultContractTransaction(populatedTx, signer);
+        if (this.yearn.services.allowList) {
+          const txValid = await this.yearn.services.allowList.validateTx(populatedTx);
+          if (txValid) {
+            return this.executeVaultContractTransaction(populatedTx, signer);
+          } else {
+            throw new SdkError("transaction is not valid");
+          }
+        } else {
+          return this.executeVaultContractTransaction(populatedTx, signer);
+        }
       }
     } else {
       return this.zapIn(vault, token, amount, account, signer, options, ZapProtocol.YEARN, overrides);
@@ -366,7 +375,16 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
     if (vaultRef.token === token) {
       const vaultContract = new Contract(vault, VaultAbi, signer);
       const populatedTx = await vaultContract.populateTransaction.withdraw(amount, overrides);
-      return this.executeVaultContractTransaction(populatedTx, signer);
+      if (this.yearn.services.allowList) {
+        const txValid = await this.yearn.services.allowList.validateTx(populatedTx);
+        if (txValid) {
+          return this.executeVaultContractTransaction(populatedTx, signer);
+        } else {
+          throw new SdkError("transaction is not valid");
+        }
+      } else {
+        return this.executeVaultContractTransaction(populatedTx, signer);
+      }
     } else {
       if (options.slippage === undefined) {
         throw new SdkError("zap operations should have a slippage set");
@@ -443,7 +461,12 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
     signer: JsonRpcSigner
   ): Promise<TransactionResponse> {
     const combinedParams = { ...transactionRequest, ...overrides };
-    await this.yearn.services.allowList.validateCalldata(combinedParams.to, combinedParams.data);
+    if (this.yearn.services.allowList) {
+      const txValid = await this.yearn.services.allowList.validateCalldata(combinedParams.to, combinedParams.data);
+      if (!txValid) {
+        throw new SdkError("transaction is not valid");
+      }
+    }
     try {
       combinedParams.gasPrice = undefined;
       return await signer.sendTransaction(combinedParams);
@@ -463,7 +486,6 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
     populatedTx: PopulatedTransaction,
     signer: JsonRpcSigner
   ): Promise<TransactionResponse> {
-    await this.yearn.services.allowList.validateTx(populatedTx);
     const originalGasPrice = populatedTx.gasPrice;
     try {
       populatedTx.gasPrice = undefined;
