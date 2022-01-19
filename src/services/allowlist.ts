@@ -55,7 +55,7 @@ export class AllowListService<T extends ChainId> extends ContractService<T> {
       return false;
     }
     if (!callData) {
-      console.error("can't validate a tx that isn't targeting an address");
+      console.error("can't validate a tx that has no call data");
       return false;
     }
 
