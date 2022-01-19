@@ -150,7 +150,7 @@ export class Yearn<T extends ChainId> {
       }
 
       const [to, data] = await Promise.all([transaction.to, transaction.data]);
-      return await this.services.allowList.validateCalldata(to, data);
+      return await this.services.allowList.validateCalldata(to, data).then(res => res.success);
     };
 
     const orig = JsonRpcSigner.prototype.sendTransaction;
