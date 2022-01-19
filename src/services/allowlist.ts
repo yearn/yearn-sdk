@@ -1,5 +1,4 @@
 import { BytesLike } from "@ethersproject/bytes";
-import { TransactionRequest } from "@ethersproject/providers";
 
 import { ChainId } from "../chain";
 import { ContractService } from "../common";
