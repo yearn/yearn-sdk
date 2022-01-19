@@ -44,15 +44,6 @@ export class AllowListService<T extends ChainId> extends ContractService<T> {
   }
 
   /**
-   * Uses yearn's on chain AllowList to verify whether the transaction being sent by the sdk is valid. This should be used prior to writing any transaction,
-   * including token approvals. This method will raise an error if the transaction is not valid.
-   * @param tx The transaction that is about to be written to the network
-   */
-  async validateTx(tx: TransactionRequest): Promise<boolean> {
-    return await this.validateCalldata(tx.to, tx.data);
-  }
-
-  /**
    * Uses yearn's on chain AllowList to verify whether the calldata being sent to the target contract by the sdk is valid. This should be used prior to any
    * write method, including token approvals. This method will raise an error if the parameters are not valid.
    * @param targetAddress The contract that is being interacted with e.g. for approving depositing usdc into a vault this would be usdc.
