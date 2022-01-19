@@ -1,6 +1,6 @@
 {
   "name": "@yfi/sdk",
-  "version": "1.0.14",
+  "version": "1.0.15",
   "description": "Interaction framework for the yearn protocol",
   "author": "nymmrx <nymmrx@protonmail.com>",
   "license": "MIT",
@@ -24,17 +24,17 @@
     "@ethersproject/abi": "^5.4.0",
     "@ethersproject/address": "^5.4.0",
     "@ethersproject/bignumber": "^5.4.1",
+    "@ethersproject/bytes": "^5.4.0",
     "@ethersproject/contracts": "^5.4.1",
-    "@ethersproject/providers": "^5.4.3",
-    "@ethersproject/bytes": "^5.4.0"
+    "@ethersproject/providers": "^5.4.3"
   },
   "devDependencies": {
     "@ethersproject/abi": "^5.4.0",
     "@ethersproject/address": "^5.4.0",
     "@ethersproject/bignumber": "^5.4.1",
+    "@ethersproject/bytes": "^5.4.0",
     "@ethersproject/contracts": "^5.4.1",
     "@ethersproject/providers": "^5.4.3",
-    "@ethersproject/bytes": "^5.4.0",
     "@size-limit/preset-small-lib": "7.0.4",
     "@solidity-parser/parser": "^0.12.0",
     "cli-table3": "^0.6.0",
