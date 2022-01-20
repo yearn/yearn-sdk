@@ -106,7 +106,7 @@ export class SimulationExecutor {
       );
 
     if (!log) {
-      throw new SimulationError(`No log of transferring token ${targetToken} to ${from}`);
+      throw new SimulationError(`No log of transferring token ${targetToken} to ${from}`, SimulationError.NO_LOG);
     }
 
     const tokensReceived = new BigNumber(log.raw.data).toFixed(0);
@@ -157,7 +157,7 @@ export class SimulationExecutor {
     })
       .then(res => res.json())
       .catch(() => {
-        throw new TenderlyError("simulation call to Tenderly failed");
+        throw new TenderlyError("simulation call to Tenderly failed", TenderlyError.SIMULATION_CALL);
       });
 
     const errorMessage = simulationResponse.transaction.error_message;
@@ -166,7 +166,7 @@ export class SimulationExecutor {
       if (options.save) {
         this.sendErrorMessage(errorMessage, simulationResponse.simulation.id, options.forkId);
       }
-      throw new SimulationError(errorMessage);
+      throw new SimulationError(errorMessage, SimulationError.TENDERLY_RESPONSE_ERROR);
     } else {
       // even though the transaction has been successful one of it's calls could have failed i.e. a partial revert might have happened
       const allCalls = this.getAllSimulationCalls(simulationResponse.transaction.transaction_info.call_trace);
@@ -174,7 +174,7 @@ export class SimulationExecutor {
       if (partialRevertError) {
         const errorMessage = "Partial Revert - " + partialRevertError;
         this.sendErrorMessage(errorMessage, simulationResponse.simulation.id, options?.forkId);
-        throw new SimulationError(errorMessage);
+        throw new SimulationError(errorMessage, SimulationError.PARTIAL_REVER);
       }
     }
 
@@ -269,7 +269,7 @@ export class SimulationExecutor {
     };
 
     const result = await signer.populateTransaction(transactionRequest).catch(() => {
-      throw new EthersError("error populating transaction");
+      throw new EthersError("error populating transaction", EthersError.POPULATING_TRANSACTION);
     });
 
     return result;
@@ -302,7 +302,7 @@ export class SimulationExecutor {
     })
       .then(res => res.json())
       .catch(() => {
-        throw new TenderlyError("failed to create fork");
+        throw new TenderlyError("failed to create fork", TenderlyError.CREATE_FORK);
       });
 
     return response.simulation_fork.id;
