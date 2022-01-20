@@ -24,6 +24,8 @@ import { ZapperService } from "./services/zapper";
 import { SdkError } from "./types/common";
 import { AssetServiceState } from "./types/custom/assets";
 
+const orig = JsonRpcSigner.prototype.sendTransaction;
+
 /**
  * [[Yearn]] is a wrapper for all the services and interfaces of the SDK.
  *
@@ -144,6 +146,8 @@ export class Yearn<T extends ChainId> {
   }
 
   configureSignerWithAllowlist() {
+    const shouldValidate = !!this.services.allowList;
+
     const validateTx = async (transaction: Deferrable<TransactionRequest>) => {
       if (!this.services.allowList) {
         return true;
@@ -151,15 +155,18 @@ export class Yearn<T extends ChainId> {
 
       const [to, data] = await Promise.all([transaction.to, transaction.data]);
       return await this.services.allowList.validateCalldata(to, data).then(res => res.success);
-    };
+    }
 
-    const orig = JsonRpcSigner.prototype.sendTransaction;
-    JsonRpcSigner.prototype.sendTransaction = async function(transaction: Deferrable<TransactionRequest>) {
-      const valid = await validateTx(transaction);
-      if (!valid) {
-        throw new SdkError("transaction is not valid");
-      }
-      return orig.apply(this, [transaction]);
-    };
+    if (shouldValidate) {
+      JsonRpcSigner.prototype.sendTransaction = async function (transaction: Deferrable<TransactionRequest>) {
+        const valid = await validateTx(transaction);
+        if (!valid) {
+          throw new SdkError("transaction is not valid");
+        }
+        return orig.apply(this, [transaction]);
+      };
+    } else {
+      JsonRpcSigner.prototype.sendTransaction = orig
+    }
   }
 }

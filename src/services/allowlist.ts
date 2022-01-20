@@ -27,13 +27,14 @@ export class AllowListService<T extends ChainId> extends ContractService<T> {
    * @param chainId
    * @returns address
    */
-  static addressByChain(chainId: ChainId): string | null {
+  static addressByChain(chainId?: ChainId): string | null {
     switch (chainId) {
       case 250:
         return "0xD2322468e5Aa331381200754f6daAD3dF923539e";
       case 1:
       case 1337:
       case 42161:
+      default:
         return null;
     }
   }
