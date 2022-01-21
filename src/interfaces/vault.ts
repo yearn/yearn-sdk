@@ -205,7 +205,8 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
               assets.map(asset => asset.address)
             );
           }
-          const chunks = chunkArray(allAddresses, 40);
+          console.log("Chunk 1");
+          const chunks = chunkArray(allAddresses, 1);
           const promises = chunks.map(async chunk => adapter.positionsOf(address, chunk, overrides));
           return await Promise.all(promises).then(chunks => chunks.flat());
         }
