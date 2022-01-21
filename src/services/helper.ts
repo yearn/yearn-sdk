@@ -74,7 +74,7 @@ export class HelperService<T extends ChainId> extends ContractService<T> {
    * @returns list of token balances
    */
   async tokenBalances(address: Address, tokens: Address[], overrides: CallOverrides = {}): Promise<TokenBalance[]> {
-    const chunks = chunkArray(tokens, 2);
+    const chunks = chunkArray(tokens, 1);
     const promises = chunks.map(async chunk =>
       this.contract.read.tokensBalances(address, chunk, overrides).then(structArray)
     );
