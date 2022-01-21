@@ -110,7 +110,7 @@ export class Yearn<T extends ChainId> {
     this.simulation = new SimulationInterface(this, chainId, this.context);
     this.strategies = new StrategyInterface(this, chainId, this.context);
 
-    // this.configureSignerWithAllowlist(); // NOTE: temporarily disable allowlist validation
+    this.configureSignerWithAllowlist();
 
     this.ready = Promise.all([this.services.asset.ready]);
   }
@@ -140,7 +140,7 @@ export class Yearn<T extends ChainId> {
     this.simulation = new SimulationInterface(this, chainId, this.context);
     this.strategies = new StrategyInterface(this, chainId, this.context);
 
-    // this.configureSignerWithAllowlist(); // NOTE: temporarily disable allowlist validation
+    this.configureSignerWithAllowlist();
 
     this.ready = Promise.all([this.services.asset.ready]);
   }
