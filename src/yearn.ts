@@ -24,7 +24,7 @@ import { ZapperService } from "./services/zapper";
 import { SdkError } from "./types/common";
 import { AssetServiceState } from "./types/custom/assets";
 
-const orig = JsonRpcSigner.prototype.sendTransaction;
+const originalJsonRpcSignerSendTransaction = JsonRpcSigner.prototype.sendTransaction;
 
 /**
  * [[Yearn]] is a wrapper for all the services and interfaces of the SDK.
@@ -163,10 +163,10 @@ export class Yearn<T extends ChainId> {
         if (!valid) {
           throw new SdkError("transaction is not valid");
         }
-        return orig.apply(this, [transaction]);
+        return originalJsonRpcSignerSendTransaction.apply(this, [transaction]);
       };
     } else {
-      JsonRpcSigner.prototype.sendTransaction = orig;
+      JsonRpcSigner.prototype.sendTransaction = originalJsonRpcSignerSendTransaction;
     }
   }
 }
