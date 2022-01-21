@@ -155,10 +155,10 @@ export class Yearn<T extends ChainId> {
 
       const [to, data] = await Promise.all([transaction.to, transaction.data]);
       return await this.services.allowList.validateCalldata(to, data).then(res => res.success);
-    }
+    };
 
     if (shouldValidate) {
-      JsonRpcSigner.prototype.sendTransaction = async function (transaction: Deferrable<TransactionRequest>) {
+      JsonRpcSigner.prototype.sendTransaction = async function(transaction: Deferrable<TransactionRequest>) {
         const valid = await validateTx(transaction);
         if (!valid) {
           throw new SdkError("transaction is not valid");
@@ -166,7 +166,7 @@ export class Yearn<T extends ChainId> {
         return orig.apply(this, [transaction]);
       };
     } else {
-      JsonRpcSigner.prototype.sendTransaction = orig
+      JsonRpcSigner.prototype.sendTransaction = orig;
     }
   }
 }
