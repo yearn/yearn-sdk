@@ -86,7 +86,7 @@ export class Yearn<T extends ChainId> {
   constructor(chainId: T, context: ContextValue, assetServiceState?: AssetServiceState) {
     this.context = new Context(context);
 
-    const allowlistAddress = AllowListService.addressByChain(chainId);
+    const allowlistAddress = !this.context.disableAllowlist && AllowListService.addressByChain(chainId);
 
     this.services = {
       lens: new LensService(chainId, this.context),
@@ -116,7 +116,7 @@ export class Yearn<T extends ChainId> {
   }
 
   setChainId(chainId: ChainId) {
-    const allowlistAddress = AllowListService.addressByChain(chainId);
+    const allowlistAddress = !this.context.disableAllowlist && AllowListService.addressByChain(chainId);
 
     this.services = {
       lens: new LensService(chainId, this.context),

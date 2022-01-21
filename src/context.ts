@@ -56,6 +56,7 @@ export interface ContextValue {
   addresses?: PartialDeep<AddressesOverride>;
   simulation?: SimulationConfiguration;
   cache?: CacheConfiguration;
+  disableAllowlist: boolean;
 }
 
 const DefaultContext = {
@@ -89,6 +90,7 @@ export class Context implements Required<ContextValue> {
     this.ctx = Object.assign({}, DefaultContext, ctx);
     this.events = new EventEmitter().setMaxListeners(100);
     this.setProvider(ctx.provider);
+    this.ctx.disableAllowlist = ctx.disableAllowlist;
   }
 
   /**
@@ -132,5 +134,10 @@ export class Context implements Required<ContextValue> {
   get cache(): CacheConfiguration {
     if (this.ctx.cache) return this.ctx.cache;
     throw new SdkError("cache must be defined in Context for this feature to work.");
+  }
+
+  get disableAllowlist(): boolean {
+    if (this.ctx.disableAllowlist) return this.ctx.disableAllowlist;
+    throw new SdkError("disableAllowlist must be defined in Context for this feature to work.");
   }
 }
