@@ -503,17 +503,18 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
     if (overrides.vaultIconOverride) {
       dynamic.metadata.displayIcon = overrides.vaultIconOverride;
     }
-    if (overrides.apyOverride) {
-      if (!dynamic.metadata.apy) {
-        dynamic.metadata.apy = this.makeEmptyApy();
-      }
-      dynamic.metadata.apy.net_apy = overrides.apyOverride;
-    }
     if (overrides.apyTypeOverride) {
       if (!dynamic.metadata.apy) {
         dynamic.metadata.apy = this.makeEmptyApy();
       }
       dynamic.metadata.apy.type = overrides.apyTypeOverride;
+    }
+    if (overrides.apyOverride) {
+      if (!dynamic.metadata.apy) {
+        dynamic.metadata.apy = this.makeEmptyApy();
+      }
+      dynamic.metadata.apy.net_apy = overrides.apyOverride;
+      dynamic.metadata.apy.type = "override";
     }
 
     dynamic.metadata.depositsDisabled = overrides.depositsDisabled;
