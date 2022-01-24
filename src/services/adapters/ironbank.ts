@@ -70,7 +70,7 @@ export class IronBankAdapter<T extends ChainId> extends ContractService<T> {
       case 1337:
         return "0xFF0bd2d0C7E9424ccB149ED3757155eEf41a793D";
       case 250:
-        return "0x8CafAF31Ee6374C02EedF1AD68dDb193dDAC29A2";
+        return "0xC31E8C238287448f0d0CCF65df40424eeF429940";
       case 42161:
         return "0xf900ea42c55D165Ca5d5f50883CddD352AE48F40";
     }
