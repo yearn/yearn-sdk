@@ -24,9 +24,9 @@ const CyTokenMetadataAbi = `tuple(
   uint256 borrowAprBips,
   uint256 liquidity,
   uint256 liquidityUsdc,
-  uint256 totalCollateralTokens;
+  uint256 totalCollateralTokens,
   uint256 collateralFactor,
-  uint256 collateralCap;
+  uint256 collateralCap,
   bool isActive,
   uint256 reserveFactor,
   uint256 exchangeRate
