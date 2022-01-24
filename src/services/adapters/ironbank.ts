@@ -68,7 +68,7 @@ export class IronBankAdapter<T extends ChainId> extends ContractService<T> {
     switch (chainId) {
       case 1:
       case 1337:
-        return "0xFF0bd2d0C7E9424ccB149ED3757155eEf41a793D";
+        return "0x5D03ad44F4Fce73407C73A1779295011691D2e1F";
       case 250:
         return "0xC31E8C238287448f0d0CCF65df40424eeF429940";
       case 42161:
