@@ -34,6 +34,7 @@ export class AllowListService<T extends ChainId> extends ContractService<T> {
       case 1:
       case 1337:
       case 42161:
+      default:
         return null;
     }
   }
