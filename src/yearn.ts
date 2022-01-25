@@ -24,6 +24,8 @@ import { ZapperService } from "./services/zapper";
 import { SdkError } from "./types/common";
 import { AssetServiceState } from "./types/custom/assets";
 
+const originalJsonRpcSignerSendTransaction = JsonRpcSigner.prototype.sendTransaction;
+
 /**
  * [[Yearn]] is a wrapper for all the services and interfaces of the SDK.
  *
@@ -84,7 +86,7 @@ export class Yearn<T extends ChainId> {
   constructor(chainId: T, context: ContextValue, assetServiceState?: AssetServiceState) {
     this.context = new Context(context);
 
-    const allowlistAddress = AllowListService.addressByChain(chainId);
+    const allowlistAddress = !this.context.disableAllowlist && AllowListService.addressByChain(chainId);
 
     this.services = {
       lens: new LensService(chainId, this.context),
@@ -108,13 +110,13 @@ export class Yearn<T extends ChainId> {
     this.simulation = new SimulationInterface(this, chainId, this.context);
     this.strategies = new StrategyInterface(this, chainId, this.context);
 
-    // this.configureSignerWithAllowlist(); // NOTE: temporarily disable allowlist validation
+    this.configureSignerWithAllowlist();
 
     this.ready = Promise.all([this.services.asset.ready]);
   }
 
   setChainId(chainId: ChainId) {
-    const allowlistAddress = AllowListService.addressByChain(chainId);
+    const allowlistAddress = !this.context.disableAllowlist && AllowListService.addressByChain(chainId);
 
     this.services = {
       lens: new LensService(chainId, this.context),
@@ -138,12 +140,14 @@ export class Yearn<T extends ChainId> {
     this.simulation = new SimulationInterface(this, chainId, this.context);
     this.strategies = new StrategyInterface(this, chainId, this.context);
 
-    // this.configureSignerWithAllowlist(); // NOTE: temporarily disable allowlist validation
+    this.configureSignerWithAllowlist();
 
     this.ready = Promise.all([this.services.asset.ready]);
   }
 
   configureSignerWithAllowlist() {
+    const shouldValidate = !!this.services.allowList;
+
     const validateTx = async (transaction: Deferrable<TransactionRequest>) => {
       if (!this.services.allowList) {
         return true;
@@ -153,13 +157,16 @@ export class Yearn<T extends ChainId> {
       return await this.services.allowList.validateCalldata(to, data).then(res => res.success);
     };
 
-    const orig = JsonRpcSigner.prototype.sendTransaction;
-    JsonRpcSigner.prototype.sendTransaction = async function(transaction: Deferrable<TransactionRequest>) {
-      const valid = await validateTx(transaction);
-      if (!valid) {
-        throw new SdkError("transaction is not valid");
-      }
-      return orig.apply(this, [transaction]);
-    };
+    if (shouldValidate) {
+      JsonRpcSigner.prototype.sendTransaction = async function(transaction: Deferrable<TransactionRequest>) {
+        const valid = await validateTx(transaction);
+        if (!valid) {
+          throw new SdkError("transaction is not valid");
+        }
+        return originalJsonRpcSignerSendTransaction.apply(this, [transaction]);
+      };
+    } else {
+      JsonRpcSigner.prototype.sendTransaction = originalJsonRpcSignerSendTransaction;
+    }
   }
 }
