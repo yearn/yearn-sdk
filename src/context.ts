@@ -61,7 +61,7 @@ export interface ContextValue {
    * If true it will disable the use of allowlist to validate tx's.
    * If false it will validate each tx againts the allowlist contracts and it will
    * override the JsonRpcSigner sendTransaction method to always try to validate, use with caution
-  */
+   */
   disableAllowlist: boolean;
 }
 
