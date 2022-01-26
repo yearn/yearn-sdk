@@ -65,7 +65,7 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
       assetsDynamic = await this.getDynamic();
     } catch {
       const allAddresses = assetsStatic.map(asset => asset.address);
-      const chunks = chunkArray(allAddresses, 4);
+      const chunks = chunkArray(allAddresses, 30);
       const promises = chunks.map(async chunk => this.getDynamic(chunk, vaultMetadataOverrides, overrides));
       assetsDynamic = await Promise.all(promises).then(chunks => chunks.flat());
     }
@@ -205,7 +205,7 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
               assets.map(asset => asset.address)
             );
           }
-          const chunks = chunkArray(allAddresses, 1);
+          const chunks = chunkArray(allAddresses, 30);
           const promises = chunks.map(async chunk => adapter.positionsOf(address, chunk, overrides));
           return await Promise.all(promises).then(chunks => chunks.flat());
         }
