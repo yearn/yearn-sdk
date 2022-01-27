@@ -15,10 +15,10 @@ export class CustomError extends Error {
  */
 export class SdkError extends CustomError {
   error_code?: string;
-  static NO_SLIPPAGE = 'no_slippage';
+  static NO_SLIPPAGE = "no_slippage";
 
   constructor(message: string, error_code?: string) {
-    super(message, 'sdk');
+    super(message, "sdk");
     this.error_code = error_code;
   }
 }
