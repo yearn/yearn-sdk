@@ -14,6 +14,7 @@
     "start": "tsdx watch",
     "build": "tsdx build",
     "test": "tsdx test",
+    "test:coverage": "tsdx test --coverage",
     "lint": "tsdx lint src test",
     "docs": "typedoc --out docs src/index.ts",
     "size": "size-limit",

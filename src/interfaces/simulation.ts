@@ -45,7 +45,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
         : new YearnVaultContract(toVault, signer);
 
     const underlyingToken = await vaultContract.token().catch(() => {
-      throw new EthersError("failed to fetch token");
+      throw new EthersError("failed to fetch token", EthersError.FAIL_TOKEN_FETCH);
     });
     const isZapping = underlyingToken !== sellToken;
     let forkId: string | undefined;
@@ -53,7 +53,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
 
     if (isZapping) {
       if (!options.slippage) {
-        throw new SdkError("slippage needs to be specified for a zap");
+        throw new SdkError("slippage needs to be specified for a zap", SdkError.NO_SLIPPAGE);
       }
 
       let needsApproving: boolean;
@@ -65,7 +65,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
           .zapInApprovalState(from, sellToken, zapProtocol)
           .then(state => !state.isApproved)
           .catch(() => {
-            throw new ZapperError("approval state");
+            throw new ZapperError("approval state", ZapperError.ZAP_IN_APPROVAL_STATE);
           });
       }
 
@@ -76,7 +76,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
         ? await this.yearn.services.zapper
             .zapInApprovalTransaction(from, sellToken, "0", zapProtocol)
             .catch(() => {
-              throw new ZapperError("approval");
+              throw new ZapperError("approval", ZapperError.ZAP_IN_APPROVAL);
             })
             .then(async approvalTransaction => {
               return await this.simulateZapApprovalTransaction(approvalTransaction, options);
@@ -134,7 +134,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
 
     if (isZapping) {
       if (!options.slippage) {
-        throw new SdkError("slippage needs to be specified for a zap");
+        throw new SdkError("slippage needs to be specified for a zap", SdkError.NO_SLIPPAGE);
       }
       let needsApproving: boolean;
 
@@ -145,7 +145,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
           .zapOutApprovalState(from, fromVault)
           .then(state => !state.isApproved)
           .catch(() => {
-            throw new ZapperError("zap out approval state");
+            throw new ZapperError("zap out approval state", ZapperError.ZAP_OUT_APPROVAL_STATE);
           });
       }
 
@@ -155,7 +155,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
         ? await this.yearn.services.zapper
             .zapOutApprovalTransaction(from, fromVault, "0")
             .catch(() => {
-              throw new ZapperError("zap out approval transaction");
+              throw new ZapperError("zap out approval transaction", ZapperError.ZAP_OUT_APPROVAL);
             })
             .then(async approvalTransaction => {
               return await this.simulateZapApprovalTransaction(approvalTransaction, options);
@@ -237,15 +237,18 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     const targetTokenAmountUsdc = await this.yearn.services.oracle
       .getNormalizedValueUsdc(toVault, tokensReceived)
       .catch(() => {
-        throw new PriceFetchingError();
+        throw new PriceFetchingError("Error fetching price", PriceFetchingError.FETCHING_PRICE_ORACLE);
       });
 
     const [decimals, pricePerShare] = await Promise.all([
-      vaultContract.decimals(),
-      vaultContract.pricePerShare()
-    ]).catch(() => {
-      throw new EthersError("no decimals or pricePerShare");
-    });
+      vaultContract.decimals().catch(() => {
+        throw new EthersError("no decimals", EthersError.NO_DECIMALS);
+      }),
+      vaultContract.pricePerShare().catch(() => {
+        throw new EthersError("no price per share", EthersError.NO_PRICE_PER_SHARE);
+      })
+    ]);
+
     const targetUnderlyingTokensReceived = new BigNumber(tokensReceived)
       .div(new BigNumber(10).pow(decimals))
       .multipliedBy(pricePerShare)
@@ -280,14 +283,15 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     const zapToken = sellToken === EthAddress ? ZeroAddress : sellToken;
 
     if (!options.slippage) {
-      throw new SdkError("slippage needs to be set");
+      throw new SdkError("slippage needs to be set", SdkError.NO_SLIPPAGE);
     }
 
     const zapInParams = await this.yearn.services.zapper
       .zapIn(from, zapToken, amount, toVault, options.gasPrice || "0", options.slippage, skipGasEstimate, zapProtocol)
       .catch(() => {
-        throw new ZapperError("zap in");
+        throw new ZapperError("zap in", ZapperError.ZAP_IN);
       });
+
     const value = new BigNumber(zapInParams.value).toFixed(0);
 
     options.gasPrice = options.gasPrice || zapInParams.gasPrice;
@@ -305,11 +309,13 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     );
 
     const [decimals, pricePerShare] = await Promise.all([
-      vaultContract.decimals(),
-      vaultContract.pricePerShare()
-    ]).catch(() => {
-      throw new EthersError("no decimals or pricePerShare");
-    });
+      vaultContract.decimals().catch(() => {
+        throw new EthersError("no decimals", EthersError.NO_DECIMALS);
+      }),
+      vaultContract.pricePerShare().catch(() => {
+        throw new EthersError("no price per share", EthersError.NO_PRICE_PER_SHARE);
+      })
+    ]);
     const targetUnderlyingTokensReceived = new BigNumber(tokensReceived)
       .div(new BigNumber(10).pow(decimals))
       .multipliedBy(pricePerShare)
@@ -323,7 +329,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
           .getNormalizedValueUsdc(toVault, tokensReceived)
           .then(price => new BigNumber(price))
           .catch(() => {
-            throw new PriceFetchingError();
+            throw new PriceFetchingError("error fetching price", PriceFetchingError.FETCHING_PRICE_ORACLE);
           });
         break;
       case ZapProtocol.PICKLE:
@@ -331,7 +337,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
           await this.yearn.services.pickle
             .getPriceUsdc(toVault)
             .catch(() => {
-              throw new PriceFetchingError();
+              throw new PriceFetchingError("error fetching price", PriceFetchingError.FETCHING_PRICE_PICKLE);
             })
             .then(usdc => new BigNumber(usdc))
         )
@@ -343,7 +349,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     const oracleToken = sellToken === EthAddress ? WethAddress : sellToken;
     const zapInAmountUsdc = new BigNumber(
       await this.yearn.services.oracle.getNormalizedValueUsdc(oracleToken, amount).catch(() => {
-        throw new PriceFetchingError();
+        throw new PriceFetchingError("error fetching price", PriceFetchingError.FETCHING_PRICE_ORACLE);
       })
     );
 
@@ -385,7 +391,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     const targetTokenAmountUsdc = await this.yearn.services.oracle
       .getNormalizedValueUsdc(toToken, tokensReceived)
       .catch(() => {
-        throw new PriceFetchingError();
+        throw new PriceFetchingError("error fetching price", PriceFetchingError.FETCHING_PRICE_ORACLE);
       });
 
     let result: TransactionOutcome = {
@@ -413,14 +419,14 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     options: SimulationOptions
   ): Promise<TransactionOutcome> {
     if (!options.slippage) {
-      throw new SdkError("slippage needs to be set");
+      throw new SdkError("slippage needs to be set", SdkError.NO_SLIPPAGE);
     }
 
     const zapToken = toToken === EthAddress ? ZeroAddress : toToken;
     const zapOutParams = await this.yearn.services.zapper
       .zapOut(from, zapToken, amount, fromVault, "0", options.slippage, skipGasEstimate)
       .catch(() => {
-        throw new ZapperError();
+        throw new ZapperError("error zapping out", ZapperError.ZAP_OUT);
       });
 
     if (!skipGasEstimate) {
@@ -453,10 +459,10 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     const zapOutAmountUsdc = await this.yearn.services.oracle
       .getNormalizedValueUsdc(oracleToken, tokensReceived)
       .catch(() => {
-        throw new PriceFetchingError();
+        throw new PriceFetchingError("error fetching price", PriceFetchingError.FETCHING_PRICE_ORACLE);
       });
     const soldAssetAmountUsdc = await this.yearn.services.oracle.getNormalizedValueUsdc(fromVault, amount).catch(() => {
-      throw new PriceFetchingError();
+      throw new PriceFetchingError("error fetching price", PriceFetchingError.FETCHING_PRICE_ORACLE);
     });
 
     const conversionRate = new BigNumber(zapOutAmountUsdc).div(new BigNumber(soldAssetAmountUsdc)).toNumber();

@@ -10,5 +10,6 @@ out/
 docs/
 ignore/
 node_modules/
+coverage/
 
 dist/
