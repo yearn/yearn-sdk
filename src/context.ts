@@ -57,21 +57,21 @@ export interface ContextValue {
   simulation?: SimulationConfiguration;
   cache?: CacheConfiguration;
   /**
-   * This is a required parameter
    * If true it will disable the use of allowlist to validate tx's.
    * If false it will validate each tx againts the allowlist contracts and it will
    * override the JsonRpcSigner sendTransaction method to always try to validate, use with caution
    */
-  disableAllowlist: boolean;
+  disableAllowlist?: boolean;
 }
 
-const DefaultContext = {
+const DefaultContext: ContextValue = {
   // Public API key provided by zapper.
   // see https://docs.zapper.fi/zapper-api/endpoints
   zapper: "96e0cc51-a62e-42ca-acee-910ea7d2a241",
   // The default tenderly dashboard for Yearn
   simulation: { dashboardUrl: "https://dashboard.tenderly.co/yearn/yearn-web" },
-  cache: { useCache: true, url: "https://test-api.yearn.network" }
+  cache: { useCache: true, url: "https://test-api.yearn.network" },
+  disableAllowlist: true,
 };
 
 /**
@@ -96,7 +96,6 @@ export class Context implements Required<ContextValue> {
     this.ctx = Object.assign({}, DefaultContext, ctx);
     this.events = new EventEmitter().setMaxListeners(100);
     this.setProvider(ctx.provider);
-    this.ctx.disableAllowlist = ctx.disableAllowlist;
   }
 
   /**
