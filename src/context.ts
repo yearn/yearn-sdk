@@ -71,7 +71,7 @@ const DefaultContext: ContextValue = {
   // The default tenderly dashboard for Yearn
   simulation: { dashboardUrl: "https://dashboard.tenderly.co/yearn/yearn-web" },
   cache: { useCache: true, url: "https://test-api.yearn.network" },
-  disableAllowlist: true,
+  disableAllowlist: true
 };
 
 /**
