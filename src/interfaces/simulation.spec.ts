@@ -36,8 +36,6 @@ jest.mock("../vault", () => ({
   }))
 }));
 
-// const ContractMock = Contract as jest.Mocked<any>
-
 const SignerMock = JsonRpcSigner as jest.Mocked<typeof JsonRpcSigner>;
 
 const buildSignerMock = (balance = 1, transactionCount = 1) => {
@@ -46,7 +44,6 @@ const buildSignerMock = (balance = 1, transactionCount = 1) => {
   const getTransactionCountMock = jest.fn().mockImplementation(() => Promise.resolve(transactionCount));
 
   const signer = new SignerMock("0x00", "provider" as any) as any;
-  // signer.provider
   signer.getBalance = getBalanceMock;
   signer.getTransactionCount = getTransactionCountMock;
   signer.getSigner = () => signer;

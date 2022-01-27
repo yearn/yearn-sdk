@@ -174,7 +174,7 @@ export class SimulationExecutor {
       if (partialRevertError) {
         const errorMessage = "Partial Revert - " + partialRevertError;
         this.sendErrorMessage(errorMessage, simulationResponse.simulation.id, options?.forkId);
-        throw new SimulationError(errorMessage, SimulationError.PARTIAL_REVER);
+        throw new SimulationError(errorMessage, SimulationError.PARTIAL_REVERT);
       }
     }
 

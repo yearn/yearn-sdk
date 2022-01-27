@@ -25,8 +25,6 @@ const populateTransactionMock = jest.fn().mockReturnValue(Promise.resolve(true))
 jest.mock("@ethersproject/providers");
 jest.mock("@ethersproject/contracts");
 
-// const ContractMock = Contract as jest.Mocked<any>
-
 const SignerMock = JsonRpcSigner as jest.Mocked<typeof JsonRpcSigner>;
 
 const buildSignerMock = (balance = 1, transactionCount = 1) => {
@@ -35,7 +33,6 @@ const buildSignerMock = (balance = 1, transactionCount = 1) => {
   const getTransactionCountMock = jest.fn().mockImplementation(() => Promise.resolve(transactionCount));
 
   const signer = new SignerMock("0x00", "provider" as any) as any;
-  // signer.provider
   signer.getBalance = getBalanceMock;
   signer.getTransactionCount = getTransactionCountMock;
   signer.getSigner = () => signer;
@@ -139,7 +136,7 @@ describe("Simualtion executor", () => {
         await simulationExecutor.makeSimulationRequest("0x000", "0x000", "1", {});
       } catch (error) {
         expect(error).toBeInstanceOf(SimulationError);
-        expect(error).toHaveProperty("error_code", SimulationError.PARTIAL_REVER);
+        expect(error).toHaveProperty("error_code", SimulationError.PARTIAL_REVERT);
       }
     });
   });

@@ -4,7 +4,7 @@ export class SimulationError extends CustomError {
   error_code: string;
   static NO_LOG = "no_log";
   static TENDERLY_RESPONSE_ERROR = "tenderly_response_error";
-  static PARTIAL_REVER = "partial_rever";
+  static PARTIAL_REVERT = "partial_revert";
 
   constructor(message: string, error_code: string) {
     super(message, "simulation");
