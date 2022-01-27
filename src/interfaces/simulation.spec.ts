@@ -88,7 +88,7 @@ describe("Simulation interface", () => {
 
   beforeEach(() => {
     const mockedYearn = new MockedYearnClass();
-    simulationInterface = new SimulationInterface(mockedYearn, 1, new Context({}));
+    simulationInterface = new SimulationInterface(mockedYearn, 1, new Context({ disableAllowlist: true }));
     jest.spyOn(SimulationExecutor.prototype, "makeSimulationRequest").mockReturnValueOnce(
       Promise.resolve({
         transaction: {
