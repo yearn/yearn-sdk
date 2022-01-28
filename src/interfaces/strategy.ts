@@ -49,13 +49,19 @@ export class StrategyInterface<T extends ChainId> extends ServiceInterface<T> {
         .then(assets => assets.map(asset => asset.address));
     }
 
-    // Read from the api if it's available, as it's quicker.
-    // Otherwise read from chain
-    if (this.chainId === 1 || this.chainId === 1337) {
-      return this.fetchMetadataFromApi(vaults);
-    } else {
-      return this.fetchMetadataFromChain(vaults);
+    let vaultStrategiesMetadata: VaultStrategiesMetadata[] | undefined;
+
+    try {
+      vaultStrategiesMetadata = await this.fetchMetadataFromApi(vaults);
+    } catch (error) {
+      console.error(error);
     }
+
+    if (!vaultStrategiesMetadata) {
+      vaultStrategiesMetadata = await this.fetchMetadataFromChain(vaults);
+    }
+
+    return vaultStrategiesMetadata;
   }
 
   private async fetchMetadataFromApi(vaultAddresses: Address[]): Promise<VaultStrategiesMetadata[]> {
@@ -179,6 +185,12 @@ export class StrategyInterface<T extends ChainId> extends ServiceInterface<T> {
   }
 
   private async fetchVaultsData(): Promise<VaultData[]> {
-    return fetch("https://d28fcsszptni1s.cloudfront.net/v1/chains/1/vaults/all").then(res => res.json());
+    const res = await fetch("https://d28fcsszptni1s.cloudfront.net/v1/chains/1/vaults/all");
+
+    if (!res.ok) {
+      throw new Error(`An error has occured fetching vaults data: ${res.status}`);
+    }
+
+    return await res.json();
   }
 }
