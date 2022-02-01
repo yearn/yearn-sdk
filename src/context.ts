@@ -142,7 +142,7 @@ export class Context implements Required<ContextValue> {
   }
 
   get disableAllowlist(): boolean {
-    if (this.ctx.disableAllowlist) return this.ctx.disableAllowlist;
+    if (typeof this.ctx.disableAllowlist !== 'undefined') return this.ctx.disableAllowlist;
     throw new SdkError("disableAllowlist must be defined in Context for this feature to work.");
   }
 }
