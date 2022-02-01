@@ -2,6 +2,9 @@ import { JsonRpcProvider } from "@ethersproject/providers";
 import EventEmitter from "events";
 import { PartialDeep } from "type-fest";
 
+import { ChainId } from "./chain";
+import { AllowListService } from "./services/allowlist";
+import { addValidationToProvider } from "./signer";
 import { Address, SdkError } from "./types";
 
 export interface AddressesOverride {
@@ -85,6 +88,8 @@ const DefaultContext: ContextValue = {
 export class Context implements Required<ContextValue> {
   static PROVIDER = "refresh:provider";
 
+  allowList?: AllowListService<ChainId>;
+
   private ctx: ContextValue;
 
   /**
@@ -105,10 +110,22 @@ export class Context implements Required<ContextValue> {
    */
   setProvider(provider?: JsonRpcProvider | ReadWriteProvider) {
     if (provider instanceof JsonRpcProvider) {
-      this.ctx.provider = { read: provider, write: provider };
+      if (this.allowList) {
+        const copy = new JsonRpcProvider(provider.connection.url, provider.network);
+        addValidationToProvider(copy, this.allowList);
+        this.ctx.provider = { read: copy, write: copy };
+      } else {
+        this.ctx.provider = { read: provider, write: provider };
+      }
     } else if (provider) {
+      if (this.allowList) {
+        const copy = new JsonRpcProvider(provider.write.connection.url, provider.write.network);
+        addValidationToProvider(provider.write, this.allowList);
+        provider.write = copy;
+      }
       this.ctx.provider = provider;
     }
+
     this.events.emit(Context.PROVIDER, this.ctx.provider);
   }
 
