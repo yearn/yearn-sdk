@@ -18,7 +18,7 @@ export function addValidationToProvider(provider: JsonRpcProvider, allowList: Al
     const signer = origSigner.apply(provider, [addressOrIndex]);
     signer.sendTransaction = async (transaction: Deferrable<TransactionRequest>) => {
       const valid = await validateTx(transaction);
-      if (valid) {
+      if (!valid) {
         throw new SdkError("transaction is not valid");
       }
       return originalJsonRpcSignerSendTransaction.apply(signer, [transaction]);
