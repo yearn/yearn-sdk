@@ -65,7 +65,7 @@ export class StrategyInterface<T extends ChainId> extends ServiceInterface<T> {
   }
 
   private async fetchMetadataFromApi(vaultAddresses: Address[]): Promise<VaultStrategiesMetadata[]> {
-    const vaultsData = await this.fetchVaultsData({ chainId: this.chainId });
+    const vaultsData = await this.fetchVaultsData();
 
     const strategiesMetadata = await this.yearn.services.meta.strategies();
 
@@ -184,8 +184,8 @@ export class StrategyInterface<T extends ChainId> extends ServiceInterface<T> {
     return result;
   }
 
-  private async fetchVaultsData({ chainId }: { chainId: ChainId }): Promise<VaultData[]> {
-    const res = await fetch(`https://d28fcsszptni1s.cloudfront.net/v1/chains/${chainId}/vaults/all`);
+  private async fetchVaultsData(): Promise<VaultData[]> {
+    const res = await fetch(`https://d28fcsszptni1s.cloudfront.net/v1/chains/${this.chainId}/vaults/all`);
 
     if (!res.ok) {
       throw new Error(`An error has occured fetching vaults data: ${res.status}`);
