@@ -185,7 +185,7 @@ export class StrategyInterface<T extends ChainId> extends ServiceInterface<T> {
   }
 
   private async fetchVaultsData(): Promise<VaultData[]> {
-    const res = await fetch(`https://d28fcsszptni1s.cloudfront.net/v1/chains/${this.chainId}/vaults/all`);
+    const res = await fetch(`https://api.yearn.finance/v1/chains/${this.chainId}/vaults/all`);
 
     if (!res.ok) {
       throw new Error(`An error has occured fetching vaults data: ${res.status}`);
