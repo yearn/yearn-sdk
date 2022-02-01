@@ -1,4 +1,5 @@
 import { JsonRpcProvider, JsonRpcSigner, Networkish } from "@ethersproject/providers";
+
 import { ChainId } from "./chain";
 import { AllowListService } from "./services/allowlist";
 import { ValidatedJsonRpcSigner } from "./validatedSigner";

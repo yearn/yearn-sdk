@@ -1,9 +1,9 @@
 import { JsonRpcProvider } from "@ethersproject/providers";
 import EventEmitter from "events";
 import { PartialDeep } from "type-fest";
+
 import { ChainId } from ".";
 import { AllowListService } from "./services/allowlist";
-
 import { Address, SdkError } from "./types";
 import { ValidatedJsonRpcProvider } from "./validatedProvider";
 
