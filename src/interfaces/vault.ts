@@ -324,6 +324,7 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
     overrides: CallOverrides = {}
   ): Promise<TransactionResponse> {
     const signer = this.ctx.provider.write.getSigner(account);
+    console.log(signer);
     const isZappingIntoPickleJar = PickleJars.includes(vault);
 
     if (isZappingIntoPickleJar) {

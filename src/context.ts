@@ -1,11 +1,11 @@
-import { JsonRpcProvider } from "@ethersproject/providers";
+import { BaseProvider, JsonRpcProvider, Provider } from "@ethersproject/providers";
 import EventEmitter from "events";
 import { PartialDeep } from "type-fest";
 
 import { ChainId } from ".";
 import { AllowListService } from "./services/allowlist";
 import { Address, SdkError } from "./types";
-import { ValidatedJsonRpcProvider } from "./validatedProvider";
+import { extendJsonRpcProvider } from "./validatedJsonRpcProvider";
 
 export interface AddressesOverride {
   lens?: Address;
@@ -108,19 +108,17 @@ export class Context implements Required<ContextValue> {
    * interaction.
    * @param provider new provider(s)
    */
-  setProvider(provider?: JsonRpcProvider | ReadWriteProvider) {
+  async setProvider(provider?: JsonRpcProvider | ReadWriteProvider) {
     if (provider instanceof JsonRpcProvider) {
       if (this.allowList) {
-        const validatedProvider = new ValidatedJsonRpcProvider(provider.connection.url, provider.network);
-        validatedProvider.allowList = this.allowList;
+        const validatedProvider = extendJsonRpcProvider(provider, this.allowList);
         this.ctx.provider = { read: validatedProvider, write: validatedProvider };
       } else {
         this.ctx.provider = { read: provider, write: provider };
       }
     } else if (provider) {
       if (this.allowList) {
-        const validatedProvider = new ValidatedJsonRpcProvider(provider.write.connection.url, provider.write.network);
-        validatedProvider.allowList = this.allowList;
+        const validatedProvider = extendJsonRpcProvider(provider.write, this.allowList);
         const newProvider = { read: provider.read, write: validatedProvider };
         this.ctx.provider = newProvider;
       } else {
