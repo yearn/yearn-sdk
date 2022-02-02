@@ -121,8 +121,7 @@ export class Context implements Required<ContextValue> {
       if (this.allowList) {
         const validatedProvider = new ValidatedJsonRpcProvider(provider.write.connection.url, provider.write.network);
         validatedProvider.allowList = this.allowList;
-        const newProvider = { read: provider.read, write: validatedProvider };
-        this.ctx.provider = newProvider;
+        this.ctx.provider = { read: provider.read, write: validatedProvider };
       } else {
         this.ctx.provider = provider;
       }
