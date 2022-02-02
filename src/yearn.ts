@@ -104,8 +104,9 @@ export class Yearn<T extends ChainId> {
     this.simulation = new SimulationInterface(this, chainId, this.context);
     this.strategies = new StrategyInterface(this, chainId, this.context);
 
+    this.context.allowList = this.services.allowList;
     if (this.services.allowList) {
-      this.context.setProviderWithAllowList(this.context.provider, this.services.allowList);
+      this.context.setProvider(this.context.provider);
     }
 
     this.ready = Promise.all([this.services.asset.ready]);
@@ -136,8 +137,9 @@ export class Yearn<T extends ChainId> {
     this.simulation = new SimulationInterface(this, chainId, this.context);
     this.strategies = new StrategyInterface(this, chainId, this.context);
 
+    this.context.allowList = this.services.allowList;
     if (this.services.allowList) {
-      this.context.setProviderWithAllowList(this.context.provider, this.services.allowList);
+      this.context.setProvider(this.context.provider);
     }
 
     this.ready = Promise.all([this.services.asset.ready]);

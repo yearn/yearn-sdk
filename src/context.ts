@@ -88,6 +88,8 @@ const DefaultContext: ContextValue = {
 export class Context implements Required<ContextValue> {
   static PROVIDER = "refresh:provider";
 
+  allowList?: AllowListService<ChainId>;
+
   private ctx: ContextValue;
 
   /**
@@ -108,20 +110,25 @@ export class Context implements Required<ContextValue> {
    */
   setProvider(provider?: JsonRpcProvider | ReadWriteProvider) {
     if (provider instanceof JsonRpcProvider) {
-      this.ctx.provider = { read: provider, write: provider };
+      if (this.allowList) {
+        const validatedProvider = new ValidatedJsonRpcProvider(provider.connection.url, provider.network);
+        validatedProvider.allowList = this.allowList;
+        this.ctx.provider = { read: validatedProvider, write: validatedProvider };
+      } else {
+        this.ctx.provider = { read: provider, write: provider };
+      }
     } else if (provider) {
-      this.ctx.provider = provider;
+      if (this.allowList) {
+        const validatedProvider = new ValidatedJsonRpcProvider(provider.write.connection.url, provider.write.network);
+        validatedProvider.allowList = this.allowList;
+        const newProvider = { read: provider.read, write: validatedProvider };
+        this.ctx.provider = newProvider;
+      } else {
+        this.ctx.provider = provider;
+      }
     }
-    this.events.emit(Context.PROVIDER, this.ctx.provider);
-  }
 
-  setProviderWithAllowList(provider: JsonRpcProvider | ReadWriteProvider, allowList: AllowListService<ChainId>) {
-    if (provider instanceof JsonRpcProvider) {
-      provider = new ValidatedJsonRpcProvider(provider.connection.url, provider.network, allowList);
-    } else {
-      provider.write = new ValidatedJsonRpcProvider(provider.write.connection.url, provider.write.network, allowList);
-    }
-    return this.setProvider(provider);
+    this.events.emit(Context.PROVIDER, this.ctx.provider);
   }
 
   get provider(): ReadWriteProvider {
