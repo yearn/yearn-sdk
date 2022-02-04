@@ -131,6 +131,10 @@ export class Context implements Required<ContextValue> {
     return Object.assign({ adapters: {} }, this.ctx.addresses);
   }
 
+  set addresses(addresses: AddressesOverride) {
+    this.ctx.addresses = addresses;
+  }
+
   get simulation(): SimulationConfiguration {
     if (this.ctx.simulation) return this.ctx.simulation;
     throw new SdkError("simulation configuration must be defined in Context for this feature to work.");

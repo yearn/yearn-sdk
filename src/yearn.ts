@@ -10,6 +10,7 @@ import { SimulationInterface } from "./interfaces/simulation";
 import { StrategyInterface } from "./interfaces/strategy";
 import { TokenInterface } from "./interfaces/token";
 import { VaultInterface } from "./interfaces/vault";
+import { AddressProviderService } from "./services/addressProvider";
 import { AllowListService } from "./services/allowlist";
 import { AssetService } from "./services/assets";
 import { HelperService } from "./services/helper";
@@ -40,6 +41,10 @@ const originalJsonRpcSignerSendTransaction = JsonRpcSigner.prototype.sendTransac
  * ```
  */
 export class Yearn<T extends ChainId> {
+  providers: {
+    addresses: AddressProviderService<T>;
+  };
+
   services: {
     lens: LensService<T>;
     oracle: OracleService<T>;
@@ -88,6 +93,10 @@ export class Yearn<T extends ChainId> {
 
     const allowlistAddress = !this.context.disableAllowlist && AllowListService.addressByChain(chainId);
 
+    this.providers = {
+      addresses: new AddressProviderService(chainId, this.context)
+    };
+
     this.services = {
       lens: new LensService(chainId, this.context),
       oracle: new OracleService(chainId, this.context),
@@ -112,7 +121,12 @@ export class Yearn<T extends ChainId> {
 
     this.configureSignerWithAllowlist();
 
-    this.ready = Promise.all([this.services.asset.ready]);
+    this.ready = Promise.all([
+      this.services.asset.ready,
+      // temporary hack that reuses existing code to initialize service
+      // addresses based on AddressProvider contract
+      this.providers.addresses.ready.then(() => this.setChainId(chainId))
+    ]);
   }
 
   setChainId(chainId: ChainId) {
