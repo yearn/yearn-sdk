@@ -69,7 +69,7 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
       const vaultBalanceAddresses = new Set(vaultBalances.map(balance => balance.address));
       zapperBalances = zapperBalances.filter(balance => !vaultBalanceAddresses.has(balance.address));
       return zapperBalances.concat(vaultBalances);
-    } else if (this.chainId === 250) {
+    } else if (this.chainId === 250 || this.chainId === 42161) {
       let ironBankTokens = await this.yearn.ironBank.balances(address);
       const vaultBalanceAddresses = new Set(vaultBalances.map(balance => balance.address));
       ironBankTokens = ironBankTokens.filter(balance => !vaultBalanceAddresses.has(balance.address));
