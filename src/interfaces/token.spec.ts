@@ -1,6 +1,7 @@
 import { Contract } from "@ethersproject/contracts";
 
-import { Address, Asset, ChainId, SdkError, TokenInterface } from "..";
+import { Address, Asset, ChainId, SdkError, TokenInterface, TokenMetadata } from "..";
+import { CachedFetcher } from "../cache";
 import { Context } from "../context";
 import { assetStaticVaultV2Factory, balanceFactory, tokenFactory } from "../factories";
 import { EthAddress } from "../helpers";
@@ -18,6 +19,9 @@ jest.mock("../yearn", () => ({
       asset: {
         ready: { then: jest.fn() },
         icon: jest.fn()
+      },
+      meta: {
+        tokens: jest.fn()
       },
       oracle: {
         getPriceFromRouter: jest.fn(),
@@ -37,12 +41,6 @@ jest.mock("../yearn", () => ({
     vaults: {
       balances: jest.fn()
     }
-  }))
-}));
-
-jest.mock("../cache", () => ({
-  CachedFetcher: jest.fn().mockImplementation(() => ({
-    fetch: jest.fn()
   }))
 }));
 
@@ -181,38 +179,56 @@ describe("TokenInterface", () => {
   });
 
   describe("supported", () => {
-    describe("when chainId is 1 or 1337", () => {
+    describe("when the supported tokens are cached", () => {
+      let cachedToken = tokenFactory.build();
+
       beforeEach(() => {
-        tokenInterface = new TokenInterface(mockedYearn, 1, new Context({}));
+        jest.spyOn(CachedFetcher.prototype, "fetch").mockResolvedValue([cachedToken]);
       });
 
-      it("should fetch all the tokens supported by the zapper protocol along with icon url", async () => {
-        const supportedTokenWithIcon = tokenFactory.build();
-        const supportedTokenWithoutIcon = tokenFactory.build({ address: "0x002" });
-        (mockedYearn.services.zapper.supportedTokens as jest.Mock).mockResolvedValue([
-          supportedTokenWithIcon,
-          supportedTokenWithoutIcon
-        ]);
-        (mockedYearn.services.asset.ready.then as jest.Mock).mockResolvedValue({ "0x001": "image.png" });
-
-        expect(await tokenInterface.supported()).toEqual([
-          { ...supportedTokenWithIcon, icon: "image.png" },
-          supportedTokenWithoutIcon
-        ]);
-        expect(mockedYearn.services.zapper.supportedTokens).toHaveBeenCalledTimes(1);
-        expect(mockedYearn.services.asset.ready.then).toHaveBeenCalledTimes(1);
+      it("should return the supported tokens cached", async () => {
+        expect(await tokenInterface.supported()).toEqual([cachedToken]);
       });
     });
 
-    describe("when chainId is not supported", () => {
+    describe("when the supported tokens are not cached", () => {
       beforeEach(() => {
-        tokenInterface = new TokenInterface(mockedYearn, 250, new Context({}));
+        jest.spyOn(CachedFetcher.prototype, "fetch").mockResolvedValue(undefined);
       });
 
-      it("should return an empty array", async () => {
-        expect(await tokenInterface.supported()).toEqual([]);
-        expect(mockedYearn.services.zapper.supportedTokens).not.toHaveBeenCalled();
-        expect(mockedYearn.services.asset.ready.then).not.toHaveBeenCalled();
+      describe("when chainId is 1 or 1337", () => {
+        beforeEach(() => {
+          tokenInterface = new TokenInterface(mockedYearn, 1, new Context({}));
+        });
+
+        it("should fetch all the tokens supported by the zapper protocol along with icon url", async () => {
+          const supportedTokenWithIcon = tokenFactory.build();
+          const supportedTokenWithoutIcon = tokenFactory.build({ address: "0x002" });
+          (mockedYearn.services.zapper.supportedTokens as jest.Mock).mockResolvedValue([
+            supportedTokenWithIcon,
+            supportedTokenWithoutIcon
+          ]);
+          (mockedYearn.services.asset.ready.then as jest.Mock).mockResolvedValue({ "0x001": "image.png" });
+
+          expect(await tokenInterface.supported()).toEqual([
+            { ...supportedTokenWithIcon, icon: "image.png" },
+            supportedTokenWithoutIcon
+          ]);
+          expect(mockedYearn.services.zapper.supportedTokens).toHaveBeenCalledTimes(1);
+          expect(mockedYearn.services.asset.ready.then).toHaveBeenCalledTimes(1);
+        });
+      });
+
+      describe("when chainId is not supported", () => {
+        beforeEach(() => {
+          tokenInterface = new TokenInterface(mockedYearn, 250, new Context({}));
+        });
+
+        it("should return an empty array", async () => {
+          expect(await tokenInterface.supported()).toEqual([]);
+          expect(mockedYearn.services.zapper.supportedTokens).not.toHaveBeenCalled();
+          expect(mockedYearn.services.asset.ready.then).not.toHaveBeenCalled();
+        });
       });
     });
   });
@@ -398,6 +414,78 @@ describe("TokenInterface", () => {
   });
 
   describe("metadata", () => {
-    it.todo("should");
+    const tokenMetadataFromMetaService: TokenMetadata[] = [
+      {
+        address: "tokenMetadataAddressFromMetaService",
+        description: "foo"
+      },
+      {
+        address: "0x001",
+        description: "bar"
+      }
+    ];
+
+    beforeEach(() => {
+      (mockedYearn.services.meta.tokens as jest.Mock).mockResolvedValue(tokenMetadataFromMetaService);
+    });
+
+    describe("when the token medatada is cached", () => {
+      let tokenMetadata: TokenMetadata[];
+
+      beforeEach(() => {
+        tokenMetadata = [
+          {
+            address: "tokenMetadataAddress",
+            description: "foo"
+          },
+          {
+            address: "0x002",
+            description: "bar"
+          }
+        ];
+        jest.spyOn(CachedFetcher.prototype, "fetch").mockResolvedValue(tokenMetadata);
+      });
+
+      describe("when there are addresses", () => {
+        it("should return the token metadata that include those addresses", async () => {
+          expect(await tokenInterface.metadata(["0x002"])).toEqual([
+            {
+              address: "0x002",
+              description: "bar"
+            }
+          ]);
+        });
+      });
+
+      describe("when there are no addresses", () => {
+        it("should return the cached result", async () => {
+          expect(await tokenInterface.metadata()).toEqual(tokenMetadata);
+        });
+      });
+    });
+
+    describe("when the token medatada is not cached", () => {
+      beforeEach(() => {
+        jest.spyOn(CachedFetcher.prototype, "fetch").mockResolvedValue(undefined);
+        (mockedYearn.services.meta.tokens as jest.Mock).mockResolvedValue(tokenMetadataFromMetaService);
+      });
+
+      describe("when there are addresses", () => {
+        it("should return the token metadata that include those addresses", async () => {
+          expect(await tokenInterface.metadata(["0x001"])).toEqual([
+            {
+              address: "0x001",
+              description: "bar"
+            }
+          ]);
+        });
+      });
+
+      describe("when there are no addresses", () => {
+        it("should return the tokens from the meta service", async () => {
+          expect(await tokenInterface.metadata()).toEqual(tokenMetadataFromMetaService);
+        });
+      });
+    });
   });
 });
