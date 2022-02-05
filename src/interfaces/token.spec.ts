@@ -165,14 +165,14 @@ describe("TokenInterface", () => {
 
     describe("when chainId is not supported", () => {
       beforeEach(() => {
-        tokenInterface = new TokenInterface(mockedYearn, 42161, new Context({}));
+        tokenInterface = new TokenInterface(mockedYearn, 42 as any, new Context({}));
       });
 
       it("should throw an SdkError", async () => {
         try {
           await tokenInterface.balances("0x000");
         } catch (error) {
-          expect(error).toStrictEqual(new SdkError(`the chain ${42161} hasn't been implemented yet`));
+          expect(error).toStrictEqual(new SdkError(`the chain ${42} hasn't been implemented yet`));
         }
       });
     });
