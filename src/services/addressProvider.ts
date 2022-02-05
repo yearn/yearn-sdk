@@ -45,9 +45,12 @@ export class AddressProviderService<T extends ChainId> extends ContractService<T
     };
 
     this.ctx.addresses = {
+      adapters: {
+        registryV2: addressByKey("REGISTRY_ADAPTER_V2_VAULTS"),
+        ironBank: addressByKey("REGISTRY_ADAPTER_IRON_BANK")
+      },
       oracle: addressByKey("ORACLE"),
-      helper: addressByKey("HELPER"),
-      adapters: {}
+      helper: addressByKey("HELPER")
     };
     return Promise.resolve();
   }
