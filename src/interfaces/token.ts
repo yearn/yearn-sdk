@@ -121,7 +121,8 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
     const signer = this.ctx.provider.write.getSigner(account);
     if (vault.token === token) {
       const tokenContract = new Contract(token, TokenAbi, signer);
-      return tokenContract.approve(vault.address, amount);
+      const tx = await tokenContract.populateTransaction.approve(vault.address, amount);
+      return this.yearn.services.transaction.sendTransaction(tx);
     } else {
       const gasPrice = await this.yearn.services.zapper.gas();
       const gasPriceFastGwei = new BigNumber(gasPrice.fast).times(new BigNumber(10 ** 9));
