@@ -44,28 +44,28 @@ describe("TokenInterface", () => {
   });
 
   describe("balances", () => {
-    it.todo("should fetch token balances from the TokenInterface.supported list", () => {});
+    it.todo("should fetch token balances from the TokenInterface.supported list");
   });
 
   describe("supported", () => {
-    it.todo("should fetch all the tokens supported by the zapper protocol along with some basic metadata", () => {});
+    it.todo("should fetch all the tokens supported by the zapper protocol along with some basic metadata");
   });
 
   describe("approve", () => {
-    it.todo("should approve vault to spend a token on zapIn", () => {});
+    it.todo("should approve vault to spend a token on zapIn");
   });
 
   describe("approveZapOut", () => {
-    it.todo("should approve vault to spend a vault token on zapOut", () => {});
+    it.todo("should approve vault to spend a vault token on zapOut");
   });
 
   describe("icon", () => {
-    it.todo("should get an icon url for a particular address", () => {});
+    it.todo("should get an icon url for a particular address");
 
-    it.todo("should get a map of icons for a list of addresses", () => {});
+    it.todo("should get a map of icons for a list of addresses");
   });
 
   describe("metadata", () => {
-    it.todo("should", () => {});
+    it.todo("should");
   });
 });
