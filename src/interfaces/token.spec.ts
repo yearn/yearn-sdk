@@ -6,7 +6,8 @@ jest.mock("../yearn", () => ({
   Yearn: jest.fn().mockImplementation(() => ({
     services: {
       oracle: {
-        getPriceFromRouter: jest.fn()
+        getPriceFromRouter: jest.fn(),
+        getPriceUsdc: jest.fn()
       }
     }
   }))
@@ -23,10 +24,6 @@ describe("TokenInterface", () => {
     tokenInterface = new TokenInterface(mockedYearn, 1, new Context({ disableAllowlist: true }));
   });
 
-  afterEach(() => {
-    jest.clearAllMocks();
-  });
-
   describe("price", () => {
     it("should should get the exchange rate between two tokens", async () => {
       (mockedYearn.services.oracle.getPriceFromRouter as jest.Mock).mockResolvedValue(1);
@@ -38,9 +35,31 @@ describe("TokenInterface", () => {
   });
 
   describe("priceUsdc", () => {
-    it.todo("should get the suggested Usdc exchange rate for a token", () => {});
+    let mockGetPriceUsdc: jest.Mock;
 
-    it.todo("should get the suggested Usdc exchange rate for list of tokens", () => {});
+    beforeEach(() => {
+      mockGetPriceUsdc = mockedYearn.services.oracle.getPriceUsdc as jest.Mock;
+    });
+
+    it("should get the suggested Usdc exchange rate for a token", async () => {
+      mockGetPriceUsdc.mockResolvedValue(0.000001);
+
+      expect(await tokenInterface.priceUsdc("0x000")).toEqual(0.000001);
+      expect(mockGetPriceUsdc).toHaveBeenCalledTimes(1);
+      expect(mockGetPriceUsdc).toHaveBeenCalledWith("0x000", undefined);
+    });
+
+    it("should get the suggested Usdc exchange rate for list of tokens", async () => {
+      mockGetPriceUsdc.mockResolvedValueOnce([0.000001, 0.000002]).mockResolvedValueOnce([0.000003, 0.000004]);
+
+      expect(await tokenInterface.priceUsdc(["0x000", "0x001"])).toEqual({
+        "0x000": [0.000001, 0.000002],
+        "0x001": [0.000003, 0.000004]
+      });
+      expect(mockGetPriceUsdc).toHaveBeenCalledTimes(2);
+      expect(mockGetPriceUsdc).toHaveBeenNthCalledWith(1, "0x000", undefined);
+      expect(mockGetPriceUsdc).toHaveBeenNthCalledWith(2, "0x001", undefined);
+    });
   });
 
   describe("balances", () => {
