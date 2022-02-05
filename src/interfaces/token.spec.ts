@@ -16,7 +16,8 @@ jest.mock("../yearn", () => ({
   Yearn: jest.fn().mockImplementation(() => ({
     services: {
       asset: {
-        ready: { then: jest.fn() }
+        ready: { then: jest.fn() },
+        icon: jest.fn()
       },
       oracle: {
         getPriceFromRouter: jest.fn(),
@@ -375,9 +376,25 @@ describe("TokenInterface", () => {
   });
 
   describe("icon", () => {
-    it.todo("should get an icon url for a particular address");
+    let mockAssetIcon: jest.Mock;
 
-    it.todo("should get a map of icons for a list of addresses");
+    beforeEach(() => {
+      mockAssetIcon = mockedYearn.services.asset.icon as jest.Mock;
+    });
+
+    it("should call AssetService#icon with the address", () => {
+      tokenInterface.icon("0x001");
+
+      expect(mockAssetIcon).toHaveBeenCalledTimes(1);
+      expect(mockAssetIcon).toHaveBeenCalledWith("0x001");
+    });
+
+    it("sshould call AssetService#icon with a list of the address", () => {
+      tokenInterface.icon(["0x001", "0x002"]);
+
+      expect(mockAssetIcon).toHaveBeenCalledTimes(1);
+      expect(mockAssetIcon).toHaveBeenCalledWith(["0x001", "0x002"]);
+    });
   });
 
   describe("metadata", () => {
