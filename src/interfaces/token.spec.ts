@@ -1,8 +1,16 @@
-import { ChainId, SdkError, TokenInterface } from "..";
+import { Contract } from "@ethersproject/contracts";
+
+import { Address, Asset, ChainId, SdkError, TokenInterface } from "..";
 import { Context } from "../context";
-import { balanceFactory } from "../factories/balance.factory";
-import { tokenFactory } from "../factories/token.factory";
+import { assetStaticVaultV2Factory, balanceFactory, tokenFactory } from "../factories";
+import { EthAddress } from "../helpers";
 import { Yearn } from "../yearn";
+
+jest.mock("@ethersproject/contracts", () => ({
+  Contract: jest.fn().mockImplementation(() => ({
+    approve: jest.fn().mockResolvedValue(true)
+  }))
+}));
 
 jest.mock("../yearn", () => ({
   Yearn: jest.fn().mockImplementation(() => ({
@@ -16,7 +24,10 @@ jest.mock("../yearn", () => ({
       },
       zapper: {
         balances: jest.fn(),
-        supportedTokens: jest.fn()
+        gas: jest.fn(),
+        supportedTokens: jest.fn(),
+        zapInApprovalState: jest.fn(),
+        zapInApprovalTransaction: jest.fn()
       }
     },
     ironBank: { balances: jest.fn() },
@@ -32,10 +43,23 @@ jest.mock("../cache", () => ({
   }))
 }));
 
+jest.mock("../context", () => ({
+  Context: jest.fn().mockImplementation(() => ({
+    provider: {
+      write: {
+        getSigner: jest.fn().mockImplementation(() => ({
+          sendTransaction: jest.fn().mockResolvedValue("transaction")
+        }))
+      }
+    }
+  }))
+}));
+
 describe("TokenInterface", () => {
   let tokenInterface: TokenInterface<1>;
 
   let mockedYearn: Yearn<ChainId>;
+
   const MockedYearnClass = Yearn as jest.Mock<Yearn<ChainId>>;
 
   beforeEach(() => {
@@ -191,7 +215,93 @@ describe("TokenInterface", () => {
   });
 
   describe("approve", () => {
-    it.todo("should approve vault to spend a token on zapIn");
+    describe("when the vault token is the same as the token", () => {
+      let vault: Asset<"VAULT_V2">;
+      let token: Address;
+
+      beforeEach(() => {
+        vault = assetStaticVaultV2Factory.build();
+        token = tokenFactory.build().address;
+      });
+
+      it("should approve vault to spend a token on zapIn", async () => {
+        expect(await tokenInterface.approve(vault, token, "1", "0x001")).toEqual(true);
+
+        expect(Contract).toHaveBeenCalledTimes(1);
+        expect(Contract).toHaveBeenCalledWith("0x001", ["function approve(address _spender, uint256 _value) public"], {
+          sendTransaction: expect.any(Function)
+        });
+      });
+    });
+
+    describe("when Ether is beind sent", () => {
+      let vault: Asset<"VAULT_V2">;
+      let token: Address;
+
+      beforeEach(() => {
+        vault = assetStaticVaultV2Factory.build();
+        token = EthAddress;
+      });
+
+      it("should return true", async () => {
+        expect(await tokenInterface.approve(vault, token, "1", "0x001")).toEqual(true);
+      });
+    });
+
+    describe("zapInApprovalState", () => {
+      let vault: Asset<"VAULT_V2">;
+      let token: Address;
+      let mockZapperZapInApprovalState: jest.Mock;
+
+      beforeEach(() => {
+        vault = assetStaticVaultV2Factory.build();
+        token = tokenFactory.build({ address: "0x999" }).address;
+        mockZapperZapInApprovalState = mockedYearn.services.zapper.zapInApprovalState as jest.Mock;
+        (mockedYearn.services.zapper.gas as jest.Mock).mockResolvedValue({
+          standard: 1,
+          instant: 2,
+          fast: 3
+        });
+      });
+
+      describe("when is not approved", () => {
+        beforeEach(() => {
+          mockZapperZapInApprovalState.mockResolvedValue({
+            isApproved: false
+          });
+          (mockedYearn.services.zapper.zapInApprovalTransaction as jest.Mock).mockResolvedValue({
+            data: "data",
+            to: "0x000",
+            from: "0x001",
+            gasPrice: "1"
+          });
+        });
+
+        it("should return a transaction response", async () => {
+          expect(await tokenInterface.approve(vault, token, "1", "0x001")).toEqual("transaction");
+
+          expect(mockedYearn.services.zapper.zapInApprovalTransaction).toHaveBeenCalledTimes(1);
+          expect(mockedYearn.services.zapper.zapInApprovalTransaction).toHaveBeenCalledWith(
+            "0x001",
+            "0x999",
+            "3000000000",
+            "yearn"
+          );
+        });
+      });
+
+      describe("when is approved", () => {
+        beforeEach(() => {
+          mockZapperZapInApprovalState.mockResolvedValue({
+            isApproved: true
+          });
+        });
+
+        it("should return true", async () => {
+          expect(await tokenInterface.approve(vault, token, "1", "0x001")).toEqual(true);
+        });
+      });
+    });
   });
 
   describe("approveZapOut", () => {

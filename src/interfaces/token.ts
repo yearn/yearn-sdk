@@ -120,38 +120,41 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
     amount: Integer,
     account: Address
   ): Promise<TransactionResponse | Boolean> {
+    // If Ether is being sent, no need for approval
+    if (EthAddress === token) return true;
+
     const signer = this.ctx.provider.write.getSigner(account);
+
     if (vault.token === token) {
       const tokenContract = new Contract(token, TokenAbi, signer);
       return tokenContract.approve(vault.address, amount);
-    } else {
-      const gasPrice = await this.yearn.services.zapper.gas();
-      const gasPriceFastGwei = new BigNumber(gasPrice.fast).times(new BigNumber(10 ** 9));
-
-      if (EthAddress === token) {
-        // If Ether is being sent, no need for approval
-        return true;
-      }
-      const zapProtocol = PickleJars.includes(vault.address) ? ZapProtocol.PICKLE : ZapProtocol.YEARN;
-      const zapInApprovalState = await this.yearn.services.zapper.zapInApprovalState(account, token, zapProtocol);
-      if (!zapInApprovalState.isApproved) {
-        const zapInApprovalParams = await this.yearn.services.zapper.zapInApprovalTransaction(
-          account,
-          token,
-          gasPriceFastGwei.toString(),
-          zapProtocol
-        );
-        const transaction: TransactionRequest = {
-          to: zapInApprovalParams.to,
-          from: zapInApprovalParams.from,
-          gasPrice: zapInApprovalParams.gasPrice,
-          data: zapInApprovalParams.data as string
-        };
-        return signer.sendTransaction(transaction);
-      } else {
-        return true;
-      }
     }
+
+    const gasPrice = await this.yearn.services.zapper.gas();
+
+    const gasPriceFastGwei = new BigNumber(gasPrice.fast).times(new BigNumber(10 ** 9));
+
+    const zapProtocol = PickleJars.includes(vault.address) ? ZapProtocol.PICKLE : ZapProtocol.YEARN;
+
+    const zapInApprovalState = await this.yearn.services.zapper.zapInApprovalState(account, token, zapProtocol);
+
+    if (!zapInApprovalState.isApproved) {
+      const zapInApprovalParams = await this.yearn.services.zapper.zapInApprovalTransaction(
+        account,
+        token,
+        gasPriceFastGwei.toString(),
+        zapProtocol
+      );
+      const transaction: TransactionRequest = {
+        to: zapInApprovalParams.to,
+        from: zapInApprovalParams.from,
+        gasPrice: zapInApprovalParams.gasPrice,
+        data: zapInApprovalParams.data as string
+      };
+      return signer.sendTransaction(transaction);
+    }
+
+    return true;
   }
 
   /**
