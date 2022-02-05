@@ -3,7 +3,7 @@ import * as Factory from "factory.ts";
 import { Token } from "..";
 
 export const tokenFactory = Factory.Sync.makeFactory<Token>({
-  address: "0x000000000000000000000000000000000000dead",
+  address: "0x001",
   decimals: "18",
   symbol: "DEAD",
   name: "Dead Token",

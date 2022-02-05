@@ -1,23 +1,34 @@
 import { ChainId, SdkError, TokenInterface } from "..";
 import { Context } from "../context";
 import { balanceFactory } from "../factories/balance.factory";
+import { tokenFactory } from "../factories/token.factory";
 import { Yearn } from "../yearn";
 
 jest.mock("../yearn", () => ({
   Yearn: jest.fn().mockImplementation(() => ({
     services: {
+      asset: {
+        ready: { then: jest.fn() }
+      },
       oracle: {
         getPriceFromRouter: jest.fn(),
         getPriceUsdc: jest.fn()
       },
       zapper: {
-        balances: jest.fn()
+        balances: jest.fn(),
+        supportedTokens: jest.fn()
       }
     },
     ironBank: { balances: jest.fn() },
     vaults: {
       balances: jest.fn()
     }
+  }))
+}));
+
+jest.mock("../cache", () => ({
+  CachedFetcher: jest.fn().mockImplementation(() => ({
+    fetch: jest.fn()
   }))
 }));
 
@@ -143,7 +154,40 @@ describe("TokenInterface", () => {
   });
 
   describe("supported", () => {
-    it.todo("should fetch all the tokens supported by the zapper protocol along with some basic metadata");
+    describe("when chainId is 1 or 1337", () => {
+      beforeEach(() => {
+        tokenInterface = new TokenInterface(mockedYearn, 1, new Context({}));
+      });
+
+      it("should fetch all the tokens supported by the zapper protocol along with icon url", async () => {
+        const supportedTokenWithIcon = tokenFactory.build();
+        const supportedTokenWithoutIcon = tokenFactory.build({ address: "0x002" });
+        (mockedYearn.services.zapper.supportedTokens as jest.Mock).mockResolvedValue([
+          supportedTokenWithIcon,
+          supportedTokenWithoutIcon
+        ]);
+        (mockedYearn.services.asset.ready.then as jest.Mock).mockResolvedValue({ "0x001": "image.png" });
+
+        expect(await tokenInterface.supported()).toEqual([
+          { ...supportedTokenWithIcon, icon: "image.png" },
+          supportedTokenWithoutIcon
+        ]);
+        expect(mockedYearn.services.zapper.supportedTokens).toHaveBeenCalledTimes(1);
+        expect(mockedYearn.services.asset.ready.then).toHaveBeenCalledTimes(1);
+      });
+    });
+
+    describe("when chainId is not supported", () => {
+      beforeEach(() => {
+        tokenInterface = new TokenInterface(mockedYearn, 250, new Context({}));
+      });
+
+      it("should return an empty array", async () => {
+        expect(await tokenInterface.supported()).toEqual([]);
+        expect(mockedYearn.services.zapper.supportedTokens).not.toHaveBeenCalled();
+        expect(mockedYearn.services.asset.ready.then).not.toHaveBeenCalled();
+      });
+    });
   });
 
   describe("approve", () => {
