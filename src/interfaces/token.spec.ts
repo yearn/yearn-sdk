@@ -1,5 +1,6 @@
 import { ChainId, TokenInterface } from "..";
 import { Context } from "../context";
+import { balanceFactory } from "../factories/balance.factory";
 import { Yearn } from "../yearn";
 
 jest.mock("../yearn", () => ({
@@ -8,7 +9,14 @@ jest.mock("../yearn", () => ({
       oracle: {
         getPriceFromRouter: jest.fn(),
         getPriceUsdc: jest.fn()
+      },
+      zapper: {
+        balances: jest.fn()
       }
+    },
+    ironBank: { balances: jest.fn() },
+    vaults: {
+      balances: jest.fn()
     }
   }))
 }));
@@ -63,7 +71,54 @@ describe("TokenInterface", () => {
   });
 
   describe("balances", () => {
-    it.todo("should fetch token balances from the TokenInterface.supported list");
+    let mockVaultsBalances: jest.Mock;
+    let mockZapperBalances: jest.Mock;
+    let mockIronBankBalances: jest.Mock;
+
+    beforeEach(() => {
+      mockVaultsBalances = mockedYearn.vaults.balances as jest.Mock;
+      mockZapperBalances = mockedYearn.services.zapper.balances as jest.Mock;
+      mockIronBankBalances = mockedYearn.ironBank.balances as jest.Mock;
+    });
+
+    describe("when chainId is 1 or 1337", () => {
+      tokenInterface = new TokenInterface(mockedYearn, 1, new Context({ disableAllowlist: true }));
+
+      it("should fetch token balances from the TokenInterface.supported list", async () => {
+        const vaultTokenWithBalance = balanceFactory.build({
+          address: "0x001"
+        });
+        const vaultTokenWithoutBalance = balanceFactory.build({
+          balance: "0"
+        });
+        const zapperTokenWithBalance = balanceFactory.build({
+          address: "0x002"
+        });
+        const zapperSameAddressTokenWithBalance = balanceFactory.build({
+          address: "0x001"
+        });
+
+        mockVaultsBalances.mockResolvedValue([vaultTokenWithBalance, vaultTokenWithoutBalance]);
+        mockZapperBalances.mockResolvedValue([zapperTokenWithBalance, zapperSameAddressTokenWithBalance]);
+
+        expect(await tokenInterface.balances("0x000")).toEqual([zapperTokenWithBalance, vaultTokenWithBalance]);
+        expect(mockZapperBalances).toHaveBeenCalledTimes(1);
+        expect(mockZapperBalances).toHaveBeenCalledWith("0x000");
+        expect(mockIronBankBalances).not.toHaveBeenCalled();
+      });
+    });
+
+    describe("when chainId is 250", () => {
+      tokenInterface = new TokenInterface(mockedYearn, 250, new Context({ disableAllowlist: true }));
+
+      it.todo("todo");
+    });
+
+    describe("when chainId not supported", () => {
+      tokenInterface = new TokenInterface(mockedYearn, 42161, new Context({ disableAllowlist: true }));
+
+      it.todo("todo");
+    });
   });
 
   describe("supported", () => {
