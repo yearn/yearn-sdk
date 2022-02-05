@@ -1,6 +1,3 @@
-import { Deferrable } from "@ethersproject/properties";
-import { JsonRpcSigner, TransactionRequest } from "@ethersproject/providers";
-
 import { ChainId } from "./chain";
 import { Context, ContextValue } from "./context";
 import { EarningsInterface } from "./interfaces/earnings";
