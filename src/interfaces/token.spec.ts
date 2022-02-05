@@ -1,4 +1,4 @@
-import { ChainId, TokenInterface } from "..";
+import { ChainId, SdkError, TokenInterface } from "..";
 import { Context } from "../context";
 import { balanceFactory } from "../factories/balance.factory";
 import { Yearn } from "../yearn";
@@ -29,7 +29,7 @@ describe("TokenInterface", () => {
 
   beforeEach(() => {
     mockedYearn = new MockedYearnClass();
-    tokenInterface = new TokenInterface(mockedYearn, 1, new Context({ disableAllowlist: true }));
+    tokenInterface = new TokenInterface(mockedYearn, 1, new Context({}));
   });
 
   describe("price", () => {
@@ -75,30 +75,33 @@ describe("TokenInterface", () => {
     let mockZapperBalances: jest.Mock;
     let mockIronBankBalances: jest.Mock;
 
+    const vaultTokenWithBalance = balanceFactory.build({
+      address: "0x001"
+    });
+    const vaultTokenWithoutBalance = balanceFactory.build({
+      balance: "0"
+    });
+    const zapperTokenWithBalance = balanceFactory.build({
+      address: "0x002"
+    });
+    const zapperSameAddressTokenWithBalance = balanceFactory.build({
+      address: "0x001"
+    });
+
     beforeEach(() => {
       mockVaultsBalances = mockedYearn.vaults.balances as jest.Mock;
       mockZapperBalances = mockedYearn.services.zapper.balances as jest.Mock;
       mockIronBankBalances = mockedYearn.ironBank.balances as jest.Mock;
+
+      mockVaultsBalances.mockResolvedValue([vaultTokenWithBalance, vaultTokenWithoutBalance]);
     });
 
     describe("when chainId is 1 or 1337", () => {
-      tokenInterface = new TokenInterface(mockedYearn, 1, new Context({ disableAllowlist: true }));
+      beforeEach(() => {
+        tokenInterface = new TokenInterface(mockedYearn, 1, new Context({}));
+      });
 
       it("should fetch token balances from the TokenInterface.supported list", async () => {
-        const vaultTokenWithBalance = balanceFactory.build({
-          address: "0x001"
-        });
-        const vaultTokenWithoutBalance = balanceFactory.build({
-          balance: "0"
-        });
-        const zapperTokenWithBalance = balanceFactory.build({
-          address: "0x002"
-        });
-        const zapperSameAddressTokenWithBalance = balanceFactory.build({
-          address: "0x001"
-        });
-
-        mockVaultsBalances.mockResolvedValue([vaultTokenWithBalance, vaultTokenWithoutBalance]);
         mockZapperBalances.mockResolvedValue([zapperTokenWithBalance, zapperSameAddressTokenWithBalance]);
 
         expect(await tokenInterface.balances("0x000")).toEqual([zapperTokenWithBalance, vaultTokenWithBalance]);
@@ -109,15 +112,33 @@ describe("TokenInterface", () => {
     });
 
     describe("when chainId is 250", () => {
-      tokenInterface = new TokenInterface(mockedYearn, 250, new Context({ disableAllowlist: true }));
+      beforeEach(() => {
+        tokenInterface = new TokenInterface(mockedYearn, 250, new Context({}));
+      });
 
-      it.todo("todo");
+      it("should fetch token balances from the TokenInterface.supported list", async () => {
+        const ironBankBalance = balanceFactory.build();
+        mockIronBankBalances.mockResolvedValue([ironBankBalance]);
+
+        expect(await tokenInterface.balances("0x000")).toEqual([ironBankBalance, vaultTokenWithBalance]);
+        expect(mockIronBankBalances).toHaveBeenCalledTimes(1);
+        expect(mockIronBankBalances).toHaveBeenCalledWith("0x000");
+        expect(mockZapperBalances).not.toHaveBeenCalled();
+      });
     });
 
-    describe("when chainId not supported", () => {
-      tokenInterface = new TokenInterface(mockedYearn, 42161, new Context({ disableAllowlist: true }));
+    describe("when chainId is not supported", () => {
+      beforeEach(() => {
+        tokenInterface = new TokenInterface(mockedYearn, 42161, new Context({}));
+      });
 
-      it.todo("todo");
+      it("should throw an SdkError", async () => {
+        try {
+          await tokenInterface.balances("0x000");
+        } catch (error) {
+          expect(error).toStrictEqual(new SdkError(`the chain ${42161} hasn't been implemented yet`));
+        }
+      });
     });
   });
 
