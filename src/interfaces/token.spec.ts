@@ -50,11 +50,11 @@ describe("TokenInterface", () => {
     });
 
     it("should get the suggested Usdc exchange rate for list of tokens", async () => {
-      mockGetPriceUsdc.mockResolvedValueOnce([0.000001, 0.000002]).mockResolvedValueOnce([0.000003, 0.000004]);
+      mockGetPriceUsdc.mockResolvedValueOnce(0.000001).mockResolvedValueOnce(0.000002);
 
       expect(await tokenInterface.priceUsdc(["0x000", "0x001"])).toEqual({
-        "0x000": [0.000001, 0.000002],
-        "0x001": [0.000003, 0.000004]
+        "0x000": 0.000001,
+        "0x001": 0.000002
       });
       expect(mockGetPriceUsdc).toHaveBeenCalledTimes(2);
       expect(mockGetPriceUsdc).toHaveBeenNthCalledWith(1, "0x000", undefined);
