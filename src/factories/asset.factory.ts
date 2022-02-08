@@ -1,8 +1,6 @@
-import * as Factory from "factory.ts";
-
 import { Asset } from "..";
 
-export const assetStaticVaultV2Factory = Factory.Sync.makeFactory<Asset<"VAULT_V2">>({
+export const defaultAssetStaticVaultV2: Asset<"VAULT_V2"> = {
   address: "0x001",
   typeId: "VAULT_V2",
   token: "0x001",
@@ -33,4 +31,9 @@ export const assetStaticVaultV2Factory = Factory.Sync.makeFactory<Asset<"VAULT_V
 
     hideIfNoDeposits: true
   }
+};
+
+export const createMockAssetStaticVaultV2 = (overwrites: Partial<Asset<"VAULT_V2">> = {}) => ({
+  ...defaultAssetStaticVaultV2,
+  ...overwrites
 });

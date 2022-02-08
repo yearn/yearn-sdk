@@ -1,8 +1,6 @@
-import * as Factory from "factory.ts";
-
 import { Token } from "..";
 
-export const tokenFactory = Factory.Sync.makeFactory<Token>({
+export const defaultToken: Token = {
   address: "0x001",
   decimals: "18",
   symbol: "DEAD",
@@ -11,4 +9,9 @@ export const tokenFactory = Factory.Sync.makeFactory<Token>({
   supported: {
     zapper: true
   }
+};
+
+export const createMockToken = (overwrites: Partial<Token> = {}) => ({
+  ...defaultToken,
+  ...overwrites
 });

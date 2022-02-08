@@ -1,17 +1,17 @@
 import { Balance } from "..";
-import { tokenFactory } from "./token.factory";
+import { createMockToken } from "./token.factory";
+
+console.log(createMockToken);
 
 export const defaultBalance: Balance = {
   address: "0x000",
-  token: tokenFactory.build(),
+  token: createMockToken(),
   balance: "1",
   balanceUsdc: "1",
   priceUsdc: "1"
 };
 
-const createMockBalance = (overwrites: Partial<Balance> = {}) => ({
+export const createMockBalance = (overwrites: Partial<Balance> = {}) => ({
   ...defaultBalance,
   ...overwrites
 });
-
-export { createMockBalance };

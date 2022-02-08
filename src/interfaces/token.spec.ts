@@ -3,7 +3,7 @@ import { Contract } from "@ethersproject/contracts";
 import { Address, Asset, ChainId, SdkError, TokenInterface, TokenMetadata } from "..";
 import { CachedFetcher } from "../cache";
 import { Context } from "../context";
-import { assetStaticVaultV2Factory, createMockBalance, tokenFactory } from "../factories";
+import { createMockAssetStaticVaultV2, createMockBalance, createMockToken } from "../factories";
 import { EthAddress } from "../helpers";
 import { Yearn } from "../yearn";
 
@@ -193,7 +193,7 @@ describe("TokenInterface", () => {
 
   describe("supported", () => {
     describe("when the supported tokens are cached", () => {
-      let cachedToken = tokenFactory.build();
+      let cachedToken = createMockToken();
 
       beforeEach(() => {
         jest.spyOn(CachedFetcher.prototype, "fetch").mockResolvedValue([cachedToken]);
@@ -217,8 +217,8 @@ describe("TokenInterface", () => {
         });
 
         it("should fetch all the tokens supported by the zapper protocol along with icon url", async () => {
-          const supportedTokenWithIcon = tokenFactory.build();
-          const supportedTokenWithoutIcon = tokenFactory.build({ address: "0x002" });
+          const supportedTokenWithIcon = createMockToken();
+          const supportedTokenWithoutIcon = createMockToken({ address: "0x002" });
           zapperSupportedTokensMock.mockResolvedValue([supportedTokenWithIcon, supportedTokenWithoutIcon]);
           assetReadyThenMock.mockResolvedValue({ "0x001": "image.png" });
 
@@ -255,8 +255,8 @@ describe("TokenInterface", () => {
       let token: Address;
 
       beforeEach(() => {
-        vault = assetStaticVaultV2Factory.build();
-        token = tokenFactory.build().address;
+        vault = createMockAssetStaticVaultV2();
+        token = createMockToken().address;
       });
 
       it("should approve vault to spend a token on zapIn", async () => {
@@ -276,7 +276,7 @@ describe("TokenInterface", () => {
       let token: Address;
 
       beforeEach(() => {
-        vault = assetStaticVaultV2Factory.build();
+        vault = createMockAssetStaticVaultV2();
         token = EthAddress;
       });
 
@@ -292,8 +292,8 @@ describe("TokenInterface", () => {
       let token: Address;
 
       beforeEach(() => {
-        vault = assetStaticVaultV2Factory.build();
-        token = tokenFactory.build({ address: "0x999" }).address;
+        vault = createMockAssetStaticVaultV2();
+        token = createMockToken({ address: "0x999" }).address;
         zapperGasMock.mockResolvedValue({
           standard: 1,
           instant: 2,
@@ -345,8 +345,8 @@ describe("TokenInterface", () => {
       let token: Address;
 
       beforeEach(() => {
-        vault = assetStaticVaultV2Factory.build();
-        token = tokenFactory.build({ address: "0x999" }).address;
+        vault = createMockAssetStaticVaultV2();
+        token = createMockToken({ address: "0x999" }).address;
       });
 
       it("should return false", async () => {
@@ -361,8 +361,8 @@ describe("TokenInterface", () => {
       let token: Address;
 
       beforeEach(() => {
-        vault = assetStaticVaultV2Factory.build();
-        token = tokenFactory.build().address;
+        vault = createMockAssetStaticVaultV2();
+        token = createMockToken().address;
         zapperGasMock.mockResolvedValue({
           standard: 1,
           instant: 2,
