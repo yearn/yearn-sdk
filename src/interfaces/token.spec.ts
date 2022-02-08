@@ -3,7 +3,7 @@ import { Contract } from "@ethersproject/contracts";
 import { Address, Asset, ChainId, SdkError, TokenInterface, TokenMetadata } from "..";
 import { CachedFetcher } from "../cache";
 import { Context } from "../context";
-import { assetStaticVaultV2Factory, balanceFactory, tokenFactory } from "../factories";
+import { assetStaticVaultV2Factory, createMockBalance, tokenFactory } from "../factories";
 import { EthAddress } from "../helpers";
 import { Yearn } from "../yearn";
 
@@ -122,16 +122,16 @@ describe("TokenInterface", () => {
   });
 
   describe("balances", () => {
-    const vaultTokenWithBalance = balanceFactory.build({
+    const vaultTokenWithBalance = createMockBalance({
       address: "0x001"
     });
-    const vaultTokenWithoutBalance = balanceFactory.build({
+    const vaultTokenWithoutBalance = createMockBalance({
       balance: "0"
     });
-    const zapperTokenWithBalance = balanceFactory.build({
+    const zapperTokenWithBalance = createMockBalance({
       address: "0x002"
     });
-    const zapperSameAddressTokenWithBalance = balanceFactory.build({
+    const zapperSameAddressTokenWithBalance = createMockBalance({
       address: "0x001"
     });
 
@@ -164,7 +164,7 @@ describe("TokenInterface", () => {
       });
 
       it("should fetch token balances from the TokenInterface.supported list", async () => {
-        const ironBankBalance = balanceFactory.build();
+        const ironBankBalance = createMockBalance();
         ironBankBalancesMock.mockResolvedValue([ironBankBalance]);
 
         const actualBalances = await tokenInterface.balances("0x000");
