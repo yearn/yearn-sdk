@@ -173,7 +173,7 @@ describe("TokenInterface", () => {
         try {
           await tokenInterface.balances("0x000");
         } catch (error) {
-          expect(error).toStrictEqual(new SdkError(`the chain ${42} hasn't been implemented yet`));
+          expect(error).toStrictEqual(new SdkError("the chain 42 hasn't been implemented yet"));
         }
       });
     });
