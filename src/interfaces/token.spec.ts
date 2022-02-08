@@ -87,7 +87,9 @@ describe("TokenInterface", () => {
 
   describe("price", () => {
     it("should should get the exchange rate between two tokens", async () => {
-      expect(await tokenInterface.price("0x000", "0x001")).toEqual(1);
+      const actualPrice = await tokenInterface.price("0x000", "0x001");
+
+      expect(actualPrice).toEqual(1);
       expect(getPriceFromRouterMock).toHaveBeenCalledTimes(1);
       expect(getPriceFromRouterMock).toHaveBeenCalledWith("0x000", "0x001");
     });
@@ -97,7 +99,9 @@ describe("TokenInterface", () => {
     it("should get the suggested Usdc exchange rate for a token", async () => {
       getPriceUsdcMock.mockResolvedValue(0.000001);
 
-      expect(await tokenInterface.priceUsdc("0x000")).toEqual(0.000001);
+      const actualPriceUsdc = await tokenInterface.priceUsdc("0x000");
+
+      expect(actualPriceUsdc).toEqual(0.000001);
       expect(getPriceUsdcMock).toHaveBeenCalledTimes(1);
       expect(getPriceUsdcMock).toHaveBeenCalledWith("0x000", undefined);
     });
@@ -105,7 +109,9 @@ describe("TokenInterface", () => {
     it("should get the suggested Usdc exchange rate for list of tokens", async () => {
       getPriceUsdcMock.mockResolvedValueOnce(0.000001).mockResolvedValueOnce(0.000002);
 
-      expect(await tokenInterface.priceUsdc(["0x000", "0x001"])).toEqual({
+      const actualPriceUsdc = await tokenInterface.priceUsdc(["0x000", "0x001"]);
+
+      expect(actualPriceUsdc).toEqual({
         "0x000": 0.000001,
         "0x001": 0.000002
       });
@@ -142,7 +148,9 @@ describe("TokenInterface", () => {
         it("should fetch token balances from the TokenInterface.supported list", async () => {
           zapperBalancesMock.mockResolvedValue([zapperTokenWithBalance, zapperSameAddressTokenWithBalance]);
 
-          expect(await tokenInterface.balances("0x000")).toEqual([zapperTokenWithBalance, vaultTokenWithBalance]);
+          const actualBalances = await tokenInterface.balances("0x000");
+
+          expect(actualBalances).toEqual([zapperTokenWithBalance, vaultTokenWithBalance]);
           expect(zapperBalancesMock).toHaveBeenCalledTimes(1);
           expect(zapperBalancesMock).toHaveBeenCalledWith("0x000");
           expect(ironBankBalancesMock).not.toHaveBeenCalled();
@@ -159,7 +167,9 @@ describe("TokenInterface", () => {
         const ironBankBalance = balanceFactory.build();
         ironBankBalancesMock.mockResolvedValue([ironBankBalance]);
 
-        expect(await tokenInterface.balances("0x000")).toEqual([ironBankBalance, vaultTokenWithBalance]);
+        const actualBalances = await tokenInterface.balances("0x000");
+
+        expect(actualBalances).toEqual([ironBankBalance, vaultTokenWithBalance]);
         expect(ironBankBalancesMock).toHaveBeenCalledTimes(1);
         expect(ironBankBalancesMock).toHaveBeenCalledWith("0x000");
         expect(zapperBalancesMock).not.toHaveBeenCalled();
@@ -190,7 +200,9 @@ describe("TokenInterface", () => {
       });
 
       it("should return the supported tokens cached", async () => {
-        expect(await tokenInterface.supported()).toEqual([cachedToken]);
+        const actualSupportedTokensCached = await tokenInterface.supported();
+
+        expect(actualSupportedTokensCached).toEqual([cachedToken]);
       });
     });
 
@@ -210,7 +222,9 @@ describe("TokenInterface", () => {
           zapperSupportedTokensMock.mockResolvedValue([supportedTokenWithIcon, supportedTokenWithoutIcon]);
           assetReadyThenMock.mockResolvedValue({ "0x001": "image.png" });
 
-          expect(await tokenInterface.supported()).toEqual([
+          const actualSupportedTokens = await tokenInterface.supported();
+
+          expect(actualSupportedTokens).toEqual([
             { ...supportedTokenWithIcon, icon: "image.png" },
             supportedTokenWithoutIcon
           ]);
@@ -225,7 +239,9 @@ describe("TokenInterface", () => {
         });
 
         it("should return an empty array", async () => {
-          expect(await tokenInterface.supported()).toEqual([]);
+          const actualSupportedTokens = await tokenInterface.supported();
+
+          expect(actualSupportedTokens).toEqual([]);
           expect(zapperSupportedTokensMock).not.toHaveBeenCalled();
           expect(assetReadyThenMock).not.toHaveBeenCalled();
         });
@@ -244,7 +260,9 @@ describe("TokenInterface", () => {
       });
 
       it("should approve vault to spend a token on zapIn", async () => {
-        expect(await tokenInterface.approve(vault, token, "1", "0x001")).toEqual(true);
+        const actualApprove = await tokenInterface.approve(vault, token, "1", "0x001");
+
+        expect(actualApprove).toEqual(true);
 
         expect(Contract).toHaveBeenCalledTimes(1);
         expect(Contract).toHaveBeenCalledWith("0x001", ["function approve(address _spender, uint256 _value) public"], {
@@ -263,7 +281,9 @@ describe("TokenInterface", () => {
       });
 
       it("should return true", async () => {
-        expect(await tokenInterface.approve(vault, token, "1", "0x001")).toEqual(true);
+        const actualApprove = await tokenInterface.approve(vault, token, "1", "0x001");
+
+        expect(actualApprove).toEqual(true);
       });
     });
 
@@ -295,8 +315,9 @@ describe("TokenInterface", () => {
         });
 
         it("should approve vault to spend a token on zapIn", async () => {
-          expect(await tokenInterface.approve(vault, token, "1", "0x001")).toEqual("transaction");
+          const actualApprove = await tokenInterface.approve(vault, token, "1", "0x001");
 
+          expect(actualApprove).toEqual("transaction");
           expect(zapperZapInApprovalTransactionMock).toHaveBeenCalledTimes(1);
           expect(zapperZapInApprovalTransactionMock).toHaveBeenCalledWith("0x001", "0x999", "3000000000", "yearn");
         });
@@ -310,7 +331,9 @@ describe("TokenInterface", () => {
         });
 
         it("should return true", async () => {
-          expect(await tokenInterface.approve(vault, token, "1", "0x001")).toEqual(true);
+          const actualApprove = await tokenInterface.approve(vault, token, "1", "0x001");
+
+          expect(actualApprove).toEqual(true);
         });
       });
     });
@@ -327,7 +350,9 @@ describe("TokenInterface", () => {
       });
 
       it("should return false", async () => {
-        expect(await tokenInterface.approveZapOut(vault, token, "0x001")).toEqual(false);
+        const actualApproveZapOut = await tokenInterface.approveZapOut(vault, token, "0x001");
+
+        expect(actualApproveZapOut).toEqual(false);
       });
     });
 
@@ -359,11 +384,11 @@ describe("TokenInterface", () => {
         });
 
         it("should approve vault to spend a vault token on zapOut", async () => {
-          expect(await tokenInterface.approveZapOut(vault, token, "0x001")).toEqual("transaction");
+          const actualApproveZapOut = await tokenInterface.approveZapOut(vault, token, "0x001");
 
+          expect(actualApproveZapOut).toEqual("transaction");
           expect(zapperZapOutApprovalStateMock).toHaveBeenCalledTimes(1);
           expect(zapperZapOutApprovalStateMock).toHaveBeenCalledWith("0x001", "0x001");
-
           expect(zapperZapOutApprovalTransactionMock).toHaveBeenCalledTimes(1);
           expect(zapperZapOutApprovalTransactionMock).toHaveBeenCalledWith("0x001", "0x001", "3000000000");
         });
@@ -377,7 +402,9 @@ describe("TokenInterface", () => {
         });
 
         it("should return false", async () => {
-          expect(await tokenInterface.approveZapOut(vault, token, "0x001")).toEqual(false);
+          const actualApproveZapOut = await tokenInterface.approveZapOut(vault, token, "0x001");
+
+          expect(actualApproveZapOut).toEqual(false);
         });
       });
     });
@@ -434,7 +461,9 @@ describe("TokenInterface", () => {
 
       describe("when there are addresses", () => {
         it("should return the token metadata that include those addresses", async () => {
-          expect(await tokenInterface.metadata(["0x002"])).toEqual([
+          const actualMetadata = await tokenInterface.metadata(["0x002"]);
+
+          expect(actualMetadata).toEqual([
             {
               address: "0x002",
               description: "bar"
@@ -445,7 +474,9 @@ describe("TokenInterface", () => {
 
       describe("when there are no addresses", () => {
         it("should return the cached result", async () => {
-          expect(await tokenInterface.metadata()).toEqual(tokenMetadata);
+          const actualMetadata = await tokenInterface.metadata();
+
+          expect(actualMetadata).toEqual(tokenMetadata);
         });
       });
     });
@@ -458,7 +489,9 @@ describe("TokenInterface", () => {
 
       describe("when there are addresses", () => {
         it("should return the token metadata that include those addresses", async () => {
-          expect(await tokenInterface.metadata(["0x001"])).toEqual([
+          const actualMetadata = await tokenInterface.metadata(["0x001"]);
+
+          expect(actualMetadata).toEqual([
             {
               address: "0x001",
               description: "bar"
@@ -469,7 +502,9 @@ describe("TokenInterface", () => {
 
       describe("when there are no addresses", () => {
         it("should return the tokens from the meta service", async () => {
-          expect(await tokenInterface.metadata()).toEqual(tokenMetadataFromMetaService);
+          const actualMetadata = await tokenInterface.metadata();
+
+          expect(actualMetadata).toEqual(tokenMetadataFromMetaService);
         });
       });
     });
