@@ -1,8 +1,6 @@
 import { Balance } from "..";
 import { createMockToken } from "./token.factory";
 
-console.log(createMockToken);
-
 export const defaultBalance: Balance = {
   address: "0x000",
   token: createMockToken(),
