@@ -133,20 +133,22 @@ describe("TokenInterface", () => {
       vaultsBalancesMock.mockResolvedValue([vaultTokenWithBalance, vaultTokenWithoutBalance]);
     });
 
-    describe("when chainId is 1 or 1337", () => {
-      beforeEach(() => {
-        tokenInterface = new TokenInterface(mockedYearn, 1, new Context({}));
-      });
+    ([1, 1337] as ChainId[]).forEach(chainId =>
+      describe(`when chainId is ${chainId}`, () => {
+        beforeEach(() => {
+          tokenInterface = new TokenInterface(mockedYearn, chainId, new Context({}));
+        });
 
-      it("should fetch token balances from the TokenInterface.supported list", async () => {
-        zapperBalancesMock.mockResolvedValue([zapperTokenWithBalance, zapperSameAddressTokenWithBalance]);
+        it("should fetch token balances from the TokenInterface.supported list", async () => {
+          zapperBalancesMock.mockResolvedValue([zapperTokenWithBalance, zapperSameAddressTokenWithBalance]);
 
-        expect(await tokenInterface.balances("0x000")).toEqual([zapperTokenWithBalance, vaultTokenWithBalance]);
-        expect(zapperBalancesMock).toHaveBeenCalledTimes(1);
-        expect(zapperBalancesMock).toHaveBeenCalledWith("0x000");
-        expect(ironBankBalancesMock).not.toHaveBeenCalled();
-      });
-    });
+          expect(await tokenInterface.balances("0x000")).toEqual([zapperTokenWithBalance, vaultTokenWithBalance]);
+          expect(zapperBalancesMock).toHaveBeenCalledTimes(1);
+          expect(zapperBalancesMock).toHaveBeenCalledWith("0x000");
+          expect(ironBankBalancesMock).not.toHaveBeenCalled();
+        });
+      })
+    );
 
     describe("when chainId is 250", () => {
       beforeEach(() => {
