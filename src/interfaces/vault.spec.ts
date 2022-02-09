@@ -1,10 +1,15 @@
-import { ChainId, Context, SdkError, VaultInterface, Yearn } from "..";
+import { Contract } from "@ethersproject/contracts";
+
+import { ChainId, Context, SdkError, VaultInterface, Yearn, ZapProtocol } from "..";
+import { createMockAssetStaticVaultV2 } from "../factories/asset.factory";
 import { createMockEarningsUserData } from "../factories/earningsUserData.factory";
 import { createMockToken } from "../factories/token.factory";
 import { createMockTokenBalance } from "../factories/tokenBalance.factory";
+import { EthAddress } from "../helpers";
 
 const earningsAccountAssetsDataMock = jest.fn();
 const helperTokenBalancesMock = jest.fn();
+const sendTransactionMock = jest.fn();
 
 jest.mock("../yearn", () => ({
   Yearn: jest.fn().mockImplementation(() => ({
@@ -32,10 +37,21 @@ jest.mock("../context", () => ({
     provider: {
       write: {
         getSigner: jest.fn().mockImplementation(() => ({
-          sendTransaction: jest.fn().mockResolvedValue("transaction")
+          sendTransaction: sendTransactionMock
         }))
       }
     }
+  }))
+}));
+
+const PickleJarsMock = jest.requireMock("../services/partners/pickle");
+jest.mock("../services/partners/pickle", () => ({
+  PickleJars: []
+}));
+
+jest.mock("@ethersproject/contracts", () => ({
+  Contract: jest.fn().mockImplementation(() => ({
+    deposit: jest.fn()
   }))
 }));
 
@@ -176,7 +192,105 @@ describe("VaultInterface", () => {
   });
 
   describe("deposit", () => {
-    it.todo("should deposit into a yearn vault");
+    describe("when is zapping into pickle jar", () => {
+      beforeEach(() => {
+        PickleJarsMock.PickleJars = ["0xVault"];
+      });
+
+      it("should call zapIn with correct arguments and pickle as the zapProtocol", async () => {
+        const zapInMock = jest.fn();
+        (vaultInterface as any).zapIn = zapInMock;
+
+        const [vault, token, amount, account] = ["0xVault", "0xToken", "1", "0xAccount"];
+
+        await vaultInterface.deposit(vault, token, amount, account);
+
+        expect(zapInMock).toHaveBeenCalledTimes(1);
+        expect(zapInMock).toHaveBeenCalledWith(
+          vault,
+          token,
+          amount,
+          account,
+          { sendTransaction: sendTransactionMock },
+          {},
+          ZapProtocol.PICKLE,
+          {}
+        );
+      });
+    });
+
+    describe("when is not zapping into pickle jar", () => {
+      beforeEach(() => {
+        PickleJarsMock.PickleJars = [];
+      });
+
+      describe("when vault ref token is the same as the token", () => {
+        describe("when token is eth address", () => {
+          it("should throw", async () => {
+            const assetStaticVaultV2 = createMockAssetStaticVaultV2({ token: EthAddress });
+            vaultInterface.getStatic = jest.fn().mockResolvedValue([assetStaticVaultV2]);
+
+            try {
+              await vaultInterface.deposit("0xVault", EthAddress, "1", "0xAccount");
+            } catch (error) {
+              expect(error).toStrictEqual(new SdkError("deposit:v2:eth not implemented"));
+            }
+          });
+        });
+
+        describe("when token is not eth address", () => {
+          it("should deposit into a yearn vault", async () => {
+            const assetStaticVaultV2 = createMockAssetStaticVaultV2({ token: "0xToken" });
+            vaultInterface.getStatic = jest.fn().mockResolvedValue([assetStaticVaultV2]);
+
+            const executeVaultContractTransactionMock = jest.fn().mockResolvedValue("trx");
+            (vaultInterface as any).executeVaultContractTransaction = executeVaultContractTransactionMock;
+
+            const [vault, token, amount, account] = ["0xVault", "0xToken", "1", "0xAccount"];
+
+            const actualDeposit = await vaultInterface.deposit(vault, token, amount, account);
+
+            expect(Contract).toHaveBeenCalledTimes(1);
+            expect(Contract).toHaveBeenCalledWith(
+              "0xVault",
+              ["function deposit(uint256 amount) public", "function withdraw(uint256 amount) public"],
+              {
+                sendTransaction: sendTransactionMock
+              }
+            );
+            expect(executeVaultContractTransactionMock).toHaveBeenCalledTimes(1);
+            expect(executeVaultContractTransactionMock).toHaveBeenCalledWith(expect.any(Function), {});
+            expect(actualDeposit).toEqual("trx");
+          });
+        });
+      });
+
+      describe("when vault ref token is not the same as the token", () => {
+        it("should call zapIn with correct arguments and yearn as the zapProtocol", async () => {
+          const assetStaticVaultV2 = createMockAssetStaticVaultV2({ token: "0xRandom" });
+          vaultInterface.getStatic = jest.fn().mockResolvedValue([assetStaticVaultV2]);
+
+          const zapInMock = jest.fn();
+          (vaultInterface as any).zapIn = zapInMock;
+
+          const [vault, token, amount, account] = ["0xVault", "0xToken", "1", "0xAccount"];
+
+          await vaultInterface.deposit(vault, token, amount, account);
+
+          expect(zapInMock).toHaveBeenCalledTimes(1);
+          expect(zapInMock).toHaveBeenCalledWith(
+            vault,
+            token,
+            amount,
+            account,
+            { sendTransaction: sendTransactionMock },
+            {},
+            ZapProtocol.YEARN,
+            {}
+          );
+        });
+      });
+    });
   });
 
   describe("withdraw", () => {
