@@ -1,6 +1,6 @@
 import { Asset } from "../..";
 
-export const defaultAssetStaticVaultV2: Asset<"VAULT_V2"> = {
+export const DEFAULT_ASSET_STATIC_VAULT_V2: Asset<"VAULT_V2"> = {
   address: "0x001",
   typeId: "VAULT_V2",
   token: "0x001",
@@ -34,6 +34,6 @@ export const defaultAssetStaticVaultV2: Asset<"VAULT_V2"> = {
 };
 
 export const createMockAssetStaticVaultV2 = (overwrites: Partial<Asset<"VAULT_V2">> = {}) => ({
-  ...defaultAssetStaticVaultV2,
+  ...DEFAULT_ASSET_STATIC_VAULT_V2,
   ...overwrites
 });

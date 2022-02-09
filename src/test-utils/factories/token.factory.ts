@@ -1,6 +1,6 @@
 import { Token } from "../..";
 
-export const defaultToken: Token = {
+export const DEFAULT_TOKEN: Token = {
   address: "0x001",
   decimals: "18",
   symbol: "DEAD",
@@ -12,6 +12,6 @@ export const defaultToken: Token = {
 };
 
 export const createMockToken = (overwrites: Partial<Token> = {}) => ({
-  ...defaultToken,
+  ...DEFAULT_TOKEN,
   ...overwrites
 });
