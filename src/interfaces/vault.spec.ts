@@ -1,4 +1,7 @@
 import { ChainId, Context, VaultInterface, Yearn } from "..";
+import { createMockEarningsUserData } from "../factories/earningsUserData.factory";
+
+const earningsAccountAssetsDataMock = jest.fn();
 
 jest.mock("../yearn", () => ({
   Yearn: jest.fn().mockImplementation(() => ({
@@ -12,7 +15,9 @@ jest.mock("../yearn", () => ({
       zapper: {}
     },
     strategies: {},
-    earnings: {},
+    earnings: {
+      accountAssetsData: earningsAccountAssetsDataMock
+    },
     tokens: {}
   }))
 }));
@@ -60,7 +65,16 @@ describe("VaultInterface", () => {
   });
 
   describe("summaryOf", () => {
-    it.todo("should get the Vaults User Summary for a particular address");
+    it("should get the Vaults User Summary for a particular address", async () => {
+      const earningsUserData = createMockEarningsUserData();
+      earningsAccountAssetsDataMock.mockResolvedValueOnce(earningsUserData);
+
+      const actualSummaryOf = await vaultInterface.summaryOf("0x000");
+
+      expect(actualSummaryOf).toEqual({ earnings: "1", estimatedYearlyYield: "1", grossApy: 1, holdings: "1" });
+      expect(earningsAccountAssetsDataMock).toHaveBeenCalledTimes(1);
+      expect(earningsAccountAssetsDataMock).toHaveBeenCalledWith("0x000");
+    });
   });
 
   describe("metadataOf", () => {
