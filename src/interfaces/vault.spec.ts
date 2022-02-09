@@ -78,7 +78,52 @@ describe("VaultInterface", () => {
   });
 
   describe("metadataOf", () => {
-    it.todo("should get the Vault User Metadata for a particular address");
+    beforeEach(() => {
+      const earningsUserData = createMockEarningsUserData();
+      earningsAccountAssetsDataMock.mockResolvedValueOnce(earningsUserData);
+    });
+
+    describe("when an addresses array is not given", () => {
+      it("should get the Vault User Metadata for a particular address", async () => {
+        const actualMetadataOf = await vaultInterface.metadataOf("0x001");
+
+        expect(actualMetadataOf).toEqual([{ assetAddress: "0x001", earned: "1" }]);
+        expect(earningsAccountAssetsDataMock).toHaveBeenCalledTimes(1);
+        expect(earningsAccountAssetsDataMock).toHaveBeenCalledWith("0x001");
+      });
+    });
+
+    describe("when an addresses array is given", () => {
+      describe("when the address provided is included in the addresses array", () => {
+        it("should get the Vault User Metadata for the address provided", async () => {
+          const actualMetadataOf = await vaultInterface.metadataOf("0x001", ["0x000", "0x001", "0x002"]);
+
+          expect(actualMetadataOf).toEqual([{ assetAddress: "0x001", earned: "1" }]);
+          expect(earningsAccountAssetsDataMock).toHaveBeenCalledTimes(1);
+          expect(earningsAccountAssetsDataMock).toHaveBeenCalledWith("0x001");
+        });
+      });
+
+      describe("when the address provided is not included in the addresses array", () => {
+        it("should return an empty array", async () => {
+          const actualMetadataOf = await vaultInterface.metadataOf("0x001", ["0x000", "0x002"]);
+
+          expect(actualMetadataOf).toEqual([]);
+          expect(earningsAccountAssetsDataMock).toHaveBeenCalledTimes(1);
+          expect(earningsAccountAssetsDataMock).toHaveBeenCalledWith("0x001");
+        });
+      });
+
+      describe("when the addresses array is empty", () => {
+        it("should return an empty array", async () => {
+          const actualMetadataOf = await vaultInterface.metadataOf("0x001", []);
+
+          expect(actualMetadataOf).toEqual([]);
+          expect(earningsAccountAssetsDataMock).toHaveBeenCalledTimes(1);
+          expect(earningsAccountAssetsDataMock).toHaveBeenCalledWith("0x001");
+        });
+      });
+    });
   });
 
   describe("balances", () => {
