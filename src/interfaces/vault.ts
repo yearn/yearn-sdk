@@ -226,7 +226,7 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
   /**
    * Get the Vault User Metadata for a particular address.
    * @param address
-   * @param addresses
+   * @param addresses filter, if provided only those addresses' Vault User Metadata are returned
    * @returns
    */
   async metadataOf(address: Address, addresses?: Address[]): Promise<VaultUserMetadata[]> {
