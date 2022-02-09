@@ -3,8 +3,8 @@ import { Contract } from "@ethersproject/contracts";
 import { Address, Asset, ChainId, SdkError, TokenInterface, TokenMetadata } from "..";
 import { CachedFetcher } from "../cache";
 import { Context } from "../context";
-import { createMockAssetStaticVaultV2, createMockBalance, createMockToken } from "../factories";
 import { EthAddress } from "../helpers";
+import { createMockAssetStaticVaultV2, createMockBalance, createMockToken } from "../test-utils/factories";
 import { Yearn } from "../yearn";
 
 const getPriceUsdcMock = jest.fn();

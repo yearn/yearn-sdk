@@ -1,4 +1,4 @@
-import { Balance } from "..";
+import { Balance } from "../..";
 import { createMockToken } from "./token.factory";
 
 export const defaultBalance: Balance = {

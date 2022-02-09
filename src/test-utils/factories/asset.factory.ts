@@ -1,4 +1,4 @@
-import { Asset } from "..";
+import { Asset } from "../..";
 
 export const defaultAssetStaticVaultV2: Asset<"VAULT_V2"> = {
   address: "0x001",

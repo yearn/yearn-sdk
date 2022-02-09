@@ -1,4 +1,4 @@
-import { Token } from "..";
+import { Token } from "../..";
 
 export const defaultToken: Token = {
   address: "0x001",
