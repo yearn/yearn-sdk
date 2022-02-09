@@ -1,7 +1,10 @@
-import { ChainId, Context, VaultInterface, Yearn } from "..";
+import { ChainId, Context, SdkError, VaultInterface, Yearn } from "..";
 import { createMockEarningsUserData } from "../factories/earningsUserData.factory";
+import { createMockToken } from "../factories/token.factory";
+import { createMockTokenBalance } from "../factories/tokenBalance.factory";
 
 const earningsAccountAssetsDataMock = jest.fn();
+const helperTokenBalancesMock = jest.fn();
 
 jest.mock("../yearn", () => ({
   Yearn: jest.fn().mockImplementation(() => ({
@@ -10,7 +13,9 @@ jest.mock("../yearn", () => ({
       lens: {},
       vision: {},
       asset: {},
-      helper: {},
+      helper: {
+        tokenBalances: helperTokenBalancesMock
+      },
       oracle: {},
       zapper: {}
     },
@@ -69,11 +74,11 @@ describe("VaultInterface", () => {
       const earningsUserData = createMockEarningsUserData();
       earningsAccountAssetsDataMock.mockResolvedValueOnce(earningsUserData);
 
-      const actualSummaryOf = await vaultInterface.summaryOf("0x000");
+      const actualSummaryOf = await vaultInterface.summaryOf("0x001");
 
       expect(actualSummaryOf).toEqual({ earnings: "1", estimatedYearlyYield: "1", grossApy: 1, holdings: "1" });
       expect(earningsAccountAssetsDataMock).toHaveBeenCalledTimes(1);
-      expect(earningsAccountAssetsDataMock).toHaveBeenCalledWith("0x000");
+      expect(earningsAccountAssetsDataMock).toHaveBeenCalledWith("0x001");
     });
   });
 
@@ -127,7 +132,43 @@ describe("VaultInterface", () => {
   });
 
   describe("balances", () => {
-    it.todo("should get all yearn vault's underlying token balances for a particular address");
+    describe("when token exists for balance", () => {
+      it("should get all yearn vault's underlying token balances for a particular address", async () => {
+        const existingToken = createMockToken();
+        const existingToken2 = createMockToken({ address: "0xExisting" });
+        const randomToken = createMockToken({ address: "0xRandom" });
+        vaultInterface.tokens = jest.fn().mockResolvedValue([existingToken, existingToken2, randomToken]);
+
+        const existingBalance = createMockTokenBalance();
+        const existingBalance2 = createMockTokenBalance({ address: "0xExisting" });
+        helperTokenBalancesMock.mockResolvedValue([existingBalance, existingBalance2]);
+
+        const actualBalances = await vaultInterface.balances("0x001");
+
+        expect(actualBalances).toEqual([
+          { ...existingBalance, token: existingToken },
+          { ...existingBalance2, token: existingToken2 }
+        ]);
+        expect(helperTokenBalancesMock).toHaveBeenCalledTimes(1);
+        expect(helperTokenBalancesMock).toHaveBeenCalledWith("0x001", ["0x001", "0xExisting", "0xRandom"], undefined);
+      });
+    });
+
+    describe("when token does not exist for balance", () => {
+      it("should throw", async () => {
+        const token = createMockToken({ address: "foo" });
+        vaultInterface.tokens = jest.fn().mockResolvedValue([token]);
+
+        const balance = createMockTokenBalance({ address: "0x001" });
+        helperTokenBalancesMock.mockResolvedValue([balance]);
+
+        try {
+          await vaultInterface.balances("0x001");
+        } catch (error) {
+          expect(error).toStrictEqual(new SdkError("Token does not exist for Balance(0x001)"));
+        }
+      });
+    });
   });
 
   describe("tokens", () => {
