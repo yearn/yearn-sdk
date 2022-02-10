@@ -1,3 +1,4 @@
+import { BigNumber } from "@ethersproject/bignumber";
 import { Contract } from "@ethersproject/contracts";
 
 import { ChainId, Context, SdkError, VaultInterface, Yearn, ZapProtocol } from "..";
@@ -8,6 +9,7 @@ import { createMockTokenBalance } from "../factories/tokenBalance.factory";
 import { EthAddress } from "../helpers";
 
 const earningsAccountAssetsDataMock = jest.fn();
+const zapperZapOutMock = jest.fn();
 const helperTokenBalancesMock = jest.fn();
 const sendTransactionMock = jest.fn();
 
@@ -22,7 +24,9 @@ jest.mock("../yearn", () => ({
         tokenBalances: helperTokenBalancesMock
       },
       oracle: {},
-      zapper: {}
+      zapper: {
+        zapOut: zapperZapOutMock
+      }
     },
     strategies: {},
     earnings: {
@@ -51,7 +55,8 @@ jest.mock("../services/partners/pickle", () => ({
 
 jest.mock("@ethersproject/contracts", () => ({
   Contract: jest.fn().mockImplementation(() => ({
-    deposit: jest.fn()
+    deposit: jest.fn(),
+    withdraw: jest.fn()
   }))
 }));
 
@@ -294,6 +299,87 @@ describe("VaultInterface", () => {
   });
 
   describe("withdraw", () => {
-    it.todo("should withdraw from a yearn vault");
+    describe("when vault ref token is the same as the token given", () => {
+      beforeEach(() => {
+        const assetStaticVaultV2 = createMockAssetStaticVaultV2({ token: "0xToken" });
+        vaultInterface.getStatic = jest.fn().mockResolvedValue([assetStaticVaultV2]);
+      });
+
+      it("should withdraw from a yearn vault", async () => {
+        const executeVaultContractTransactionMock = jest.fn().mockResolvedValue("trx");
+        (vaultInterface as any).executeVaultContractTransaction = executeVaultContractTransactionMock;
+
+        const [vault, token, amount, account] = ["0xVault", "0xToken", "1", "0xAccount"];
+
+        const actualWithdraw = await vaultInterface.withdraw(vault, token, amount, account);
+
+        expect(Contract).toHaveBeenCalledTimes(1);
+        expect(Contract).toHaveBeenCalledWith(
+          "0xVault",
+          ["function deposit(uint256 amount) public", "function withdraw(uint256 amount) public"],
+          {
+            sendTransaction: sendTransactionMock
+          }
+        );
+        expect(executeVaultContractTransactionMock).toHaveBeenCalledTimes(1);
+        expect(executeVaultContractTransactionMock).toHaveBeenCalledWith(expect.any(Function), {});
+        expect(actualWithdraw).toEqual("trx");
+      });
+    });
+
+    describe("when vault ref token is not the same as the token given", () => {
+      beforeEach(() => {
+        const assetStaticVaultV2 = createMockAssetStaticVaultV2({ token: "0xRandom" });
+        vaultInterface.getStatic = jest.fn().mockResolvedValue([assetStaticVaultV2]);
+      });
+
+      describe("when slippage is provided as an option", () => {
+        it("should call zapOut with correct arguments and pickle as the zapProtocol", async () => {
+          const zapOutput = {
+            to: "0xZapOutTo",
+            from: "0xZapOutFrom",
+            data: "zapOutData",
+            value: "1",
+            gasPrice: "1",
+            gas: "1"
+          };
+          zapperZapOutMock.mockResolvedValue(zapOutput);
+          const executeZapperTransactionMock = jest.fn().mockResolvedValue("executeZapperTransactionResponse");
+          (vaultInterface as any).executeZapperTransaction = executeZapperTransactionMock;
+
+          const [vault, token, amount, account] = ["0xVault", "0xToken", "1", "0xAccount"];
+
+          const actualWithdraw = await vaultInterface.withdraw(vault, token, amount, account, { slippage: 1 });
+
+          expect(actualWithdraw).toBe("executeZapperTransactionResponse");
+          expect(zapperZapOutMock).toHaveBeenCalledTimes(1);
+          expect(zapperZapOutMock).toHaveBeenCalledWith("0xAccount", "0xToken", "1", "0xVault", "0", 1, false);
+          expect(executeZapperTransactionMock).toHaveBeenCalledTimes(1);
+          expect(executeZapperTransactionMock).toHaveBeenCalledWith(
+            {
+              data: "zapOutData",
+              from: "0xZapOutFrom",
+              gasLimit: BigNumber.from(zapOutput.gas),
+              gasPrice: BigNumber.from(zapOutput.gasPrice),
+              to: "0xZapOutTo",
+              value: BigNumber.from(zapOutput.value)
+            },
+            {},
+            BigNumber.from(zapOutput.value),
+            { sendTransaction: sendTransactionMock }
+          );
+        });
+      });
+
+      describe("when slippage is not provided as an option", () => {
+        it("should throw", async () => {
+          try {
+            await vaultInterface.withdraw("0xVault", "0xToken", "1", "0xAccount", { slippage: undefined });
+          } catch (error) {
+            expect(error).toStrictEqual(new SdkError("zap operations should have a slippage set"));
+          }
+        });
+      });
+    });
   });
 });
