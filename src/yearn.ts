@@ -27,12 +27,43 @@ import { AssetServiceState } from "./types/custom/assets";
 
 const originalJsonRpcSignerSendTransaction = JsonRpcSigner.prototype.sendTransaction;
 
+type ServicesType<T extends ChainId> = {
+  lens: LensService<T>;
+  oracle: OracleService<T>;
+  zapper: ZapperService;
+  asset: AssetService;
+  vision: VisionService;
+  subgraph: SubgraphService;
+  telegram: TelegramService;
+  meta: MetaService;
+  allowList?: AllowListService<T>;
+  pickle: PickleService;
+  helper: HelperService<T>;
+};
+
 /**
  * [[Yearn]] is a wrapper for all the services and interfaces of the SDK.
  *
- * Yearn namespace can be instantiated as a class, providing configuration
- * options that will then be used by all the services and interfaces:
+ * Yearn namespace can be instantiated as a class or with an asynchronous
+ * initializer, providing configuration options that will then be used by all
+ * the services and interfaces:
  *
+ * Initializing via asynchronous factory is preferred as it guarantees that
+ * services will use up-to-date onchain service addresses.
+ *
+ * ```typescript
+ * import { Yearn } from "@yfi/sdk";
+ *
+ * async function main() {
+ *   const provider = new JsonRpcProvider("http://localhost:8545");
+ *   const yearn = await Yearn.init(1, { provider });
+ * }
+ *
+ * main();
+ * ```
+ *
+ * You can also initialize via the constructor, falling back to hardcoded
+ * service addresses, at your own risk.
  * ```typescript
  * import { Yearn } from "@yfi/sdk";
  *
@@ -41,26 +72,9 @@ const originalJsonRpcSignerSendTransaction = JsonRpcSigner.prototype.sendTransac
  * ```
  */
 export class Yearn<T extends ChainId> {
-  providers: {
-    addresses: AddressProviderService<T>;
-  };
+  _ctxValue: ContextValue;
 
-  services: {
-    lens: LensService<T>;
-    oracle: OracleService<T>;
-    zapper: ZapperService;
-    asset: AssetService;
-    vision: VisionService;
-    subgraph: SubgraphService;
-    telegram: TelegramService;
-    meta: MetaService;
-    allowList?: AllowListService<T>;
-
-    pickle: PickleService;
-
-    helper: HelperService<T>;
-  };
-
+  services: ServicesType<T>;
   vaults: VaultInterface<T>;
   tokens: TokenInterface<T>;
   earnings: EarningsInterface<T>;
@@ -89,13 +103,10 @@ export class Yearn<T extends ChainId> {
    * @param assetServiceState the asset service does some expensive computation at initialization, passing the state from a previous sdk instance can prevent this
    */
   constructor(chainId: T, context: ContextValue, assetServiceState?: AssetServiceState) {
+    this._ctxValue = context;
     this.context = new Context(context);
 
-    const allowlistAddress = !this.context.disableAllowlist && AllowListService.addressByChain(chainId);
-
-    this.providers = {
-      addresses: new AddressProviderService(chainId, this.context)
-    };
+    const allowlistAddress = !this.context.disableAllowlist && this.context.addresses.allowList;
 
     this.services = {
       lens: new LensService(chainId, this.context),
@@ -121,42 +132,11 @@ export class Yearn<T extends ChainId> {
 
     this.configureSignerWithAllowlist();
 
-    this.ready = Promise.all([
-      this.services.asset.ready,
-      // temporary hack that reuses existing code to initialize service
-      // addresses based on AddressProvider contract
-      this.providers.addresses.ready.then(() => this.setChainId(chainId))
-    ]);
+    this.ready = Promise.all([this.services.asset.ready]);
   }
 
-  setChainId(chainId: ChainId) {
-    const allowlistAddress = !this.context.disableAllowlist && AllowListService.addressByChain(chainId);
-
-    this.services = {
-      lens: new LensService(chainId, this.context),
-      oracle: new OracleService(chainId, this.context),
-      zapper: new ZapperService(chainId, this.context),
-      asset: new AssetService(chainId, this.context),
-      vision: new VisionService(chainId, this.context),
-      subgraph: new SubgraphService(chainId, this.context),
-      pickle: new PickleService(chainId, this.context),
-      helper: new HelperService(chainId, this.context),
-      telegram: new TelegramService(chainId, this.context),
-      meta: new MetaService(chainId, this.context),
-      allowList: allowlistAddress ? new AllowListService(chainId, this.context, allowlistAddress) : undefined
-    };
-
-    this.vaults = new VaultInterface(this, chainId, this.context);
-    this.tokens = new TokenInterface(this, chainId, this.context);
-    this.earnings = new EarningsInterface(this, chainId, this.context);
-    this.fees = new FeesInterface(this, chainId, this.context);
-    this.ironBank = new IronBankInterface(this, chainId, this.context);
-    this.simulation = new SimulationInterface(this, chainId, this.context);
-    this.strategies = new StrategyInterface(this, chainId, this.context);
-
-    this.configureSignerWithAllowlist();
-
-    this.ready = Promise.all([this.services.asset.ready]);
+  async setChainId(chainId: ChainId) {
+    return await Yearn.init(chainId, this._ctxValue);
   }
 
   configureSignerWithAllowlist() {
@@ -182,5 +162,18 @@ export class Yearn<T extends ChainId> {
     } else {
       JsonRpcSigner.prototype.sendTransaction = originalJsonRpcSignerSendTransaction;
     }
+  }
+
+  static async init<T extends ChainId>(
+    chainId: T,
+    context: ContextValue,
+    assetServiceState?: AssetServiceState
+  ): Promise<Yearn<T>> {
+    let ctx = new Context(context);
+    let addresses = new AddressProviderService(chainId, ctx);
+
+    ctx = await addresses.ready;
+
+    return new Yearn(chainId, ctx, assetServiceState);
   }
 }

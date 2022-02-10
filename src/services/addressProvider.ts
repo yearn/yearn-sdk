@@ -5,10 +5,11 @@ import { Context } from "../context";
 
 /**
  * [[AddressProviderService]] fetches addresses of various contracts based on the
- * network and feeds them to the Yearn SDK
+ * network and feeds them to the Yearn SDK. It's purpose is to move away from
+ * hardcoded contract addresses on all the on-chain services used by the SDK.
  */
 export class AddressProviderService<T extends ChainId> extends ContractService<T> {
-  ready: Promise<void>;
+  ready: Promise<Context>;
   static abi = [
     "function addressById(string) public view returns (address)",
     "function addressPositionById(string) public view returns (int256)",
@@ -20,7 +21,7 @@ export class AddressProviderService<T extends ChainId> extends ContractService<T
 
   constructor(chainId: T, ctx: Context) {
     super(AddressProviderService.addressByChain(chainId), chainId, ctx);
-    this.ready = this.initialize();
+    this.ready = this._initialize();
   }
 
   static addressByChain(chainId: ChainId): string {
@@ -35,7 +36,12 @@ export class AddressProviderService<T extends ChainId> extends ContractService<T
     }
   }
 
-  private async initialize(): Promise<void> {
+  /**
+   * Fetches contract addresses from the network, populates the context with
+   * the correct addresses and yields the context.
+   * @private
+   */
+  private async _initialize(): Promise<Context> {
     const addresses: [string, string][] = await this.contract.read.addressesMetadata();
 
     const addressByKey = (key: string): string | undefined => {
@@ -50,8 +56,10 @@ export class AddressProviderService<T extends ChainId> extends ContractService<T
         ironBank: addressByKey("REGISTRY_ADAPTER_IRON_BANK")
       },
       oracle: addressByKey("ORACLE"),
-      helper: addressByKey("HELPER")
+      helper: addressByKey("HELPER"),
+      lens: addressByKey(""),
+      allowList: addressByKey("")
     };
-    return Promise.resolve();
+    return Promise.resolve(this.ctx);
   }
 }

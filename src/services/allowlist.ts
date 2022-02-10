@@ -3,14 +3,14 @@ import { BytesLike } from "@ethersproject/bytes";
 import { ChainId } from "../chain";
 import { ContractService } from "../common";
 import { Context } from "../context";
-import { Address } from "../types/common";
+import { Address } from "../types";
 
 /**
  * [[AllowListService]] is used to interface with yearn's deployed AllowList contract. The purpose of it is to be able to
  * validate that all interactions that are about to be written to the blockchain follow the set of rules that the AllowList defines on chain.
  * It should be used to validate any transaction before it is written. For example, it can be used to check that an approval transaction that the sdk makes
  * is approving a token that is an underlying asset of a vault, and also that the first parameter in the approval transaction is the address of a valid yearn vault.
- * Similiarly, for a deposit transaction, it can be used to check whether the vault is a valid yearn vault
+ * Similarly, for a deposit transaction, it can be used to check whether the vault is a valid yearn vault
  */
 export class AllowListService<T extends ChainId> extends ContractService<T> {
   static abi = [
