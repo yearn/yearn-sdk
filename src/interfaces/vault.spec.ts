@@ -1,7 +1,7 @@
 import { BigNumber } from "@ethersproject/bignumber";
 import { Contract } from "@ethersproject/contracts";
 
-import { ChainId, Context, SdkError, VaultInterface, Yearn, ZapProtocol } from "..";
+import { ChainId, Context, Position, SdkError, VaultInterface, Yearn, ZapProtocol } from "..";
 import { createMockAssetStaticVaultV2 } from "../factories/asset.factory";
 import { createMockEarningsUserData } from "../factories/earningsUserData.factory";
 import { createMockToken } from "../factories/token.factory";
@@ -11,13 +11,20 @@ import { EthAddress } from "../helpers";
 const earningsAccountAssetsDataMock = jest.fn();
 const zapperZapOutMock = jest.fn();
 const helperTokenBalancesMock = jest.fn();
+const lensAdaptersVaultsV2PositionsOfMock = jest.fn();
 const sendTransactionMock = jest.fn();
 
 jest.mock("../yearn", () => ({
   Yearn: jest.fn().mockImplementation(() => ({
     services: {
       meta: {},
-      lens: {},
+      lens: {
+        adapters: {
+          vaults: {
+            v2: { positionsOf: lensAdaptersVaultsV2PositionsOfMock }
+          }
+        }
+      },
       vision: {},
       asset: {},
       helper: {
@@ -87,7 +94,76 @@ describe("VaultInterface", () => {
   });
 
   describe("positionsOf", () => {
-    it.todo("should get yearn vault positions for a particular address");
+    let position: Position;
+
+    beforeEach(() => {
+      const assetStaticVaultV2 = createMockAssetStaticVaultV2({ token: EthAddress });
+      vaultInterface.getStatic = jest.fn().mockResolvedValue([assetStaticVaultV2]);
+      position = {
+        assetAddress: "0xPositionAssetAddress",
+        tokenAddress: "0xPositionTokenAddress",
+        typeId: "positionTypeId",
+        balance: "1",
+        underlyingTokenBalance: {
+          amount: "1",
+          amountUsdc: "1"
+        },
+        assetAllowances: [
+          {
+            owner: "0xAssetAllowancesOwner",
+            spender: "0xAssetAllowancesSpender",
+            amount: "2"
+          }
+        ],
+        tokenAllowances: [
+          {
+            owner: "0xTokenAllowancesOwner",
+            spender: "0xTokenAllowancesSpender",
+            amount: "3"
+          }
+        ]
+      };
+      lensAdaptersVaultsV2PositionsOfMock.mockResolvedValue([position]);
+    });
+
+    it("should get yearn vault positions for a particular address", async () => {
+      const actualPositionsOf = await vaultInterface.positionsOf("0x001");
+
+      expect(actualPositionsOf).toEqual([position]);
+      expect(lensAdaptersVaultsV2PositionsOfMock).toHaveBeenCalledTimes(1);
+      expect(lensAdaptersVaultsV2PositionsOfMock).toHaveBeenCalledWith("0x001", undefined, undefined);
+    });
+
+    describe("when positionsOf throws", () => {
+      describe("when the addresses filter was provided", () => {
+        it("should return all positions and not get the static vaults", async () => {
+          lensAdaptersVaultsV2PositionsOfMock.mockRejectedValueOnce(new Error("positionsOf error"));
+          lensAdaptersVaultsV2PositionsOfMock.mockResolvedValue([position]);
+
+          const actualPositionsOf = await vaultInterface.positionsOf("0x001", ["0x001"]);
+
+          expect(actualPositionsOf).toEqual([position]);
+          expect(lensAdaptersVaultsV2PositionsOfMock).toHaveBeenCalledTimes(2);
+          expect(lensAdaptersVaultsV2PositionsOfMock).toHaveBeenCalledWith("0x001", ["0x001"], undefined);
+          expect(vaultInterface.getStatic).not.toHaveBeenCalled();
+        });
+      });
+
+      describe("when the addresses filter was not provided", () => {
+        it("should return all positions and get the static vaults", async () => {
+          lensAdaptersVaultsV2PositionsOfMock.mockRejectedValueOnce(new Error("positionsOf error"));
+          lensAdaptersVaultsV2PositionsOfMock.mockResolvedValue([position]);
+
+          const actualPositionsOf = await vaultInterface.positionsOf("0x001");
+
+          expect(actualPositionsOf).toEqual([position]);
+          expect(lensAdaptersVaultsV2PositionsOfMock).toHaveBeenCalledTimes(2);
+          expect(lensAdaptersVaultsV2PositionsOfMock).toHaveBeenCalledWith("0x001", ["0x001"], undefined);
+          expect(vaultInterface.getStatic).toHaveBeenCalledTimes(1);
+          expect(vaultInterface.getStatic).toHaveBeenCalledWith(undefined, undefined);
+        });
+      });
+    });
   });
 
   describe("summaryOf", () => {
