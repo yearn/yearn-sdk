@@ -1,7 +1,21 @@
 import { BigNumber } from "@ethersproject/bignumber";
 import { Contract } from "@ethersproject/contracts";
 
-import { ChainId, Context, Position, SdkError, VaultInterface, Yearn, ZapProtocol } from "..";
+import {
+  Address,
+  ChainId,
+  Context,
+  ERC20,
+  IconMap,
+  Position,
+  SdkError,
+  Token,
+  TokenMetadata,
+  Usdc,
+  VaultInterface,
+  Yearn,
+  ZapProtocol
+} from "..";
 import { createMockAssetStaticVaultV2 } from "../factories/asset.factory";
 import { createMockEarningsUserData } from "../factories/earningsUserData.factory";
 import { createMockToken } from "../factories/token.factory";
@@ -9,11 +23,19 @@ import { createMockTokenBalance } from "../factories/tokenBalance.factory";
 import { EthAddress } from "../helpers";
 
 const earningsAccountAssetsDataMock = jest.fn();
+const tokensMetadataMock: jest.Mock<Promise<TokenMetadata[]>> = jest.fn();
 const zapperZapOutMock = jest.fn();
 const helperTokenBalancesMock = jest.fn();
+const helperTokensMock: jest.Mock<Promise<ERC20[]>> = jest.fn();
 const lensAdaptersVaultsV2PositionsOfMock = jest.fn();
 const lensAdaptersVaultsV2AssetsStaticMock = jest.fn();
+const lensAdaptersVaultsV2TokensMock = jest.fn();
 const sendTransactionMock = jest.fn();
+const cachedFetcherFetchMock = jest.fn();
+const assetReadyMock = jest.fn();
+const assetIconMock: jest.Mock<IconMap<Address>> = jest.fn();
+const assetAliasMock = jest.fn();
+const oracleGetPriceUsdcMock: jest.Mock<Promise<Usdc>> = jest.fn();
 
 jest.mock("../yearn", () => ({
   Yearn: jest.fn().mockImplementation(() => ({
@@ -24,17 +46,25 @@ jest.mock("../yearn", () => ({
           vaults: {
             v2: {
               positionsOf: lensAdaptersVaultsV2PositionsOfMock,
-              assetsStatic: lensAdaptersVaultsV2AssetsStaticMock
+              assetsStatic: lensAdaptersVaultsV2AssetsStaticMock,
+              tokens: lensAdaptersVaultsV2TokensMock
             }
           }
         }
       },
       vision: {},
-      asset: {},
-      helper: {
-        tokenBalances: helperTokenBalancesMock
+      asset: {
+        ready: assetReadyMock,
+        icon: assetIconMock,
+        alias: assetAliasMock
       },
-      oracle: {},
+      helper: {
+        tokenBalances: helperTokenBalancesMock,
+        tokens: helperTokensMock
+      },
+      oracle: {
+        getPriceUsdc: oracleGetPriceUsdcMock
+      },
       zapper: {
         zapOut: zapperZapOutMock
       }
@@ -43,7 +73,15 @@ jest.mock("../yearn", () => ({
     earnings: {
       accountAssetsData: earningsAccountAssetsDataMock
     },
-    tokens: {}
+    tokens: {
+      metadata: tokensMetadataMock
+    }
+  }))
+}));
+
+jest.mock("../cache", () => ({
+  CachedFetcher: jest.fn().mockImplementation(() => ({
+    fetch: cachedFetcherFetchMock
   }))
 }));
 
@@ -305,7 +343,73 @@ describe("VaultInterface", () => {
   });
 
   describe("tokens", () => {
-    it.todo("should get all yearn vault's underlying tokens");
+    describe("when the fetcher tokens are cached", () => {
+      it("should get all cached tokens", async () => {
+        const cachedToken = createMockToken({ address: "0xCachedToken" });
+        cachedFetcherFetchMock.mockResolvedValue([cachedToken]);
+
+        const actualTokens = await vaultInterface.tokens();
+
+        expect(actualTokens).toEqual([cachedToken]);
+      });
+    });
+
+    describe("when the fetcher tokens are not cached", () => {
+      it("should get all yearn vault's underlying tokens", async () => {
+        const tokenMock = createMockToken();
+        cachedFetcherFetchMock.mockResolvedValue(undefined);
+        lensAdaptersVaultsV2TokensMock.mockResolvedValue([tokenMock.address]);
+        assetIconMock.mockReturnValue({
+          [tokenMock.address]: "token-mock-icon.png"
+        });
+        helperTokensMock.mockReturnValue(
+          Promise.resolve<Token[]>([tokenMock])
+        );
+        tokensMetadataMock.mockReturnValue(
+          Promise.resolve<TokenMetadata[]>([{ ...tokenMock, description: "Token mock metadata" }])
+        );
+        oracleGetPriceUsdcMock.mockResolvedValue("1");
+        const fillTokenMetadataOverridesMock = jest.fn();
+        (vaultInterface as any).fillTokenMetadataOverrides = fillTokenMetadataOverridesMock;
+
+        const actualTokens = await vaultInterface.tokens();
+
+        expect(actualTokens).toEqual([
+          {
+            address: "0x001",
+            decimals: "18",
+            icon: "token-mock-icon.png",
+            metadata: {
+              address: "0x001",
+              decimals: "18",
+              description: "Token mock metadata",
+              name: "Dead Token",
+              priceUsdc: "0",
+              supported: {
+                zapper: true
+              },
+              symbol: "DEAD"
+            },
+            name: "Dead Token",
+            priceUsdc: "1",
+            supported: {},
+            symbol: "DEAD"
+          }
+        ]);
+        expect(lensAdaptersVaultsV2TokensMock).toHaveBeenCalledTimes(1);
+        expect(lensAdaptersVaultsV2TokensMock).toHaveBeenCalledWith(undefined); // no overrides
+        expect(assetIconMock).toHaveBeenCalledTimes(1);
+        expect(assetIconMock).toHaveBeenCalledWith(["0x001", EthAddress]);
+        expect(helperTokensMock).toHaveBeenCalledTimes(1);
+        expect(helperTokensMock).toHaveBeenCalledWith(["0x001"], undefined);
+        expect(tokensMetadataMock).toHaveBeenCalledTimes(1);
+        expect(tokensMetadataMock).toHaveBeenCalledWith(["0x001"]);
+        expect(assetAliasMock).toHaveBeenCalledTimes(1);
+        expect(assetAliasMock).toHaveBeenCalledWith("0x001");
+        expect(fillTokenMetadataOverridesMock).toHaveBeenCalledTimes(1);
+        expect(fillTokenMetadataOverridesMock).toHaveBeenCalledWith(actualTokens[0], actualTokens[0].metadata);
+      });
+    });
   });
 
   describe("deposit", () => {
