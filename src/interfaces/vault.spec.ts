@@ -12,6 +12,7 @@ const earningsAccountAssetsDataMock = jest.fn();
 const zapperZapOutMock = jest.fn();
 const helperTokenBalancesMock = jest.fn();
 const lensAdaptersVaultsV2PositionsOfMock = jest.fn();
+const lensAdaptersVaultsV2AssetsStaticMock = jest.fn();
 const sendTransactionMock = jest.fn();
 
 jest.mock("../yearn", () => ({
@@ -21,7 +22,10 @@ jest.mock("../yearn", () => ({
       lens: {
         adapters: {
           vaults: {
-            v2: { positionsOf: lensAdaptersVaultsV2PositionsOfMock }
+            v2: {
+              positionsOf: lensAdaptersVaultsV2PositionsOfMock,
+              assetsStatic: lensAdaptersVaultsV2AssetsStaticMock
+            }
           }
         }
       },
@@ -86,7 +90,39 @@ describe("VaultInterface", () => {
   });
 
   describe("getStatic", () => {
-    it.todo("should get static part of yearn vaults");
+    it("should get static part of yearn vaults", async () => {
+      const position = {
+        assetAddress: "0xPositionAssetAddress",
+        tokenAddress: "0xPositionTokenAddress",
+        typeId: "positionTypeId",
+        balance: "1",
+        underlyingTokenBalance: {
+          amount: "1",
+          amountUsdc: "1"
+        },
+        assetAllowances: [
+          {
+            owner: "0xAssetAllowancesOwner",
+            spender: "0xAssetAllowancesSpender",
+            amount: "2"
+          }
+        ],
+        tokenAllowances: [
+          {
+            owner: "0xTokenAllowancesOwner",
+            spender: "0xTokenAllowancesSpender",
+            amount: "3"
+          }
+        ]
+      };
+      lensAdaptersVaultsV2AssetsStaticMock.mockResolvedValue([position]);
+
+      const actualGetStatic = await vaultInterface.getStatic(["0x001"]);
+
+      expect(actualGetStatic).toEqual([position]);
+      expect(lensAdaptersVaultsV2AssetsStaticMock).toHaveBeenCalledTimes(1);
+      expect(lensAdaptersVaultsV2AssetsStaticMock).toHaveBeenCalledWith(["0x001"], undefined);
+    });
   });
 
   describe("getDynamic", () => {
