@@ -36,7 +36,7 @@ const DEFAULT_ASSET_STATIC_VAULT_V2: Asset<"VAULT_V2"> = {
 const DEFAULT_ASSET_DYNAMIC_VAULT_V2: AssetDynamic<"VAULT_V2"> = {
   address: "0x001",
   typeId: "VAULT_V2",
-  tokenId: "0x001",
+  tokenId: "0x001Dynamic",
   underlyingTokenBalance: {
     amount: "1",
     amountUsdc: "1"

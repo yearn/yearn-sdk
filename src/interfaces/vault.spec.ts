@@ -171,6 +171,7 @@ describe("VaultInterface", () => {
 
     describe("when the fetcher tokens are not cached", () => {
       let getStaticMock: jest.Mock;
+      let vaultDynamic: AssetDynamic<"VAULT_V2">;
 
       beforeEach(() => {
         cachedFetcherFetchMock.mockResolvedValue(undefined);
@@ -178,7 +179,7 @@ describe("VaultInterface", () => {
         const vaultStatic = createMockAssetStaticVaultV2();
         getStaticMock = jest.fn().mockResolvedValue([vaultStatic]);
         (vaultInterface as any).getStatic = getStaticMock;
-        const vaultDynamic = createMockAssetDynamicVaultV2();
+        vaultDynamic = createMockAssetDynamicVaultV2();
         const getDynamicMock = jest.fn().mockResolvedValue([vaultDynamic]);
         (vaultInterface as any).getDynamic = getDynamicMock;
         vaultsStrategiesMetadataMock.mockResolvedValue([
@@ -208,43 +209,19 @@ describe("VaultInterface", () => {
         );
       });
 
-      it("should get all yearn vaults", async () => {
+      fit("should get all yearn vaults", async () => {
         const actualGet = await vaultInterface.get();
 
         expect(actualGet).toEqual([
           {
-            address: "0x001",
-            typeId: "VAULT_V2",
-            token: "0x001",
-            name: "ASSET",
-            version: "1",
-            symbol: "ASS",
+            ...vaultDynamic,
             decimals: "18",
-            tokenId: "0x001",
-            underlyingTokenBalance: { amount: "1", amountUsdc: "1" },
+            name: "ASSET",
+            symbol: "ASS",
+            token: "0x001",
+            version: "1",
             metadata: {
-              symbol: "str",
-              pricePerShare: "Int",
-              migrationAvailable: true,
-              latestVaultAddress: "0x001",
-              depositLimit: "Int",
-              emergencyShutdown: true,
-              controller: "0x001",
-              totalAssets: "Int",
-              totalSupply: "Int",
-              displayName: "str",
-              displayIcon: "str",
-              defaultDisplayToken: "0x001",
-              hideIfNoDeposits: true,
-              strategies: {
-                strategiesMetadata: {
-                  address: "strategiesMetadataAddress",
-                  description: "strategiesMetadataDescription",
-                  name: "strategiesMetadataName",
-                  protocols: ["strategiesMetadata"]
-                },
-                vaultAddress: "0x001"
-              },
+              ...vaultDynamic.metadata,
               historicEarnings: [
                 {
                   date: "12-02-2022",
@@ -253,7 +230,16 @@ describe("VaultInterface", () => {
                     amountUsdc: "1"
                   }
                 }
-              ]
+              ],
+              strategies: {
+                strategiesMetadata: {
+                  address: "strategiesMetadataAddress",
+                  description: "strategiesMetadataDescription",
+                  name: "strategiesMetadataName",
+                  protocols: ["strategiesMetadata"]
+                },
+                vaultAddress: "0x001"
+              }
             }
           }
         ]);
@@ -383,55 +369,25 @@ describe("VaultInterface", () => {
           });
           lensAdaptersVaultsV2AssetsDynamicMock.mockResolvedValue([assetsDynamic]);
           visionApyMock.mockResolvedValue([]);
+          assetIconMock.mockReturnValue({ [EthAddress]: "eth.png" });
         });
 
         it("should set the ETH metadata", async () => {
-          const actualGetDynamic = await vaultInterface.getDynamic([]);
+          const actualGetDynamic = await vaultInterface.getDynamic();
 
           expect(actualGetDynamic).toEqual([
             {
-              address: "0x001",
-              typeId: "VAULT_V2",
-              tokenId: WethAddress,
-              underlyingTokenBalance: { amount: "1", amountUsdc: "1" },
+              ...assetsDynamic,
               metadata: {
-                symbol: "str",
-                pricePerShare: "Int",
-                strategies: {
-                  strategiesMetadata: {
-                    address: "strategiesMetadataAddress",
-                    description: "strategiesMetadataDescription",
-                    name: "strategiesMetadataName",
-                    protocols: ["strategiesMetadata"]
-                  },
-                  vaultAddress: "0x001"
-                },
-                migrationAvailable: true,
-                latestVaultAddress: "0x001",
-                depositLimit: "Int",
-                emergencyShutdown: true,
-                controller: "0x001",
-                totalAssets: "Int",
-                totalSupply: "Int",
-                displayName: "ETH",
-                displayIcon: "",
-                defaultDisplayToken: EthAddress,
-                hideIfNoDeposits: true,
-                historicEarnings: [
-                  {
-                    date: "12-02-2022",
-                    earnings: {
-                      amount: "1",
-                      amountUsdc: "1"
-                    }
-                  }
-                ],
-                apy: undefined
+                ...assetsDynamic.metadata,
+                displayIcon: {
+                  "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE": "eth.png"
+                }
               }
             }
           ]);
           expect(lensAdaptersVaultsV2AssetsDynamicMock).toHaveBeenCalledTimes(1);
-          expect(lensAdaptersVaultsV2AssetsDynamicMock).toHaveBeenCalledWith([], undefined);
+          expect(lensAdaptersVaultsV2AssetsDynamicMock).toHaveBeenCalledWith(undefined, undefined);
           expect(assetIconMock).toHaveBeenCalledTimes(1);
           expect(assetIconMock).not.toHaveBeenCalledWith(WethAddress);
           expect(assetIconMock).toHaveBeenCalledWith(EthAddress);
@@ -445,55 +401,32 @@ describe("VaultInterface", () => {
           assetsDynamic = createMockAssetDynamicVaultV2();
           lensAdaptersVaultsV2AssetsDynamicMock.mockResolvedValue([assetsDynamic]);
           visionApyMock.mockResolvedValue([]);
+          assetIconMock.mockReturnValue({ "0x001": "0x001.png" });
+          assetAliasMock.mockReturnValueOnce({
+            name: "aliasTokenName",
+            symbol: "ALIAS_TOKEN_SYMBOL",
+            address: "0x001"
+          });
         });
 
         it("should get dynamic part of yearn vaults", async () => {
-          const actualGetDynamic = await vaultInterface.getDynamic([]);
+          const actualGetDynamic = await vaultInterface.getDynamic();
 
           expect(actualGetDynamic).toEqual([
             {
-              address: "0x001",
-              typeId: "VAULT_V2",
-              tokenId: "0x001",
-              underlyingTokenBalance: { amount: "1", amountUsdc: "1" },
+              ...assetsDynamic,
               metadata: {
-                symbol: "str",
-                pricePerShare: "Int",
-                strategies: {
-                  strategiesMetadata: {
-                    address: "strategiesMetadataAddress",
-                    description: "strategiesMetadataDescription",
-                    name: "strategiesMetadataName",
-                    protocols: ["strategiesMetadata"]
-                  },
-                  vaultAddress: "0x001"
+                ...assetsDynamic.metadata,
+                displayIcon: {
+                  "0x001": "0x001.png"
                 },
-                migrationAvailable: true,
-                latestVaultAddress: "0x001",
-                depositLimit: "Int",
-                emergencyShutdown: true,
-                controller: "0x001",
-                totalAssets: "Int",
-                totalSupply: "Int",
-                displayName: "",
-                displayIcon: "",
-                defaultDisplayToken: "0x001",
-                hideIfNoDeposits: true,
-                historicEarnings: [
-                  {
-                    date: "12-02-2022",
-                    earnings: {
-                      amount: "1",
-                      amountUsdc: "1"
-                    }
-                  }
-                ],
-                apy: undefined
+                displayName: "ALIAS_TOKEN_SYMBOL",
+                defaultDisplayToken: assetsDynamic.tokenId
               }
             }
           ]);
           expect(lensAdaptersVaultsV2AssetsDynamicMock).toHaveBeenCalledTimes(1);
-          expect(lensAdaptersVaultsV2AssetsDynamicMock).toHaveBeenCalledWith([], undefined);
+          expect(lensAdaptersVaultsV2AssetsDynamicMock).toHaveBeenCalledWith(undefined, undefined);
           expect(assetIconMock).toHaveBeenCalledTimes(1);
           expect(assetIconMock).toHaveBeenCalledWith("0x001");
           expect(assetAliasMock).toHaveBeenCalledTimes(1);
@@ -712,24 +645,22 @@ describe("VaultInterface", () => {
 
         expect(actualTokens).toEqual([
           {
-            address: "0x001",
-            decimals: "18",
+            ...tokenMock,
             icon: "token-mock-icon.png",
             metadata: {
               address: "0x001",
               decimals: "18",
               description: "Token mock metadata",
+              symbol: "DEAD",
               name: "Dead Token",
               priceUsdc: "0",
               supported: {
                 zapper: true
-              },
-              symbol: "DEAD"
+              }
             },
             name: "Dead Token",
             priceUsdc: "1",
-            supported: {},
-            symbol: "DEAD"
+            supported: {}
           }
         ]);
         expect(lensAdaptersVaultsV2TokensMock).toHaveBeenCalledTimes(1);
