@@ -1,7 +1,7 @@
-import { EarningsUserData } from "..";
+import { EarningsUserData } from "../..";
 import { createMockEarningsAssetData } from "./earningsAssetData.factory";
 
-export const defaultEarningsUserData: EarningsUserData = {
+const DEFAULT_EARNINGS_USER_DATA: EarningsUserData = {
   earnings: "1",
   holdings: "1",
   grossApy: 1,
@@ -10,6 +10,6 @@ export const defaultEarningsUserData: EarningsUserData = {
 };
 
 export const createMockEarningsUserData = (overwrites: Partial<EarningsUserData> = {}) => ({
-  ...defaultEarningsUserData,
+  ...DEFAULT_EARNINGS_USER_DATA,
   ...overwrites
 });

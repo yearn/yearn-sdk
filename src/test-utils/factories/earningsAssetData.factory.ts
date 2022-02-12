@@ -1,11 +1,11 @@
-import { EarningsAssetData } from "..";
+import { EarningsAssetData } from "../..";
 
-export const defaultEarningsAssetData: EarningsAssetData = {
+const DEFAULT_EARNINGS_ASSET_DATA: EarningsAssetData = {
   assetAddress: "0x001",
   earned: "1"
 };
 
 export const createMockEarningsAssetData = (overwrites: Partial<EarningsAssetData> = {}) => ({
-  ...defaultEarningsAssetData,
+  ...DEFAULT_EARNINGS_ASSET_DATA,
   ...overwrites
 });

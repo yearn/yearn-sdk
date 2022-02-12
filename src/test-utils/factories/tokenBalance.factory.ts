@@ -1,6 +1,6 @@
-import { TokenBalance } from "..";
+import { TokenBalance } from "../..";
 
-export const defaultTokenBalance: TokenBalance = {
+const DEFAULT_TOKEN_BALANCE: TokenBalance = {
   address: "0x001",
   priceUsdc: "1",
   balance: "1",
@@ -8,6 +8,6 @@ export const defaultTokenBalance: TokenBalance = {
 };
 
 export const createMockTokenBalance = (overwrites: Partial<TokenBalance> = {}) => ({
-  ...defaultTokenBalance,
+  ...DEFAULT_TOKEN_BALANCE,
   ...overwrites
 });

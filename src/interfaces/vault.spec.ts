@@ -18,11 +18,14 @@ import {
   Yearn,
   ZapProtocol
 } from "..";
-import { createMockAssetDynamicVaultV2, createMockAssetStaticVaultV2 } from "../factories/asset.factory";
-import { createMockEarningsUserData } from "../factories/earningsUserData.factory";
-import { createMockToken } from "../factories/token.factory";
-import { createMockTokenBalance } from "../factories/tokenBalance.factory";
 import { EthAddress, WethAddress } from "../helpers";
+import {
+  createMockAssetDynamicVaultV2,
+  createMockAssetStaticVaultV2,
+  createMockEarningsUserData,
+  createMockToken,
+  createMockTokenBalance
+} from "../test-utils/factories";
 
 const earningsAccountAssetsDataMock = jest.fn();
 const tokensMetadataMock: jest.Mock<Promise<TokenMetadata[]>> = jest.fn();
