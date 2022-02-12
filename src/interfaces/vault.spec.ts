@@ -3,6 +3,7 @@ import { Contract } from "@ethersproject/contracts";
 
 import {
   Address,
+  AssetDynamic,
   ChainId,
   Context,
   ERC20,
@@ -16,11 +17,11 @@ import {
   Yearn,
   ZapProtocol
 } from "..";
-import { createMockAssetStaticVaultV2 } from "../factories/asset.factory";
+import { createMockAssetDynamicVaultV2, createMockAssetStaticVaultV2 } from "../factories/asset.factory";
 import { createMockEarningsUserData } from "../factories/earningsUserData.factory";
 import { createMockToken } from "../factories/token.factory";
 import { createMockTokenBalance } from "../factories/tokenBalance.factory";
-import { EthAddress } from "../helpers";
+import { EthAddress, WethAddress } from "../helpers";
 
 const earningsAccountAssetsDataMock = jest.fn();
 const tokensMetadataMock: jest.Mock<Promise<TokenMetadata[]>> = jest.fn();
@@ -29,6 +30,7 @@ const helperTokenBalancesMock = jest.fn();
 const helperTokensMock: jest.Mock<Promise<ERC20[]>> = jest.fn();
 const lensAdaptersVaultsV2PositionsOfMock = jest.fn();
 const lensAdaptersVaultsV2AssetsStaticMock = jest.fn();
+const lensAdaptersVaultsV2AssetsDynamicMock = jest.fn();
 const lensAdaptersVaultsV2TokensMock = jest.fn();
 const sendTransactionMock = jest.fn();
 const cachedFetcherFetchMock = jest.fn();
@@ -36,23 +38,30 @@ const assetReadyMock = jest.fn();
 const assetIconMock: jest.Mock<IconMap<Address>> = jest.fn();
 const assetAliasMock = jest.fn();
 const oracleGetPriceUsdcMock: jest.Mock<Promise<Usdc>> = jest.fn();
+const metaVaultsMock = jest.fn();
+const visionApyMock = jest.fn();
 
 jest.mock("../yearn", () => ({
   Yearn: jest.fn().mockImplementation(() => ({
     services: {
-      meta: {},
+      meta: {
+        vaults: metaVaultsMock
+      },
       lens: {
         adapters: {
           vaults: {
             v2: {
               positionsOf: lensAdaptersVaultsV2PositionsOfMock,
               assetsStatic: lensAdaptersVaultsV2AssetsStaticMock,
+              assetsDynamic: lensAdaptersVaultsV2AssetsDynamicMock,
               tokens: lensAdaptersVaultsV2TokensMock
             }
           }
         }
       },
-      vision: {},
+      vision: {
+        apy: visionApyMock
+      },
       asset: {
         ready: assetReadyMock,
         icon: assetIconMock,
@@ -164,7 +173,152 @@ describe("VaultInterface", () => {
   });
 
   describe("getDynamic", () => {
-    it.todo("should get dynamic part of yearn vaults");
+    describe("when the fetcher tokens are cached", () => {
+      let cachedToken: Token;
+      let randomCachedToken: Token;
+
+      beforeEach(() => {
+        cachedToken = createMockToken({ address: "0xCachedToken" });
+        randomCachedToken = createMockToken({ address: "0xCachedRandom" });
+        cachedFetcherFetchMock.mockResolvedValue([cachedToken, randomCachedToken]);
+      });
+
+      describe("when the addresses filter is given", () => {
+        it("should get all cached tokens in the addresses array filter", async () => {
+          const actualGetDynamic = await vaultInterface.getDynamic(["0xCachedToken"]);
+
+          expect(actualGetDynamic).toEqual([cachedToken]);
+        });
+      });
+
+      describe("when the addresses filter is not given", () => {
+        it("should get all cached tokens", async () => {
+          const actualGetDynamic = await vaultInterface.getDynamic();
+
+          expect(actualGetDynamic).toEqual([cachedToken, randomCachedToken]);
+        });
+      });
+    });
+
+    describe("when the fetcher tokens are not cached", () => {
+      beforeEach(() => {
+        cachedFetcherFetchMock.mockResolvedValue(undefined);
+        metaVaultsMock.mockResolvedValue([]);
+      });
+
+      describe("vaultMetadataOverrides", () => {
+        beforeEach(() => {
+          (vaultInterface as any).yearn.services.lens.adapters.vaults = [];
+        });
+
+        describe("when is provided", () => {
+          it("should not call meta vaults", async () => {
+            await vaultInterface.getDynamic([], [{ address: "0xVaultMetadataOverrides" }]);
+
+            expect(metaVaultsMock).not.toHaveBeenCalled();
+          });
+        });
+
+        describe("when is not provided", () => {
+          it("should call meta vaults", async () => {
+            await vaultInterface.getDynamic([]);
+
+            expect(metaVaultsMock).toHaveBeenCalledTimes(1);
+          });
+        });
+      });
+
+      describe("when tokenId is WethAddress", () => {
+        let assetsDynamic: AssetDynamic<"VAULT_V2">;
+
+        beforeEach(() => {
+          assetsDynamic = createMockAssetDynamicVaultV2({
+            tokenId: WethAddress
+          });
+          lensAdaptersVaultsV2AssetsDynamicMock.mockResolvedValue([assetsDynamic]);
+          visionApyMock.mockResolvedValue([]);
+        });
+
+        it("should set the ETH metadata", async () => {
+          const actualGetDynamic = await vaultInterface.getDynamic([]);
+
+          expect(actualGetDynamic).toEqual([
+            {
+              address: "0x001",
+              typeId: "VAULT_V2",
+              tokenId: WethAddress,
+              underlyingTokenBalance: { amount: "1", amountUsdc: "1" },
+              metadata: {
+                symbol: "str",
+                pricePerShare: "Int",
+                migrationAvailable: true,
+                latestVaultAddress: "0x001",
+                depositLimit: "Int",
+                emergencyShutdown: true,
+                controller: "0x001",
+                totalAssets: "Int",
+                totalSupply: "Int",
+                displayName: "ETH",
+                displayIcon: "",
+                defaultDisplayToken: EthAddress,
+                hideIfNoDeposits: true,
+                apy: undefined
+              }
+            }
+          ]);
+          expect(lensAdaptersVaultsV2AssetsDynamicMock).toHaveBeenCalledTimes(1);
+          expect(lensAdaptersVaultsV2AssetsDynamicMock).toHaveBeenCalledWith([], undefined);
+          expect(assetIconMock).toHaveBeenCalledTimes(1);
+          expect(assetIconMock).not.toHaveBeenCalledWith(WethAddress);
+          expect(assetIconMock).toHaveBeenCalledWith(EthAddress);
+        });
+      });
+
+      describe("when tokenId is not WethAddress", () => {
+        let assetsDynamic: AssetDynamic<"VAULT_V2">;
+
+        beforeEach(() => {
+          assetsDynamic = createMockAssetDynamicVaultV2();
+          lensAdaptersVaultsV2AssetsDynamicMock.mockResolvedValue([assetsDynamic]);
+          visionApyMock.mockResolvedValue([]);
+        });
+
+        it("should get dynamic part of yearn vaults", async () => {
+          const actualGetDynamic = await vaultInterface.getDynamic([]);
+
+          expect(actualGetDynamic).toEqual([
+            {
+              address: "0x001",
+              typeId: "VAULT_V2",
+              tokenId: "0x001",
+              underlyingTokenBalance: { amount: "1", amountUsdc: "1" },
+              metadata: {
+                symbol: "str",
+                pricePerShare: "Int",
+                migrationAvailable: true,
+                latestVaultAddress: "0x001",
+                depositLimit: "Int",
+                emergencyShutdown: true,
+                controller: "0x001",
+                totalAssets: "Int",
+                totalSupply: "Int",
+                displayName: "",
+                displayIcon: "",
+                defaultDisplayToken: "0x001",
+                hideIfNoDeposits: true,
+                apy: undefined
+              }
+            }
+          ]);
+          expect(lensAdaptersVaultsV2AssetsDynamicMock).toHaveBeenCalledTimes(1);
+          expect(lensAdaptersVaultsV2AssetsDynamicMock).toHaveBeenCalledWith([], undefined);
+          expect(assetIconMock).toHaveBeenCalledTimes(1);
+          expect(assetIconMock).toHaveBeenCalledWith("0x001");
+          expect(assetAliasMock).toHaveBeenCalledTimes(1);
+          expect(assetAliasMock).toHaveBeenCalledWith("0x001");
+        });
+      });
+    });
   });
 
   describe("positionsOf", () => {

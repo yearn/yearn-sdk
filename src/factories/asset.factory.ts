@@ -1,6 +1,6 @@
-import { Asset } from "..";
+import { Asset, AssetDynamic } from "..";
 
-export const defaultAssetStaticVaultV2: Asset<"VAULT_V2"> = {
+const defaultAssetStaticVaultV2: Asset<"VAULT_V2"> = {
   address: "0x001",
   typeId: "VAULT_V2",
   token: "0x001",
@@ -33,7 +33,40 @@ export const defaultAssetStaticVaultV2: Asset<"VAULT_V2"> = {
   }
 };
 
+const defaultAssetDynamicVaultV2: AssetDynamic<"VAULT_V2"> = {
+  address: "0x001",
+  typeId: "VAULT_V2",
+  tokenId: "0x001",
+  underlyingTokenBalance: {
+    amount: "1",
+    amountUsdc: "1"
+  },
+  metadata: {
+    symbol: "str",
+    pricePerShare: "Int",
+    migrationAvailable: true,
+    latestVaultAddress: "0x001",
+    depositLimit: "Int",
+    emergencyShutdown: true,
+
+    controller: "0x001",
+    totalAssets: "Int",
+    totalSupply: "Int",
+
+    displayName: "str",
+    displayIcon: "str",
+    defaultDisplayToken: "0x001",
+
+    hideIfNoDeposits: true
+  }
+};
+
 export const createMockAssetStaticVaultV2 = (overwrites: Partial<Asset<"VAULT_V2">> = {}) => ({
   ...defaultAssetStaticVaultV2,
+  ...overwrites
+});
+
+export const createMockAssetDynamicVaultV2 = (overwrites: Partial<AssetDynamic<"VAULT_V2">> = {}) => ({
+  ...defaultAssetDynamicVaultV2,
   ...overwrites
 });
