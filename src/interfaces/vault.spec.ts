@@ -4,6 +4,7 @@ import { Contract } from "@ethersproject/contracts";
 import {
   Address,
   AssetDynamic,
+  AssetHistoricEarnings,
   ChainId,
   Context,
   ERC20,
@@ -40,6 +41,8 @@ const assetAliasMock = jest.fn();
 const oracleGetPriceUsdcMock: jest.Mock<Promise<Usdc>> = jest.fn();
 const metaVaultsMock = jest.fn();
 const visionApyMock = jest.fn();
+const vaultsStrategiesMetadataMock = jest.fn();
+const assetsHistoricEarningsMock = jest.fn();
 
 jest.mock("../yearn", () => ({
   Yearn: jest.fn().mockImplementation(() => ({
@@ -78,9 +81,12 @@ jest.mock("../yearn", () => ({
         zapOut: zapperZapOutMock
       }
     },
-    strategies: {},
+    strategies: {
+      vaultsStrategiesMetadata: vaultsStrategiesMetadataMock
+    },
     earnings: {
-      accountAssetsData: earningsAccountAssetsDataMock
+      accountAssetsData: earningsAccountAssetsDataMock,
+      assetsHistoricEarnings: assetsHistoricEarningsMock
     },
     tokens: {
       metadata: tokensMetadataMock
@@ -133,7 +139,144 @@ describe("VaultInterface", () => {
   });
 
   describe("get", () => {
-    it.todo("should get all yearn vaults");
+    describe("when the fetcher tokens are cached", () => {
+      let cachedToken: Token;
+      let randomCachedToken: Token;
+
+      beforeEach(() => {
+        cachedToken = createMockToken({ address: "0xCachedToken" });
+        randomCachedToken = createMockToken({ address: "0xCachedRandom" });
+        cachedFetcherFetchMock.mockResolvedValue([cachedToken, randomCachedToken]);
+      });
+
+      describe("when the addresses filter is given", () => {
+        it("should get all cached tokens in the addresses array filter", async () => {
+          const actualGet = await vaultInterface.get(["0xCachedToken"]);
+
+          expect(actualGet).toEqual([cachedToken]);
+        });
+      });
+
+      describe("when the addresses filter is not given", () => {
+        it("should get all cached tokens", async () => {
+          const actualGet = await vaultInterface.get();
+
+          expect(actualGet).toEqual([cachedToken, randomCachedToken]);
+        });
+      });
+    });
+
+    describe("when the fetcher tokens are not cached", () => {
+      let getStaticMock: jest.Mock;
+
+      beforeEach(() => {
+        cachedFetcherFetchMock.mockResolvedValue(undefined);
+        metaVaultsMock.mockResolvedValue([]);
+        const vaultStatic = createMockAssetStaticVaultV2();
+        getStaticMock = jest.fn().mockResolvedValue([vaultStatic]);
+        (vaultInterface as any).getStatic = getStaticMock;
+        const vaultDynamic = createMockAssetDynamicVaultV2();
+        const getDynamicMock = jest.fn().mockResolvedValue([vaultDynamic]);
+        (vaultInterface as any).getDynamic = getDynamicMock;
+        vaultsStrategiesMetadataMock.mockResolvedValue([
+          {
+            vaultAddress: "0x001",
+            strategiesMetadata: {
+              name: "strategiesMetadataName",
+              description: "strategiesMetadataDescription",
+              address: "strategiesMetadataAddress",
+              protocols: ["strategiesMetadata"]
+            }
+          }
+        ]);
+        assetsHistoricEarningsMock.mockReturnValue(
+          Promise.resolve<AssetHistoricEarnings[]>([
+            {
+              assetAddress: "0x001",
+              decimals: 18,
+              dayData: [
+                {
+                  earnings: { amount: "1", amountUsdc: "1" },
+                  date: "12-02-2022"
+                }
+              ]
+            }
+          ])
+        );
+      });
+
+      it("should get all yearn vaults", async () => {
+        const actualGet = await vaultInterface.get();
+
+        expect(actualGet).toEqual([
+          {
+            address: "0x001",
+            typeId: "VAULT_V2",
+            token: "0x001",
+            name: "ASSET",
+            version: "1",
+            symbol: "ASS",
+            decimals: "18",
+            tokenId: "0x001",
+            underlyingTokenBalance: { amount: "1", amountUsdc: "1" },
+            metadata: {
+              symbol: "str",
+              pricePerShare: "Int",
+              migrationAvailable: true,
+              latestVaultAddress: "0x001",
+              depositLimit: "Int",
+              emergencyShutdown: true,
+              controller: "0x001",
+              totalAssets: "Int",
+              totalSupply: "Int",
+              displayName: "str",
+              displayIcon: "str",
+              defaultDisplayToken: "0x001",
+              hideIfNoDeposits: true,
+              strategies: {
+                strategiesMetadata: {
+                  address: "strategiesMetadataAddress",
+                  description: "strategiesMetadataDescription",
+                  name: "strategiesMetadataName",
+                  protocols: ["strategiesMetadata"]
+                },
+                vaultAddress: "0x001"
+              },
+              historicEarnings: [
+                {
+                  date: "12-02-2022",
+                  earnings: {
+                    amount: "1",
+                    amountUsdc: "1"
+                  }
+                }
+              ]
+            }
+          }
+        ]);
+        expect(metaVaultsMock).toHaveBeenCalledTimes(1);
+        expect(getStaticMock).toHaveBeenCalledTimes(1);
+        expect(getStaticMock).toHaveBeenCalledWith(undefined, undefined);
+      });
+
+      describe("when dynamic asset does not exist for asset address", () => {
+        beforeEach(() => {
+          const vaultDynamic = createMockAssetDynamicVaultV2({ address: "0xNonExistant" });
+          (vaultInterface as any).getDynamic = jest.fn().mockResolvedValue([vaultDynamic]);
+        });
+
+        it("should throw", async () => {
+          const balance = createMockTokenBalance({ address: "0x001" });
+          helperTokenBalancesMock.mockResolvedValue([balance]);
+
+          try {
+            await vaultInterface.get();
+          } catch (error) {
+            expect(error).toStrictEqual(new SdkError("Dynamic asset does not exist for 0x001"));
+          }
+        });
+      });
+    });
   });
 
   describe("getStatic", () => {
@@ -251,6 +394,15 @@ describe("VaultInterface", () => {
               metadata: {
                 symbol: "str",
                 pricePerShare: "Int",
+                strategies: {
+                  strategiesMetadata: {
+                    address: "strategiesMetadataAddress",
+                    description: "strategiesMetadataDescription",
+                    name: "strategiesMetadataName",
+                    protocols: ["strategiesMetadata"]
+                  },
+                  vaultAddress: "0x001"
+                },
                 migrationAvailable: true,
                 latestVaultAddress: "0x001",
                 depositLimit: "Int",
@@ -262,6 +414,15 @@ describe("VaultInterface", () => {
                 displayIcon: "",
                 defaultDisplayToken: EthAddress,
                 hideIfNoDeposits: true,
+                historicEarnings: [
+                  {
+                    date: "12-02-2022",
+                    earnings: {
+                      amount: "1",
+                      amountUsdc: "1"
+                    }
+                  }
+                ],
                 apy: undefined
               }
             }
@@ -295,6 +456,15 @@ describe("VaultInterface", () => {
               metadata: {
                 symbol: "str",
                 pricePerShare: "Int",
+                strategies: {
+                  strategiesMetadata: {
+                    address: "strategiesMetadataAddress",
+                    description: "strategiesMetadataDescription",
+                    name: "strategiesMetadataName",
+                    protocols: ["strategiesMetadata"]
+                  },
+                  vaultAddress: "0x001"
+                },
                 migrationAvailable: true,
                 latestVaultAddress: "0x001",
                 depositLimit: "Int",
@@ -306,6 +476,15 @@ describe("VaultInterface", () => {
                 displayIcon: "",
                 defaultDisplayToken: "0x001",
                 hideIfNoDeposits: true,
+                historicEarnings: [
+                  {
+                    date: "12-02-2022",
+                    earnings: {
+                      amount: "1",
+                      amountUsdc: "1"
+                    }
+                  }
+                ],
                 apy: undefined
               }
             }
