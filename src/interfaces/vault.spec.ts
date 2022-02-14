@@ -317,7 +317,7 @@ describe("VaultInterface", () => {
 
       describe("when the addresses filter is given", () => {
         it("should get all cached tokens in the addresses array filter", async () => {
-          const actualGetDynamic = await vaultInterface.getDynamic(["0xCachedToken"]);
+          const actualGetDynamic = await vaultInterface.getDynamic([cachedToken.address]);
 
           expect(actualGetDynamic).toEqual([cachedToken]);
         });
