@@ -37,12 +37,11 @@ export class RegistryV2Adapter<T extends ChainId> extends ContractService<T> imp
    * @returns static
    */
   async assetsStatic(addresses?: Address[], overrides: CallOverrides = {}): Promise<VaultStatic[]> {
+    const contract = await this.contract;
     if (addresses) {
-      return await this.contract
-        .then(contract => contract.read["assetsStatic(address[])"](addresses, overrides))
-        .then(structArray);
+      return await contract.read["assetsStatic(address[])"](addresses, overrides).then(structArray);
     }
-    return await this.contract.then(contract => contract.read["assetsStatic()"]()).then(structArray);
+    return await contract.read["assetsStatic()"]().then(structArray);
   }
 
   /**
@@ -52,9 +51,9 @@ export class RegistryV2Adapter<T extends ChainId> extends ContractService<T> imp
    * @returns dynamic
    */
   async assetsDynamic(addresses?: Address[], overrides: CallOverrides = {}): Promise<VaultDynamic[]> {
+    const contract = await this.contract;
     if (addresses) {
-      return await this.contract
-        .then(contract => contract.read["assetsDynamic(address[])"](addresses, overrides))
+      return await contract.read["assetsDynamic(address[])"](addresses, overrides)
         .then(structArray)
         .then((assets: any) =>
           assets.map((asset: any) => ({
@@ -68,8 +67,7 @@ export class RegistryV2Adapter<T extends ChainId> extends ContractService<T> imp
           }))
         );
     }
-    return await this.contract
-      .then(contract => contract.read["assetsDynamic()"]())
+    return await contract.read["assetsDynamic()"]()
       .then(structArray)
       .then((assets: any) =>
         assets.map((asset: any) => {
@@ -95,14 +93,13 @@ export class RegistryV2Adapter<T extends ChainId> extends ContractService<T> imp
    */
 
   async positionsOf(address: Address, addresses?: Address[], overrides: CallOverrides = {}): Promise<Position[]> {
+    const contract = await this.contract;
     if (addresses) {
-      return await this.contract
-        .then(contract => contract.read["assetsPositionsOf(address,address[])"](address, addresses, overrides))
-        .then(structArray);
+      return await contract.read["assetsPositionsOf(address,address[])"](address, addresses, overrides).then(
+        structArray
+      );
     }
-    return await this.contract
-      .then(contract => contract.read["assetsPositionsOf(address)"](address, overrides))
-      .then(structArray);
+    return await contract.read["assetsPositionsOf(address)"](address, overrides).then(structArray);
   }
 
   /**
@@ -111,6 +108,7 @@ export class RegistryV2Adapter<T extends ChainId> extends ContractService<T> imp
    * @returns
    */
   async tokens(overrides: CallOverrides = {}): Promise<Address[]> {
-    return await this.contract.then(contract => contract.read.assetsTokensAddresses(overrides));
+    const contract = await this.contract;
+    return await contract.read.assetsTokensAddresses(overrides);
   }
 }
