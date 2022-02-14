@@ -85,7 +85,7 @@ export class IronBankAdapter<T extends ChainId> extends ContractService<T> {
     const contract = await this.contract;
     const assetsPromise: Promise<IronBankMarketDynamic[]> = addresses
       ? contract.read["assetsDynamic(address[])"](addresses, overrides).then(structArray)
-      : this.contract.then(contract => contract.read["assetsDynamic()"](overrides)).then(structArray);
+      : contract.read["assetsDynamic()"](overrides).then(structArray);
 
     const [assets, blocksPerYear] = await Promise.all([assetsPromise, this.blocksPerYear()]);
     for (const asset of assets) {
@@ -103,14 +103,13 @@ export class IronBankAdapter<T extends ChainId> extends ContractService<T> {
    * @returns
    */
   async positionsOf(address: Address, addresses?: Address[], overrides: CallOverrides = {}): Promise<Position[]> {
+    const contract = await this.contract;
     if (addresses) {
-      return await this.contract
-        .then(contract => contract.read["assetsPositionsOf(address,address[])"](address, addresses, overrides))
-        .then(structArray);
+      return await contract.read["assetsPositionsOf(address,address[])"](address, addresses, overrides).then(
+        structArray
+      );
     }
-    return await this.contract
-      .then(contract => contract.read["assetsPositionsOf(address)"](address, overrides))
-      .then(structArray);
+    return contract.read["assetsPositionsOf(address)"](address, overrides).then(structArray);
   }
 
   /**
