@@ -154,7 +154,7 @@ describe("VaultInterface", () => {
 
       describe("when the addresses filter is given", () => {
         it("should get all cached tokens in the addresses array filter", async () => {
-          const actualGet = await vaultInterface.get(["0xCachedToken"]);
+          const actualGet = await vaultInterface.get([cachedToken.address]);
 
           expect(actualGet).toEqual([cachedToken]);
         });
