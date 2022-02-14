@@ -1,8 +1,11 @@
-import { ChainId, EarningsInterface } from "..";
+import BigNumber from "bignumber.js";
+
+import { ChainId, EarningsInterface, Usdc } from "..";
 import { Context } from "../context";
 import { Yearn } from "../yearn";
 
 const subgraphFetchQueryMock = jest.fn();
+const oracleGetPriceUsdcMock: jest.Mock<Promise<Usdc>> = jest.fn();
 
 jest.mock("../yearn", () => ({
   Yearn: jest.fn().mockImplementation(() => ({
@@ -12,7 +15,9 @@ jest.mock("../yearn", () => ({
       },
       vision: {},
       lens: {},
-      oracle: {}
+      oracle: {
+        getPriceUsdc: oracleGetPriceUsdcMock
+      }
     }
   }))
 }));
@@ -32,7 +37,7 @@ describe("EarningsInterface", () => {
   });
 
   describe("protocolEarnings", () => {
-    describe("when there is no response", () => {
+    describe("when there is no data", () => {
       beforeEach(() => {
         subgraphFetchQueryMock.mockResolvedValue(undefined);
       });
@@ -41,6 +46,39 @@ describe("EarningsInterface", () => {
         const actualProtocolEarnings = await earningsInterface.protocolEarnings();
 
         expect(actualProtocolEarnings).toEqual("0");
+      });
+    });
+
+    describe("when there is data", () => {
+      beforeEach(() => {
+        oracleGetPriceUsdcMock.mockResolvedValueOnce("2.5");
+        subgraphFetchQueryMock.mockResolvedValue({
+          data: {
+            vaults: [
+              {
+                latestUpdate: {
+                  returnsGenerated: new BigNumber(2).multipliedBy(10 ** 18)
+                },
+                token: {
+                  decimals: 18,
+                  id: "tokenId"
+                }
+              },
+              {
+                token: {
+                  decimals: 18,
+                  id: "tokenIdWithoutLatestUpdate"
+                }
+              }
+            ]
+          }
+        });
+      });
+
+      it("should return the protocol earnings", async () => {
+        const actualProtocolEarnings = await earningsInterface.protocolEarnings();
+
+        expect(actualProtocolEarnings).toEqual(new BigNumber(5).toFixed(0));
       });
     });
   });
