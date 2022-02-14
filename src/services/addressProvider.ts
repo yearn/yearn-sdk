@@ -1,15 +1,20 @@
 import { AddressMetadataAbi } from "../abi";
 import { ChainId } from "../chain";
-import { ContractService } from "../common";
+import { ContractAddressId, Service, WrappedContract } from "../common";
 import { Context } from "../context";
+import { structArray } from "../struct";
+import { Address } from "../types";
+
+interface AddressMetadata {
+  addr: Address;
+  addrId: string;
+}
 
 /**
  * [[AddressProviderService]] fetches addresses of various contracts based on the
- * network and feeds them to the Yearn SDK. It's purpose is to move away from
- * hardcoded contract addresses on all the on-chain services used by the SDK.
+ * network and feeds them to the Yearn SDK.
  */
-export class AddressProviderService<T extends ChainId> extends ContractService<T> {
-  ready: Promise<Context>;
+export class AddressProvider<T extends ChainId> extends Service {
   static abi = [
     "function addressById(string) public view returns (address)",
     "function addressPositionById(string) public view returns (int256)",
@@ -18,10 +23,11 @@ export class AddressProviderService<T extends ChainId> extends ContractService<T
     `function addressesMetadata() public view returns (${AddressMetadataAbi}[] memory)`,
     `function addressesMetadataByIdStartsWith(string) public view returns (${AddressMetadataAbi}[] memory)`
   ];
+  private contract: WrappedContract;
 
   constructor(chainId: T, ctx: Context) {
-    super(AddressProviderService.addressByChain(chainId), chainId, ctx);
-    this.ready = this._initialize();
+    super(chainId, ctx);
+    this.contract = new WrappedContract(AddressProvider.addressByChain(chainId), AddressProvider.abi, ctx);
   }
 
   static addressByChain(chainId: ChainId): string {
@@ -36,30 +42,11 @@ export class AddressProviderService<T extends ChainId> extends ContractService<T
     }
   }
 
-  /**
-   * Fetches contract addresses from the network, populates the context with
-   * the correct addresses and yields the context.
-   * @private
-   */
-  private async _initialize(): Promise<Context> {
-    const addresses: [string, string][] = await this.contract.read.addressesMetadata();
+  async addressById(id: ContractAddressId): Promise<string> {
+    return await this.contract.read.addressById(id);
+  }
 
-    const addressByKey = (key: string): string | undefined => {
-      let tuple = addresses.find(tuple => tuple.includes(key));
-      if (!tuple) return;
-      return tuple[1];
-    };
-
-    this.ctx.addresses = {
-      adapters: {
-        registryV2: addressByKey("REGISTRY_ADAPTER_V2_VAULTS"),
-        ironBank: addressByKey("REGISTRY_ADAPTER_IRON_BANK")
-      },
-      oracle: addressByKey("ORACLE"),
-      helper: addressByKey("HELPER"),
-      lens: addressByKey(""),
-      allowList: addressByKey("")
-    };
-    return Promise.resolve(this.ctx);
+  async addressesMetadataByIdStartsWith(prefix: string): Promise<AddressMetadata[]> {
+    return await this.contract.read.addressById(prefix).then(structArray);
   }
 }

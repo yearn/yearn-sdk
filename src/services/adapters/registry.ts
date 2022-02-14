@@ -2,8 +2,7 @@ import { CallOverrides } from "@ethersproject/contracts";
 
 import { AdapterAbi } from "../../abi";
 import { ChainId } from "../../chain";
-import { ContractService } from "../../common";
-import { Context } from "../../context";
+import { ContractAddressId, ContractService } from "../../common";
 import { ZeroAddress } from "../../helpers";
 import { structArray } from "../../struct";
 import { Address, Position, VaultDynamic, VaultStatic } from "../../types";
@@ -25,27 +24,10 @@ const VaultV2MetadataAbi = `tuple(
 
 export class RegistryV2Adapter<T extends ChainId> extends ContractService<T> implements IRegistryAdapter {
   static abi = AdapterAbi(VaultV2MetadataAbi);
+  static contractId = ContractAddressId.adapter_registry_v2;
 
-  constructor(chainId: T, ctx: Context) {
-    super(ctx.addresses.adapters.registryV2 ?? RegistryV2Adapter.addressByChain(chainId), chainId, ctx);
-  }
-
-  /**
-   * Get most up-to-date address of the Vault V2 adapter contract for a
-   * particular chain id.
-   * @param chainId
-   * @returns address
-   */
-  static addressByChain(chainId: ChainId): string {
-    switch (chainId) {
-      case 1:
-      case 1337:
-        return "0x240315db938d44bb124ae619f5fd0269a02d1271";
-      case 250:
-        return "0xF628Fb7436fFC382e2af8E63DD7ccbaa142E3cd1";
-      case 42161:
-        return "0x57AA88A0810dfe3f9b71a9b179Dd8bF5F956C46A";
-    }
+  get contract() {
+    return super._getContract(RegistryV2Adapter.abi, RegistryV2Adapter.contractId, this.ctx);
   }
 
   /**
@@ -56,9 +38,11 @@ export class RegistryV2Adapter<T extends ChainId> extends ContractService<T> imp
    */
   async assetsStatic(addresses?: Address[], overrides: CallOverrides = {}): Promise<VaultStatic[]> {
     if (addresses) {
-      return await this.contract.read["assetsStatic(address[])"](addresses, overrides).then(structArray);
+      return await this.contract
+        .then(contract => contract.read["assetsStatic(address[])"](addresses, overrides))
+        .then(structArray);
     }
-    return await this.contract.read["assetsStatic()"]().then(structArray);
+    return await this.contract.then(contract => contract.read["assetsStatic()"]()).then(structArray);
   }
 
   /**
@@ -69,7 +53,8 @@ export class RegistryV2Adapter<T extends ChainId> extends ContractService<T> imp
    */
   async assetsDynamic(addresses?: Address[], overrides: CallOverrides = {}): Promise<VaultDynamic[]> {
     if (addresses) {
-      return await this.contract.read["assetsDynamic(address[])"](addresses, overrides)
+      return await this.contract
+        .then(contract => contract.read["assetsDynamic(address[])"](addresses, overrides))
         .then(structArray)
         .then((assets: any) =>
           assets.map((asset: any) => ({
@@ -83,7 +68,8 @@ export class RegistryV2Adapter<T extends ChainId> extends ContractService<T> imp
           }))
         );
     }
-    return await this.contract.read["assetsDynamic()"]()
+    return await this.contract
+      .then(contract => contract.read["assetsDynamic()"]())
       .then(structArray)
       .then((assets: any) =>
         assets.map((asset: any) => {
@@ -110,11 +96,13 @@ export class RegistryV2Adapter<T extends ChainId> extends ContractService<T> imp
 
   async positionsOf(address: Address, addresses?: Address[], overrides: CallOverrides = {}): Promise<Position[]> {
     if (addresses) {
-      return await this.contract.read["assetsPositionsOf(address,address[])"](address, addresses, overrides).then(
-        structArray
-      );
+      return await this.contract
+        .then(contract => contract.read["assetsPositionsOf(address,address[])"](address, addresses, overrides))
+        .then(structArray);
     }
-    return await this.contract.read["assetsPositionsOf(address)"](address, overrides).then(structArray);
+    return await this.contract
+      .then(contract => contract.read["assetsPositionsOf(address)"](address, overrides))
+      .then(structArray);
   }
 
   /**
@@ -123,6 +111,6 @@ export class RegistryV2Adapter<T extends ChainId> extends ContractService<T> imp
    * @returns
    */
   async tokens(overrides: CallOverrides = {}): Promise<Address[]> {
-    return await this.contract.read.assetsTokensAddresses(overrides);
+    return await this.contract.then(contract => contract.read.assetsTokensAddresses(overrides));
   }
 }

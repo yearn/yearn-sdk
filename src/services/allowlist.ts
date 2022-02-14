@@ -1,8 +1,7 @@
 import { BytesLike } from "@ethersproject/bytes";
 
 import { ChainId } from "../chain";
-import { ContractService } from "../common";
-import { Context } from "../context";
+import { ContractAddressId, ContractService } from "../common";
 import { Address } from "../types";
 
 /**
@@ -16,31 +15,15 @@ export class AllowListService<T extends ChainId> extends ContractService<T> {
   static abi = [
     "function validateCalldataByOrigin(string memory originName, address targetAddress, bytes calldata data) public view returns (bool)"
   ];
+  static contractId = ContractAddressId.allowlist;
 
   /**
    * This is used by the AllowListFactory to resolve which set of rules are applicable to which organization
    */
   private static originName = "yearn.finance";
 
-  /**
-   * Get most up-to-date address of the Allow List Factory contract for a particular chain id
-   * @param chainId
-   * @returns address
-   */
-  static addressByChain(chainId: ChainId): string | null {
-    switch (chainId) {
-      case 250:
-        return "0xD2322468e5Aa331381200754f6daAD3dF923539e";
-      case 1:
-      case 1337:
-      case 42161:
-      default:
-        return null;
-    }
-  }
-
-  constructor(chainId: T, ctx: Context, address: string) {
-    super(address, chainId, ctx);
+  get contract() {
+    return super._getContract(AllowListService.abi, AllowListService.contractId, this.ctx);
   }
 
   /**
@@ -62,11 +45,8 @@ export class AllowListService<T extends ChainId> extends ContractService<T> {
     }
 
     try {
-      const valid = await this.contract.read.validateCalldataByOrigin(
-        AllowListService.originName,
-        targetAddress,
-        callData
-      );
+      const contract = await this.contract;
+      const valid = await contract.read.validateCalldataByOrigin(AllowListService.originName, targetAddress, callData);
       if (!valid) {
         return { success: false, error: "tx is not permitted by the allow list" };
       }

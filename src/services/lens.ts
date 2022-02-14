@@ -2,7 +2,7 @@ import { CallOverrides } from "@ethersproject/contracts";
 
 import { ChainId } from "../chain";
 import { ContractService } from "../common";
-import { Context } from "../context";
+import { ContractAddressId } from "../common";
 import { structArray } from "../struct";
 import { Address, GenericAsset, Position } from "../types";
 import { IronBankAdapter } from "./adapters/ironbank";
@@ -25,33 +25,19 @@ export type Adapters<T extends ChainId> = {
  */
 export class LensService<T extends ChainId> extends ContractService<T> {
   static abi = LensAbi;
-
-  constructor(chainId: T, ctx: Context) {
-    super(ctx.addresses.lens ?? LensService.addressByChain(chainId), chainId, ctx);
-  }
+  static contractId = ContractAddressId.lens;
 
   get adapters(): Adapters<T> {
     return {
       vaults: {
-        v2: new RegistryV2Adapter(this.chainId, this.ctx)
+        v2: new RegistryV2Adapter(this.chainId, this.ctx, this.addressProvider)
       },
-      ironBank: new IronBankAdapter(this.chainId, this.ctx)
+      ironBank: new IronBankAdapter(this.chainId, this.ctx, this.addressProvider)
     } as Adapters<T>;
   }
 
-  /**
-   * Get most up-to-date address of the Lens contract for a particular chain id.
-   * @param chainId
-   * @returns address
-   */
-  static addressByChain(chainId: ChainId): string {
-    switch (chainId) {
-      case 1: // FIXME: doesn't actually exist
-      case 250: // ditto
-      case 1337: // ditto
-      case 42161: // ditto
-        return "0xFa58130BE296EDFA23C42a1d15549fA91449F979";
-    }
+  get contract() {
+    return super._getContract(LensService.abi, LensService.contractId, this.ctx);
   }
 
   /**
@@ -60,7 +46,8 @@ export class LensService<T extends ChainId> extends ContractService<T> {
    * @returns list of registry addresses
    */
   async getAdapters(overrides: CallOverrides = {}): Promise<string[]> {
-    return await this.contract.read.getRegistries(overrides);
+    let contract = await this.contract;
+    return await contract.read.getRegistries(overrides);
   }
 
   /**
@@ -69,7 +56,8 @@ export class LensService<T extends ChainId> extends ContractService<T> {
    * @returns list of assets
    */
   async getAssets(overrides: CallOverrides = {}): Promise<GenericAsset[]> {
-    return await this.contract.read.getAssets(overrides).then(structArray);
+    let contract = await this.contract;
+    return await contract.read.getAssets(overrides).then(structArray);
   }
 
   /**
@@ -80,7 +68,8 @@ export class LensService<T extends ChainId> extends ContractService<T> {
    * @returns list of user positions
    */
   async getPositions(address: string, overrides: CallOverrides = {}): Promise<Position[]> {
-    return await this.contract.read.getPositionsOf(address, overrides).then(structArray);
+    let contract = await this.contract;
+    return await contract.read.getPositionsOf(address, overrides).then(structArray);
   }
 
   /**
@@ -90,6 +79,7 @@ export class LensService<T extends ChainId> extends ContractService<T> {
    * @returns list of assets
    */
   async getAssetsFromAdapter(adapter: Address, overrides: CallOverrides = {}): Promise<GenericAsset[]> {
-    return await this.contract.read.getAssetsFromAdapter(adapter, overrides).then(structArray);
+    let contract = await this.contract;
+    return await contract.read.getAssetsFromAdapter(adapter, overrides).then(structArray);
   }
 }
