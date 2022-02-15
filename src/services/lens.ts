@@ -1,7 +1,7 @@
 import { CallOverrides } from "@ethersproject/contracts";
 
 import { ChainId } from "../chain";
-import { ContractService } from "../common";
+import { ContractService, WrappedContract } from "../common";
 import { ContractAddressId } from "../common";
 import { structArray } from "../struct";
 import { Address, GenericAsset, Position } from "../types";
@@ -36,7 +36,7 @@ export class LensService<T extends ChainId> extends ContractService<T> {
     } as Adapters<T>;
   }
 
-  get contract() {
+  get contract(): Promise<WrappedContract> {
     return this._getContract(LensService.abi, LensService.contractId, this.ctx);
   }
 

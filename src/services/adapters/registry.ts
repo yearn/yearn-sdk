@@ -2,7 +2,7 @@ import { CallOverrides } from "@ethersproject/contracts";
 
 import { AdapterAbi } from "../../abi";
 import { ChainId } from "../../chain";
-import { ContractAddressId, ContractService } from "../../common";
+import { ContractAddressId, ContractService, WrappedContract } from "../../common";
 import { ZeroAddress } from "../../helpers";
 import { structArray } from "../../struct";
 import { Address, Position, VaultDynamic, VaultStatic } from "../../types";
@@ -26,7 +26,7 @@ export class RegistryV2Adapter<T extends ChainId> extends ContractService<T> imp
   static abi = AdapterAbi(VaultV2MetadataAbi);
   static contractId = ContractAddressId.adapter_registry_v2;
 
-  get contract() {
+  get contract(): Promise<WrappedContract> {
     return this._getContract(RegistryV2Adapter.abi, RegistryV2Adapter.contractId, this.ctx);
   }
 

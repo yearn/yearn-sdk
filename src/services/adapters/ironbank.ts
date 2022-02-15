@@ -4,7 +4,7 @@ import { BigNumber } from "bignumber.js";
 
 import { AdapterAbi } from "../../abi";
 import { ChainId } from "../../chain";
-import { ContractAddressId, ContractService } from "../../common";
+import { ContractAddressId, ContractService, WrappedContract } from "../../common";
 import { struct, structArray } from "../../struct";
 import {
   Address,
@@ -57,7 +57,7 @@ export class IronBankAdapter<T extends ChainId> extends ContractService<T> {
   static abi = AdapterAbi(CyTokenMetadataAbi).concat(CustomAbi);
   static contractId = ContractAddressId.adapter_ironbank;
 
-  get contract() {
+  get contract(): Promise<WrappedContract> {
     return this._getContract(IronBankAdapter.abi, IronBankAdapter.contractId, this.ctx);
   }
 

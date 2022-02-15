@@ -43,10 +43,10 @@ export class AddressProvider<T extends ChainId> extends Service {
   }
 
   async addressById(id: ContractAddressId): Promise<string> {
-    return await this.contract.read.addressById(id);
+    return this.contract.read.addressById(id);
   }
 
   async addressesMetadataByIdStartsWith(prefix: string): Promise<AddressMetadata[]> {
-    return await this.contract.read.addressById(prefix).then(structArray);
+    return this.contract.read.addressById(prefix).then(structArray);
   }
 }

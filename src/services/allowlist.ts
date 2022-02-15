@@ -1,7 +1,7 @@
 import { BytesLike } from "@ethersproject/bytes";
 
 import { ChainId } from "../chain";
-import { ContractAddressId, ContractService } from "../common";
+import { ContractAddressId, ContractService, WrappedContract } from "../common";
 import { Address } from "../types";
 
 /**
@@ -22,7 +22,7 @@ export class AllowListService<T extends ChainId> extends ContractService<T> {
    */
   private static originName = "yearn.finance";
 
-  get contract() {
+  get contract(): Promise<WrappedContract> {
     return this._getContract(AllowListService.abi, AllowListService.contractId, this.ctx);
   }
 

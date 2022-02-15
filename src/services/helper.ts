@@ -2,7 +2,7 @@ import { CallOverrides } from "@ethersproject/contracts";
 
 import { AllowanceAbi, TokenAbi, TokenBalanceAbi, TokenPriceAbi } from "../abi";
 import { ChainId } from "../chain";
-import { ContractAddressId, ContractService } from "../common";
+import { ContractAddressId, ContractService, WrappedContract } from "../common";
 import { chunkArray } from "../helpers";
 import { structArray } from "../struct";
 import { Address, ERC20, TokenAllowance, TokenBalance, TokenPrice } from "../types";
@@ -23,7 +23,7 @@ export class HelperService<T extends ChainId> extends ContractService<T> {
   static abi = HelperAbi;
   static contractId = ContractAddressId.helper;
 
-  get contract() {
+  get contract(): Promise<WrappedContract> {
     return this._getContract(HelperService.abi, HelperService.contractId, this.ctx);
   }
 
@@ -34,7 +34,8 @@ export class HelperService<T extends ChainId> extends ContractService<T> {
    * @returns list of erc20 object
    */
   async tokens(addresses: Address[], overrides: CallOverrides = {}): Promise<ERC20[]> {
-    return await this.contract.then(contract => contract.read.tokensMetadata(addresses, overrides)).then(structArray);
+    const contract = await this.contract;
+    return contract.read.tokensMetadata(addresses, overrides).then(structArray);
   }
 
   /**
@@ -44,7 +45,8 @@ export class HelperService<T extends ChainId> extends ContractService<T> {
    * @returns list of token prices
    */
   async tokenPrices(addresses: Address[], overrides: CallOverrides = {}): Promise<TokenPrice[]> {
-    return await this.contract.then(contract => contract.read.tokensPrices(addresses, overrides)).then(structArray);
+    const contract = await this.contract;
+    return contract.read.tokensPrices(addresses, overrides).then(structArray);
   }
 
   /**
@@ -57,8 +59,9 @@ export class HelperService<T extends ChainId> extends ContractService<T> {
    */
   async tokenBalances(address: Address, tokens: Address[], overrides: CallOverrides = {}): Promise<TokenBalance[]> {
     const chunks = chunkArray(tokens, 30);
+    const contract = await this.contract;
     const promises = chunks.map(async chunk =>
-      this.contract.then(contract => contract.read.tokensBalances(address, chunk, overrides)).then(structArray)
+      contract.read.tokensBalances(address, chunk, overrides).then(structArray)
     );
     return Promise.all(promises).then(chunks => chunks.flat());
   }
@@ -78,12 +81,12 @@ export class HelperService<T extends ChainId> extends ContractService<T> {
     spenders: Address[],
     overrides: CallOverrides = {}
   ): Promise<TokenAllowance[]> {
-    return await this.contract
-      .then(contract => contract.read.allowances(address, tokens, spenders, overrides))
-      .then(structArray);
+    const contract = await this.contract;
+    return contract.read.allowances(address, tokens, spenders, overrides).then(structArray);
   }
 
   async assetStrategiesAddresses(address: Address, overrides: CallOverrides = {}): Promise<Address[]> {
-    return this.contract.then(contract => contract.read.assetStrategiesAddresses(address, overrides));
+    const contract = await this.contract;
+    return contract.read.assetStrategiesAddresses(address, overrides);
   }
 }

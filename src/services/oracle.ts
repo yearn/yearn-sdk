@@ -1,7 +1,7 @@
 import { CallOverrides } from "@ethersproject/contracts";
 
 import { ChainId } from "../chain";
-import { ContractAddressId, ContractService } from "../common";
+import { ContractAddressId, ContractService, WrappedContract } from "../common";
 import { int } from "../helpers";
 import { Address, Integer, Usdc } from "../types";
 
@@ -38,7 +38,7 @@ export class OracleService<T extends ChainId> extends ContractService<T> {
   static abi = OracleAbi;
   static contractId = ContractAddressId.oracle;
 
-  get contract() {
+  get contract(): Promise<WrappedContract> {
     return this._getContract(OracleService.abi, OracleService.contractId, this.ctx);
   }
   /**
@@ -47,7 +47,8 @@ export class OracleService<T extends ChainId> extends ContractService<T> {
    * @returns list of calculations contract addresses
    */
   async getCalculations(overrides: CallOverrides = {}): Promise<Address[]> {
-    return await this.contract.then(contract => contract.read.calculations(overrides));
+    const contract = await this.contract;
+    return contract.read.calculations(overrides);
   }
 
   /**
@@ -57,7 +58,8 @@ export class OracleService<T extends ChainId> extends ContractService<T> {
    * @returns Usdc exchange rate (6 decimals)
    */
   async getPriceUsdc(token: Address, overrides: CallOverrides = {}): Promise<Usdc> {
-    return await this.contract.then(contract => contract.read.getPriceUsdcRecommended(token, overrides)).then(int);
+    const contract = await this.contract;
+    return contract.read.getPriceUsdcRecommended(token, overrides).then(int);
   }
 
   /**
@@ -68,9 +70,8 @@ export class OracleService<T extends ChainId> extends ContractService<T> {
    * @returns Usdc exchange rate (6 decimals)
    */
   async getNormalizedValueUsdc(token: Address, amount: Integer, overrides: CallOverrides = {}): Promise<Usdc> {
-    return await this.contract
-      .then(contract => contract.read.getNormalizedValueUsdc(token, amount, overrides))
-      .then(int);
+    const contract = await this.contract;
+    return contract.read.getNormalizedValueUsdc(token, amount, overrides).then(int);
   }
 
   /**
@@ -79,7 +80,8 @@ export class OracleService<T extends ChainId> extends ContractService<T> {
    * @returns address
    */
   async getUsdcAddress(overrides: CallOverrides = {}): Promise<Address> {
-    return await this.contract.then(contract => contract.read.usdcAddress(overrides));
+    const contract = await this.contract;
+    return contract.read.usdcAddress(overrides);
   }
 
   // Calculations Curve
@@ -91,7 +93,8 @@ export class OracleService<T extends ChainId> extends ContractService<T> {
    * @returns test result
    */
   async isCurveLpToken(lpToken: Address, overrides: CallOverrides = {}): Promise<boolean> {
-    return await this.contract.then(contract => contract.read.isCurveLpToken(lpToken, overrides));
+    const contract = await this.contract;
+    return contract.read.isCurveLpToken(lpToken, overrides);
   }
 
   /**
@@ -101,7 +104,8 @@ export class OracleService<T extends ChainId> extends ContractService<T> {
    * @returns Usdc exchange rate (6 decimals)
    */
   async getCurvePriceUsdc(lpToken: Address, overrides: CallOverrides = {}): Promise<Usdc> {
-    return await this.contract.then(contract => contract.read.getCurvePriceUsdc(lpToken, overrides)).then(int);
+    const contract = await this.contract;
+    return contract.read.getCurvePriceUsdc(lpToken, overrides).then(int);
   }
 
   /**
@@ -112,7 +116,8 @@ export class OracleService<T extends ChainId> extends ContractService<T> {
    * @returns Usdc exchange rate (6 decimals)
    */
   async getBasePrice(lpToken: Address, overrides: CallOverrides = {}): Promise<Usdc> {
-    return await this.contract.then(contract => contract.read.getBasePrice(lpToken, overrides)).then(int);
+    const contract = await this.contract;
+    return contract.read.getBasePrice(lpToken, overrides).then(int);
   }
 
   /**
@@ -122,7 +127,8 @@ export class OracleService<T extends ChainId> extends ContractService<T> {
    * @returns virtual price
    */
   async getVirtualPrice(lpToken: Address, overrides: CallOverrides = {}): Promise<Integer> {
-    return await this.contract.then(contract => contract.read.getVirtualPrice(lpToken, overrides)).then(int);
+    const contract = await this.contract;
+    return contract.read.getVirtualPrice(lpToken, overrides).then(int);
   }
 
   /**
@@ -131,7 +137,8 @@ export class OracleService<T extends ChainId> extends ContractService<T> {
    * @returns
    */
   async getCurveRegistryAddress(overrides: CallOverrides = {}): Promise<Integer> {
-    return await this.contract.then(contract => contract.read.usdcAddress(overrides)).then(int);
+    const contract = await this.contract;
+    return contract.read.usdcAddress(overrides).then(int);
   }
 
   // Calculations: Iron Bank
@@ -143,7 +150,8 @@ export class OracleService<T extends ChainId> extends ContractService<T> {
    * @returns test result
    */
   async isIronBankMarket(token: Address, overrides: CallOverrides = {}): Promise<boolean> {
-    return await this.contract.then(contract => contract.read.isIronBankMarket(token, overrides));
+    const contract = await this.contract;
+    return contract.read.isIronBankMarket(token, overrides);
   }
 
   /**
@@ -153,7 +161,8 @@ export class OracleService<T extends ChainId> extends ContractService<T> {
    * @returns Usdc exchange rate (6 decimals)
    */
   async getIronBankMarketPriceUsdc(token: Address, overrides: CallOverrides = {}): Promise<Usdc> {
-    return await this.contract.then(contract => contract.read.getIronBankMarketPriceUsdc(token, overrides)).then(int);
+    const contract = await this.contract;
+    return contract.read.getIronBankMarketPriceUsdc(token, overrides).then(int);
   }
 
   /**
@@ -162,7 +171,8 @@ export class OracleService<T extends ChainId> extends ContractService<T> {
    * @returns list of iron bank market addresses
    */
   async getIronBankMarkets(overrides: CallOverrides = {}): Promise<Address[]> {
-    return await this.contract.then(contract => contract.read.getIronBankMarkets(overrides));
+    const contract = await this.contract;
+    return contract.read.getIronBankMarkets(overrides);
   }
 
   // Calculations: Sushiswap
@@ -174,7 +184,8 @@ export class OracleService<T extends ChainId> extends ContractService<T> {
    * @returns test result
    */
   async isLpToken(token: Address, overrides: CallOverrides = {}): Promise<boolean> {
-    return await this.contract.then(contract => contract.read.isLpToken(token, overrides));
+    const contract = await this.contract;
+    return contract.read.isLpToken(token, overrides);
   }
 
   /**
@@ -185,7 +196,8 @@ export class OracleService<T extends ChainId> extends ContractService<T> {
    * @returns exchange rate
    */
   async getPriceFromRouter(token0: Address, token1: Address, overrides: CallOverrides = {}): Promise<Integer> {
-    return await this.contract.then(contract => contract.read.getPriceFromRouter(token0, token1, overrides)).then(int);
+    const contract = await this.contract;
+    return contract.read.getPriceFromRouter(token0, token1, overrides).then(int);
   }
 
   /**
@@ -195,7 +207,8 @@ export class OracleService<T extends ChainId> extends ContractService<T> {
    * @returns Usdc exchange rate (6 decimals)
    */
   async getPriceFromRouterUsdc(token: Address, overrides: CallOverrides = {}): Promise<Usdc> {
-    return await this.contract.then(contract => contract.read.getPriceFromRouterUsdc(token, overrides)).then(int);
+    const contract = await this.contract;
+    return contract.read.getPriceFromRouterUsdc(token, overrides).then(int);
   }
 
   /**
@@ -205,7 +218,8 @@ export class OracleService<T extends ChainId> extends ContractService<T> {
    * @returns Usdc liquidity (6 decimals)
    */
   async getLpTokenTotalLiquidityUsdc(token: Address, overrides: CallOverrides = {}): Promise<Usdc> {
-    return await this.contract.then(contract => contract.read.getLpTokenTotalLiquidityUsdc(token, overrides)).then(int);
+    const contract = await this.contract;
+    return contract.read.getLpTokenTotalLiquidityUsdc(token, overrides).then(int);
   }
 
   /**
@@ -215,6 +229,7 @@ export class OracleService<T extends ChainId> extends ContractService<T> {
    * @returns Usdc exchange rate (6 decimals)
    */
   async getLpTokenPriceUsdc(token: Address, overrides: CallOverrides = {}): Promise<Integer> {
-    return await this.contract.then(contract => contract.read.getLpTokenPriceUsdc(token, overrides)).then(int);
+    const contract = await this.contract;
+    return contract.read.getLpTokenPriceUsdc(token, overrides).then(int);
   }
 }
