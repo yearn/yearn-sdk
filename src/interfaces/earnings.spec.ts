@@ -1,13 +1,16 @@
 import { getAddress } from "@ethersproject/address";
 import BigNumber from "bignumber.js";
 
-import { ChainId, EarningsInterface, SdkError, Usdc } from "..";
+import { AssetHistoricEarnings, ChainId, EarningsInterface, SdkError, Usdc, VaultStatic } from "..";
 import { Context } from "../context";
+import { createMockAssetHistoricEarnings, createMockAssetStaticVaultV2 } from "../test-utils/factories";
 import { Yearn } from "../yearn";
 
 const getAddressMock = jest.fn();
 const subgraphFetchQueryMock = jest.fn();
 const oracleGetPriceUsdcMock: jest.Mock<Promise<Usdc>> = jest.fn();
+const lensAdaptersVaultsV2AssetsStaticMock: jest.Mock<Promise<VaultStatic[]>> = jest.fn();
+const getBlockNumberMock: jest.Mock<Promise<number>> = jest.fn();
 
 jest.mock("../yearn", () => ({
   Yearn: jest.fn().mockImplementation(() => ({
@@ -16,7 +19,9 @@ jest.mock("../yearn", () => ({
         fetchQuery: subgraphFetchQueryMock
       },
       vision: {},
-      lens: {},
+      lens: {
+        adapters: { vaults: { v2: { assetsStatic: lensAdaptersVaultsV2AssetsStaticMock } } }
+      },
       oracle: {
         getPriceUsdc: oracleGetPriceUsdcMock
       }
@@ -26,6 +31,16 @@ jest.mock("../yearn", () => ({
 
 jest.mock("@ethersproject/address", () => ({
   getAddress: jest.fn().mockImplementation(() => getAddressMock)
+}));
+
+jest.mock("../context", () => ({
+  Context: jest.fn().mockImplementation(() => ({
+    provider: {
+      read: {
+        getBlockNumber: getBlockNumberMock
+      }
+    }
+  }))
 }));
 
 describe("EarningsInterface", () => {
@@ -142,9 +157,55 @@ describe("EarningsInterface", () => {
     });
   });
 
-  describe("accountAssetsData", () => {});
+  describe("accountAssetsData", () => {
+    it.todo("todo");
+  });
 
-  describe("assetsHistoricEarnings", () => {});
+  describe("assetsHistoricEarnings", () => {
+    const assetHistoricEarnings = createMockAssetHistoricEarnings();
+    let assetHistoricEarningsCacheFetchMock: jest.Mock<Promise<AssetHistoricEarnings[] | undefined>> = jest.fn();
+
+    beforeEach(() => {
+      (earningsInterface as any).assetHistoricEarningsCache.fetch = assetHistoricEarningsCacheFetchMock;
+    });
+
+    describe("when there is cached data", () => {
+      beforeEach(() => {
+        assetHistoricEarningsCacheFetchMock.mockResolvedValue([assetHistoricEarnings]);
+      });
+
+      it("return the cached data", async () => {
+        const actualAssetsHistoricEarnings = await earningsInterface.assetsHistoricEarnings();
+
+        expect(actualAssetsHistoricEarnings).toEqual([assetHistoricEarnings]);
+        expect(assetHistoricEarningsCacheFetchMock).toHaveBeenCalledTimes(1);
+      });
+    });
+
+    describe("when there is no cached data", () => {
+      let assetHistoricEarningsMock: jest.Mock<Promise<AssetHistoricEarnings>> = jest.fn();
+      const assetsStatic = [createMockAssetStaticVaultV2()];
+      const assetHistoricEarnings = createMockAssetHistoricEarnings();
+
+      beforeEach(() => {
+        assetHistoricEarningsCacheFetchMock.mockResolvedValue(undefined);
+        lensAdaptersVaultsV2AssetsStaticMock.mockResolvedValue(assetsStatic);
+        getBlockNumberMock.mockResolvedValue(42000);
+        (earningsInterface as any).assetHistoricEarnings = assetHistoricEarningsMock;
+        assetHistoricEarningsMock.mockResolvedValue(assetHistoricEarnings);
+      });
+
+      it("should not call `assetHistoricEarningsCache.fetch`", async () => {
+        const actualAssetsHistoricEarnings = await earningsInterface.assetsHistoricEarnings();
+
+        expect(actualAssetsHistoricEarnings).toEqual([assetHistoricEarnings]);
+        expect(lensAdaptersVaultsV2AssetsStaticMock).toHaveBeenCalledTimes(1);
+        expect(getBlockNumberMock).toHaveBeenCalledTimes(1);
+        expect(assetHistoricEarningsMock).toHaveBeenCalledTimes(1);
+        expect(assetHistoricEarningsMock).toHaveBeenCalledWith("0x001", 30, 42000);
+      });
+    });
+  });
 
   describe("assetHistoricEarnings", () => {});
 
