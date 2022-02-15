@@ -56,11 +56,11 @@ export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
       vault: assetAddress
     });
 
-    const vault = response.data.vault;
-
-    if (!vault) {
+    if (!response?.data || !response.data?.vault) {
       throw new SdkError(`No asset with address ${assetAddress}`);
     }
+
+    const { vault } = response.data;
 
     const returnsGenerated = new BigNumber(vault.latestUpdate?.returnsGenerated || 0);
     const earningsUsdc = await this.tokensValueInUsdc(returnsGenerated, vault.token.id, vault.token.decimals);

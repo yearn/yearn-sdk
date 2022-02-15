@@ -1,9 +1,11 @@
+import { getAddress } from "@ethersproject/address";
 import BigNumber from "bignumber.js";
 
-import { ChainId, EarningsInterface, Usdc } from "..";
+import { ChainId, EarningsInterface, SdkError, Usdc } from "..";
 import { Context } from "../context";
 import { Yearn } from "../yearn";
 
+const getAddressMock = jest.fn();
 const subgraphFetchQueryMock = jest.fn();
 const oracleGetPriceUsdcMock: jest.Mock<Promise<Usdc>> = jest.fn();
 
@@ -20,6 +22,10 @@ jest.mock("../yearn", () => ({
       }
     }
   }))
+}));
+
+jest.mock("@ethersproject/address", () => ({
+  getAddress: jest.fn().mockImplementation(() => getAddressMock)
 }));
 
 describe("EarningsInterface", () => {
@@ -83,7 +89,58 @@ describe("EarningsInterface", () => {
     });
   });
 
-  describe("assetEarnings", () => {});
+  describe("assetEarnings", () => {
+    describe("when there is no data", () => {
+      beforeEach(() => {
+        subgraphFetchQueryMock.mockResolvedValue(undefined);
+      });
+
+      it("should throw", async () => {
+        try {
+          await earningsInterface.assetEarnings("0x001");
+        } catch (error) {
+          expect(error).toStrictEqual(new SdkError("No asset with address 0x001"));
+        }
+      });
+    });
+
+    describe("when there is data", () => {
+      beforeEach(() => {
+        getAddressMock.mockReturnValue("0x001");
+        oracleGetPriceUsdcMock.mockResolvedValueOnce("3.5");
+        subgraphFetchQueryMock.mockResolvedValue({
+          data: {
+            vault: {
+              token: {
+                id: "vaultTokenId",
+                decimals: 18
+              },
+              latestUpdate: {
+                returnsGenerated: new BigNumber(2).multipliedBy(10 ** 18)
+              }
+            }
+          }
+        });
+      });
+
+      it("should return the asset earnings", async () => {
+        const actualAssetEarnings = await earningsInterface.assetEarnings("0x001");
+
+        expect(actualAssetEarnings).toEqual({
+          amount: "2000000000000000000",
+          amountUsdc: "7",
+          assetAddress: getAddressMock,
+          tokenAddress: getAddressMock
+        });
+        expect(oracleGetPriceUsdcMock).toHaveBeenCalledTimes(1);
+        expect(oracleGetPriceUsdcMock).toHaveBeenCalledWith("vaultTokenId");
+
+        expect(getAddress).toHaveBeenCalledTimes(2);
+        expect(getAddress).toHaveBeenNthCalledWith(1, "0x001");
+        expect(getAddress).toHaveBeenNthCalledWith(2, "vaultTokenId");
+      });
+    });
+  });
 
   describe("accountAssetsData", () => {});
 
