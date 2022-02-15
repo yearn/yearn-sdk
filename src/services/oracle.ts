@@ -39,7 +39,7 @@ export class OracleService<T extends ChainId> extends ContractService<T> {
   static contractId = ContractAddressId.oracle;
 
   get contract() {
-    return super._getContract(OracleService.abi, OracleService.contractId, this.ctx);
+    return this._getContract(OracleService.abi, OracleService.contractId, this.ctx);
   }
   /**
    * Fetch all the active Oracle calculations.

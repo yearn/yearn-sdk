@@ -22,14 +22,14 @@ async function main() {
   console.log(ironBankTable.toString());
 
   const ironBankGeneralPositionTable = new Table();
-  const ironBankGeneralPosition = await yearn.ironBank.summaryOf(YearnGovernance);
+  const ironBankGeneralPosition = await yearn.ironBank.generalPositionOf(YearnGovernance);
 
   ironBankGeneralPositionTable.push(...Object.entries(ironBankGeneralPosition));
   console.log("Yearn Multisig general IronBank position:");
   console.log(ironBankGeneralPositionTable.toString());
 
   const CyTokenUserMetadataTable = new Table();
-  const CyTokenUserMetadata = await yearn.ironBank.metadataOf(YearnGovernance);
+  const CyTokenUserMetadata = await yearn.ironBank.userMetadata(YearnGovernance);
 
   CyTokenUserMetadataTable.push(...CyTokenUserMetadata.map(market => Object.values(market)));
   console.log("Yearn Multisig IronBank user metadata:");

@@ -37,7 +37,7 @@ export class LensService<T extends ChainId> extends ContractService<T> {
   }
 
   get contract() {
-    return super._getContract(LensService.abi, LensService.contractId, this.ctx);
+    return this._getContract(LensService.abi, LensService.contractId, this.ctx);
   }
 
   /**
@@ -47,7 +47,7 @@ export class LensService<T extends ChainId> extends ContractService<T> {
    */
   async getAdapters(overrides: CallOverrides = {}): Promise<string[]> {
     let contract = await this.contract;
-    return await contract.read.getRegistries(overrides);
+    return contract.read.getRegistries(overrides);
   }
 
   /**
@@ -57,7 +57,7 @@ export class LensService<T extends ChainId> extends ContractService<T> {
    */
   async getAssets(overrides: CallOverrides = {}): Promise<GenericAsset[]> {
     let contract = await this.contract;
-    return await contract.read.getAssets(overrides).then(structArray);
+    return contract.read.getAssets(overrides).then(structArray);
   }
 
   /**
@@ -69,7 +69,7 @@ export class LensService<T extends ChainId> extends ContractService<T> {
    */
   async getPositions(address: string, overrides: CallOverrides = {}): Promise<Position[]> {
     let contract = await this.contract;
-    return await contract.read.getPositionsOf(address, overrides).then(structArray);
+    return contract.read.getPositionsOf(address, overrides).then(structArray);
   }
 
   /**
@@ -80,6 +80,6 @@ export class LensService<T extends ChainId> extends ContractService<T> {
    */
   async getAssetsFromAdapter(adapter: Address, overrides: CallOverrides = {}): Promise<GenericAsset[]> {
     let contract = await this.contract;
-    return await contract.read.getAssetsFromAdapter(adapter, overrides).then(structArray);
+    return contract.read.getAssetsFromAdapter(adapter, overrides).then(structArray);
   }
 }

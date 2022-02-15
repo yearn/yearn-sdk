@@ -58,7 +58,7 @@ export class IronBankAdapter<T extends ChainId> extends ContractService<T> {
   static contractId = ContractAddressId.adapter_ironbank;
 
   get contract() {
-    return super._getContract(IronBankAdapter.abi, IronBankAdapter.contractId, this.ctx);
+    return this._getContract(IronBankAdapter.abi, IronBankAdapter.contractId, this.ctx);
   }
 
   /**
@@ -70,9 +70,9 @@ export class IronBankAdapter<T extends ChainId> extends ContractService<T> {
   async assetsStatic(addresses?: Address[], overrides: CallOverrides = {}): Promise<IronBankMarketStatic[]> {
     const contract = await this.contract;
     if (addresses) {
-      return await contract.read["assetsStatic(address[])"](addresses, overrides).then(structArray);
+      return contract.read["assetsStatic(address[])"](addresses, overrides).then(structArray);
     }
-    return await contract.read["assetsStatic()"](overrides).then(structArray);
+    return contract.read["assetsStatic()"](overrides).then(structArray);
   }
 
   /**
@@ -105,9 +105,7 @@ export class IronBankAdapter<T extends ChainId> extends ContractService<T> {
   async positionsOf(address: Address, addresses?: Address[], overrides: CallOverrides = {}): Promise<Position[]> {
     const contract = await this.contract;
     if (addresses) {
-      return await contract.read["assetsPositionsOf(address,address[])"](address, addresses, overrides).then(
-        structArray
-      );
+      return contract.read["assetsPositionsOf(address,address[])"](address, addresses, overrides).then(structArray);
     }
     return contract.read["assetsPositionsOf(address)"](address, overrides).then(structArray);
   }
@@ -120,7 +118,7 @@ export class IronBankAdapter<T extends ChainId> extends ContractService<T> {
    */
   async generalPositionOf(address: Address, overrides: CallOverrides = {}): Promise<IronBankUserSummary> {
     const contract = await this.contract;
-    return await contract.read.adapterPositionOf(address, overrides).then(struct);
+    return contract.read.adapterPositionOf(address, overrides).then(struct);
   }
 
   /**
@@ -136,11 +134,9 @@ export class IronBankAdapter<T extends ChainId> extends ContractService<T> {
   ): Promise<CyTokenUserMetadata[]> {
     const contract = await this.contract;
     if (addresses) {
-      return await contract.read["assetsUserMetadata(address,address[])"](address, addresses, overrides).then(
-        structArray
-      );
+      return contract.read["assetsUserMetadata(address,address[])"](address, addresses, overrides).then(structArray);
     }
-    return await contract.read["assetsUserMetadata(address)"](address, overrides).then(structArray);
+    return contract.read["assetsUserMetadata(address)"](address, overrides).then(structArray);
   }
 
   /**
@@ -150,7 +146,7 @@ export class IronBankAdapter<T extends ChainId> extends ContractService<T> {
    */
   async tokens(overrides: CallOverrides = {}): Promise<Address[]> {
     const contract = await this.contract;
-    return await contract.read.assetsTokensAddresses(overrides);
+    return contract.read.assetsTokensAddresses(overrides);
   }
 
   async blocksPerYear(overrides: CallOverrides = {}): Promise<Integer> {

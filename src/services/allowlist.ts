@@ -23,7 +23,7 @@ export class AllowListService<T extends ChainId> extends ContractService<T> {
   private static originName = "yearn.finance";
 
   get contract() {
-    return super._getContract(AllowListService.abi, AllowListService.contractId, this.ctx);
+    return this._getContract(AllowListService.abi, AllowListService.contractId, this.ctx);
   }
 
   /**

@@ -24,7 +24,7 @@ export class HelperService<T extends ChainId> extends ContractService<T> {
   static contractId = ContractAddressId.helper;
 
   get contract() {
-    return super._getContract(HelperService.abi, HelperService.contractId, this.ctx);
+    return this._getContract(HelperService.abi, HelperService.contractId, this.ctx);
   }
 
   /**
