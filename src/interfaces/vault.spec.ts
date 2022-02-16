@@ -206,7 +206,7 @@ describe("VaultInterface", () => {
         ]);
       });
 
-      fit("should get all yearn vaults", async () => {
+      it("should get all yearn vaults", async () => {
         const actualGet = await vaultInterface.get();
 
         expect(actualGet).toEqual([
@@ -425,9 +425,9 @@ describe("VaultInterface", () => {
           expect(lensAdaptersVaultsV2AssetsDynamicMock).toHaveBeenCalledTimes(1);
           expect(lensAdaptersVaultsV2AssetsDynamicMock).toHaveBeenCalledWith(undefined, undefined);
           expect(assetIconMock).toHaveBeenCalledTimes(1);
-          expect(assetIconMock).toHaveBeenCalledWith("0x001");
+          expect(assetIconMock).toHaveBeenCalledWith("0x001Dynamic");
           expect(assetAliasMock).toHaveBeenCalledTimes(1);
-          expect(assetAliasMock).toHaveBeenCalledWith("0x001");
+          expect(assetAliasMock).toHaveBeenCalledWith("0x001Dynamic");
         });
       });
     });
