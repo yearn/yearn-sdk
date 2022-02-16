@@ -13,6 +13,7 @@ export interface AddressesOverride {
   };
   helper?: Address;
   allowList?: Address;
+  partner?: Address
 }
 
 /**
@@ -62,6 +63,7 @@ export interface ContextValue {
   simulation?: SimulationConfiguration;
   cache?: CacheConfiguration;
   subgraph?: SubgraphConfiguration;
+  partnerId?: string;
 }
 
 const DefaultContext: ContextValue = {
@@ -147,5 +149,10 @@ export class Context implements Required<ContextValue> {
   get subgraph(): SubgraphConfiguration {
     if (this.ctx.subgraph) return this.ctx.subgraph;
     throw new SdkError("subgraph configuration must be defined in Context for this feature to work.");
+  }
+
+  get partnerId(): string {
+    if (typeof this.ctx.partnerId !== "undefined") return this.ctx.partnerId;
+    throw new SdkError("partnerId must be defined in Context for this feature to work.");
   }
 }

@@ -14,6 +14,7 @@ import { HelperService } from "./services/helper";
 import { LensService } from "./services/lens";
 import { MetaService } from "./services/meta";
 import { OracleService } from "./services/oracle";
+import { PartnerService } from "./services/partner";
 import { PickleService } from "./services/partners/pickle";
 import { SubgraphService } from "./services/subgraph";
 import { TelegramService } from "./services/telegram";
@@ -145,7 +146,8 @@ export class Yearn<T extends ChainId> {
       telegram: new TelegramService(chainId, ctx),
       meta: new MetaService(chainId, ctx),
       allowList: allowlistService,
-      transaction: new TransactionService(chainId, ctx, allowlistService)
+      transaction: new TransactionService(chainId, ctx, allowlistService),
+      partner: ctx.partnerId ? new PartnerService(chainId, ctx) : undefined,
     };
   }
 }
