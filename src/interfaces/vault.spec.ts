@@ -4,7 +4,6 @@ import { Contract } from "@ethersproject/contracts";
 import {
   Address,
   AssetDynamic,
-  AssetHistoricEarnings,
   ChainId,
   Context,
   ERC20,
@@ -193,20 +192,18 @@ describe("VaultInterface", () => {
             }
           }
         ]);
-        assetsHistoricEarningsMock.mockReturnValue(
-          Promise.resolve<AssetHistoricEarnings[]>([
-            {
-              assetAddress: "0x001",
-              decimals: 18,
-              dayData: [
-                {
-                  earnings: { amount: "1", amountUsdc: "1" },
-                  date: "12-02-2022"
-                }
-              ]
-            }
-          ])
-        );
+        assetsHistoricEarningsMock.mockResolvedValue([
+          {
+            assetAddress: "0x001",
+            decimals: 18,
+            dayData: [
+              {
+                earnings: { amount: "1", amountUsdc: "1" },
+                date: "12-02-2022"
+              }
+            ]
+          }
+        ]);
       });
 
       fit("should get all yearn vaults", async () => {
