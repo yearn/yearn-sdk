@@ -1,6 +1,6 @@
 import { Token } from "../..";
 
-export const DEFAULT_TOKEN: Token = {
+const DEFAULT_TOKEN: Token = {
   address: "0x001",
   decimals: "18",
   symbol: "DEAD",
