@@ -1,7 +1,7 @@
 import { getAddress } from "@ethersproject/address";
 import BigNumber from "bignumber.js";
 
-import { AssetHistoricEarnings, ChainId, EarningsInterface, SdkError, Usdc, VaultStatic } from "..";
+import { Address, AssetHistoricEarnings, ChainId, EarningsInterface, SdkError, Usdc, VaultStatic } from "..";
 import { Context } from "../context";
 import { createMockAssetHistoricEarnings, createMockAssetStaticVaultV2 } from "../test-utils/factories";
 import { Yearn } from "../yearn";
@@ -120,6 +120,8 @@ describe("EarningsInterface", () => {
     });
 
     describe("when there is data", () => {
+      const assetAddress: Address = "0x001";
+
       beforeEach(() => {
         getAddressMock.mockReturnValue("0x001");
         oracleGetPriceUsdcMock.mockResolvedValueOnce("3.5");
@@ -139,7 +141,7 @@ describe("EarningsInterface", () => {
       });
 
       it("should return the asset earnings", async () => {
-        const actualAssetEarnings = await earningsInterface.assetEarnings("0x001");
+        const actualAssetEarnings = await earningsInterface.assetEarnings(assetAddress);
 
         expect(actualAssetEarnings).toEqual({
           amount: "2000000000000000000",
@@ -151,7 +153,7 @@ describe("EarningsInterface", () => {
         expect(oracleGetPriceUsdcMock).toHaveBeenCalledWith("vaultTokenId");
 
         expect(getAddress).toHaveBeenCalledTimes(2);
-        expect(getAddress).toHaveBeenNthCalledWith(1, "0x001");
+        expect(getAddress).toHaveBeenNthCalledWith(1, assetAddress);
         expect(getAddress).toHaveBeenNthCalledWith(2, "vaultTokenId");
       });
     });
