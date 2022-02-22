@@ -2,7 +2,6 @@ import { CallOverrides } from "@ethersproject/contracts";
 import { ChainId } from "../chain";
 import { ContractService } from "../common";
 import { Context } from "../context";
-import { SdkError } from "../types";
 
 /**
  * [[PartnerService]] provides access to yearns partner contract.
@@ -15,12 +14,8 @@ export class PartnerService<T extends ChainId> extends ContractService<T> {
   ];
   partnerId: string;
 
-  constructor(chainId: T, ctx: Context) {
-    const partnerAddress = PartnerService.addressByChain(chainId)
-    if(!partnerAddress) {
-      throw new SdkError("Cannot instantiate partner service on a chain where it does not exist");
-    }
-    super(ctx.addresses.partner ?? partnerAddress, chainId, ctx);
+  constructor(chainId: T, ctx: Context, address: string) {
+    super(address, chainId, ctx);
     this.partnerId = ctx.partnerId;
   }
 
