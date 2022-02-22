@@ -276,6 +276,7 @@ export class ZapperService extends Service {
    * @param slippagePercentage - slippage as a decimal
    * @param skipGasEstimate - provide the gasLimit in the response. Should be set to true when simulating a zap without approval
    * @param zapProtocol the protocol to use with zapper e.g. Yearn, Pickle
+   * @param signature - the account valid secp256k1 signature of Permit encoded from r, s, v. (https://eips.ethereum.org/EIPS/eip-2612)
    */
   async zapOut(
     from: Address,
@@ -285,7 +286,8 @@ export class ZapperService extends Service {
     gasPrice: Integer,
     slippagePercentage: number,
     skipGasEstimate: boolean,
-    zapProtocol: ZapProtocol = ZapProtocol.YEARN
+    zapProtocol: ZapProtocol = ZapProtocol.YEARN,
+    signature?: string
   ): Promise<ZapOutput> {
     let toToken = token;
     if (EthAddress === token) {
@@ -304,7 +306,8 @@ export class ZapperService extends Service {
       slippagePercentage: slippagePercentage.toString(),
       api_key: this.ctx.zapper,
       shouldSellEntireBalance: "true",
-      skipGasEstimate: skipGasEstimate ? "true" : "false"
+      skipGasEstimate: skipGasEstimate ? "true" : "false",
+      ...(signature && { signature })
     });
     const response: ZapOutput = await fetch(`${url}?${params}`)
       .then(handleHttpError)
