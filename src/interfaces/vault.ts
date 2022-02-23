@@ -375,7 +375,9 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
         vault,
         "0",
         options.slippage,
-        false
+        false,
+        undefined,
+        options.signature
       );
 
       const transactionRequest: TransactionRequest = {

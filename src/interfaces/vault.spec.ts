@@ -827,7 +827,17 @@ describe("VaultInterface", () => {
 
           expect(actualWithdraw).toBe("executeZapperTransactionResponse");
           expect(zapperZapOutMock).toHaveBeenCalledTimes(1);
-          expect(zapperZapOutMock).toHaveBeenCalledWith("0xAccount", "0xToken", "1", "0xVault", "0", 1, false);
+          expect(zapperZapOutMock).toHaveBeenCalledWith(
+            "0xAccount",
+            "0xToken",
+            "1",
+            "0xVault",
+            "0",
+            1,
+            false,
+            undefined,
+            undefined
+          );
           expect(executeZapperTransactionMock).toHaveBeenCalledTimes(1);
           expect(executeZapperTransactionMock).toHaveBeenCalledWith(
             {
