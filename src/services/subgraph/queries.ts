@@ -56,7 +56,7 @@ export const ACCOUNT_EARNINGS = `
         vault {
           id
           latestUpdate {
-            pricePerShare
+            currentPricePerShare
           }
         }
       }
