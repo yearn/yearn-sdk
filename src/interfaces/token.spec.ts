@@ -21,10 +21,13 @@ const assetReadyThenMock = jest.fn();
 const metaTokensMock = jest.fn();
 const vaultsBalancesMock = jest.fn();
 const ironBankBalancesMock = jest.fn();
+const sendTransactionMock = jest.fn();
 
 jest.mock("@ethersproject/contracts", () => ({
   Contract: jest.fn().mockImplementation(() => ({
-    approve: jest.fn().mockResolvedValue(true)
+    populateTransaction: {
+      approve: jest.fn().mockResolvedValue(true)
+    }
   }))
 }));
 
@@ -50,6 +53,9 @@ jest.mock("../yearn", () => ({
         zapInApprovalTransaction: zapperZapInApprovalTransactionMock,
         zapOutApprovalState: zapperZapOutApprovalStateMock,
         zapOutApprovalTransaction: zapperZapOutApprovalTransactionMock
+      },
+      transaction: {
+        sendTransaction: sendTransactionMock
       }
     },
     ironBank: { balances: ironBankBalancesMock },
@@ -257,9 +263,10 @@ describe("TokenInterface", () => {
       beforeEach(() => {
         vault = createMockAssetStaticVaultV2();
         token = createMockToken().address;
+        sendTransactionMock.mockResolvedValue(true);
       });
 
-      it("should approve vault to spend a token on zapIn", async () => {
+      it("should approve vault to spend a token on a direct deposit", async () => {
         const actualApprove = await tokenInterface.approve(vault, token, "1", "0x001");
 
         expect(actualApprove).toEqual(true);
