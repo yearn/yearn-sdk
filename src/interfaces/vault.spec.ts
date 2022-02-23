@@ -124,13 +124,7 @@ jest.mock("../services/partners/pickle", () => ({
 }));
 
 jest.mock("@ethersproject/contracts", () => ({
-  Contract: jest.fn().mockImplementation(() => ({
-    populateTransaction: {
-      deposit: jest.fn(),
-      withdraw: jest.fn()
-      // approve: jest.fn().mockResolvedValue(true)
-    }
-  }))
+  Contract: jest.fn()
 }));
 
 describe("VaultInterface", () => {
