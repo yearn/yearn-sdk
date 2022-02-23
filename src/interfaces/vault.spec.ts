@@ -18,6 +18,7 @@ import {
   ZapProtocol
 } from "..";
 import { EthAddress, WethAddress } from "../helpers";
+import { PartnerService } from "../services/partner";
 import {
   createMockAssetDynamicVaultV2,
   createMockAssetStaticVaultV2,
@@ -46,6 +47,13 @@ const visionApyMock = jest.fn();
 const vaultsStrategiesMetadataMock = jest.fn();
 const assetsHistoricEarningsMock = jest.fn();
 const sendTransactionUsingServiceMock = jest.fn();
+const partnerDepositMock = jest.fn();
+
+jest.mock("../services/partner", () => ({
+  PartnerService: jest.fn().mockImplementation(() => ({
+    deposit: partnerDepositMock
+  }))
+}));
 
 jest.mock("../yearn", () => ({
   Yearn: jest.fn().mockImplementation(() => ({
@@ -708,28 +716,51 @@ describe("VaultInterface", () => {
         });
 
         describe("when token is not eth address", () => {
-          it("should deposit into a yearn vault", async () => {
-            const assetStaticVaultV2 = createMockAssetStaticVaultV2({ token: "0xToken" });
-            vaultInterface.getStatic = jest.fn().mockResolvedValue([assetStaticVaultV2]);
+          describe("when there is no partner service", () => {
+            it("should deposit directly into a yearn vault", async () => {
+              const assetStaticVaultV2 = createMockAssetStaticVaultV2({ token: "0xToken" });
+              vaultInterface.getStatic = jest.fn().mockResolvedValue([assetStaticVaultV2]);
 
-            const executeVaultContractTransactionMock = jest.fn().mockResolvedValue("trx");
-            (vaultInterface as any).executeVaultContractTransaction = executeVaultContractTransactionMock;
+              const executeVaultContractTransactionMock = jest.fn().mockResolvedValue("trx");
+              (vaultInterface as any).executeVaultContractTransaction = executeVaultContractTransactionMock;
 
-            const [vault, token, amount, account] = ["0xVault", "0xToken", "1", "0xAccount"];
+              const [vault, token, amount, account] = ["0xVault", "0xToken", "1", "0xAccount"];
 
-            const actualDeposit = await vaultInterface.deposit(vault, token, amount, account);
+              const actualDeposit = await vaultInterface.deposit(vault, token, amount, account);
 
-            expect(Contract).toHaveBeenCalledTimes(1);
-            expect(Contract).toHaveBeenCalledWith(
-              "0xVault",
-              ["function deposit(uint256 amount) public", "function withdraw(uint256 amount) public"],
-              {
-                sendTransaction: sendTransactionMock
-              }
-            );
-            expect(executeVaultContractTransactionMock).toHaveBeenCalledTimes(1);
-            expect(executeVaultContractTransactionMock).toHaveBeenCalledWith(expect.any(Function), {});
-            expect(actualDeposit).toEqual("trx");
+              expect(Contract).toHaveBeenCalledTimes(1);
+              expect(Contract).toHaveBeenCalledWith(
+                "0xVault",
+                ["function deposit(uint256 amount) public", "function withdraw(uint256 amount) public"],
+                {
+                  sendTransaction: sendTransactionMock
+                }
+              );
+              expect(executeVaultContractTransactionMock).toHaveBeenCalledTimes(1);
+              expect(executeVaultContractTransactionMock).toHaveBeenCalledWith(expect.any(Function), {});
+              expect(actualDeposit).toEqual("trx");
+            });
+          });
+
+          describe("when there is partner service", () => {
+            it("should deposit into a yearn vault through the partner service", async () => {
+              mockedYearn = new (Yearn as jest.Mock<Yearn<ChainId>>)();
+              mockedYearn.services.partner = new ((PartnerService as unknown) as jest.Mock<PartnerService<ChainId>>)();
+              vaultInterface = new VaultInterface(mockedYearn, 1, new Context({}));
+              const assetStaticVaultV2 = createMockAssetStaticVaultV2({ token: "0xToken" });
+              vaultInterface.getStatic = jest.fn().mockResolvedValue([assetStaticVaultV2]);
+
+              const executeVaultContractTransactionMock = jest.fn().mockImplementation(fn => fn());
+              (vaultInterface as any).executeVaultContractTransaction = executeVaultContractTransactionMock;
+
+              const [vault, token, amount, account] = ["0xVault", "0xToken", "1", "0xAccount"];
+
+              await vaultInterface.deposit(vault, token, amount, account);
+
+              expect(Contract).toHaveBeenCalledTimes(0);
+              expect(partnerDepositMock).toHaveBeenCalledTimes(1);
+              expect(partnerDepositMock).toHaveBeenCalledWith("0xVault", "1", undefined);
+            });
           });
         });
       });
