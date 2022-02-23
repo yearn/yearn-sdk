@@ -82,7 +82,7 @@ export class Yearn<T extends ChainId> {
   constructor(chainId: T, context: ContextValue, assetServiceState?: AssetServiceState) {
     this.context = new Context(context);
 
-    const allowlistAddress = !this.context.disableAllowlist && AllowListService.addressByChain(chainId);
+    const allowlistAddress = AllowListService.addressByChain(chainId);
     const allowListService = allowlistAddress
       ? new AllowListService(chainId, this.context, allowlistAddress)
       : undefined;
@@ -114,7 +114,7 @@ export class Yearn<T extends ChainId> {
   }
 
   setChainId(chainId: ChainId) {
-    const allowlistAddress = !this.context.disableAllowlist && AllowListService.addressByChain(chainId);
+    const allowlistAddress = AllowListService.addressByChain(chainId);
     const allowListService = allowlistAddress
       ? new AllowListService(chainId, this.context, allowlistAddress)
       : undefined;
