@@ -11,13 +11,6 @@ jest.mock("../context", () => ({
   }))
 }));
 
-// jest.mock("@ethersproject/contracts", () => ({
-//   Contract: jest.fn().mockImplementation(() => ({
-//     deposit: jest.fn(),
-//     withdraw: jest.fn()
-//   }))
-// }));
-
 describe("VaultInterface", () => {
   let partner: PartnerService<1>;
 
