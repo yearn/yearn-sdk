@@ -13,7 +13,7 @@ export interface AddressesOverride {
   };
   helper?: Address;
   allowList?: Address;
-  partner?: Address
+  partner?: Address;
 }
 
 /**
@@ -73,7 +73,7 @@ const DefaultContext: ContextValue = {
   // The default tenderly dashboard for Yearn
   simulation: { dashboardUrl: "https://dashboard.tenderly.co/yearn/yearn-web" },
   cache: { useCache: true, url: "https://cache.yearn.finance" },
-  partnerId: '',
+  partnerId: ""
 };
 
 /**

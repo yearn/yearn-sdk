@@ -336,7 +336,10 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
           return this.yearn.services.transaction.sendTransaction(tx);
         };
         const vaultContract = this.yearn.services.partner || new Contract(vault, VaultAbi, signer);
-        const makeTransaction = (overrides: CallOverrides) => this.yearn.services.partner ? vaultContract.deposit(vault, amount, overrides) : vaultContract.deposit(amount, overrides);
+        const makeTransaction = (overrides: CallOverrides) =>
+          this.yearn.services.partner
+            ? vaultContract.deposit(vault, amount, overrides)
+            : vaultContract.deposit(amount, overrides);
         return this.executeVaultContractTransaction(makeTransaction, overrides);
       }
     } else {
