@@ -31,9 +31,14 @@ const BigZero = new BigNumber(0);
 
 export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
   async protocolEarnings(): Promise<String> {
-    const response = (await this.yearn.services.subgraph.fetchQuery(PROTOCOL_EARNINGS)) as ProtocolEarningsResponse;
+    const response = await this.yearn.services.subgraph.fetchQuery<ProtocolEarningsResponse>(PROTOCOL_EARNINGS);
 
     let result = BigZero;
+
+    if (!response?.data || !response.data?.vaults) {
+      return result.toFixed(0);
+    }
+
     for (const vault of response.data.vaults) {
       if (!vault.latestUpdate) {
         continue;
@@ -47,15 +52,15 @@ export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
   }
 
   async assetEarnings(assetAddress: Address): Promise<AssetEarnings> {
-    const response = (await this.yearn.services.subgraph.fetchQuery(VAULT_EARNINGS, {
+    const response = await this.yearn.services.subgraph.fetchQuery<VaultEarningsResponse>(VAULT_EARNINGS, {
       vault: assetAddress
-    })) as VaultEarningsResponse;
+    });
 
-    const vault = response.data.vault;
-
-    if (!vault) {
+    if (!response?.data || !response.data?.vault) {
       throw new SdkError(`No asset with address ${assetAddress}`);
     }
+
+    const { vault } = response.data;
 
     const returnsGenerated = new BigNumber(vault.latestUpdate?.returnsGenerated || 0);
     const earningsUsdc = await this.tokensValueInUsdc(returnsGenerated, vault.token.id, vault.token.decimals);
@@ -68,10 +73,10 @@ export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
   }
 
   async accountAssetsData(accountAddress: Address): Promise<EarningsUserData> {
-    const response = (await this.yearn.services.subgraph.fetchQuery(
+    const response = await this.yearn.services.subgraph.fetchQuery<AccountEarningsResponse>(
       ACCOUNT_EARNINGS,
       buildAccountEarningsVariables(accountAddress)
-    )) as AccountEarningsResponse;
+    );
 
     const account = response.data.account;
 
@@ -216,9 +221,9 @@ export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
       .reverse()
       .map(day => blockNumber - day * this.blocksPerDay());
 
-    const response = (await this.yearn.services.subgraph.fetchQuery(ASSET_HISTORIC_EARNINGS(blocks), {
+    const response = await this.yearn.services.subgraph.fetchQuery<any>(ASSET_HISTORIC_EARNINGS(blocks), {
       id: vault
-    })) as any;
+    });
 
     const data = response.data;
 
@@ -273,16 +278,19 @@ export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
       throw new SdkError("fromDaysAgo must be greater than toDaysAgo");
     }
 
-    const response = (await this.yearn.services.subgraph.fetchQuery(ACCOUNT_HISTORIC_EARNINGS, {
-      id: accountAddress,
-      shareToken: shareTokenAddress,
-      fromDate: this.getDate(fromDaysAgo)
-        .getTime()
-        .toString(),
-      toDate: this.getDate(toDaysAgo || 0)
-        .getTime()
-        .toString()
-    })) as AccountHistoricEarningsResponse;
+    const response = await this.yearn.services.subgraph.fetchQuery<AccountHistoricEarningsResponse>(
+      ACCOUNT_HISTORIC_EARNINGS,
+      {
+        id: accountAddress,
+        shareToken: shareTokenAddress,
+        fromDate: this.getDate(fromDaysAgo)
+          .getTime()
+          .toString(),
+        toDate: this.getDate(toDaysAgo || 0)
+          .getTime()
+          .toString()
+      }
+    );
 
     const vaultPositions = response.data.account?.vaultPositions;
 
