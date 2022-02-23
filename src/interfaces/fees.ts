@@ -8,9 +8,9 @@ import { Usdc } from "../types";
 
 export class FeesInterface<C extends ChainId> extends ServiceInterface<C> {
   async protocolFees(since: Date): Promise<Usdc> {
-    const response = (await this.yearn.services.subgraph.fetchQuery(PROTOCOL_FEES, {
+    const response = await this.yearn.services.subgraph.fetchQuery<FeesResponse>(PROTOCOL_FEES, {
       sinceDate: since.getTime().toString()
-    })) as FeesResponse;
+    });
 
     const transfers = response.data.transfers;
 

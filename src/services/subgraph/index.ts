@@ -28,7 +28,7 @@ export class SubgraphService extends Service {
     this.yearnSubgraphEndpoint = `https://api.thegraph.com/subgraphs/name/${subgraphName}`;
   }
 
-  async fetchQuery(query: string, variables: { [key: string]: any } = {}): Promise<unknown> {
+  async fetchQuery<T>(query: string, variables: { [key: string]: any } = {}): Promise<T> {
     // the subgraph only works with lowercased addresses
     Object.keys(variables).forEach(key => {
       const variable = variables[key];
