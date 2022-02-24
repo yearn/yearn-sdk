@@ -1,13 +1,16 @@
 import { getAddress } from "@ethersproject/address";
 import BigNumber from "bignumber.js";
 
-import { Address, AssetHistoricEarnings, ChainId, EarningsInterface, SdkError, Usdc, VaultStatic } from "..";
+import { Address, ApyMap, AssetHistoricEarnings, ChainId, EarningsInterface, SdkError, Usdc, VaultStatic } from "..";
 import { Context } from "../context";
 import { createMockAssetHistoricEarnings, createMockAssetStaticVaultV2 } from "../test-utils/factories";
+import { createMockAccountEarningsResponse } from "../test-utils/factories/accountEarningsResponse.factory";
+import { createMockApy } from "../test-utils/factories/apy.factory";
 import { Yearn } from "../yearn";
 
 const getAddressMock = jest.fn();
 const subgraphFetchQueryMock = jest.fn();
+const visionApyMock: jest.Mock<Promise<ApyMap<string>>> = jest.fn();
 const oracleGetPriceUsdcMock: jest.Mock<Promise<Usdc>> = jest.fn();
 const lensAdaptersVaultsV2AssetsStaticMock: jest.Mock<Promise<VaultStatic[]>> = jest.fn();
 const getBlockNumberMock: jest.Mock<Promise<number>> = jest.fn();
@@ -18,7 +21,9 @@ jest.mock("../yearn", () => ({
       subgraph: {
         fetchQuery: subgraphFetchQueryMock
       },
-      vision: {},
+      vision: {
+        apy: visionApyMock
+      },
       lens: {
         adapters: { vaults: { v2: { assetsStatic: lensAdaptersVaultsV2AssetsStaticMock } } }
       },
@@ -30,7 +35,7 @@ jest.mock("../yearn", () => ({
 }));
 
 jest.mock("@ethersproject/address", () => ({
-  getAddress: jest.fn().mockImplementation(() => getAddressMock)
+  getAddress: jest.fn(() => getAddressMock())
 }));
 
 jest.mock("../context", () => ({
@@ -146,8 +151,8 @@ describe("EarningsInterface", () => {
         expect(actualAssetEarnings).toEqual({
           amount: "2000000000000000000",
           amountUsdc: "7",
-          assetAddress: getAddressMock,
-          tokenAddress: getAddressMock
+          assetAddress: "0x001",
+          tokenAddress: "0x001"
         });
         expect(oracleGetPriceUsdcMock).toHaveBeenCalledTimes(1);
         expect(oracleGetPriceUsdcMock).toHaveBeenCalledWith("vaultTokenId");
@@ -160,7 +165,62 @@ describe("EarningsInterface", () => {
   });
 
   describe("accountAssetsData", () => {
-    it.todo("todo");
+    describe("when there is no account", () => {
+      beforeEach(() => {
+        subgraphFetchQueryMock.mockResolvedValue(undefined);
+      });
+
+      it("should return an empty EarningsUserData", async () => {
+        const actual = await earningsInterface.accountAssetsData("0x001");
+
+        expect(actual).toEqual({
+          earnings: "0",
+          holdings: "0",
+          earningsAssetData: [],
+          grossApy: 0,
+          estimatedYearlyYield: "0"
+        });
+      });
+    });
+
+    describe("when there is an account", () => {
+      const accountAddress: Address = "0x001";
+      const apyMock = createMockApy({
+        net_apy: 42
+      });
+      const accountEarningsResponse = createMockAccountEarningsResponse();
+      const tokensValueInUsdcMock: jest.Mock<Promise<BigNumber>> = jest.fn();
+
+      beforeEach(() => {
+        subgraphFetchQueryMock.mockResolvedValue(accountEarningsResponse);
+        visionApyMock.mockResolvedValue({
+          [accountAddress]: apyMock
+        });
+        getAddressMock.mockReturnValue(accountAddress);
+        (earningsInterface as any).tokensValueInUsdc = tokensValueInUsdcMock;
+        tokensValueInUsdcMock.mockResolvedValue(new BigNumber(10));
+      });
+
+      it("should return an empty EarningsUserData", async () => {
+        const actual = await earningsInterface.accountAssetsData(accountAddress);
+
+        expect(visionApyMock).toHaveBeenCalledTimes(1);
+        expect(visionApyMock).toHaveBeenCalledWith([accountAddress]);
+        expect(getAddressMock).toHaveBeenCalledTimes(1);
+        expect(actual).toEqual({
+          earnings: "10",
+          earningsAssetData: [
+            {
+              assetAddress: accountAddress,
+              earned: "10"
+            }
+          ],
+          estimatedYearlyYield: "420",
+          grossApy: 42,
+          holdings: "10"
+        });
+      });
+    });
   });
 
   describe("assetsHistoricEarnings", () => {
