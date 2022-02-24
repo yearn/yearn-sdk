@@ -80,6 +80,7 @@ describe("TranscationService", () => {
           await transactionService.sendTransaction(tx);
         } catch (error) {
           expect(error).toStrictEqual(new SdkError(errorMessage));
+          expect(sendTransactionMock).toHaveBeenCalledTimes(0);
         }
       });
     });
@@ -99,6 +100,7 @@ describe("TranscationService", () => {
       await transactionService.sendTransaction(tx);
 
       expect(sendTransactionMock).toHaveBeenCalledTimes(1);
+      expect(validateCalldataMock).toHaveBeenCalledTimes(0);
     });
   });
 });
