@@ -1,3 +1,5 @@
+export * from "./accountEarningsResponse.factory";
+export * from "./apy.factory";
 export * from "./asset.factory";
 export * from "./assetHistoricEarnings.factory";
 export * from "./balance.factory";
