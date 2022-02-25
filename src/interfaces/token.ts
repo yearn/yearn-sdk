@@ -127,7 +127,8 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
 
     if (vault.token === token) {
       const tokenContract = new Contract(token, TokenAbi, signer);
-      return tokenContract.approve(vault.address, amount);
+      const tx = await tokenContract.populateTransaction.approve(vault.address, amount);
+      return this.yearn.services.transaction.sendTransaction(tx);
     }
 
     const gasPrice = await this.yearn.services.zapper.gas();

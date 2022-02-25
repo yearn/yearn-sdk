@@ -56,12 +56,6 @@ export interface ContextValue {
   addresses?: PartialDeep<AddressesOverride>;
   simulation?: SimulationConfiguration;
   cache?: CacheConfiguration;
-  /**
-   * If true it will disable the use of allowlist to validate tx's.
-   * If false it will validate each tx againts the allowlist contracts and it will
-   * override the JsonRpcSigner sendTransaction method to always try to validate, use with caution
-   */
-  disableAllowlist?: boolean;
 }
 
 const DefaultContext: ContextValue = {
@@ -70,8 +64,7 @@ const DefaultContext: ContextValue = {
   zapper: "96e0cc51-a62e-42ca-acee-910ea7d2a241",
   // The default tenderly dashboard for Yearn
   simulation: { dashboardUrl: "https://dashboard.tenderly.co/yearn/yearn-web" },
-  cache: { useCache: true, url: "https://cache.yearn.finance" },
-  disableAllowlist: true
+  cache: { useCache: true, url: "https://cache.yearn.finance" }
 };
 
 /**
@@ -139,10 +132,5 @@ export class Context implements Required<ContextValue> {
   get cache(): CacheConfiguration {
     if (this.ctx.cache) return this.ctx.cache;
     throw new SdkError("cache must be defined in Context for this feature to work.");
-  }
-
-  get disableAllowlist(): boolean {
-    if (typeof this.ctx.disableAllowlist !== "undefined") return this.ctx.disableAllowlist;
-    throw new SdkError("disableAllowlist must be defined in Context for this feature to work.");
   }
 }

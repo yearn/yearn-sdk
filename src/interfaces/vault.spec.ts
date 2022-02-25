@@ -45,6 +45,7 @@ const metaVaultsMock = jest.fn();
 const visionApyMock = jest.fn();
 const vaultsStrategiesMetadataMock = jest.fn();
 const assetsHistoricEarningsMock = jest.fn();
+const sendTransactionUsingServiceMock = jest.fn();
 
 jest.mock("../yearn", () => ({
   Yearn: jest.fn().mockImplementation(() => ({
@@ -81,6 +82,9 @@ jest.mock("../yearn", () => ({
       },
       zapper: {
         zapOut: zapperZapOutMock
+      },
+      transaction: {
+        sendTransaction: sendTransactionUsingServiceMock
       }
     },
     strategies: {
@@ -120,10 +124,7 @@ jest.mock("../services/partners/pickle", () => ({
 }));
 
 jest.mock("@ethersproject/contracts", () => ({
-  Contract: jest.fn().mockImplementation(() => ({
-    deposit: jest.fn(),
-    withdraw: jest.fn()
-  }))
+  Contract: jest.fn()
 }));
 
 describe("VaultInterface", () => {
@@ -685,16 +686,7 @@ describe("VaultInterface", () => {
         await vaultInterface.deposit(vault, token, amount, account);
 
         expect(zapInMock).toHaveBeenCalledTimes(1);
-        expect(zapInMock).toHaveBeenCalledWith(
-          vault,
-          token,
-          amount,
-          account,
-          { sendTransaction: sendTransactionMock },
-          {},
-          ZapProtocol.PICKLE,
-          {}
-        );
+        expect(zapInMock).toHaveBeenCalledWith(vault, token, amount, account, {}, ZapProtocol.PICKLE, {});
       });
     });
 
@@ -757,16 +749,7 @@ describe("VaultInterface", () => {
           await vaultInterface.deposit(vault, token, amount, account);
 
           expect(zapInMock).toHaveBeenCalledTimes(1);
-          expect(zapInMock).toHaveBeenCalledWith(
-            vault,
-            token,
-            amount,
-            account,
-            { sendTransaction: sendTransactionMock },
-            {},
-            ZapProtocol.YEARN,
-            {}
-          );
+          expect(zapInMock).toHaveBeenCalledWith(vault, token, amount, account, {}, ZapProtocol.YEARN, {});
         });
       });
     });
@@ -849,8 +832,7 @@ describe("VaultInterface", () => {
               value: BigNumber.from(zapOutput.value)
             },
             {},
-            BigNumber.from(zapOutput.value),
-            { sendTransaction: sendTransactionMock }
+            BigNumber.from(zapOutput.value)
           );
         });
       });

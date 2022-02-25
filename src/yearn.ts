@@ -1,6 +1,3 @@
-import { Deferrable } from "@ethersproject/properties";
-import { JsonRpcSigner, TransactionRequest } from "@ethersproject/providers";
-
 import { ChainId } from "./chain";
 import { Context, ContextValue } from "./context";
 import { EarningsInterface } from "./interfaces/earnings";
@@ -19,12 +16,10 @@ import { OracleService } from "./services/oracle";
 import { PickleService } from "./services/partners/pickle";
 import { SubgraphService } from "./services/subgraph";
 import { TelegramService } from "./services/telegram";
+import { TransactionService } from "./services/transaction";
 import { VisionService } from "./services/vision";
 import { ZapperService } from "./services/zapper";
-import { SdkError } from "./types/common";
 import { AssetServiceState } from "./types/custom/assets";
-
-const originalJsonRpcSignerSendTransaction = JsonRpcSigner.prototype.sendTransaction;
 
 /**
  * [[Yearn]] is a wrapper for all the services and interfaces of the SDK.
@@ -50,6 +45,7 @@ export class Yearn<T extends ChainId> {
     telegram: TelegramService;
     meta: MetaService;
     allowList?: AllowListService<T>;
+    transaction: TransactionService<T>;
 
     pickle: PickleService;
 
@@ -86,7 +82,10 @@ export class Yearn<T extends ChainId> {
   constructor(chainId: T, context: ContextValue, assetServiceState?: AssetServiceState) {
     this.context = new Context(context);
 
-    const allowlistAddress = !this.context.disableAllowlist && AllowListService.addressByChain(chainId);
+    const allowlistAddress = AllowListService.addressByChain(chainId);
+    const allowListService = allowlistAddress
+      ? new AllowListService(chainId, this.context, allowlistAddress)
+      : undefined;
 
     this.services = {
       lens: new LensService(chainId, this.context),
@@ -99,7 +98,8 @@ export class Yearn<T extends ChainId> {
       helper: new HelperService(chainId, this.context),
       telegram: new TelegramService(chainId, this.context),
       meta: new MetaService(chainId, this.context),
-      allowList: allowlistAddress ? new AllowListService(chainId, this.context, allowlistAddress) : undefined
+      allowList: allowListService,
+      transaction: new TransactionService(chainId, this.context, allowListService)
     };
 
     this.vaults = new VaultInterface(this, chainId, this.context);
@@ -110,13 +110,14 @@ export class Yearn<T extends ChainId> {
     this.simulation = new SimulationInterface(this, chainId, this.context);
     this.strategies = new StrategyInterface(this, chainId, this.context);
 
-    this.configureSignerWithAllowlist();
-
     this.ready = Promise.all([this.services.asset.ready]);
   }
 
   setChainId(chainId: ChainId) {
-    const allowlistAddress = !this.context.disableAllowlist && AllowListService.addressByChain(chainId);
+    const allowlistAddress = AllowListService.addressByChain(chainId);
+    const allowListService = allowlistAddress
+      ? new AllowListService(chainId, this.context, allowlistAddress)
+      : undefined;
 
     this.services = {
       lens: new LensService(chainId, this.context),
@@ -129,7 +130,8 @@ export class Yearn<T extends ChainId> {
       helper: new HelperService(chainId, this.context),
       telegram: new TelegramService(chainId, this.context),
       meta: new MetaService(chainId, this.context),
-      allowList: allowlistAddress ? new AllowListService(chainId, this.context, allowlistAddress) : undefined
+      allowList: allowListService,
+      transaction: new TransactionService(chainId, this.context, allowListService)
     };
 
     this.vaults = new VaultInterface(this, chainId, this.context);
@@ -140,33 +142,6 @@ export class Yearn<T extends ChainId> {
     this.simulation = new SimulationInterface(this, chainId, this.context);
     this.strategies = new StrategyInterface(this, chainId, this.context);
 
-    this.configureSignerWithAllowlist();
-
     this.ready = Promise.all([this.services.asset.ready]);
-  }
-
-  configureSignerWithAllowlist() {
-    const shouldValidate = !!this.services.allowList;
-
-    const validateTx = async (transaction: Deferrable<TransactionRequest>) => {
-      if (!this.services.allowList) {
-        return true;
-      }
-
-      const [to, data] = await Promise.all([transaction.to, transaction.data]);
-      return await this.services.allowList.validateCalldata(to, data).then(res => res.success);
-    };
-
-    if (shouldValidate) {
-      JsonRpcSigner.prototype.sendTransaction = async function(transaction: Deferrable<TransactionRequest>) {
-        const valid = await validateTx(transaction);
-        if (!valid) {
-          throw new SdkError("transaction is not valid");
-        }
-        return originalJsonRpcSignerSendTransaction.apply(this, [transaction]);
-      };
-    } else {
-      JsonRpcSigner.prototype.sendTransaction = originalJsonRpcSignerSendTransaction;
-    }
   }
 }
