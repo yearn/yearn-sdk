@@ -64,21 +64,20 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
       .balances(address)
       .then(balances => balances.filter(token => token.balance !== "0"));
 
-    if (this.chainId === 1 || this.chainId === 1337) {
-      let zapperBalances = await this.yearn.services.zapper.balances(address);
-      const vaultBalanceAddresses = new Set(vaultBalances.map(balance => balance.address));
-      zapperBalances = zapperBalances.filter(balance => !vaultBalanceAddresses.has(balance.address));
-      return zapperBalances.concat(vaultBalances);
-    }
-
-    if (this.chainId === 250 || this.chainId === 42161) {
-      let ironBankTokens = await this.yearn.ironBank.balances(address);
-      const vaultBalanceAddresses = new Set(vaultBalances.map(balance => balance.address));
-      ironBankTokens = ironBankTokens.filter(balance => !vaultBalanceAddresses.has(balance.address));
-      return ironBankTokens.concat(vaultBalances);
-    }
-
-    throw new SdkError(`the chain ${this.chainId} hasn't been implemented yet`);
+    const vaultBalanceAddresses = new Set(vaultBalances.map(balance => balance.address));
+      const filterBalance = tokens => tokens.filter(balance => !vaultBalanceAddresses.has(balance.address));
+     let zapperBalances = await this.yearn.services.zapper.balances(address).filter(balance => !vaultBalanceAddresses.has(balance.address));
+     let ironBankTokens = await this.yearn.ironBank.balances(address).filter(balance => !vaultBalanceAddresses.has(balance.address));
+    switch(this.chainId){
+      case 1:
+      case 1337:
+         return [...zapperBalances, ...vaultBalances];
+      case 250:
+      case 42161:
+        return [...ironBankTokens, ...vaultBalances];
+      default:
+        throw new SdkError(`the chain ${this.chainId} hasn't been implemented yet`);
+     }
   }
 
   /**
