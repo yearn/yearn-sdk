@@ -56,11 +56,10 @@ export class WrappedContract {
 
 export enum ContractAddressId {
   oracle = "ORACLE",
-  lens = "LENS",
   adapter_ironbank = "REGISTRY_ADAPTER_IRON_BANK",
   adapter_registry_v2 = "REGISTRY_ADAPTER_V2_VAULTS",
   helper = "HELPER",
-  allowlist = "ALLOWLIST",
+  allowlist = "ALLOW_LIST_REGISTRY",
   unused = "UNUSED"
 }
 

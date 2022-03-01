@@ -34,7 +34,7 @@ export class AddressProvider<T extends ChainId> extends Service {
     switch (chainId) {
       case 1:
       case 1337:
-        return "0x9be19Ee7Bc4099D62737a7255f5c227fBcd6dB93";
+        return "0xe11dC9f2Ab122dC5978EACA41483Da0D7D7e6128";
       case 250:
         return "0xac5A9E4135A3A26497F3890bFb602b06Ee592B61";
       case 42161:
