@@ -30,6 +30,9 @@ import {
 const BigZero = new BigNumber(0);
 
 export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
+/**
+ * @deprecated
+ */
   async protocolEarnings(): Promise<String> {
     const response = await this.yearn.services.subgraph.fetchQuery<ProtocolEarningsResponse>(PROTOCOL_EARNINGS);
 
