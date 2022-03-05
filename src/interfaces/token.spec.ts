@@ -1,6 +1,6 @@
 import { Contract } from "@ethersproject/contracts";
 
-import { Address, Asset, ChainId, SdkError, TokenInterface, TokenMetadata } from "..";
+import { Address, Asset, ChainId, TokenInterface, TokenMetadata } from "..";
 import { CachedFetcher } from "../cache";
 import { Context } from "../context";
 import { EthAddress } from "../helpers";
@@ -85,6 +85,7 @@ describe("TokenInterface", () => {
   beforeEach(() => {
     mockedYearn = new (Yearn as jest.Mock<Yearn<ChainId>>)();
     tokenInterface = new TokenInterface(mockedYearn, 1, new Context({}));
+    jest.spyOn(console, "error").mockImplementation(() => {});
   });
 
   afterEach(() => {
@@ -161,6 +162,20 @@ describe("TokenInterface", () => {
           expect(zapperBalancesMock).toHaveBeenCalledWith("0x000");
           expect(ironBankBalancesMock).not.toHaveBeenCalled();
         });
+
+        it("should return an empty array when zapper fails", async () => {
+          zapperBalancesMock.mockImplementation(() => {
+            throw new Error("zapper balances failed!");
+          });
+
+          const actualBalances = await tokenInterface.balances("0x000");
+
+          expect(actualBalances).toEqual([]);
+          expect(zapperBalancesMock).toHaveBeenCalledTimes(1);
+          expect(zapperBalancesMock).toHaveBeenCalledWith("0x000");
+          expect(ironBankBalancesMock).not.toHaveBeenCalled();
+          expect(console.error).toHaveBeenCalled();
+        });
       })
     );
 
@@ -187,12 +202,13 @@ describe("TokenInterface", () => {
         tokenInterface = new TokenInterface(mockedYearn, 42 as any, new Context({}));
       });
 
-      it("should throw an SdkError", async () => {
-        try {
-          await tokenInterface.balances("0x000");
-        } catch (error) {
-          expect(error).toStrictEqual(new SdkError("the chain 42 hasn't been implemented yet"));
-        }
+      it("should return an empty array and log the error", async () => {
+        const actualBalances = await tokenInterface.balances("0x000");
+
+        expect(actualBalances).toEqual([]);
+        expect(console.error).toHaveBeenCalled();
+        expect(zapperBalancesMock).not.toHaveBeenCalled();
+        expect(ironBankBalancesMock).not.toHaveBeenCalled();
       });
     });
   });
@@ -236,6 +252,19 @@ describe("TokenInterface", () => {
           ]);
           expect(zapperSupportedTokensMock).toHaveBeenCalledTimes(1);
           expect(assetReadyThenMock).toHaveBeenCalledTimes(1);
+        });
+
+        it("should return an empty array when zapper fails", async () => {
+          zapperSupportedTokensMock.mockImplementation(() => {
+            throw new Error("zapper balances failed!");
+          });
+
+          const actualSupportedTokens = await tokenInterface.supported();
+
+          expect(actualSupportedTokens).toEqual([]);
+          expect(zapperSupportedTokensMock).toHaveBeenCalledTimes(1);
+          expect(assetReadyThenMock).not.toHaveBeenCalled();
+          expect(console.error).toHaveBeenCalled();
         });
       });
 
