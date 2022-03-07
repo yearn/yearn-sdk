@@ -65,13 +65,15 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
       .then(balances => balances.filter(token => token.balance !== "0"));
 
     switch (this.chainId) {
-      case 1 || 1337: {
+      case 1:
+      case 1337: {
         let zapperBalances = await this.yearn.services.zapper.balances(address);
         const vaultBalanceAddresses = new Set(vaultBalances.map(balance => balance.address));
         zapperBalances = zapperBalances.filter(balance => !vaultBalanceAddresses.has(balance.address));
         return zapperBalances.concat(vaultBalances);
       }
-      case 250 || 42161: {
+      case 250:
+      case 42161: {
         let ironBankTokens = await this.yearn.ironBank.balances(address);
         const vaultBalanceAddresses = new Set(vaultBalances.map(balance => balance.address));
         ironBankTokens = ironBankTokens.filter(balance => !vaultBalanceAddresses.has(balance.address));
