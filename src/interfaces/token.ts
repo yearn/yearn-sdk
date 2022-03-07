@@ -7,7 +7,7 @@ import { ChainId } from "../chain";
 import { ServiceInterface } from "../common";
 import { EthAddress } from "../helpers";
 import { PickleJars } from "../services/partners/pickle";
-import { Address, Integer, SdkError, TokenMetadata, TypedMap, Usdc, Vault, ZapProtocol } from "../types";
+import { Address, Integer, TokenMetadata, TypedMap, Usdc, Vault, ZapProtocol } from "../types";
 import { Balance, Icon, IconMap, Token } from "../types";
 
 const TokenAbi = ["function approve(address _spender, uint256 _value) public"];
@@ -65,7 +65,12 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
       .then(balances => balances.filter(token => token.balance !== "0"));
 
     if (this.chainId === 1 || this.chainId === 1337) {
-      let zapperBalances = await this.yearn.services.zapper.balances(address);
+      let zapperBalances: Balance[] = [];
+      try {
+        zapperBalances = await this.yearn.services.zapper.balances(address);
+      } catch (error) {
+        console.error(error);
+      }
       const vaultBalanceAddresses = new Set(vaultBalances.map(balance => balance.address));
       zapperBalances = zapperBalances.filter(balance => !vaultBalanceAddresses.has(balance.address));
       return zapperBalances.concat(vaultBalances);
@@ -78,7 +83,9 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
       return ironBankTokens.concat(vaultBalances);
     }
 
-    throw new SdkError(`the chain ${this.chainId} hasn't been implemented yet`);
+    console.error(`the chain ${this.chainId} hasn't been implemented yet`);
+
+    return [];
   }
 
   /**
@@ -87,22 +94,29 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
    * @returns list of tokens supported by the zapper protocol.
    */
   async supported(): Promise<Token[]> {
-    const cached = await this.cachedFetcherSupported.fetch();
-    if (cached) {
-      return cached;
+    try {
+      const cached = await this.cachedFetcherSupported.fetch();
+      if (cached) {
+        return cached;
+      }
+
+      if (this.chainId === 1 || this.chainId === 1337) {
+        // only ETH Main is supported
+        const tokens = await this.yearn.services.zapper.supportedTokens();
+        const icons = await this.yearn.services.asset.ready.then(() =>
+          this.yearn.services.asset.icon(tokens.map(token => token.address))
+        );
+        return tokens.map(token => {
+          const icon = icons[token.address];
+          return icon ? { ...token, icon } : token;
+        });
+      }
+
+      console.error(`the chain ${this.chainId} hasn't been implemented yet`);
+    } catch (error) {
+      console.error(error);
     }
 
-    if (this.chainId === 1 || this.chainId === 1337) {
-      // only ETH Main is supported
-      const tokens = await this.yearn.services.zapper.supportedTokens();
-      const icons = await this.yearn.services.asset.ready.then(() =>
-        this.yearn.services.asset.icon(tokens.map(token => token.address))
-      );
-      return tokens.map(token => {
-        const icon = icons[token.address];
-        return icon ? { ...token, icon } : token;
-      });
-    }
     return [];
   }
 
