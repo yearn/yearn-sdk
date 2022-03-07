@@ -53,7 +53,7 @@ const partnerIsAllowedMock = jest.fn().mockReturnValue(true);
 jest.mock("../services/partner", () => ({
   PartnerService: jest.fn().mockImplementation(() => ({
     populateDepositTransaction: partnerPopulateDepositTransactionMock,
-    isAllowed: partnerIsAllowedMock,
+    isAllowed: partnerIsAllowedMock
   }))
 }));
 
