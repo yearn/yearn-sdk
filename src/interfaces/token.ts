@@ -85,7 +85,8 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
         return ironBankTokens.concat(vaultBalances);
       }
       default:
-        throw new SdkError(`the chain ${this.chainId} hasn't been implemented yet`);
+        console.error(`the chain ${this.chainId} hasn't been implemented yet`);
+        return [];
     }
   }
 
