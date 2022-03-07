@@ -32,6 +32,7 @@ const BigZero = new BigNumber(0);
 export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
 /**
  * @deprecated
+ * Not able to be accurately calculated by the subgraph, this functionality will be removed in a future version
  */
   async protocolEarnings(): Promise<String> {
     const response = await this.yearn.services.subgraph.fetchQuery<ProtocolEarningsResponse>(PROTOCOL_EARNINGS);
