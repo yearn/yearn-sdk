@@ -331,9 +331,12 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
         throw new SdkError("deposit:v2:eth not implemented");
       } else {
         const shouldUserPartner = this.yearn.services.partner && this.yearn.services.partner.isAllowed(vault);
-        const vaultContract = (shouldUserPartner && this.yearn.services.partner) || new Contract(vault, VaultAbi, signer);
+        const vaultContract =
+          (shouldUserPartner && this.yearn.services.partner) || new Contract(vault, VaultAbi, signer);
         const makeTransaction = async (overrides: CallOverrides) => {
-          const tx = shouldUserPartner ? await vaultContract.populateDepositTransaction(vault, amount, overrides) : await (vaultContract as Contract).populateTransaction.deposit(amount, overrides);
+          const tx = shouldUserPartner
+            ? await vaultContract.populateDepositTransaction(vault, amount, overrides)
+            : await (vaultContract as Contract).populateTransaction.deposit(amount, overrides);
           return this.yearn.services.transaction.sendTransaction(tx);
         };
 

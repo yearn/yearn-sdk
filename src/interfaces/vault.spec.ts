@@ -47,11 +47,13 @@ const visionApyMock = jest.fn();
 const vaultsStrategiesMetadataMock = jest.fn();
 const assetsHistoricEarningsMock = jest.fn();
 const sendTransactionUsingServiceMock = jest.fn();
-const partnerDepositMock = jest.fn();
+const partnerPopulateDepositTransactionMock = jest.fn();
+const partnerIsAllowedMock = jest.fn().mockReturnValue(true);
 
 jest.mock("../services/partner", () => ({
   PartnerService: jest.fn().mockImplementation(() => ({
-    deposit: partnerDepositMock
+    populateDepositTransaction: partnerPopulateDepositTransactionMock,
+    isAllowed: partnerIsAllowedMock,
   }))
 }));
 
@@ -758,8 +760,8 @@ describe("VaultInterface", () => {
               await vaultInterface.deposit(vault, token, amount, account);
 
               expect(Contract).toHaveBeenCalledTimes(0);
-              expect(partnerDepositMock).toHaveBeenCalledTimes(1);
-              expect(partnerDepositMock).toHaveBeenCalledWith("0xVault", "1", undefined);
+              expect(partnerPopulateDepositTransactionMock).toHaveBeenCalledTimes(1);
+              expect(partnerPopulateDepositTransactionMock).toHaveBeenCalledWith("0xVault", "1", undefined);
             });
           });
         });

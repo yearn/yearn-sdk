@@ -20,10 +20,12 @@ const getNormalizedValueUsdcMock = jest.fn(() => Promise.resolve("10"));
 const zapInMock = jest.fn(() => Promise.resolve(true));
 const zapOutMock = jest.fn(() => Promise.resolve(true));
 const partnerEncodeDepositMock = jest.fn().mockReturnValue("");
+const partnerIsAllowedMock = jest.fn().mockReturnValue(true);
 
 jest.mock("../services/partner", () => ({
   PartnerService: jest.fn().mockImplementation(() => ({
     encodeDeposit: partnerEncodeDepositMock,
+    isAllowed: partnerIsAllowedMock,
     address: "0x00001"
   }))
 }));
@@ -269,7 +271,7 @@ describe("Simulation interface", () => {
       it("should directly call the vault contract", async () => {
         const mockedYearn = new MockedYearnClass();
         mockedYearn.services.partner = new ((PartnerService as unknown) as jest.Mock<PartnerService<ChainId>>)();
-        simulationInterface = new SimulationInterface(mockedYearn, 1, new Context({ disableAllowlist: true }));
+        simulationInterface = new SimulationInterface(mockedYearn, 1, new Context({}));
         tokenMock.mockReturnValueOnce(Promise.resolve("0x001"));
         executeSimulationWithReSimulationOnFailureSpy.mockImplementationOnce(fn => fn());
 

@@ -4,8 +4,8 @@ import { ChainId } from "../chain";
 import { ContractService } from "../common";
 import { Context } from "../context";
 
-const YVECRV = '0xc5bDdf9843308380375a611c18B50Fb9341f502A';
-const PICKLE = '0xCeD67a187b923F0E5ebcc77C7f2F7da20099e378';
+const YVECRV = "0xc5bDdf9843308380375a611c18B50Fb9341f502A";
+const PICKLE = "0xCeD67a187b923F0E5ebcc77C7f2F7da20099e378";
 /**
  * [[PartnerService]] provides access to yearns partner contract.
  * It's implemented in the form of a contract that lives on all networks
