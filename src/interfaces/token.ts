@@ -71,7 +71,7 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
         zapperBalances = zapperBalances.filter(balance => !vaultBalanceAddresses.has(balance.address));
         return zapperBalances.concat(vaultBalances);
       }
-      case 250|| 42161: {
+      case 250 || 42161: {
         let ironBankTokens = await this.yearn.ironBank.balances(address);
         const vaultBalanceAddresses = new Set(vaultBalances.map(balance => balance.address));
         ironBankTokens = ironBankTokens.filter(balance => !vaultBalanceAddresses.has(balance.address));
@@ -80,7 +80,6 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
       default:
         throw new SdkError(`the chain ${this.chainId} hasn't been implemented yet`);
     }
-    
   }
 
   /**
