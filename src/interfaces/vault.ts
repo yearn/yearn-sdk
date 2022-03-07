@@ -332,7 +332,7 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
       } else {
         const vaultContract = new Contract(vault, VaultAbi, signer);
         const makeTransaction = async (overrides: CallOverrides) => {
-          const tx = await vaultContract.populateTransaction.depsoit(amount, overrides);
+          const tx = await vaultContract.populateTransaction.deposit(amount, overrides);
           return this.yearn.services.transaction.sendTransaction(tx);
         };
         return this.executeVaultContractTransaction(makeTransaction, overrides);
