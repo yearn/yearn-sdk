@@ -224,13 +224,13 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     vaultContract: VaultContract,
     options: SimulationOptions
   ): Promise<TransactionOutcome> {
-    const encodedInputData = this.yearn.services.partner
+    const encodedInputData = this.yearn.services.partner && this.yearn.services.partner.isAllowed(toVault)
       ? this.yearn.services.partner.encodeDeposit(toVault, amount)
       : vaultContract.encodeDeposit(amount);
 
     const tokensReceived = await this.simulationExecutor.simulateVaultInteraction(
       from,
-      this.yearn.services.partner ? this.yearn.services.partner.address : toVault,
+      this.yearn.services.partner && this.yearn.services.partner.isAllowed(toVault) ? this.yearn.services.partner.address : toVault,
       encodedInputData,
       toVault,
       options

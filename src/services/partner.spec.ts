@@ -11,7 +11,7 @@ jest.mock("../context", () => ({
   }))
 }));
 
-describe("VaultInterface", () => {
+describe("PartnerService", () => {
   let partner: PartnerService<1>;
 
   beforeEach(() => {

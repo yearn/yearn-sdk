@@ -4,6 +4,8 @@ import { ChainId } from "../chain";
 import { ContractService } from "../common";
 import { Context } from "../context";
 
+const YVECRV = '0xc5bDdf9843308380375a611c18B50Fb9341f502A';
+const PICKLE = '0xCeD67a187b923F0E5ebcc77C7f2F7da20099e378';
 /**
  * [[PartnerService]] provides access to yearns partner contract.
  * It's implemented in the form of a contract that lives on all networks
@@ -11,6 +13,7 @@ import { Context } from "../context";
  */
 export class PartnerService<T extends ChainId> extends ContractService<T> {
   static abi = ["function deposit(address vault, address partnerId, uint256 amount) external returns (uint256)"];
+  static IGNORED_ADDRESSES = [YVECRV, PICKLE];
   partnerId: string;
 
   constructor(chainId: T, ctx: Context, address: string) {
@@ -33,6 +36,10 @@ export class PartnerService<T extends ChainId> extends ContractService<T> {
       default:
         return null;
     }
+  }
+
+  isAllowed(vault: string) {
+    return !PartnerService.IGNORED_ADDRESSES.includes(vault);
   }
 
   deposit(vault: string, amount: string, overrides: CallOverrides) {
