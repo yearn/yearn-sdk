@@ -60,29 +60,30 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
    * @param address
    */
   async balances(address: Address): Promise<Balance[]> {
-    try {
-      const vaultBalances = await this.yearn.vaults
-        .balances(address)
-        .then(balances => balances.filter(token => token.balance !== "0"));
+    const vaultBalances = await this.yearn.vaults
+      .balances(address)
+      .then(balances => balances.filter(token => token.balance !== "0"));
 
-      if (this.chainId === 1 || this.chainId === 1337) {
-        let zapperBalances = await this.yearn.services.zapper.balances(address);
-        const vaultBalanceAddresses = new Set(vaultBalances.map(balance => balance.address));
-        zapperBalances = zapperBalances.filter(balance => !vaultBalanceAddresses.has(balance.address));
-        return zapperBalances.concat(vaultBalances);
+    if (this.chainId === 1 || this.chainId === 1337) {
+      let zapperBalances: Balance[] = [];
+      try {
+        zapperBalances = await this.yearn.services.zapper.balances(address);
+      } catch (error) {
+        console.error(error);
       }
-
-      if (this.chainId === 250 || this.chainId === 42161) {
-        let ironBankTokens = await this.yearn.ironBank.balances(address);
-        const vaultBalanceAddresses = new Set(vaultBalances.map(balance => balance.address));
-        ironBankTokens = ironBankTokens.filter(balance => !vaultBalanceAddresses.has(balance.address));
-        return ironBankTokens.concat(vaultBalances);
-      }
-
-      console.error(`the chain ${this.chainId} hasn't been implemented yet`);
-    } catch (error) {
-      console.error(error);
+      const vaultBalanceAddresses = new Set(vaultBalances.map(balance => balance.address));
+      zapperBalances = zapperBalances.filter(balance => !vaultBalanceAddresses.has(balance.address));
+      return zapperBalances.concat(vaultBalances);
     }
+
+    if (this.chainId === 250 || this.chainId === 42161) {
+      let ironBankTokens = await this.yearn.ironBank.balances(address);
+      const vaultBalanceAddresses = new Set(vaultBalances.map(balance => balance.address));
+      ironBankTokens = ironBankTokens.filter(balance => !vaultBalanceAddresses.has(balance.address));
+      return ironBankTokens.concat(vaultBalances);
+    }
+
+    console.error(`the chain ${this.chainId} hasn't been implemented yet`);
 
     return [];
   }

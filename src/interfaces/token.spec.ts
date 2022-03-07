@@ -163,14 +163,14 @@ describe("TokenInterface", () => {
           expect(ironBankBalancesMock).not.toHaveBeenCalled();
         });
 
-        it("should return an empty array when zapper fails", async () => {
+        it("should return only tokens from the vaults when zapper fails", async () => {
           zapperBalancesMock.mockImplementation(() => {
             throw new Error("zapper balances failed!");
           });
 
           const actualBalances = await tokenInterface.balances("0x000");
 
-          expect(actualBalances).toEqual([]);
+          expect(actualBalances).toEqual([vaultTokenWithBalance]);
           expect(zapperBalancesMock).toHaveBeenCalledTimes(1);
           expect(zapperBalancesMock).toHaveBeenCalledWith("0x000");
           expect(ironBankBalancesMock).not.toHaveBeenCalled();
