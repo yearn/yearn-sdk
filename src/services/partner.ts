@@ -46,6 +46,10 @@ export class PartnerService<T extends ChainId> extends ContractService<T> {
     return this.contract.write.deposit(vault, this.partnerId, amount, overrides);
   }
 
+  populateDepositTransaction(vault: string, amount: string, overrides: CallOverrides) {
+    return this.contract.write.populateTransaction.deposit(vault, this.partnerId, amount, overrides);
+  }
+
   encodeDeposit = (vault: string, amount: string): string => {
     return this.contract.write.interface.encodeFunctionData("deposit", [vault, this.partnerId, amount]);
   };
