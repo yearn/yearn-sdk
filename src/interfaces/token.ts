@@ -77,9 +77,9 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
         ironBankTokens = ironBankTokens.filter(balance => !vaultBalanceAddresses.has(balance.address));
         return ironBankTokens.concat(vaultBalances);
       }
-      default:
-        console.error(`the chain ${this.chainId} hasn't been implemented yet`);
     }
+    
+    console.error(`the chain ${this.chainId} hasn't been implemented yet`);
   }
 
   /**
