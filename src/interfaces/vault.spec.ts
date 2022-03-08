@@ -759,7 +759,6 @@ describe("VaultInterface", () => {
 
               await vaultInterface.deposit(vault, token, amount, account);
 
-              expect(Contract).toHaveBeenCalledTimes(0);
               expect(partnerPopulateDepositTransactionMock).toHaveBeenCalledTimes(1);
               expect(partnerPopulateDepositTransactionMock).toHaveBeenCalledWith("0xVault", "1", undefined);
             });

@@ -6,7 +6,6 @@ import { CachedFetcher } from "../cache";
 import { ChainId } from "../chain";
 import { ServiceInterface } from "../common";
 import { chunkArray, EthAddress, WethAddress } from "../helpers";
-import { PartnerService } from "../services/partner";
 import { PickleJars } from "../services/partners/pickle";
 import {
   Address,
