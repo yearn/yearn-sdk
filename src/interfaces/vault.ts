@@ -6,6 +6,7 @@ import { CachedFetcher } from "../cache";
 import { ChainId } from "../chain";
 import { ServiceInterface } from "../common";
 import { chunkArray, EthAddress, WethAddress } from "../helpers";
+import { PartnerService } from "../services/partner";
 import { PickleJars } from "../services/partners/pickle";
 import {
   Address,
@@ -330,12 +331,12 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
       if (token === EthAddress) {
         throw new SdkError("deposit:v2:eth not implemented");
       } else {
-        const shouldUserPartner = this.yearn.services.partner && this.yearn.services.partner.isAllowed(vault);
-        const vaultContract =
-          (shouldUserPartner && this.yearn.services.partner) || new Contract(vault, VaultAbi, signer);
+        const shouldUsePartner = this.yearn.services.partner && this.yearn.services.partner.isAllowed(vault);
+        const vaultContract = new Contract(vault, VaultAbi, signer);
+
         const makeTransaction = async (overrides: CallOverrides) => {
-          const tx = shouldUserPartner
-            ? await vaultContract.populateDepositTransaction(vault, amount, overrides)
+          const tx = shouldUsePartner
+            ? await this.yearn.services.partner!.populateDepositTransaction(vault, amount, overrides)
             : await (vaultContract as Contract).populateTransaction.deposit(amount, overrides);
           return this.yearn.services.transaction.sendTransaction(tx);
         };

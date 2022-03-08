@@ -250,7 +250,7 @@ describe("Simulation interface", () => {
     });
 
     describe("when it does not have the partner service", () => {
-      it("should directly call the vault contract", async () => {
+      it("should call the partner service deposit", async () => {
         tokenMock.mockReturnValueOnce(Promise.resolve("0x001"));
         executeSimulationWithReSimulationOnFailureSpy.mockImplementationOnce(fn => fn());
 
