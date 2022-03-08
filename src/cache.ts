@@ -64,7 +64,7 @@ export class CachedFetcher<T> {
     ]);
   }
 
-  private get currentValue(): T | undefined {
+  get currentValue(): T | undefined {
     if (!this.expiryDate) {
       return undefined;
     }
