@@ -4,10 +4,10 @@ import { CachedFetcher } from "./cache";
 import { Context } from "./context";
 
 const contextCacheSpy = jest.spyOn(Context.prototype, "cache", "get");
-const currentValueSpy = jest.spyOn(CachedFetcher.prototype, "currentValue", "get");
+const currentValueSpy = jest.spyOn(CachedFetcher.prototype as any, "currentValue", "get");
 const consoleWarnSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
 const fetchWithTimeoutSpy: jest.SpyInstance<Promise<PartialDeep<Response>>> = jest.spyOn(
-  CachedFetcher.prototype,
+  CachedFetcher.prototype as any,
   "fetchWithTimeout"
 );
 const nowMock = new Date(4242, 4, 2).getTime();

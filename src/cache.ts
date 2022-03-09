@@ -58,14 +58,14 @@ export class CachedFetcher<T> {
     return json as T;
   }
 
-  async fetchWithTimeout(url: string, timeout: number): Promise<Response> {
+  private async fetchWithTimeout(url: string, timeout: number): Promise<Response> {
     return Promise.race([
       fetch(url),
       new Promise<Response>((_, reject) => setTimeout(() => reject("timeout"), timeout))
     ]);
   }
 
-  get currentValue(): T | undefined {
+  private get currentValue(): T | undefined {
     if (!this.expiryDate) {
       return undefined;
     }
