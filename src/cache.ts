@@ -37,7 +37,6 @@ export class CachedFetcher<T> {
       console.warn(`Call to cache at ${path} timed out`);
       return undefined;
     }
-
     if (call.status !== 200) {
       const { url, status, statusText } = call;
       console.warn(`Call to cache failed at ${url} (status ${status} ${statusText})`);
