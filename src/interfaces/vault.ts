@@ -330,13 +330,13 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
       if (token === EthAddress) {
         throw new SdkError("deposit:v2:eth not implemented");
       } else {
-        const shouldUsePartner = this.yearn.services.partner && this.yearn.services.partner.isAllowed(vault);
+        const shouldUsePartner = this.shouldUsePartnerService(vault);
         const vaultContract = new Contract(vault, VaultAbi, signer);
 
         const makeTransaction = async (overrides: CallOverrides) => {
           const tx = shouldUsePartner
             ? await this.yearn.services.partner!.populateDepositTransaction(vault, amount, overrides)
-            : await (vaultContract as Contract).populateTransaction.deposit(amount, overrides);
+            : await vaultContract.populateTransaction.deposit(amount, overrides);
           return this.yearn.services.transaction.sendTransaction(tx);
         };
 
@@ -530,6 +530,10 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
     dynamic.metadata.hideIfNoDeposits =
       dynamic.metadata.emergencyShutdown || overrides.retired || overrides.migrationAvailable || false;
     dynamic.metadata.migrationAvailable = dynamic.metadata.migrationAvailable || overrides.migrationAvailable || false;
+  }
+
+  private shouldUsePartnerService(vault: string): boolean {
+    return !!this.yearn.services.partner && this.yearn.services.partner.isAllowed(vault);
   }
 
   private makeEmptyApy(): Apy {

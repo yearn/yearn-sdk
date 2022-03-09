@@ -15,7 +15,11 @@ describe("PartnerService", () => {
   let partner: PartnerService<1>;
 
   beforeEach(() => {
-    partner = new PartnerService(1, new Context({}), "0x8ee392a4787397126c163cb9844d7c447da419d8");
+    partner = new PartnerService({
+      chainId: 1,
+      ctx: new Context({}),
+      address: "0x8ee392a4787397126c163cb9844d7c447da419d8"
+    });
   });
 
   afterEach(() => {

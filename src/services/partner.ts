@@ -6,6 +6,12 @@ import { Context } from "../context";
 
 const YVECRV = "0xc5bDdf9843308380375a611c18B50Fb9341f502A";
 const PSLPYVBOOSTETH = "0xCeD67a187b923F0E5ebcc77C7f2F7da20099e378";
+
+interface PartnerServiceParams<T extends ChainId> {
+  chainId: T;
+  ctx: Context;
+  address: string;
+}
 /**
  * [[PartnerService]] provides access to yearns partner contract.
  * It's implemented in the form of a contract that lives on all networks
@@ -16,7 +22,7 @@ export class PartnerService<T extends ChainId> extends ContractService<T> {
   static IGNORED_ADDRESSES = [YVECRV, PSLPYVBOOSTETH];
   partnerId: string;
 
-  constructor(chainId: T, ctx: Context, address: string) {
+  constructor({ chainId, ctx, address }: PartnerServiceParams<T>) {
     super(address, chainId, ctx);
     this.partnerId = ctx.partnerId;
   }

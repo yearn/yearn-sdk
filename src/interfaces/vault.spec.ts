@@ -738,6 +738,8 @@ describe("VaultInterface", () => {
                   sendTransaction: sendTransactionMock
                 }
               );
+
+              expect(partnerPopulateDepositTransactionMock).not.toHaveBeenCalled();
               expect(executeVaultContractTransactionMock).toHaveBeenCalledTimes(1);
               expect(executeVaultContractTransactionMock).toHaveBeenCalledWith(expect.any(Function), {});
               expect(actualDeposit).toEqual("trx");
