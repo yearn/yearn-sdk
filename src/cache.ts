@@ -37,6 +37,7 @@ export class CachedFetcher<T> {
       console.warn(`Call to cache at ${path} timed out`);
       return undefined;
     }
+
     if (call.status !== 200) {
       const { url, status, statusText } = call;
       console.warn(`Call to cache failed at ${url} (status ${status} ${statusText})`);
@@ -57,7 +58,7 @@ export class CachedFetcher<T> {
     return json as T;
   }
 
-  private async fetchWithTimeout(url: string, timeout: number): Promise<Response> {
+  async fetchWithTimeout(url: string, timeout: number): Promise<Response> {
     return Promise.race([
       fetch(url),
       new Promise<Response>((_, reject) => setTimeout(() => reject("timeout"), timeout))
