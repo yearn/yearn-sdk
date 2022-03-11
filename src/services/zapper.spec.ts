@@ -2,6 +2,7 @@ import { getAddress } from "@ethersproject/address";
 
 import { Context, ZapperService } from "..";
 import { createMockZapperToken } from "../test-utils/factories";
+import { ZapperToken } from "../types";
 
 const fetchSpy = jest.spyOn(global, "fetch");
 
@@ -25,13 +26,20 @@ describe("ZapperService", () => {
 
     it("should return the supported tokens", async () => {
       const mockZapperToken = createMockZapperToken();
+      const mockIncompleteZapperToken = createMockZapperToken({
+        price: undefined
+      } as Partial<ZapperToken>);
+
       fetchSpy.mockImplementation(
-        jest.fn(() => Promise.resolve({ json: () => Promise.resolve([mockZapperToken]), status: 200 })) as jest.Mock
+        jest.fn(() =>
+          Promise.resolve({ json: () => Promise.resolve([mockZapperToken, mockIncompleteZapperToken]), status: 200 })
+        ) as jest.Mock
       );
       getAddressMock.mockReturnValue("0x001");
 
       const actualSupportedTokens = await zapperServiceService.supportedTokens();
 
+      expect(actualSupportedTokens.length).toEqual(1);
       expect(actualSupportedTokens).toEqual([
         {
           address: "0x001",
