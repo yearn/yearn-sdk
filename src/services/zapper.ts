@@ -27,25 +27,27 @@ export class ZapperService extends Service {
   async supportedTokens(): Promise<Token[]> {
     const url = "https://api.zapper.fi/v1/prices";
     const params = new URLSearchParams({ api_key: this.ctx.zapper });
-    const tokens = await fetch(`${url}?${params}`)
+    const zapperTokens: ZapperToken[] = await fetch(`${url}?${params}`)
       .then(handleHttpError)
       .then(res => res.json());
     const network = Chains[this.chainId] ?? "ethereum";
 
-    const validZapperTokens: ZapperToken[] = tokens.filter(({ hide, ...importantAttributes }: ZapperToken) =>
-      Object.values(importantAttributes).every(attr => !!attr)
-    );
+    const visibleZapperTokens = zapperTokens.filter(zapperToken => !zapperToken.hide);
 
-    return validZapperTokens.map(
-      ({ address: zapperAddress, decimals, symbol, price, hide }: ZapperToken): Token => ({
-        address: zapperAddress === ZeroAddress ? EthAddress : getAddress(zapperAddress),
-        decimals: String(decimals),
-        icon: `https://assets.yearn.network/tokens/${network}/${zapperAddress}.png`,
-        name: symbol,
-        priceUsdc: usdc(price),
-        supported: { zapper: !hide },
-        symbol
-      })
+    return visibleZapperTokens.map(
+      (zapperToken): Token => {
+        const address = zapperToken.address === ZeroAddress ? EthAddress : getAddress(zapperToken.address);
+
+        return {
+          address,
+          decimals: String(zapperToken.decimals),
+          icon: `https://assets.yearn.network/tokens/${network}/${address}.png`,
+          name: zapperToken.symbol,
+          priceUsdc: usdc(zapperToken.price),
+          supported: { zapper: true },
+          symbol: zapperToken.symbol
+        };
+      }
     );
   }
 

@@ -3,7 +3,6 @@ import { getAddress } from "@ethersproject/address";
 import { ChainId, Context, ZapperService } from "..";
 import { Chains } from "../chain";
 import { createMockZapperToken } from "../test-utils/factories";
-import { ZapperToken } from "../types";
 
 const fetchSpy = jest.spyOn(global, "fetch");
 
@@ -27,20 +26,17 @@ describe("ZapperService", () => {
           zapperServiceService = new ZapperService(chainId, new Context({}));
         });
 
-        it("should return the supported tokens", async () => {
+        it("should return the only visible tokens", async () => {
           const mockZapperToken = createMockZapperToken();
-          const mockUnsupportedZapperToken = createMockZapperToken({
+          const mockHiddenZapperToken = createMockZapperToken({
             symbol: "SHY",
             hide: true
           });
-          const mockIncompleteZapperToken = createMockZapperToken({
-            price: undefined
-          } as Partial<ZapperToken>);
 
           fetchSpy.mockImplementation(
             jest.fn(() =>
               Promise.resolve({
-                json: () => Promise.resolve([mockZapperToken, mockUnsupportedZapperToken, mockIncompleteZapperToken]),
+                json: () => Promise.resolve([mockZapperToken, mockHiddenZapperToken]),
                 status: 200
               })
             ) as jest.Mock
@@ -49,7 +45,7 @@ describe("ZapperService", () => {
 
           const actualSupportedTokens = await zapperServiceService.supportedTokens();
 
-          expect(actualSupportedTokens.length).toEqual(2);
+          expect(actualSupportedTokens.length).toEqual(1);
           expect(actualSupportedTokens).toEqual(
             expect.arrayContaining([
               {
@@ -60,15 +56,6 @@ describe("ZapperService", () => {
                 priceUsdc: "10000",
                 supported: { zapper: true },
                 symbol: "DEAD"
-              },
-              {
-                address: "0x001",
-                decimals: "18",
-                icon: `https://assets.yearn.network/tokens/${Chains[chainId]}/${mockZapperToken.address}.png`,
-                name: "SHY",
-                priceUsdc: "10000",
-                supported: { zapper: false },
-                symbol: "SHY"
               }
             ])
           );
