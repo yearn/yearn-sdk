@@ -39,7 +39,8 @@ export class ZapperService extends Service {
     const zapperTokens: ZapperToken[] = await fetch(`${url}?${params}`)
       .then(handleHttpError)
       .then(res => res.json());
-    const network = Chains[this.chainId] ?? "ethereum";
+
+    const network = Chains[this.chainId];
 
     const visibleZapperTokens = zapperTokens.filter(zapperToken => !zapperToken.hide);
 
