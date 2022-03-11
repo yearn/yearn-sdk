@@ -31,7 +31,7 @@ describe("ZapperService", () => {
           const mockZapperToken = createMockZapperToken();
           const mockUnsupportedZapperToken = createMockZapperToken({
             symbol: "SHY",
-            hide: undefined
+            hide: "yes"
           });
           const mockIncompleteZapperToken = createMockZapperToken({
             price: undefined
@@ -58,7 +58,7 @@ describe("ZapperService", () => {
                 icon: `https://assets.yearn.network/tokens/${Chains[chainId]}/${mockZapperToken.address}.png`,
                 name: "DEAD",
                 priceUsdc: "10000000",
-                supported: { zapper: false },
+                supported: { zapper: true },
                 symbol: "DEAD"
               },
               {
@@ -67,7 +67,7 @@ describe("ZapperService", () => {
                 icon: `https://assets.yearn.network/tokens/${Chains[chainId]}/${mockZapperToken.address}.png`,
                 name: "SHY",
                 priceUsdc: "10000000",
-                supported: { zapper: true },
+                supported: { zapper: false },
                 symbol: "SHY"
               }
             ])
