@@ -32,25 +32,20 @@ export class ZapperService extends Service {
       .then(res => res.json());
     const network = Chains[this.chainId] ?? "ethereum";
 
-    const validTokens: ZapperToken[] = tokens.filter(({ hide, ...importantAttributes }: ZapperToken) =>
+    const validZapperTokens: ZapperToken[] = tokens.filter(({ hide, ...importantAttributes }: ZapperToken) =>
       Object.values(importantAttributes).every(attr => !!attr)
     );
 
-    return validTokens.map(
-      (token: ZapperToken): Token => {
-        const address = token.address === ZeroAddress ? EthAddress : getAddress(token.address);
-        const isSupported = !token.hide;
-
-        return {
-          address: address,
-          name: token.symbol,
-          symbol: token.symbol,
-          icon: `https://assets.yearn.network/tokens/${network}/${token.address}.png`,
-          decimals: String(token.decimals),
-          priceUsdc: usdc(token.price),
-          supported: { zapper: isSupported }
-        };
-      }
+    return validZapperTokens.map(
+      ({ address: zapperAddress, decimals, symbol, price, hide }: ZapperToken): Token => ({
+        address: zapperAddress === ZeroAddress ? EthAddress : getAddress(zapperAddress),
+        decimals: String(decimals),
+        icon: `https://assets.yearn.network/tokens/${network}/${zapperAddress}.png`,
+        name: symbol,
+        priceUsdc: usdc(price),
+        supported: { zapper: !hide },
+        symbol
+      })
     );
   }
 
