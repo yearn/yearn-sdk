@@ -1,6 +1,6 @@
 import { getAddress } from "@ethersproject/address";
 
-import { ChainId, Context, ZapperService } from "..";
+import { ChainId, Context, SdkError, ZapperService } from "..";
 import { Chains } from "../chain";
 import { createMockZapperToken } from "../test-utils/factories";
 
@@ -19,8 +19,24 @@ jest.mock("@ethersproject/address", () => ({
 describe("ZapperService", () => {
   let zapperServiceService: ZapperService;
 
+  ([1, 1337] as ChainId[]).forEach(chainId =>
+    it(`should not throw when chainId is ${chainId}`, () => {
+      expect(() => {
+        zapperServiceService = new ZapperService(chainId, new Context({}));
+      }).not.toThrow(new SdkError(`Chain id ${chainId} currently not supported!`));
+    })
+  );
+
+  ([250, 42161] as ChainId[]).forEach(chainId =>
+    it(`should throw when chainId is ${chainId}`, () => {
+      expect(() => {
+        zapperServiceService = new ZapperService(chainId, new Context({}));
+      }).toThrow(new SdkError(`Chain id ${chainId} currently not supported!`));
+    })
+  );
+
   describe("supportedTokens", () => {
-    ([1, 250, 1337] as ChainId[]).forEach(chainId =>
+    ([1, 1337] as ChainId[]).forEach(chainId =>
       describe(`when chainId is ${chainId}`, () => {
         beforeEach(() => {
           zapperServiceService = new ZapperService(chainId, new Context({}));
