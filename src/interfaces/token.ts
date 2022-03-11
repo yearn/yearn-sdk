@@ -102,8 +102,8 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
         return cached;
       }
 
-      if (this.chainId === 1 || this.chainId === 1337) {
-        // only ETH Main is supported
+      // Ethereum and Fantom supported
+      if (this.chainId === 1 || this.chainId === 1337 || this.chainId === 250) {
         const tokens = await this.yearn.services.zapper.supportedTokens();
         const icons = await this.yearn.services.asset.ready.then(() =>
           this.yearn.services.asset.icon(tokens.map(token => token.address))

@@ -228,49 +228,51 @@ describe("TokenInterface", () => {
       });
     });
 
-    describe("when the supported tokens are not cached", () => {
+    fdescribe("when the supported tokens are not cached", () => {
       beforeEach(() => {
         jest.spyOn(CachedFetcher.prototype, "fetch").mockResolvedValue(undefined);
       });
 
-      describe("when chainId is 1 or 1337", () => {
-        beforeEach(() => {
-          tokenInterface = new TokenInterface(mockedYearn, 1, new Context({}));
-        });
-
-        it("should fetch all the tokens supported by the zapper protocol along with icon url", async () => {
-          const supportedTokenWithIcon = createMockToken();
-          const supportedTokenWithoutIcon = createMockToken({ address: "0x002" });
-          zapperSupportedTokensMock.mockResolvedValue([supportedTokenWithIcon, supportedTokenWithoutIcon]);
-          assetReadyThenMock.mockResolvedValue({ "0x001": "image.png" });
-
-          const actualSupportedTokens = await tokenInterface.supported();
-
-          expect(actualSupportedTokens).toEqual([
-            { ...supportedTokenWithIcon, icon: "image.png" },
-            supportedTokenWithoutIcon
-          ]);
-          expect(zapperSupportedTokensMock).toHaveBeenCalledTimes(1);
-          expect(assetReadyThenMock).toHaveBeenCalledTimes(1);
-        });
-
-        it("should return an empty array when zapper fails", async () => {
-          zapperSupportedTokensMock.mockImplementation(() => {
-            throw new Error("zapper balances failed!");
+      ([1, 250, 1337] as ChainId[]).forEach(chainId =>
+        describe(`when chainId is ${chainId}`, () => {
+          beforeEach(() => {
+            tokenInterface = new TokenInterface(mockedYearn, chainId, new Context({}));
           });
 
-          const actualSupportedTokens = await tokenInterface.supported();
+          it("should fetch all the tokens supported by the zapper protocol along with icon url", async () => {
+            const supportedTokenWithIcon = createMockToken();
+            const supportedTokenWithoutIcon = createMockToken({ address: "0x002" });
+            zapperSupportedTokensMock.mockResolvedValue([supportedTokenWithIcon, supportedTokenWithoutIcon]);
+            assetReadyThenMock.mockResolvedValue({ "0x001": "image.png" });
 
-          expect(actualSupportedTokens).toEqual([]);
-          expect(zapperSupportedTokensMock).toHaveBeenCalledTimes(1);
-          expect(assetReadyThenMock).not.toHaveBeenCalled();
-          expect(console.error).toHaveBeenCalled();
-        });
-      });
+            const actualSupportedTokens = await tokenInterface.supported();
+
+            expect(actualSupportedTokens).toEqual([
+              { ...supportedTokenWithIcon, icon: "image.png" },
+              supportedTokenWithoutIcon
+            ]);
+            expect(zapperSupportedTokensMock).toHaveBeenCalledTimes(1);
+            expect(assetReadyThenMock).toHaveBeenCalledTimes(1);
+          });
+
+          it("should return an empty array when zapper fails", async () => {
+            zapperSupportedTokensMock.mockImplementation(() => {
+              throw new Error("zapper balances failed!");
+            });
+
+            const actualSupportedTokens = await tokenInterface.supported();
+
+            expect(actualSupportedTokens).toEqual([]);
+            expect(zapperSupportedTokensMock).toHaveBeenCalledTimes(1);
+            expect(assetReadyThenMock).not.toHaveBeenCalled();
+            expect(console.error).toHaveBeenCalled();
+          });
+        })
+      );
 
       describe("when chainId is not supported", () => {
         beforeEach(() => {
-          tokenInterface = new TokenInterface(mockedYearn, 250, new Context({}));
+          tokenInterface = new TokenInterface(mockedYearn, 42161, new Context({}));
         });
 
         it("should return an empty array", async () => {

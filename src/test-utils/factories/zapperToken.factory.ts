@@ -5,7 +5,7 @@ const DEFAULT_ZAPPER_TOKEN: ZapperToken = {
   decimals: "18",
   symbol: "DEAD",
   price: "10",
-  hide: "no?"
+  hide: "no"
 };
 
 export const createMockZapperToken = (overwrites: Partial<ZapperToken> = {}) => ({

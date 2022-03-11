@@ -30,10 +30,10 @@ export interface Token extends ERC20 {
 
 export interface ZapperToken {
   address: string;
-  hide: string;
-  symbol: string;
   decimals: string;
+  hide?: string | null;
   price: string;
+  symbol: string;
 }
 
 /**
