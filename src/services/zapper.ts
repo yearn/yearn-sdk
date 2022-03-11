@@ -3,7 +3,7 @@ import { getAddress } from "@ethersproject/address";
 import { Chains } from "../chain";
 import { Service } from "../common";
 import { EthAddress, handleHttpError, usdc, ZeroAddress } from "../helpers";
-import { Address, Balance, BalancesMap, Integer, Token } from "../types";
+import { Address, Balance, BalancesMap, Integer, Token, ZapperToken } from "../types";
 import {
   GasPrice,
   ZapApprovalStateOutput,
@@ -31,9 +31,14 @@ export class ZapperService extends Service {
       .then(handleHttpError)
       .then(res => res.json());
     const network = Chains[this.chainId] ?? "ethereum";
-    return tokens.map(
-      (token: Record<string, string>): Token => {
-        const address = token.address === ZeroAddress ? EthAddress : getAddress(String(token.address));
+
+    const validTokens: ZapperToken[] = tokens.filter((token: ZapperToken) =>
+      Object.values(token).every(attr => !!attr)
+    );
+
+    return validTokens.map(
+      (token: ZapperToken): Token => {
+        const address = token.address === ZeroAddress ? EthAddress : getAddress(token.address);
         const supported = token.hide ? !token.hide : true;
         return {
           address: address,
