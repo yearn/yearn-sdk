@@ -228,7 +228,7 @@ describe("TokenInterface", () => {
       });
     });
 
-    fdescribe("when the supported tokens are not cached", () => {
+    describe("when the supported tokens are not cached", () => {
       beforeEach(() => {
         jest.spyOn(CachedFetcher.prototype, "fetch").mockResolvedValue(undefined);
       });
