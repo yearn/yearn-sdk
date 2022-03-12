@@ -233,7 +233,7 @@ describe("TokenInterface", () => {
         jest.spyOn(CachedFetcher.prototype, "fetch").mockResolvedValue(undefined);
       });
 
-      ([1, 250, 1337] as ChainId[]).forEach(chainId =>
+      ([1, 1337] as ChainId[]).forEach(chainId =>
         describe(`when chainId is ${chainId}`, () => {
           beforeEach(() => {
             tokenInterface = new TokenInterface(mockedYearn, chainId, new Context({}));
@@ -270,19 +270,17 @@ describe("TokenInterface", () => {
         })
       );
 
-      describe("when chainId is not supported", () => {
-        beforeEach(() => {
-          tokenInterface = new TokenInterface(mockedYearn, 42161, new Context({}));
-        });
+      ([250, 42161] as ChainId[]).forEach(chainId =>
+        it(`should return an empty array when chainId is ${chainId}`, async () => {
+          tokenInterface = new TokenInterface(mockedYearn, chainId, new Context({}));
 
-        it("should return an empty array", async () => {
           const actualSupportedTokens = await tokenInterface.supported();
 
           expect(actualSupportedTokens).toEqual([]);
           expect(zapperSupportedTokensMock).not.toHaveBeenCalled();
           expect(assetReadyThenMock).not.toHaveBeenCalled();
-        });
-      });
+        })
+      );
     });
   });
 
