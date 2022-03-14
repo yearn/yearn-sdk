@@ -534,7 +534,7 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
   }
 
   private shouldUsePartnerService(vault: string): boolean {
-    return !!this.yearn.services.partner && this.yearn.services.partner.isAllowed(vault);
+    return !!this.yearn.services.partner?.isAllowed(vault);
   }
 
   private makeEmptyApy(): Apy {
