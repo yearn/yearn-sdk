@@ -268,7 +268,7 @@ describe("Simulation interface", () => {
     });
 
     describe("when it has the partner service", () => {
-      it("should directly call the vault contract", async () => {
+      it("should call the partner contract", async () => {
         const mockedYearn = new MockedYearnClass();
         mockedYearn.services.partner = new ((PartnerService as unknown) as jest.Mock<PartnerService<ChainId>>)();
         simulationInterface = new SimulationInterface(mockedYearn, 1, new Context({}));

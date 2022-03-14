@@ -30,6 +30,14 @@ import {
 const earningsAccountAssetsDataMock = jest.fn();
 const tokensMetadataMock: jest.Mock<Promise<TokenMetadata[]>> = jest.fn();
 const zapperZapOutMock = jest.fn();
+const zapperZapInMock = jest.fn().mockResolvedValue({
+  to: 'to',
+  from: 'from',
+  data: 'data',
+  value: '100',
+  gas: '100',
+  gasPrice: '100',
+});
 const helperTokenBalancesMock = jest.fn();
 const helperTokensMock: jest.Mock<Promise<ERC20[]>> = jest.fn();
 const lensAdaptersVaultsV2PositionsOfMock = jest.fn();
@@ -53,7 +61,8 @@ const partnerIsAllowedMock = jest.fn().mockReturnValue(true);
 jest.mock("../services/partner", () => ({
   PartnerService: jest.fn().mockImplementation(() => ({
     populateDepositTransaction: partnerPopulateDepositTransactionMock,
-    isAllowed: partnerIsAllowedMock
+    isAllowed: partnerIsAllowedMock,
+    partnerId: '0x000partner',
   }))
 }));
 
@@ -91,7 +100,8 @@ jest.mock("../yearn", () => ({
         getPriceUsdc: oracleGetPriceUsdcMock
       },
       zapper: {
-        zapOut: zapperZapOutMock
+        zapOut: zapperZapOutMock,
+        zapIn: zapperZapInMock
       },
       transaction: {
         sendTransaction: sendTransactionUsingServiceMock
@@ -696,6 +706,19 @@ describe("VaultInterface", () => {
         expect(zapInMock).toHaveBeenCalledTimes(1);
         expect(zapInMock).toHaveBeenCalledWith(vault, token, amount, account, {}, ZapProtocol.PICKLE, {});
       });
+
+      it("should call zapIn with correct arguments and pickle as the zapProtocol and the partner id", async () => {
+        mockedYearn = new (Yearn as jest.Mock<Yearn<ChainId>>)();
+        mockedYearn.services.partner = new ((PartnerService as unknown) as jest.Mock<PartnerService<ChainId>>)();
+        vaultInterface = new VaultInterface(mockedYearn, 1, new Context({}));
+
+        const [vault, token, amount, account] = ["0xVault", "0xToken", "1", "0xAccount"];
+
+        await vaultInterface.deposit(vault, token, amount, account, { slippage: 0.1 });
+
+        expect(zapperZapInMock).toHaveBeenCalledTimes(1);
+        expect(zapperZapInMock).toHaveBeenCalledWith("0xAccount", "0xToken", "1", "0xVault", "0", 0.1, false, "pickle", "0x000partner");
+      });
     });
 
     describe("when is not zapping into pickle jar", () => {
@@ -782,6 +805,21 @@ describe("VaultInterface", () => {
 
           expect(zapInMock).toHaveBeenCalledTimes(1);
           expect(zapInMock).toHaveBeenCalledWith(vault, token, amount, account, {}, ZapProtocol.YEARN, {});
+        });
+
+        it("should call zapIn with correct arguments and yearn as the zapProtocol and the partner id", async () => {
+          mockedYearn = new (Yearn as jest.Mock<Yearn<ChainId>>)();
+          mockedYearn.services.partner = new ((PartnerService as unknown) as jest.Mock<PartnerService<ChainId>>)();
+          vaultInterface = new VaultInterface(mockedYearn, 1, new Context({}));
+          const assetStaticVaultV2 = createMockAssetStaticVaultV2({ token: "0xRandom" });
+          vaultInterface.getStatic = jest.fn().mockResolvedValue([assetStaticVaultV2]);
+
+          const [vault, token, amount, account] = ["0xVault", "0xToken", "1", "0xAccount"];
+
+          await vaultInterface.deposit(vault, token, amount, account, { slippage: 0.1 });
+
+          expect(zapperZapInMock).toHaveBeenCalledTimes(1);
+          expect(zapperZapInMock).toHaveBeenCalledWith("0xAccount", "0xToken", "1", "0xVault", "0", 0.1, false, "yearn", "0x000partner");
         });
       });
     });
