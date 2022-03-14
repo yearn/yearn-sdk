@@ -425,7 +425,7 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
       options.slippage,
       false,
       zapProtocol,
-      this.yearn.services.partner?.partnerId,
+      this.yearn.services.partner?.partnerId
     );
 
     const transactionRequest: TransactionRequest = {

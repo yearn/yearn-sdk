@@ -31,12 +31,12 @@ const earningsAccountAssetsDataMock = jest.fn();
 const tokensMetadataMock: jest.Mock<Promise<TokenMetadata[]>> = jest.fn();
 const zapperZapOutMock = jest.fn();
 const zapperZapInMock = jest.fn().mockResolvedValue({
-  to: 'to',
-  from: 'from',
-  data: 'data',
-  value: '100',
-  gas: '100',
-  gasPrice: '100',
+  to: "to",
+  from: "from",
+  data: "data",
+  value: "100",
+  gas: "100",
+  gasPrice: "100"
 });
 const helperTokenBalancesMock = jest.fn();
 const helperTokensMock: jest.Mock<Promise<ERC20[]>> = jest.fn();
@@ -62,7 +62,7 @@ jest.mock("../services/partner", () => ({
   PartnerService: jest.fn().mockImplementation(() => ({
     populateDepositTransaction: partnerPopulateDepositTransactionMock,
     isAllowed: partnerIsAllowedMock,
-    partnerId: '0x000partner',
+    partnerId: "0x000partner"
   }))
 }));
 
@@ -717,7 +717,17 @@ describe("VaultInterface", () => {
         await vaultInterface.deposit(vault, token, amount, account, { slippage: 0.1 });
 
         expect(zapperZapInMock).toHaveBeenCalledTimes(1);
-        expect(zapperZapInMock).toHaveBeenCalledWith("0xAccount", "0xToken", "1", "0xVault", "0", 0.1, false, "pickle", "0x000partner");
+        expect(zapperZapInMock).toHaveBeenCalledWith(
+          "0xAccount",
+          "0xToken",
+          "1",
+          "0xVault",
+          "0",
+          0.1,
+          false,
+          "pickle",
+          "0x000partner"
+        );
       });
     });
 
@@ -819,7 +829,17 @@ describe("VaultInterface", () => {
           await vaultInterface.deposit(vault, token, amount, account, { slippage: 0.1 });
 
           expect(zapperZapInMock).toHaveBeenCalledTimes(1);
-          expect(zapperZapInMock).toHaveBeenCalledWith("0xAccount", "0xToken", "1", "0xVault", "0", 0.1, false, "yearn", "0x000partner");
+          expect(zapperZapInMock).toHaveBeenCalledWith(
+            "0xAccount",
+            "0xToken",
+            "1",
+            "0xVault",
+            "0",
+            0.1,
+            false,
+            "yearn",
+            "0x000partner"
+          );
         });
       });
     });
