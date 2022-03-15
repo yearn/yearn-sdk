@@ -20,7 +20,9 @@ const assetIconMock = jest.fn();
 const assetReadyThenMock = jest.fn();
 const metaTokensMock = jest.fn();
 const vaultsBalancesMock = jest.fn();
+const vaultsTokensMock = jest.fn();
 const ironBankBalancesMock = jest.fn();
+const ironBankTokensMock = jest.fn();
 const sendTransactionMock = jest.fn();
 
 jest.mock("@ethersproject/contracts", () => ({
@@ -58,9 +60,10 @@ jest.mock("../yearn", () => ({
         sendTransaction: sendTransactionMock
       }
     },
-    ironBank: { balances: ironBankBalancesMock },
+    ironBank: { balances: ironBankBalancesMock, tokens: ironBankTokensMock },
     vaults: {
-      balances: vaultsBalancesMock
+      balances: vaultsBalancesMock,
+      tokens: vaultsTokensMock
     }
   }))
 }));
@@ -239,17 +242,30 @@ describe("TokenInterface", () => {
             tokenInterface = new TokenInterface(mockedYearn, chainId, new Context({}));
           });
 
-          it("should fetch all the tokens supported by the zapper protocol along with icon url", async () => {
-            const supportedTokenWithIcon = createMockToken();
-            const supportedTokenWithoutIcon = createMockToken({ address: "0x002" });
-            zapperSupportedTokensMock.mockResolvedValue([supportedTokenWithIcon, supportedTokenWithoutIcon]);
+          it("should fetch all the tokens from Zapper, Vaults and Iron", async () => {
+            const supportedZapperTokenWithIcon = createMockToken();
+            const supportedZapperTokenWithoutIcon = createMockToken({ address: "0x002" });
+            const vaultsToken = createMockToken({
+              symbol: "VAULT",
+              name: "Vault Token"
+            });
+            const ironBankTokens = createMockToken({ symbol: "IRON", name: "Iron Token" });
+
+            zapperSupportedTokensMock.mockResolvedValue([
+              supportedZapperTokenWithIcon,
+              supportedZapperTokenWithoutIcon
+            ]);
+            vaultsTokensMock.mockResolvedValue([vaultsToken]);
+            ironBankTokensMock.mockResolvedValue([ironBankTokens]);
             assetReadyThenMock.mockResolvedValue({ "0x001": "image.png" });
 
             const actualSupportedTokens = await tokenInterface.supported();
 
             expect(actualSupportedTokens).toEqual([
-              { ...supportedTokenWithIcon, icon: "image.png" },
-              supportedTokenWithoutIcon
+              { ...supportedZapperTokenWithIcon, icon: "image.png" },
+              supportedZapperTokenWithoutIcon,
+              vaultsToken,
+              ironBankTokens
             ]);
             expect(zapperSupportedTokensMock).toHaveBeenCalledTimes(1);
             expect(assetReadyThenMock).toHaveBeenCalledTimes(1);

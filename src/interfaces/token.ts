@@ -104,14 +104,20 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
 
       // Only ethereum supported
       if (this.chainId === 1 || this.chainId === 1337) {
-        const tokens = await this.yearn.services.zapper.supportedTokens();
-        const icons = await this.yearn.services.asset.ready.then(() =>
-          this.yearn.services.asset.icon(tokens.map(token => token.address))
+        const zapperTokens = await this.yearn.services.zapper.supportedTokens();
+        const vaultsTokens = await this.yearn.vaults.tokens();
+        const ironBankTokens = await this.yearn.ironBank.tokens();
+
+        const zapperTokensIcons = await this.yearn.services.asset.ready.then(() =>
+          this.yearn.services.asset.icon(zapperTokens.map(({ address }) => address))
         );
-        return tokens.map(token => {
-          const icon = icons[token.address];
+
+        const setIcon = (token: Token) => {
+          const icon = zapperTokensIcons[token.address];
           return icon ? { ...token, icon } : token;
-        });
+        };
+
+        return [...zapperTokens.map(setIcon), ...vaultsTokens, ...ironBankTokens];
       }
 
       console.error(`the chain ${this.chainId} hasn't been implemented yet`);
