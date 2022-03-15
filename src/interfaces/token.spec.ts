@@ -1,6 +1,6 @@
 import { Contract } from "@ethersproject/contracts";
 
-import { Address, Asset, ChainId, TokenInterface, TokenMetadata } from "..";
+import { Address, Asset, ChainId, Token, TokenInterface, TokenMetadata } from "..";
 import { CachedFetcher } from "../cache";
 import { Context } from "../context";
 import { EthAddress } from "../helpers";
@@ -238,25 +238,28 @@ describe("TokenInterface", () => {
 
       ([1, 1337] as ChainId[]).forEach(chainId =>
         describe(`when chainId is ${chainId}`, () => {
+          let ironBankToken: Token;
+          let vaultsToken: Token;
+
           beforeEach(() => {
             tokenInterface = new TokenInterface(mockedYearn, chainId, new Context({}));
+            ironBankToken = createMockToken({ symbol: "IRON", name: "Iron Token" });
+            vaultsToken = createMockToken({
+              symbol: "VAULT",
+              name: "Vault Token"
+            });
+            vaultsTokensMock.mockResolvedValue([vaultsToken]);
+            ironBankTokensMock.mockResolvedValue([ironBankToken]);
           });
 
           it("should fetch all the tokens from Zapper, Vaults and Iron", async () => {
             const supportedZapperTokenWithIcon = createMockToken();
             const supportedZapperTokenWithoutIcon = createMockToken({ address: "0x002" });
-            const vaultsToken = createMockToken({
-              symbol: "VAULT",
-              name: "Vault Token"
-            });
-            const ironBankTokens = createMockToken({ symbol: "IRON", name: "Iron Token" });
 
             zapperSupportedTokensMock.mockResolvedValue([
               supportedZapperTokenWithIcon,
               supportedZapperTokenWithoutIcon
             ]);
-            vaultsTokensMock.mockResolvedValue([vaultsToken]);
-            ironBankTokensMock.mockResolvedValue([ironBankTokens]);
             assetReadyThenMock.mockResolvedValue({ "0x001": "image.png" });
 
             const actualSupportedTokens = await tokenInterface.supported();
@@ -265,7 +268,7 @@ describe("TokenInterface", () => {
               { ...supportedZapperTokenWithIcon, icon: "image.png" },
               supportedZapperTokenWithoutIcon,
               vaultsToken,
-              ironBankTokens
+              ironBankToken
             ]);
             expect(zapperSupportedTokensMock).toHaveBeenCalledTimes(1);
             expect(vaultsTokensMock).toHaveBeenCalledTimes(1);
@@ -273,15 +276,17 @@ describe("TokenInterface", () => {
             expect(assetReadyThenMock).toHaveBeenCalledTimes(1);
           });
 
-          it("should return an empty array when zapper fails", async () => {
+          it("should return internal tokens when zapper fails", async () => {
             zapperSupportedTokensMock.mockImplementation(() => {
               throw new Error("zapper balances failed!");
             });
 
             const actualSupportedTokens = await tokenInterface.supported();
 
-            expect(actualSupportedTokens).toEqual([]);
+            expect(actualSupportedTokens).toEqual([vaultsToken, ironBankToken]);
             expect(zapperSupportedTokensMock).toHaveBeenCalledTimes(1);
+            expect(vaultsTokensMock).toHaveBeenCalledTimes(1);
+            expect(ironBankTokensMock).toHaveBeenCalledTimes(1);
             expect(assetReadyThenMock).not.toHaveBeenCalled();
             expect(console.error).toHaveBeenCalled();
           });

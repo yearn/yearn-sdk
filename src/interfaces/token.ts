@@ -104,20 +104,18 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
 
       // Only ethereum supported
       if (this.chainId === 1 || this.chainId === 1337) {
-        const zapperTokens = await this.yearn.services.zapper.supportedTokens();
+        let zapperTokensWithIcon: Token[] = [];
+
+        try {
+          zapperTokensWithIcon = await this.getZapperTokensWithIcons();
+        } catch (error) {
+          console.error(error);
+        }
+
         const vaultsTokens = await this.yearn.vaults.tokens();
         const ironBankTokens = await this.yearn.ironBank.tokens();
 
-        const zapperTokensIcons = await this.yearn.services.asset.ready.then(() =>
-          this.yearn.services.asset.icon(zapperTokens.map(({ address }) => address))
-        );
-
-        const setIcon = (token: Token) => {
-          const icon = zapperTokensIcons[token.address];
-          return icon ? { ...token, icon } : token;
-        };
-
-        return [...zapperTokens.map(setIcon), ...vaultsTokens, ...ironBankTokens];
+        return [...zapperTokensWithIcon, ...vaultsTokens, ...ironBankTokens];
       }
 
       console.error(`the chain ${this.chainId} hasn't been implemented yet`);
@@ -126,6 +124,20 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
     }
 
     return [];
+  }
+
+  private async getZapperTokensWithIcons(): Promise<Token[]> {
+    const zapperTokens = await this.yearn.services.zapper.supportedTokens();
+    const zapperTokensIcons = await this.yearn.services.asset.ready.then(() =>
+      this.yearn.services.asset.icon(zapperTokens.map(({ address }) => address))
+    );
+
+    const setIcon = (token: Token) => {
+      const icon = zapperTokensIcons[token.address];
+      return icon ? { ...token, icon } : token;
+    };
+
+    return zapperTokens.map(setIcon);
   }
 
   /**
