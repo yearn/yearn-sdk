@@ -115,7 +115,23 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
         const vaultsTokens = await this.yearn.vaults.tokens();
         const ironBankTokens = await this.yearn.ironBank.tokens();
 
-        return [...zapperTokensWithIcon, ...vaultsTokens, ...ironBankTokens];
+        const duplicateZapperTokensAddresses: Set<Address> = new Set();
+        const uniqueYearnTokens = [...vaultsTokens, ...ironBankTokens].map(yearnToken => {
+          const zapperDuplicate = zapperTokensWithIcon.find(({ address }) => address === yearnToken.address);
+
+          if (zapperDuplicate) {
+            duplicateZapperTokensAddresses.add(zapperDuplicate.address);
+            return { ...yearnToken, supported: { zapper: true } };
+          }
+
+          return yearnToken;
+        });
+
+        const filteredZapperTokens = zapperTokensWithIcon.filter(
+          ({ address }) => !duplicateZapperTokensAddresses.has(address)
+        );
+
+        return [...uniqueYearnTokens, ...filteredZapperTokens];
       }
 
       console.error(`the chain ${this.chainId} hasn't been implemented yet`);
@@ -128,8 +144,11 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
 
   private async getZapperTokensWithIcons(): Promise<Token[]> {
     const zapperTokens = await this.yearn.services.zapper.supportedTokens();
+
+    const zapperTokensAddresses = zapperTokens.map(({ address }) => address);
+
     const zapperTokensIcons = await this.yearn.services.asset.ready.then(() =>
-      this.yearn.services.asset.icon(zapperTokens.map(({ address }) => address))
+      this.yearn.services.asset.icon(zapperTokensAddresses)
     );
 
     const setIcon = (token: Token) => {

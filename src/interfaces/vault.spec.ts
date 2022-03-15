@@ -646,9 +646,7 @@ describe("VaultInterface", () => {
               symbol: "DEAD",
               name: "Dead Token",
               priceUsdc: "0",
-              supported: {
-                zapper: true
-              }
+              supported: {}
             },
             name: "Dead Token",
             priceUsdc: "1",
