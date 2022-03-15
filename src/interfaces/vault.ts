@@ -61,7 +61,7 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
 
     let assetsDynamic: VaultDynamic[] = [];
     try {
-      assetsDynamic = await this.getDynamic();
+      assetsDynamic = await this.getDynamic(addresses);
     } catch {
       const allAddresses = assetsStatic.map(asset => asset.address);
       const chunks = chunkArray(allAddresses, 30);
