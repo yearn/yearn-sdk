@@ -13,7 +13,7 @@ export class SubgraphService extends Service {
     switch (chainId) {
       case 1:
       case 1337:
-        subgraphName = "salazarguille/yearn-vaults-v2-subgraph-mainnet";
+        subgraphName = `https://gateway.thegraph.com/api/${process.env.SUBGRAPH_KEY}/subgraphs/id/${process.env.MAINNET_SUBGRAPH_ID}`;
         break;
       case 250:
         subgraphName = "yearn/yearn-vaults-v2-fantom";
