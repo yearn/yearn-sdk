@@ -268,6 +268,8 @@ describe("TokenInterface", () => {
               ironBankTokens
             ]);
             expect(zapperSupportedTokensMock).toHaveBeenCalledTimes(1);
+            expect(vaultsTokensMock).toHaveBeenCalledTimes(1);
+            expect(ironBankTokensMock).toHaveBeenCalledTimes(1);
             expect(assetReadyThenMock).toHaveBeenCalledTimes(1);
           });
 
