@@ -133,6 +133,7 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
             ...token,
             ...(isZapperToken && {
               supported: {
+                ...token.supported,
                 zapper: true
               }
             })
