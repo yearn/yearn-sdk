@@ -113,25 +113,31 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
         }
 
         const vaultsTokens = await this.yearn.vaults.tokens();
+
         const ironBankTokens = await this.yearn.ironBank.tokens();
 
-        const duplicateZapperTokensAddresses: Set<Address> = new Set();
-        const uniqueYearnTokens = [...vaultsTokens, ...ironBankTokens].map(yearnToken => {
-          const zapperDuplicate = zapperTokensWithIcon.find(({ address }) => address === yearnToken.address);
+        const combinedVaultsAndIronBankTokens = this.mergeTokens(vaultsTokens, ironBankTokens);
 
-          if (zapperDuplicate) {
-            duplicateZapperTokensAddresses.add(zapperDuplicate.address);
-            return { ...yearnToken, supported: { zapper: true } };
-          }
+        if (!zapperTokensWithIcon.length) {
+          return combinedVaultsAndIronBankTokens;
+        }
 
-          return yearnToken;
+        const allSupportedTokens = this.mergeTokens(combinedVaultsAndIronBankTokens, zapperTokensWithIcon);
+
+        const zapperTokensUniqueAddresses = new Set(zapperTokensWithIcon.map(({ address }) => address));
+
+        return allSupportedTokens.map(token => {
+          const isZapperToken = zapperTokensUniqueAddresses.has(token.address);
+
+          return {
+            ...token,
+            ...(isZapperToken && {
+              supported: {
+                zapper: true
+              }
+            })
+          };
         });
-
-        const filteredZapperTokens = zapperTokensWithIcon.filter(
-          ({ address }) => !duplicateZapperTokensAddresses.has(address)
-        );
-
-        return [...uniqueYearnTokens, ...filteredZapperTokens];
       }
 
       console.error(`the chain ${this.chainId} hasn't been implemented yet`);
@@ -279,5 +285,17 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
     } else {
       return result;
     }
+  }
+
+  /**
+   * Merges token array b into a removing a duplicates from b
+   * @param a higher priority array
+   * @param b lower priority array
+   * @returns combined token array without duplicates
+   */
+  private mergeTokens(a: Token[], b: Token[]): Token[] {
+    const filter = new Set(a.map(({ address }) => address));
+
+    return [...a, ...b.filter(({ address }) => !filter.has(address))];
   }
 }

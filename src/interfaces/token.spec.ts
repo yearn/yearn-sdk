@@ -266,10 +266,11 @@ describe("TokenInterface", () => {
 
             const actualSupportedTokens = await tokenInterface.supported();
 
+            expect(actualSupportedTokens.length).toEqual(4);
             expect(actualSupportedTokens).toEqual(
               expect.arrayContaining([
-                { ...supportedZapperTokenWithIcon, icon: "image.png" },
-                supportedZapperTokenWithoutIcon,
+                { ...supportedZapperTokenWithIcon, icon: "image.png", supported: { zapper: true } },
+                { ...supportedZapperTokenWithoutIcon, supported: { zapper: true } },
                 vaultsToken,
                 ironBankToken
               ])
@@ -309,9 +310,31 @@ describe("TokenInterface", () => {
               icon: "vaults-2.svg",
               priceUsdc: "22"
             });
+            const ironBankTokenInVaults = createMockToken({
+              address: "0x005",
+              symbol: "IRON3",
+              name: "Iron Token in Vaults",
+              icon: "iron-bank-3.svg",
+              priceUsdc: "13"
+            });
+            const vaultsTokenInIronBank = createMockToken({
+              address: "0x005",
+              symbol: "VAULT3",
+              name: "Vault Token in Iron Bank",
+              icon: "vaults-3.svg",
+              priceUsdc: "23"
+            });
 
-            ironBankTokensMock.mockResolvedValue([vaultsTokenAlsoInZapper, ironBankTokenNotInZapper]);
-            vaultsTokensMock.mockResolvedValue([ironBankTokenAlsoInZapper, vaultsTokenNotInZapper]);
+            ironBankTokensMock.mockResolvedValue([
+              vaultsTokenAlsoInZapper,
+              ironBankTokenNotInZapper,
+              ironBankTokenInVaults
+            ]);
+            vaultsTokensMock.mockResolvedValue([
+              ironBankTokenAlsoInZapper,
+              vaultsTokenNotInZapper,
+              vaultsTokenInIronBank
+            ]);
             zapperSupportedTokensMock.mockResolvedValue([
               {
                 ...ironBankTokenAlsoInZapper,
@@ -332,6 +355,7 @@ describe("TokenInterface", () => {
 
             const actualSupportedTokens = await tokenInterface.supported();
 
+            expect(actualSupportedTokens.length).toEqual(5);
             expect(actualSupportedTokens).toEqual(
               expect.arrayContaining([
                 {
@@ -341,14 +365,14 @@ describe("TokenInterface", () => {
                   }
                 },
                 vaultsTokenNotInZapper,
-
                 {
                   ...vaultsTokenAlsoInZapper,
                   supported: {
                     zapper: true
                   }
                 },
-                ironBankTokenNotInZapper
+                ironBankTokenNotInZapper,
+                vaultsTokenInIronBank
               ])
             );
             expect(zapperSupportedTokensMock).toHaveBeenCalledTimes(1);
@@ -364,6 +388,7 @@ describe("TokenInterface", () => {
 
             const actualSupportedTokens = await tokenInterface.supported();
 
+            expect(actualSupportedTokens.length).toEqual(2);
             expect(actualSupportedTokens).toEqual([vaultsToken, ironBankToken]);
             expect(zapperSupportedTokensMock).toHaveBeenCalledTimes(1);
             expect(vaultsTokensMock).toHaveBeenCalledTimes(1);
