@@ -236,8 +236,7 @@ describe("TokenInterface", () => {
         jest.spyOn(CachedFetcher.prototype, "fetch").mockResolvedValue(undefined);
       });
 
-      // ([1, 1337] as ChainId[]).forEach(chainId =>
-      ([1] as ChainId[]).forEach(chainId =>
+      ([1, 1337] as ChainId[]).forEach(chainId =>
         describe(`when chainId is ${chainId}`, () => {
           let ironBankToken: Token;
           let vaultsToken: Token;
