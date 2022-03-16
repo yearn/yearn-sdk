@@ -42,8 +42,19 @@ export class AllowListService<T extends ChainId> extends ContractService<T> {
       return { success: false, error: "can't validate a tx that has no call data" };
     }
 
+    let contract;
+
     try {
-      const contract = await this.contract;
+      contract = await this.contract;
+      if (!contract) throw new Error("Contract missing");
+    } catch (e) {
+      // temporary workaround after deprecating the `disableAllowlist` param
+      // if allowlist has no onchain contract address, we skip validation altogether
+      console.warn("AllowList on-chain contract address missing. Skipping validation...");
+      return { success: true };
+    }
+
+    try {
       const valid = await contract.read.validateCalldataByOrigin(AllowListService.originName, targetAddress, callData);
       if (!valid) {
         return { success: false, error: "tx is not permitted by the allow list" };

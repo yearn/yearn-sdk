@@ -20,7 +20,6 @@ import { TelegramService } from "./services/telegram";
 import { TransactionService } from "./services/transaction";
 import { VisionService } from "./services/vision";
 import { ZapperService } from "./services/zapper";
-import { SdkError } from "./types";
 import { AssetServiceState } from "./types";
 
 type ServicesType<T extends ChainId> = {
@@ -88,19 +87,14 @@ export class Yearn<T extends ChainId> {
     this._ctxValue = context;
     this.context = new Context(context);
 
-    const allowlistAddress = AllowListService.addressByChain(chainId);
-    const allowListService = allowlistAddress
-      ? new AllowListService(chainId, this.context, allowlistAddress)
-      : undefined;
     this.addressProvider = new AddressProvider(chainId, this.context);
-
-    const allowlistAddress = !this.context.disableAllowlist && this.context.addresses.allowList;
+    const allowListService = new AllowListService(chainId, this.context, this.addressProvider);
 
     this.services = this._initServices(
       chainId,
       this.context,
       this.addressProvider,
-      allowlistAddress,
+      allowListService,
       assetServiceState
     );
 
@@ -116,14 +110,10 @@ export class Yearn<T extends ChainId> {
   }
 
   setChainId(chainId: ChainId) {
-    const allowlistAddress = AllowListService.addressByChain(chainId);
-    const allowListService = allowlistAddress
-      ? new AllowListService(chainId, this.context, allowlistAddress)
-      : undefined;
     this.addressProvider = new AddressProvider(chainId, this.context);
+    const allowListService = new AllowListService(chainId, this.context, this.addressProvider);
 
-    const allowlistAddress = !this.context.disableAllowlist && this.context.addresses.allowList;
-    this.services = this._initServices(chainId, this.context, this.addressProvider, allowlistAddress);
+    this.services = this._initServices(chainId, this.context, this.addressProvider, allowListService);
 
     this.vaults = new VaultInterface(this, chainId, this.context);
     this.tokens = new TokenInterface(this, chainId, this.context);
@@ -140,7 +130,7 @@ export class Yearn<T extends ChainId> {
     chainId: ChainId,
     ctx: Context,
     addressProvider: AddressProvider<T>,
-    allowlistAddress?: string | false,
+    allowlistService?: AllowListService<T>,
     assetServiceState?: AssetServiceState
   ) {
     return {
@@ -154,7 +144,8 @@ export class Yearn<T extends ChainId> {
       helper: new HelperService(chainId, ctx, addressProvider),
       telegram: new TelegramService(chainId, ctx),
       meta: new MetaService(chainId, ctx),
-      allowList: allowlistAddress ? new AllowListService(chainId, ctx, addressProvider) : undefined
+      allowList: allowlistService,
+      transaction: new TransactionService(chainId, ctx, allowlistService)
     };
   }
 }

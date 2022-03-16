@@ -22,10 +22,13 @@ export type Adapters<T extends ChainId> = {
  * [[LensService]] provides access to all yearn's assets and user positions.
  * It's implemented in the form of a contract that lives on all networks
  * supported by yearn.
+ *
+ * WARNING: This service will be deprecated soon
  */
 export class LensService<T extends ChainId> extends ContractService<T> {
   static abi = LensAbi;
-  static contractId = ContractAddressId.lens;
+  // unused contract id as the contract doesn't exist and will be deprecated soon
+  static contractId = ContractAddressId.unused;
 
   get adapters(): Adapters<T> {
     return {

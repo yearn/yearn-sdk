@@ -39,6 +39,8 @@ export class AddressProvider<T extends ChainId> extends Service {
         return "0xac5A9E4135A3A26497F3890bFb602b06Ee592B61";
       case 42161:
         return "0xcAd10033C86B0C1ED6bfcCAa2FF6779938558E9f";
+      default:
+        throw new Error("Unsupported chain id");
     }
   }
 
