@@ -188,7 +188,9 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     const TokenAbi = ["function approve(address spender, uint256 amount) returns (bool)"];
     const signer = this.ctx.provider.write.getSigner(from);
     const tokenContract = new Contract(token, TokenAbi, signer);
-    const encodedInputData = tokenContract.interface.encodeFunctionData("approve", [vault, amount]);
+    const isUsingPartnerService = this.shouldUsePartnerService(vault);
+    const addressToApprove = (isUsingPartnerService && this.yearn.services.partner?.address) || vault;
+    const encodedInputData = tokenContract.interface.encodeFunctionData("approve", [addressToApprove, amount]);
     options.save = true;
 
     const simulationResponse: SimulationResponse = await this.simulationExecutor.makeSimulationRequest(
@@ -210,7 +212,9 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
   ): Promise<boolean> {
     const TokenAbi = ["function allowance(address owner, address spender) view returns (uint256)"];
     const contract = new Contract(token, TokenAbi, signer);
-    const result = await contract.allowance(from, vault).catch(() => {
+    const isUsingPartnerService = this.shouldUsePartnerService(vault);
+    const addressToCheck = (isUsingPartnerService && this.yearn.services.partner?.address) || vault;
+    const result = await contract.allowance(from, addressToCheck).catch(() => {
       "deposit needs approving";
     });
     return new BigNumber(result.toString()).lt(new BigNumber(amount));
