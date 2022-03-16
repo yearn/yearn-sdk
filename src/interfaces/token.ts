@@ -91,64 +91,64 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
   }
 
   /**
-   * Fetch all the tokens supported by the zapper protocol along with some basic
-   * metadata.
-   * @returns list of tokens supported by the zapper protocol.
+   * Fetch all the tokens supported along with some basic metadata.
+   * @returns list of tokens supported.
    */
   async supported(): Promise<Token[]> {
-    try {
-      const cached = await this.cachedFetcherSupported.fetch();
-      if (cached) {
-        return cached;
-      }
-
-      // Only ethereum supported
-      if (this.chainId === 1 || this.chainId === 1337) {
-        let zapperTokensWithIcon: Token[] = [];
-
-        try {
-          zapperTokensWithIcon = await this.getZapperTokensWithIcons();
-        } catch (error) {
-          console.error(error);
-        }
-
-        const vaultsTokens = await this.yearn.vaults.tokens();
-
-        const ironBankTokens = await this.yearn.ironBank.tokens();
-
-        const combinedVaultsAndIronBankTokens = this.mergeTokens(vaultsTokens, ironBankTokens);
-
-        if (!zapperTokensWithIcon.length) {
-          return combinedVaultsAndIronBankTokens;
-        }
-
-        const allSupportedTokens = this.mergeTokens(combinedVaultsAndIronBankTokens, zapperTokensWithIcon);
-
-        const zapperTokensUniqueAddresses = new Set(zapperTokensWithIcon.map(({ address }) => address));
-
-        return allSupportedTokens.map(token => {
-          const isZapperToken = zapperTokensUniqueAddresses.has(token.address);
-
-          return {
-            ...token,
-            ...(isZapperToken && {
-              supported: {
-                ...token.supported,
-                zapper: true
-              }
-            })
-          };
-        });
-      }
-
-      console.error(`the chain ${this.chainId} hasn't been implemented yet`);
-    } catch (error) {
-      console.error(error);
+    const cached = await this.cachedFetcherSupported.fetch();
+    if (cached) {
+      return cached;
     }
+
+    let zapperTokensWithIcon: Token[] = [];
+
+    // Zapper only supported in Ethereum
+    if ([1, 1337].includes(this.chainId)) {
+      try {
+        zapperTokensWithIcon = await this.getZapperTokensWithIcons();
+      } catch (error) {
+        console.error(error);
+      }
+    }
+
+    if ([1, 1337, 250, 42161].includes(this.chainId)) {
+      const vaultsTokens = await this.yearn.vaults.tokens();
+      const ironBankTokens = await this.yearn.ironBank.tokens();
+
+      const combinedVaultsAndIronBankTokens = this.mergeTokens(vaultsTokens, ironBankTokens);
+
+      if (!zapperTokensWithIcon.length) {
+        return combinedVaultsAndIronBankTokens;
+      }
+
+      const allSupportedTokens = this.mergeTokens(combinedVaultsAndIronBankTokens, zapperTokensWithIcon);
+
+      const zapperTokensUniqueAddresses = new Set(zapperTokensWithIcon.map(({ address }) => address));
+
+      return allSupportedTokens.map(token => {
+        const isZapperToken = zapperTokensUniqueAddresses.has(token.address);
+
+        return {
+          ...token,
+          ...(isZapperToken && {
+            supported: {
+              ...token.supported,
+              zapper: true
+            }
+          })
+        };
+      });
+    }
+
+    console.error(`the chain ${this.chainId} hasn't been implemented yet`);
 
     return [];
   }
 
+  /**
+   * Fetches supported zapper tokens and sets their icon
+   * @returns zapper tokens with icons
+   */
   private async getZapperTokensWithIcons(): Promise<Token[]> {
     const zapperTokens = await this.yearn.services.zapper.supportedTokens();
 
