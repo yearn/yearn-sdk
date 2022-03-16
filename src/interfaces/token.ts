@@ -102,15 +102,42 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
         return cached;
       }
 
+      // Only ethereum supported
       if (this.chainId === 1 || this.chainId === 1337) {
-        // only ETH Main is supported
-        const tokens = await this.yearn.services.zapper.supportedTokens();
-        const icons = await this.yearn.services.asset.ready.then(() =>
-          this.yearn.services.asset.icon(tokens.map(token => token.address))
-        );
-        return tokens.map(token => {
-          const icon = icons[token.address];
-          return icon ? { ...token, icon } : token;
+        let zapperTokensWithIcon: Token[] = [];
+
+        try {
+          zapperTokensWithIcon = await this.getZapperTokensWithIcons();
+        } catch (error) {
+          console.error(error);
+        }
+
+        const vaultsTokens = await this.yearn.vaults.tokens();
+
+        const ironBankTokens = await this.yearn.ironBank.tokens();
+
+        const combinedVaultsAndIronBankTokens = this.mergeTokens(vaultsTokens, ironBankTokens);
+
+        if (!zapperTokensWithIcon.length) {
+          return combinedVaultsAndIronBankTokens;
+        }
+
+        const allSupportedTokens = this.mergeTokens(combinedVaultsAndIronBankTokens, zapperTokensWithIcon);
+
+        const zapperTokensUniqueAddresses = new Set(zapperTokensWithIcon.map(({ address }) => address));
+
+        return allSupportedTokens.map(token => {
+          const isZapperToken = zapperTokensUniqueAddresses.has(token.address);
+
+          return {
+            ...token,
+            ...(isZapperToken && {
+              supported: {
+                ...token.supported,
+                zapper: true
+              }
+            })
+          };
         });
       }
 
@@ -120,6 +147,23 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
     }
 
     return [];
+  }
+
+  private async getZapperTokensWithIcons(): Promise<Token[]> {
+    const zapperTokens = await this.yearn.services.zapper.supportedTokens();
+
+    const zapperTokensAddresses = zapperTokens.map(({ address }) => address);
+
+    const zapperTokensIcons = await this.yearn.services.asset.ready.then(() =>
+      this.yearn.services.asset.icon(zapperTokensAddresses)
+    );
+
+    const setIcon = (token: Token) => {
+      const icon = zapperTokensIcons[token.address];
+      return icon ? { ...token, icon } : token;
+    };
+
+    return zapperTokens.map(setIcon);
   }
 
   /**
@@ -242,5 +286,17 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
     } else {
       return result;
     }
+  }
+
+  /**
+   * Merges token array b into a removing a duplicates from b
+   * @param a higher priority array
+   * @param b lower priority array
+   * @returns combined token array without duplicates
+   */
+  private mergeTokens(a: Token[], b: Token[]): Token[] {
+    const filter = new Set(a.map(({ address }) => address));
+
+    return [...a, ...b.filter(({ address }) => !filter.has(address))];
   }
 }

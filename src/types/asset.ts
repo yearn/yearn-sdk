@@ -28,6 +28,15 @@ export interface Token extends ERC20 {
   metadata?: TokenMetadata;
 }
 
+export interface ZapperToken {
+  address: string;
+  canExchange?: boolean;
+  decimals: number;
+  hide?: boolean;
+  price: number;
+  symbol: string;
+}
+
 /**
  * Representation of a user position in a particular asset.
  */
