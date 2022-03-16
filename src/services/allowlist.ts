@@ -33,13 +33,11 @@ export class AllowListService<T extends ChainId> extends ContractService<T> {
    *                      For depositing/withdrawing from a vault it'd be the vault contract itself
    * @param callData The data from the tx that should be validated. This should be from a tx that has been populated and is about to be sent
    */
-  async validateCalldata(
-    targetAddress: Address | undefined,
-    callData: BytesLike | undefined
-  ): Promise<{ success: boolean; error?: string }> {
+  async validateCalldata(targetAddress?: Address, callData?: BytesLike): Promise<{ success: boolean; error?: string }> {
     if (!targetAddress) {
       return { success: false, error: "can't validate a tx that isn't targeting an address" };
     }
+
     if (!callData) {
       return { success: false, error: "can't validate a tx that has no call data" };
     }
@@ -50,7 +48,8 @@ export class AllowListService<T extends ChainId> extends ContractService<T> {
       if (!valid) {
         return { success: false, error: "tx is not permitted by the allow list" };
       }
-      return { success: true, error: undefined };
+
+      return { success: true };
     } catch {
       return { success: false, error: "failed to read from the allow list whether the transaction is valid" };
     }

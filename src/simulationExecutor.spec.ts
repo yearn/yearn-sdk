@@ -62,7 +62,7 @@ describe("Simulation executor", () => {
 
   beforeEach(() => {
     const mockedTelegramService = new MockedTelegramServiceClass();
-    simulationExecutor = new SimulationExecutor(mockedTelegramService, new Context({ disableAllowlist: true }));
+    simulationExecutor = new SimulationExecutor(mockedTelegramService, new Context({}));
   });
 
   afterEach(() => {

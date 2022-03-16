@@ -30,10 +30,19 @@ import {
 const BigZero = new BigNumber(0);
 
 export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
+  /**
+   * @deprecated
+   * Not able to be accurately calculated by the subgraph, this functionality will be removed in a future version
+   */
   async protocolEarnings(): Promise<String> {
-    const response = (await this.yearn.services.subgraph.fetchQuery(PROTOCOL_EARNINGS)) as ProtocolEarningsResponse;
+    const response = await this.yearn.services.subgraph.fetchQuery<ProtocolEarningsResponse>(PROTOCOL_EARNINGS);
 
     let result = BigZero;
+
+    if (!response?.data || !response.data?.vaults) {
+      return result.toFixed(0);
+    }
+
     for (const vault of response.data.vaults) {
       if (!vault.latestUpdate) {
         continue;
@@ -47,15 +56,15 @@ export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
   }
 
   async assetEarnings(assetAddress: Address): Promise<AssetEarnings> {
-    const response = (await this.yearn.services.subgraph.fetchQuery(VAULT_EARNINGS, {
+    const response = await this.yearn.services.subgraph.fetchQuery<VaultEarningsResponse>(VAULT_EARNINGS, {
       vault: assetAddress
-    })) as VaultEarningsResponse;
+    });
 
-    const vault = response.data.vault;
-
-    if (!vault) {
+    if (!response?.data || !response.data?.vault) {
       throw new SdkError(`No asset with address ${assetAddress}`);
     }
+
+    const { vault } = response.data;
 
     const returnsGenerated = new BigNumber(vault.latestUpdate?.returnsGenerated || 0);
     const earningsUsdc = await this.tokensValueInUsdc(returnsGenerated, vault.token.id, vault.token.decimals);
@@ -68,19 +77,16 @@ export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
   }
 
   async accountAssetsData(accountAddress: Address): Promise<EarningsUserData> {
-    const response = (await this.yearn.services.subgraph.fetchQuery(
+    const response = await this.yearn.services.subgraph.fetchQuery<AccountEarningsResponse>(
       ACCOUNT_EARNINGS,
       buildAccountEarningsVariables(accountAddress)
-    )) as AccountEarningsResponse;
+    );
 
-    const account = response.data.account;
+    const account = response?.data?.account;
 
     if (!account) {
       return { earnings: "0", holdings: "0", earningsAssetData: [], grossApy: 0, estimatedYearlyYield: "0" };
     }
-
-    const assetAddresses = account.vaultPositions.map(position => getAddress(position.vault.id));
-    const apys = await this.yearn.services.vision.apy(assetAddresses);
 
     const assetsData = await Promise.all(
       account.vaultPositions.map(async assetPosition => {
@@ -88,18 +94,20 @@ export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
           .multipliedBy(new BigNumber(assetPosition.vault.latestUpdate?.pricePerShare || 0))
           .div(10 ** assetPosition.token.decimals);
 
-        const deposits = assetPosition.updates
-          .map(update => new BigNumber(update.deposits))
-          .reduce((sum, value) => sum.plus(value));
-        const withdrawals = assetPosition.updates
-          .map(update => new BigNumber(update.withdrawals))
-          .reduce((sum, value) => sum.plus(value));
-        const tokensReceived = assetPosition.updates
-          .map(update => new BigNumber(update.tokensReceived))
-          .reduce((sum, value) => sum.plus(value));
-        const tokensSent = assetPosition.updates
-          .map(update => new BigNumber(update.tokensSent))
-          .reduce((sum, value) => sum.plus(value));
+        const { deposits, withdrawals, tokensReceived, tokensSent } = assetPosition.updates.reduce(
+          ({ deposits, withdrawals, tokensReceived, tokensSent }, current) => ({
+            deposits: deposits.plus(new BigNumber(current.deposits)),
+            withdrawals: withdrawals.plus(new BigNumber(current.withdrawals)),
+            tokensReceived: tokensReceived.plus(new BigNumber(current.tokensReceived)),
+            tokensSent: tokensSent.plus(new BigNumber(current.tokensSent))
+          }),
+          {
+            deposits: BigZero,
+            withdrawals: BigZero,
+            tokensReceived: BigZero,
+            tokensSent: BigZero
+          }
+        );
 
         const positiveTokens = balanceTokens.plus(withdrawals).plus(tokensSent);
         const negativeTokens = deposits.plus(tokensReceived);
@@ -117,15 +125,16 @@ export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
           assetPosition.token.decimals
         );
 
-        const assetAddress = getAddress(assetPosition.vault.id);
-
         return {
-          assetAddress: assetAddress,
-          balanceUsdc: balanceUsdc,
+          assetAddress: getAddress(assetPosition.vault.id),
+          balanceUsdc,
           earned: earningsUsdc.toFixed(0)
         };
       })
     );
+
+    const assetAddresses = assetsData.map(assetData => assetData.assetAddress);
+    const apys = await this.yearn.services.vision.apy(assetAddresses);
 
     const totalEarnings = assetsData.map(datum => new BigNumber(datum.earned)).reduce((sum, value) => sum.plus(value));
     const holdings = assetsData.map(datum => new BigNumber(datum.balanceUsdc)).reduce((sum, value) => sum.plus(value));
@@ -216,9 +225,9 @@ export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
       .reverse()
       .map(day => blockNumber - day * this.blocksPerDay());
 
-    const response = (await this.yearn.services.subgraph.fetchQuery(ASSET_HISTORIC_EARNINGS(blocks), {
+    const response = await this.yearn.services.subgraph.fetchQuery<any>(ASSET_HISTORIC_EARNINGS(blocks), {
       id: vault
-    })) as any;
+    });
 
     const data = response.data;
 
@@ -273,16 +282,19 @@ export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
       throw new SdkError("fromDaysAgo must be greater than toDaysAgo");
     }
 
-    const response = (await this.yearn.services.subgraph.fetchQuery(ACCOUNT_HISTORIC_EARNINGS, {
-      id: accountAddress,
-      shareToken: shareTokenAddress,
-      fromDate: this.getDate(fromDaysAgo)
-        .getTime()
-        .toString(),
-      toDate: this.getDate(toDaysAgo || 0)
-        .getTime()
-        .toString()
-    })) as AccountHistoricEarningsResponse;
+    const response = await this.yearn.services.subgraph.fetchQuery<AccountHistoricEarningsResponse>(
+      ACCOUNT_HISTORIC_EARNINGS,
+      {
+        id: accountAddress,
+        shareToken: shareTokenAddress,
+        fromDate: this.getDate(fromDaysAgo)
+          .getTime()
+          .toString(),
+        toDate: this.getDate(toDaysAgo || 0)
+          .getTime()
+          .toString()
+      }
+    );
 
     const vaultPositions = response.data.account?.vaultPositions;
 

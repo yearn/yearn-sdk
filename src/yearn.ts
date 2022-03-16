@@ -1,6 +1,3 @@
-import { Deferrable } from "@ethersproject/properties";
-import { JsonRpcSigner, TransactionRequest } from "@ethersproject/providers";
-
 import { ChainId } from "./chain";
 import { Context, ContextValue } from "./context";
 import { EarningsInterface } from "./interfaces/earnings";
@@ -20,12 +17,11 @@ import { OracleService } from "./services/oracle";
 import { PickleService } from "./services/partners/pickle";
 import { SubgraphService } from "./services/subgraph";
 import { TelegramService } from "./services/telegram";
+import { TransactionService } from "./services/transaction";
 import { VisionService } from "./services/vision";
 import { ZapperService } from "./services/zapper";
 import { SdkError } from "./types";
 import { AssetServiceState } from "./types";
-
-const originalJsonRpcSignerSendTransaction = JsonRpcSigner.prototype.sendTransaction;
 
 type ServicesType<T extends ChainId> = {
   lens: LensService<T>;
@@ -37,6 +33,7 @@ type ServicesType<T extends ChainId> = {
   telegram: TelegramService;
   meta: MetaService;
   allowList?: AllowListService<T>;
+  transaction: TransactionService<T>;
   pickle: PickleService;
   helper: HelperService<T>;
 };
@@ -91,6 +88,10 @@ export class Yearn<T extends ChainId> {
     this._ctxValue = context;
     this.context = new Context(context);
 
+    const allowlistAddress = AllowListService.addressByChain(chainId);
+    const allowListService = allowlistAddress
+      ? new AllowListService(chainId, this.context, allowlistAddress)
+      : undefined;
     this.addressProvider = new AddressProvider(chainId, this.context);
 
     const allowlistAddress = !this.context.disableAllowlist && this.context.addresses.allowList;
@@ -111,12 +112,14 @@ export class Yearn<T extends ChainId> {
     this.simulation = new SimulationInterface(this, chainId, this.context);
     this.strategies = new StrategyInterface(this, chainId, this.context);
 
-    this.configureSignerWithAllowlist();
-
     this.ready = Promise.all([this.services.asset.ready]);
   }
 
   setChainId(chainId: ChainId) {
+    const allowlistAddress = AllowListService.addressByChain(chainId);
+    const allowListService = allowlistAddress
+      ? new AllowListService(chainId, this.context, allowlistAddress)
+      : undefined;
     this.addressProvider = new AddressProvider(chainId, this.context);
 
     const allowlistAddress = !this.context.disableAllowlist && this.context.addresses.allowList;
@@ -130,34 +133,7 @@ export class Yearn<T extends ChainId> {
     this.simulation = new SimulationInterface(this, chainId, this.context);
     this.strategies = new StrategyInterface(this, chainId, this.context);
 
-    this.configureSignerWithAllowlist();
-
     this.ready = Promise.all([this.services.asset.ready]);
-  }
-
-  configureSignerWithAllowlist() {
-    const shouldValidate = !!this.services.allowList;
-
-    const validateTx = async (transaction: Deferrable<TransactionRequest>) => {
-      if (!this.services.allowList) {
-        return true;
-      }
-
-      const [to, data] = await Promise.all([transaction.to, transaction.data]);
-      return await this.services.allowList.validateCalldata(to, data).then(res => res.success);
-    };
-
-    if (shouldValidate) {
-      JsonRpcSigner.prototype.sendTransaction = async function(transaction: Deferrable<TransactionRequest>) {
-        const valid = await validateTx(transaction);
-        if (!valid) {
-          throw new SdkError("transaction is not valid");
-        }
-        return originalJsonRpcSignerSendTransaction.apply(this, [transaction]);
-      };
-    } else {
-      JsonRpcSigner.prototype.sendTransaction = originalJsonRpcSignerSendTransaction;
-    }
   }
 
   _initServices<T extends ChainId>(

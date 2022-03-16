@@ -26,6 +26,10 @@ export function int(value: BigNumber): Integer {
 }
 
 export function chunkArray<T>(array: T[], size: number) {
+  if (size < 1) {
+    throw new Error(`Size needs to be positive: ${size}`);
+  }
+
   let result = [];
   for (let i = 0; i < array.length; i += size) {
     let chunk = array.slice(i, i + size);

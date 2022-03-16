@@ -7,7 +7,7 @@ import { ChainId } from "../chain";
 import { ServiceInterface } from "../common";
 import { EthAddress } from "../helpers";
 import { PickleJars } from "../services/partners/pickle";
-import { Address, Integer, SdkError, TokenMetadata, TypedMap, Usdc, Vault, ZapProtocol } from "../types";
+import { Address, Integer, TokenMetadata, TypedMap, Usdc, Vault, ZapProtocol } from "../types";
 import { Balance, Icon, IconMap, Token } from "../types";
 
 const TokenAbi = ["function approve(address _spender, uint256 _value) public"];
@@ -64,21 +64,30 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
       .balances(address)
       .then(balances => balances.filter(token => token.balance !== "0"));
 
-    if (this.chainId === 1 || this.chainId === 1337) {
-      let zapperBalances = await this.yearn.services.zapper.balances(address);
-      const vaultBalanceAddresses = new Set(vaultBalances.map(balance => balance.address));
-      zapperBalances = zapperBalances.filter(balance => !vaultBalanceAddresses.has(balance.address));
-      return zapperBalances.concat(vaultBalances);
+    switch (this.chainId) {
+      case 1:
+      case 1337: {
+        let zapperBalances: Balance[] = [];
+        try {
+          zapperBalances = await this.yearn.services.zapper.balances(address);
+        } catch (error) {
+          console.error(error);
+        }
+        const vaultBalanceAddresses = new Set(vaultBalances.map(balance => balance.address));
+        zapperBalances = zapperBalances.filter(balance => !vaultBalanceAddresses.has(balance.address));
+        return zapperBalances.concat(vaultBalances);
+      }
+      case 250:
+      case 42161: {
+        let ironBankTokens = await this.yearn.ironBank.balances(address);
+        const vaultBalanceAddresses = new Set(vaultBalances.map(balance => balance.address));
+        ironBankTokens = ironBankTokens.filter(balance => !vaultBalanceAddresses.has(balance.address));
+        return ironBankTokens.concat(vaultBalances);
+      }
+      default:
+        console.error(`the chain ${this.chainId} hasn't been implemented yet`);
+        return [];
     }
-
-    if (this.chainId === 250 || this.chainId === 42161) {
-      let ironBankTokens = await this.yearn.ironBank.balances(address);
-      const vaultBalanceAddresses = new Set(vaultBalances.map(balance => balance.address));
-      ironBankTokens = ironBankTokens.filter(balance => !vaultBalanceAddresses.has(balance.address));
-      return ironBankTokens.concat(vaultBalances);
-    }
-
-    throw new SdkError(`the chain ${this.chainId} hasn't been implemented yet`);
   }
 
   /**
@@ -87,22 +96,29 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
    * @returns list of tokens supported by the zapper protocol.
    */
   async supported(): Promise<Token[]> {
-    const cached = await this.cachedFetcherSupported.fetch();
-    if (cached) {
-      return cached;
+    try {
+      const cached = await this.cachedFetcherSupported.fetch();
+      if (cached) {
+        return cached;
+      }
+
+      if (this.chainId === 1 || this.chainId === 1337) {
+        // only ETH Main is supported
+        const tokens = await this.yearn.services.zapper.supportedTokens();
+        const icons = await this.yearn.services.asset.ready.then(() =>
+          this.yearn.services.asset.icon(tokens.map(token => token.address))
+        );
+        return tokens.map(token => {
+          const icon = icons[token.address];
+          return icon ? { ...token, icon } : token;
+        });
+      }
+
+      console.error(`the chain ${this.chainId} hasn't been implemented yet`);
+    } catch (error) {
+      console.error(error);
     }
 
-    if (this.chainId === 1 || this.chainId === 1337) {
-      // only ETH Main is supported
-      const tokens = await this.yearn.services.zapper.supportedTokens();
-      const icons = await this.yearn.services.asset.ready.then(() =>
-        this.yearn.services.asset.icon(tokens.map(token => token.address))
-      );
-      return tokens.map(token => {
-        const icon = icons[token.address];
-        return icon ? { ...token, icon } : token;
-      });
-    }
     return [];
   }
 
@@ -127,7 +143,8 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
 
     if (vault.token === token) {
       const tokenContract = new Contract(token, TokenAbi, signer);
-      return tokenContract.approve(vault.address, amount);
+      const tx = await tokenContract.populateTransaction.approve(vault.address, amount);
+      return this.yearn.services.transaction.sendTransaction(tx);
     }
 
     const gasPrice = await this.yearn.services.zapper.gas();

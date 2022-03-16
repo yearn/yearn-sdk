@@ -1,7 +1,6 @@
 import { BigNumber } from "@ethersproject/bignumber";
 import { CallOverrides, Contract } from "@ethersproject/contracts";
 import { TransactionRequest, TransactionResponse } from "@ethersproject/providers";
-import { JsonRpcSigner } from "@ethersproject/providers";
 
 import { CachedFetcher } from "../cache";
 import { ChainId } from "../chain";
@@ -62,7 +61,7 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
 
     let assetsDynamic: VaultDynamic[] = [];
     try {
-      assetsDynamic = await this.getDynamic();
+      assetsDynamic = await this.getDynamic(addresses, vaultMetadataOverrides, overrides);
     } catch {
       const allAddresses = assetsStatic.map(asset => asset.address);
       const chunks = chunkArray(allAddresses, 30);
@@ -140,11 +139,7 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
   ): Promise<VaultDynamic[]> {
     const cached = await this.cachedFetcherGetDynamic.fetch();
     if (cached) {
-      if (addresses) {
-        return cached.filter(vault => addresses.includes(vault.address));
-      } else {
-        return cached;
-      }
+      return addresses ? cached.filter(vault => addresses.includes(vault.address)) : cached;
     }
 
     let metadataOverrides = vaultMetadataOverrides
@@ -226,7 +221,7 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
   /**
    * Get the Vault User Metadata for a particular address.
    * @param address
-   * @param addresses
+   * @param addresses filter, if provided only those addresses' Vault User Metadata are returned
    * @returns
    */
   async metadataOf(address: Address, addresses?: Address[]): Promise<VaultUserMetadata[]> {
@@ -327,7 +322,7 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
     const isZappingIntoPickleJar = PickleJars.includes(vault);
 
     if (isZappingIntoPickleJar) {
-      return this.zapIn(vault, token, amount, account, signer, options, ZapProtocol.PICKLE, overrides);
+      return this.zapIn(vault, token, amount, account, options, ZapProtocol.PICKLE, overrides);
     }
 
     const [vaultRef] = await this.getStatic([vault], overrides);
@@ -336,11 +331,14 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
         throw new SdkError("deposit:v2:eth not implemented");
       } else {
         const vaultContract = new Contract(vault, VaultAbi, signer);
-        const makeTransaction = (overrides: CallOverrides) => vaultContract.deposit(amount, overrides);
+        const makeTransaction = async (overrides: CallOverrides) => {
+          const tx = await vaultContract.populateTransaction.deposit(amount, overrides);
+          return this.yearn.services.transaction.sendTransaction(tx);
+        };
         return this.executeVaultContractTransaction(makeTransaction, overrides);
       }
     } else {
-      return this.zapIn(vault, token, amount, account, signer, options, ZapProtocol.YEARN, overrides);
+      return this.zapIn(vault, token, amount, account, options, ZapProtocol.YEARN, overrides);
     }
   }
 
@@ -365,7 +363,10 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
     const signer = this.ctx.provider.write.getSigner(account);
     if (vaultRef.token === token) {
       const vaultContract = new Contract(vault, VaultAbi, signer);
-      const makeTransaction = (overrides: CallOverrides) => vaultContract.withdraw(amount, overrides);
+      const makeTransaction = async (overrides: CallOverrides) => {
+        const tx = await vaultContract.populateTransaction.withdraw(amount, overrides);
+        return this.yearn.services.transaction.sendTransaction(tx);
+      };
       return this.executeVaultContractTransaction(makeTransaction, overrides);
     } else {
       if (options.slippage === undefined) {
@@ -379,7 +380,9 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
         vault,
         "0",
         options.slippage,
-        false
+        false,
+        undefined,
+        options.signature
       );
 
       const transactionRequest: TransactionRequest = {
@@ -391,12 +394,7 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
         value: BigNumber.from(zapOutParams.value)
       };
 
-      return this.executeZapperTransaction(
-        transactionRequest,
-        overrides,
-        BigNumber.from(zapOutParams.gasPrice),
-        signer
-      );
+      return this.executeZapperTransaction(transactionRequest, overrides, BigNumber.from(zapOutParams.gasPrice));
     }
   }
 
@@ -405,7 +403,6 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
     token: Address,
     amount: Integer,
     account: Address,
-    signer: JsonRpcSigner,
     options: DepositOptions = {},
     zapProtocol: ZapProtocol = ZapProtocol.YEARN,
     overrides: CallOverrides = {}
@@ -433,26 +430,25 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
       gasLimit: BigNumber.from(zapInParams.gas)
     };
 
-    return this.executeZapperTransaction(transactionRequest, overrides, BigNumber.from(zapInParams.gasPrice), signer);
+    return this.executeZapperTransaction(transactionRequest, overrides, BigNumber.from(zapInParams.gasPrice));
   }
 
   private async executeZapperTransaction(
     transactionRequest: TransactionRequest,
     overrides: CallOverrides,
-    fallbackGasPrice: BigNumber,
-    signer: JsonRpcSigner
+    fallbackGasPrice: BigNumber
   ): Promise<TransactionResponse> {
     try {
       const combinedParams = { ...transactionRequest, ...overrides };
       combinedParams.gasPrice = undefined;
-      return await signer.sendTransaction(combinedParams);
+      return await this.yearn.services.transaction.sendTransaction(combinedParams);
     } catch (error) {
       if ((error as any).code === -32602) {
         const combinedParams = { ...transactionRequest, ...overrides };
         combinedParams.maxFeePerGas = undefined;
         combinedParams.maxPriorityFeePerGas = undefined;
         combinedParams.gasPrice = overrides.gasPrice || fallbackGasPrice;
-        return await signer.sendTransaction(combinedParams);
+        return await this.yearn.services.transaction.sendTransaction(combinedParams);
       }
 
       throw error;
