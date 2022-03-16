@@ -1,3 +1,4 @@
+import { MaxUint256 } from "@ethersproject/constants";
 import { CallOverrides, Contract } from "@ethersproject/contracts";
 import { TransactionRequest, TransactionResponse } from "@ethersproject/providers";
 import BigNumber from "bignumber.js";
@@ -186,7 +187,7 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
     let allowance: TokenAllowance = {
       owner: account,
       spender: vault.address,
-      amount: "0",
+      amount: MaxUint256.toString(),
       token
     };
     debugger;

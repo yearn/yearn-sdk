@@ -1,9 +1,11 @@
+import { MaxUint256 } from "@ethersproject/constants";
 import { Contract } from "@ethersproject/contracts";
 
 import { Address, Asset, ChainId, Token, TokenInterface, TokenMetadata } from "..";
 import { CachedFetcher } from "../cache";
 import { Context } from "../context";
 import { EthAddress } from "../helpers";
+import { PartnerService } from "../services/partner";
 import { createMockAssetStaticVaultV2, createMockBalance, createMockToken } from "../test-utils/factories";
 import { Yearn } from "../yearn";
 
@@ -24,12 +26,24 @@ const vaultsTokensMock = jest.fn();
 const ironBankBalancesMock = jest.fn();
 const ironBankTokensMock = jest.fn();
 const sendTransactionMock = jest.fn();
+const approveMock = jest.fn().mockResolvedValue(true);
+const allowanceMock = jest.fn().mockResolvedValue("0");
+const partnerIsAllowedMock = jest.fn().mockReturnValue(true);
 
 jest.mock("@ethersproject/contracts", () => ({
   Contract: jest.fn().mockImplementation(() => ({
     populateTransaction: {
-      approve: jest.fn().mockResolvedValue(true)
-    }
+      approve: approveMock
+    },
+    allowance: allowanceMock
+  }))
+}));
+
+jest.mock("../services/partner", () => ({
+  PartnerService: jest.fn().mockImplementation(() => ({
+    isAllowed: partnerIsAllowedMock,
+    partnerId: "0x000partner",
+    address: "0x0001partner"
   }))
 }));
 
@@ -75,7 +89,8 @@ jest.mock("../context", () => ({
         getSigner: jest.fn().mockImplementation(() => ({
           sendTransaction: jest.fn().mockResolvedValue("transaction")
         }))
-      }
+      },
+      read: "reader"
     }
   }))
 }));
@@ -498,15 +513,54 @@ describe("TokenInterface", () => {
         sendTransactionMock.mockResolvedValue(true);
       });
 
+      describe("when it has a partner id defined", () => {
+        it("should approve the partner contract to spend a token on a direct deposit", async () => {
+          mockedYearn = new (Yearn as jest.Mock<Yearn<ChainId>>)();
+          mockedYearn.services.partner = new ((PartnerService as unknown) as jest.Mock<PartnerService<ChainId>>)();
+          tokenInterface = new TokenInterface(mockedYearn, 1, new Context({}));
+          approveMock.mockReturnValue("partner deposit");
+          const actualApprove = await tokenInterface.approveDeposit(vault, token, "1", "0x001");
+
+          expect(actualApprove).toEqual(true);
+          expect(Contract).toHaveBeenCalledTimes(1);
+          expect(Contract).toHaveBeenCalledWith(
+            token,
+            [
+              "function approve(address _spender, uint256 _value) public",
+              "function allowance(address _owner, address _spender) public view returns (uint256)"
+            ],
+            {
+              sendTransaction: expect.any(Function)
+            }
+          );
+          expect(approveMock).toHaveBeenCalledTimes(1);
+          expect(approveMock).toHaveBeenCalledWith("0x0001partner", "1");
+          expect(sendTransactionMock).toHaveBeenCalledTimes(1);
+          expect(sendTransactionMock).toHaveBeenCalledWith("partner deposit");
+        });
+      });
+
       it("should approve vault to spend a token on a direct deposit", async () => {
-        const actualApprove = await tokenInterface.approve(vault, token, "1", "0x001");
+        approveMock.mockReturnValue("direct deposit");
+        const actualApprove = await tokenInterface.approveDeposit(vault, token, "1", "0x001");
 
         expect(actualApprove).toEqual(true);
 
         expect(Contract).toHaveBeenCalledTimes(1);
-        expect(Contract).toHaveBeenCalledWith("0x001", ["function approve(address _spender, uint256 _value) public"], {
-          sendTransaction: expect.any(Function)
-        });
+        expect(Contract).toHaveBeenCalledWith(
+          token,
+          [
+            "function approve(address _spender, uint256 _value) public",
+            "function allowance(address _owner, address _spender) public view returns (uint256)"
+          ],
+          {
+            sendTransaction: expect.any(Function)
+          }
+        );
+        expect(approveMock).toHaveBeenCalledTimes(1);
+        expect(approveMock).toHaveBeenCalledWith(vault.address, "1");
+        expect(sendTransactionMock).toHaveBeenCalledTimes(1);
+        expect(sendTransactionMock).toHaveBeenCalledWith("direct deposit");
       });
     });
 
@@ -520,7 +574,7 @@ describe("TokenInterface", () => {
       });
 
       it("should return true", async () => {
-        const actualApprove = await tokenInterface.approve(vault, token, "1", "0x001");
+        const actualApprove = await tokenInterface.approveDeposit(vault, token, "1", "0x001");
 
         expect(actualApprove).toEqual(true);
       });
@@ -554,7 +608,7 @@ describe("TokenInterface", () => {
         });
 
         it("should approve vault to spend a token on zapIn", async () => {
-          const actualApprove = await tokenInterface.approve(vault, token, "1", "0x001");
+          const actualApprove = await tokenInterface.approveDeposit(vault, token, "1", "0x001");
 
           expect(actualApprove).toEqual("transaction");
           expect(zapperZapInApprovalTransactionMock).toHaveBeenCalledTimes(1);
@@ -570,10 +624,104 @@ describe("TokenInterface", () => {
         });
 
         it("should return true", async () => {
-          const actualApprove = await tokenInterface.approve(vault, token, "1", "0x001");
+          const actualApprove = await tokenInterface.approveDeposit(vault, token, "1", "0x001");
 
           expect(actualApprove).toEqual(true);
         });
+      });
+    });
+  });
+
+  describe("allowance", () => {
+    describe("when the vault token is the same as the token", () => {
+      let vault: Asset<"VAULT_V2">;
+      let token: Address;
+
+      beforeEach(() => {
+        vault = createMockAssetStaticVaultV2();
+        token = createMockToken().address;
+        sendTransactionMock.mockResolvedValue(true);
+      });
+
+      describe("when it has a partner id defined", () => {
+        it("should get the allowance for the partner contract", async () => {
+          mockedYearn = new (Yearn as jest.Mock<Yearn<ChainId>>)();
+          mockedYearn.services.partner = new ((PartnerService as unknown) as jest.Mock<PartnerService<ChainId>>)();
+          tokenInterface = new TokenInterface(mockedYearn, 1, new Context({}));
+          allowanceMock.mockReturnValue("10");
+          const actualAllowance = await tokenInterface.allowance(vault, token, "0x001");
+
+          expect(Contract).toHaveBeenCalledTimes(1);
+          expect(Contract).toHaveBeenCalledWith(
+            token,
+            [
+              "function approve(address _spender, uint256 _value) public",
+              "function allowance(address _owner, address _spender) public view returns (uint256)"
+            ],
+            "reader"
+          );
+          expect(actualAllowance).toEqual({ amount: "10", owner: "0x001", spender: "0x0001partner", token });
+          expect(allowanceMock).toHaveBeenCalledTimes(1);
+          expect(allowanceMock).toHaveBeenCalledWith("0x001", "0x0001partner");
+        });
+      });
+
+      it("should approve vault to spend a token on a direct deposit", async () => {
+        allowanceMock.mockReturnValue("20");
+        const actualAllowance = await tokenInterface.allowance(vault, token, "0x001");
+
+        expect(Contract).toHaveBeenCalledTimes(1);
+        expect(Contract).toHaveBeenCalledWith(
+          token,
+          [
+            "function approve(address _spender, uint256 _value) public",
+            "function allowance(address _owner, address _spender) public view returns (uint256)"
+          ],
+          "reader"
+        );
+        expect(actualAllowance).toEqual({ amount: "20", owner: "0x001", spender: vault.address, token });
+        expect(allowanceMock).toHaveBeenCalledTimes(1);
+        expect(allowanceMock).toHaveBeenCalledWith(vault.address, "0x001");
+      });
+    });
+
+    describe("when Ether is beind sent", () => {
+      let vault: Asset<"VAULT_V2">;
+      let token: Address;
+
+      beforeEach(() => {
+        vault = createMockAssetStaticVaultV2();
+        token = EthAddress;
+      });
+
+      it("should return true", async () => {
+        const actualApprove = await tokenInterface.allowance(vault, token, "0x00account");
+
+        expect(actualApprove).toEqual({ amount: MaxUint256.toString(), owner: "0x00account", spender: "0x001", token });
+      });
+    });
+
+    describe("zapInApprovalState", () => {
+      let vault: Asset<"VAULT_V2">;
+      let token: Address;
+
+      beforeEach(() => {
+        vault = createMockAssetStaticVaultV2();
+        token = createMockToken({ address: "0x999" }).address;
+        zapperZapInApprovalStateMock.mockResolvedValue({
+          isApproved: false,
+          ownerAddress: "owner",
+          spenderAddress: "spender",
+          allowance: "allowance"
+        });
+      });
+
+      it("should approve vault to spend a token on zapIn", async () => {
+        const actualAllowance = await tokenInterface.allowance(vault, token, "0x001");
+
+        expect(actualAllowance).toEqual({ amount: "allowance", owner: "owner", spender: "spender", token });
+        expect(zapperZapInApprovalStateMock).toHaveBeenCalledTimes(1);
+        expect(zapperZapInApprovalStateMock).toHaveBeenCalledWith("0x001", "0x999", "yearn");
       });
     });
   });
