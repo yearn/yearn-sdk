@@ -7,3 +7,4 @@ export * from "./earningsAssetData.factory";
 export * from "./earningsUserData.factory";
 export * from "./token.factory";
 export * from "./tokenBalance.factory";
+export * from "./zapperToken.factory";

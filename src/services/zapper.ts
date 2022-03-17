@@ -3,7 +3,7 @@ import { getAddress } from "@ethersproject/address";
 import { Chains } from "../chain";
 import { Service } from "../common";
 import { EthAddress, handleHttpError, usdc, ZeroAddress } from "../helpers";
-import { Address, Balance, BalancesMap, Integer, Token } from "../types";
+import { Address, Balance, BalancesMap, Integer, Token, ZapperToken } from "../types";
 import {
   GasPrice,
   ZapApprovalStateOutput,
@@ -27,22 +27,26 @@ export class ZapperService extends Service {
   async supportedTokens(): Promise<Token[]> {
     const url = "https://api.zapper.fi/v1/prices";
     const params = new URLSearchParams({ api_key: this.ctx.zapper });
-    const tokens = await fetch(`${url}?${params}`)
+    const zapperTokens: ZapperToken[] = await fetch(`${url}?${params}`)
       .then(handleHttpError)
       .then(res => res.json());
-    const network = Chains[this.chainId] ?? "ethereum";
-    return tokens.map(
-      (token: Record<string, string>): Token => {
-        const address = token.address === ZeroAddress ? EthAddress : getAddress(String(token.address));
-        const supported = token.hide ? !token.hide : true;
+
+    const network = Chains[this.chainId];
+
+    const visibleZapperTokens = zapperTokens.filter(zapperToken => !zapperToken.hide);
+
+    return visibleZapperTokens.map(
+      (zapperToken): Token => {
+        const address = zapperToken.address === ZeroAddress ? EthAddress : getAddress(zapperToken.address);
+
         return {
-          address: address,
-          name: token.symbol,
-          symbol: token.symbol,
-          icon: `https://assets.yearn.network/tokens/${network}/${token.address}.png`,
-          decimals: token.decimals,
-          priceUsdc: usdc(token.price),
-          supported: { zapper: supported }
+          address,
+          decimals: String(zapperToken.decimals),
+          icon: `https://assets.yearn.network/tokens/${network}/${address}.png`,
+          name: zapperToken.symbol,
+          priceUsdc: usdc(zapperToken.price),
+          supported: { zapper: true },
+          symbol: zapperToken.symbol
         };
       }
     );

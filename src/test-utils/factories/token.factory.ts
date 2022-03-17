@@ -6,9 +6,7 @@ const DEFAULT_TOKEN: Token = {
   symbol: "DEAD",
   name: "Dead Token",
   priceUsdc: "0",
-  supported: {
-    zapper: true
-  }
+  supported: {}
 };
 
 export const createMockToken = (overwrites: Partial<Token> = {}) => ({
