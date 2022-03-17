@@ -1,10 +1,9 @@
 import { getAddress } from "@ethersproject/address";
 
-import { ChainId, Chains } from "../chain";
+import { Chains } from "../chain";
 import { Service } from "../common";
-import { Context } from "../context";
 import { EthAddress, handleHttpError, usdc, ZeroAddress } from "../helpers";
-import { Address, Balance, BalancesMap, Integer, SdkError, Token, ZapperToken } from "../types";
+import { Address, Balance, BalancesMap, Integer, Token, ZapperToken } from "../types";
 import {
   GasPrice,
   ZapApprovalStateOutput,
@@ -20,14 +19,6 @@ const ZAPPER_AFFILIATE_ADDRESS = "0xFEB4acf3df3cDEA7399794D0869ef76A6EfAff52";
  * tokens and user positions.
  */
 export class ZapperService extends Service {
-  constructor(chainId: ChainId, ctx: Context) {
-    super(chainId, ctx);
-
-    if (![1, 1337].includes(chainId)) {
-      throw new SdkError(`Chain id ${chainId} currently not supported!`);
-    }
-  }
-
   /**
    * Fetch all the tokens supported by the zapper protocol along with some basic
    * metadata.
