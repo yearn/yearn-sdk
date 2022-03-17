@@ -38,7 +38,6 @@
 
 // global fetch polyfill
 import "cross-fetch/polyfill";
-import "dotenv/config";
 
 export { ChainId } from "./chain";
 export { Context, ContextValue } from "./context";
