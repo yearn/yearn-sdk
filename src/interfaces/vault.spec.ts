@@ -18,6 +18,7 @@ import {
   ZapProtocol
 } from "..";
 import { EthAddress, WethAddress } from "../helpers";
+import { PartnerService } from "../services/partner";
 import {
   createMockAssetDynamicVaultV2,
   createMockAssetStaticVaultV2,
@@ -29,6 +30,14 @@ import {
 const earningsAccountAssetsDataMock = jest.fn();
 const tokensMetadataMock: jest.Mock<Promise<TokenMetadata[]>> = jest.fn();
 const zapperZapOutMock = jest.fn();
+const zapperZapInMock = jest.fn().mockResolvedValue({
+  to: "to",
+  from: "from",
+  data: "data",
+  value: "100",
+  gas: "100",
+  gasPrice: "100"
+});
 const helperTokenBalancesMock = jest.fn();
 const helperTokensMock: jest.Mock<Promise<ERC20[]>> = jest.fn();
 const lensAdaptersVaultsV2PositionsOfMock = jest.fn();
@@ -46,6 +55,16 @@ const visionApyMock = jest.fn();
 const vaultsStrategiesMetadataMock = jest.fn();
 const assetsHistoricEarningsMock = jest.fn();
 const sendTransactionUsingServiceMock = jest.fn();
+const partnerPopulateDepositTransactionMock = jest.fn();
+const partnerIsAllowedMock = jest.fn().mockReturnValue(true);
+
+jest.mock("../services/partner", () => ({
+  PartnerService: jest.fn().mockImplementation(() => ({
+    populateDepositTransaction: partnerPopulateDepositTransactionMock,
+    isAllowed: partnerIsAllowedMock,
+    partnerId: "0x000partner"
+  }))
+}));
 
 jest.mock("../yearn", () => ({
   Yearn: jest.fn().mockImplementation(() => ({
@@ -81,7 +100,8 @@ jest.mock("../yearn", () => ({
         getPriceUsdc: oracleGetPriceUsdcMock
       },
       zapper: {
-        zapOut: zapperZapOutMock
+        zapOut: zapperZapOutMock,
+        zapIn: zapperZapInMock
       },
       transaction: {
         sendTransaction: sendTransactionUsingServiceMock
@@ -686,6 +706,29 @@ describe("VaultInterface", () => {
         expect(zapInMock).toHaveBeenCalledTimes(1);
         expect(zapInMock).toHaveBeenCalledWith(vault, token, amount, account, {}, ZapProtocol.PICKLE, {});
       });
+
+      it("should call zapIn with correct arguments and pickle as the zapProtocol and the partner id", async () => {
+        mockedYearn = new (Yearn as jest.Mock<Yearn<ChainId>>)();
+        mockedYearn.services.partner = new ((PartnerService as unknown) as jest.Mock<PartnerService<ChainId>>)();
+        vaultInterface = new VaultInterface(mockedYearn, 1, new Context({}));
+
+        const [vault, token, amount, account] = ["0xVault", "0xToken", "1", "0xAccount"];
+
+        await vaultInterface.deposit(vault, token, amount, account, { slippage: 0.1 });
+
+        expect(zapperZapInMock).toHaveBeenCalledTimes(1);
+        expect(zapperZapInMock).toHaveBeenCalledWith(
+          "0xAccount",
+          "0xToken",
+          "1",
+          "0xVault",
+          "0",
+          0.1,
+          false,
+          "pickle",
+          "0x000partner"
+        );
+      });
     });
 
     describe("when is not zapping into pickle jar", () => {
@@ -708,28 +751,52 @@ describe("VaultInterface", () => {
         });
 
         describe("when token is not eth address", () => {
-          it("should deposit into a yearn vault", async () => {
-            const assetStaticVaultV2 = createMockAssetStaticVaultV2({ token: "0xToken" });
-            vaultInterface.getStatic = jest.fn().mockResolvedValue([assetStaticVaultV2]);
+          describe("when there is no partner service", () => {
+            it("should deposit directly into a yearn vault", async () => {
+              const assetStaticVaultV2 = createMockAssetStaticVaultV2({ token: "0xToken" });
+              vaultInterface.getStatic = jest.fn().mockResolvedValue([assetStaticVaultV2]);
 
-            const executeVaultContractTransactionMock = jest.fn().mockResolvedValue("trx");
-            (vaultInterface as any).executeVaultContractTransaction = executeVaultContractTransactionMock;
+              const executeVaultContractTransactionMock = jest.fn().mockResolvedValue("trx");
+              (vaultInterface as any).executeVaultContractTransaction = executeVaultContractTransactionMock;
 
-            const [vault, token, amount, account] = ["0xVault", "0xToken", "1", "0xAccount"];
+              const [vault, token, amount, account] = ["0xVault", "0xToken", "1", "0xAccount"];
 
-            const actualDeposit = await vaultInterface.deposit(vault, token, amount, account);
+              const actualDeposit = await vaultInterface.deposit(vault, token, amount, account);
 
-            expect(Contract).toHaveBeenCalledTimes(1);
-            expect(Contract).toHaveBeenCalledWith(
-              "0xVault",
-              ["function deposit(uint256 amount) public", "function withdraw(uint256 amount) public"],
-              {
-                sendTransaction: sendTransactionMock
-              }
-            );
-            expect(executeVaultContractTransactionMock).toHaveBeenCalledTimes(1);
-            expect(executeVaultContractTransactionMock).toHaveBeenCalledWith(expect.any(Function), {});
-            expect(actualDeposit).toEqual("trx");
+              expect(Contract).toHaveBeenCalledTimes(1);
+              expect(Contract).toHaveBeenCalledWith(
+                "0xVault",
+                ["function deposit(uint256 amount) public", "function withdraw(uint256 amount) public"],
+                {
+                  sendTransaction: sendTransactionMock
+                }
+              );
+
+              expect(partnerPopulateDepositTransactionMock).not.toHaveBeenCalled();
+              expect(executeVaultContractTransactionMock).toHaveBeenCalledTimes(1);
+              expect(executeVaultContractTransactionMock).toHaveBeenCalledWith(expect.any(Function), {});
+              expect(actualDeposit).toEqual("trx");
+            });
+          });
+
+          describe("when there is partner service", () => {
+            it("should deposit into a yearn vault through the partner service", async () => {
+              mockedYearn = new (Yearn as jest.Mock<Yearn<ChainId>>)();
+              mockedYearn.services.partner = new ((PartnerService as unknown) as jest.Mock<PartnerService<ChainId>>)();
+              vaultInterface = new VaultInterface(mockedYearn, 1, new Context({}));
+              const assetStaticVaultV2 = createMockAssetStaticVaultV2({ token: "0xToken" });
+              vaultInterface.getStatic = jest.fn().mockResolvedValue([assetStaticVaultV2]);
+
+              const executeVaultContractTransactionMock = jest.fn().mockImplementation(fn => fn());
+              (vaultInterface as any).executeVaultContractTransaction = executeVaultContractTransactionMock;
+
+              const [vault, token, amount, account] = ["0xVault", "0xToken", "1", "0xAccount"];
+
+              await vaultInterface.deposit(vault, token, amount, account);
+
+              expect(partnerPopulateDepositTransactionMock).toHaveBeenCalledTimes(1);
+              expect(partnerPopulateDepositTransactionMock).toHaveBeenCalledWith("0xVault", "1", undefined);
+            });
           });
         });
       });
@@ -748,6 +815,31 @@ describe("VaultInterface", () => {
 
           expect(zapInMock).toHaveBeenCalledTimes(1);
           expect(zapInMock).toHaveBeenCalledWith(vault, token, amount, account, {}, ZapProtocol.YEARN, {});
+        });
+
+        it("should call zapIn with correct arguments and yearn as the zapProtocol and the partner id", async () => {
+          mockedYearn = new (Yearn as jest.Mock<Yearn<ChainId>>)();
+          mockedYearn.services.partner = new ((PartnerService as unknown) as jest.Mock<PartnerService<ChainId>>)();
+          vaultInterface = new VaultInterface(mockedYearn, 1, new Context({}));
+          const assetStaticVaultV2 = createMockAssetStaticVaultV2({ token: "0xRandom" });
+          vaultInterface.getStatic = jest.fn().mockResolvedValue([assetStaticVaultV2]);
+
+          const [vault, token, amount, account] = ["0xVault", "0xToken", "1", "0xAccount"];
+
+          await vaultInterface.deposit(vault, token, amount, account, { slippage: 0.1 });
+
+          expect(zapperZapInMock).toHaveBeenCalledTimes(1);
+          expect(zapperZapInMock).toHaveBeenCalledWith(
+            "0xAccount",
+            "0xToken",
+            "1",
+            "0xVault",
+            "0",
+            0.1,
+            false,
+            "yearn",
+            "0x000partner"
+          );
         });
       });
     });

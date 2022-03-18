@@ -1,8 +1,9 @@
 import { Contract } from "@ethersproject/contracts";
 import { JsonRpcSigner } from "@ethersproject/providers";
 
-import { SdkError } from "..";
+import { ChainId, SdkError } from "..";
 import { Context } from "../context";
+import { PartnerService } from "../services/partner";
 import { SimulationExecutor } from "../simulationExecutor";
 import { EthersError, PriceFetchingError, ZapperError } from "../types/custom/simulation";
 import { Yearn } from "../yearn";
@@ -18,7 +19,16 @@ const zapOutApprovalTransactionMock = jest.fn(() => Promise.resolve({ from: "0x0
 const getNormalizedValueUsdcMock = jest.fn(() => Promise.resolve("10"));
 const zapInMock = jest.fn(() => Promise.resolve(true));
 const zapOutMock = jest.fn(() => Promise.resolve(true));
+const partnerEncodeDepositMock = jest.fn().mockReturnValue("");
+const partnerIsAllowedMock = jest.fn().mockReturnValue(true);
 
+jest.mock("../services/partner", () => ({
+  PartnerService: jest.fn().mockImplementation(() => ({
+    encodeDeposit: partnerEncodeDepositMock,
+    isAllowed: partnerIsAllowedMock,
+    address: "0x00001"
+  }))
+}));
 jest.mock("@ethersproject/providers");
 jest.mock("@ethersproject/contracts");
 jest.mock("../vault", () => ({
@@ -32,7 +42,7 @@ jest.mock("../vault", () => ({
     token: tokenMock,
     decimals: decimalsMock,
     pricePerShare: pricePerShareMock,
-    encodeDeposit: jest.fn().mockReturnValue(Promise.resolve(""))
+    encodeDeposit: jest.fn().mockReturnValue("")
   }))
 }));
 
@@ -82,6 +92,8 @@ jest.mock("../context", () => ({
 describe("Simulation interface", () => {
   let simulationInterface: SimulationInterface<1>;
   const MockedYearnClass = Yearn as jest.Mock<Yearn<1>>;
+  let executeSimulationWithReSimulationOnFailureSpy: jest.SpyInstance;
+  let simulateVaultInteractionSpy: jest.SpyInstance;
 
   beforeEach(() => {
     const mockedYearn = new MockedYearnClass();
@@ -100,7 +112,14 @@ describe("Simulation interface", () => {
       })
     );
     jest.spyOn(SimulationExecutor.prototype, "createFork").mockReturnValue(Promise.resolve("1"));
-    jest.spyOn(SimulationExecutor.prototype, "simulateVaultInteraction").mockReturnValue(Promise.resolve("1"));
+    simulateVaultInteractionSpy = jest
+      .spyOn(SimulationExecutor.prototype, "simulateVaultInteraction")
+      .mockReturnValue(Promise.resolve("1"));
+    executeSimulationWithReSimulationOnFailureSpy = jest.spyOn(
+      SimulationExecutor.prototype,
+      "executeSimulationWithReSimulationOnFailure"
+    );
+
     (Contract as any).prototype.allowance = jest.fn().mockReturnValue(Promise.resolve("100000000000"));
   });
 
@@ -228,6 +247,45 @@ describe("Simulation interface", () => {
         expect(error).toBeInstanceOf(PriceFetchingError);
         expect(error).toHaveProperty("error_code", PriceFetchingError.FETCHING_PRICE_ORACLE);
       }
+    });
+
+    describe("when it does not have the partner service", () => {
+      it("should call the partner service deposit", async () => {
+        tokenMock.mockReturnValueOnce(Promise.resolve("0x001"));
+        executeSimulationWithReSimulationOnFailureSpy.mockImplementationOnce(fn => fn());
+
+        await simulationInterface.deposit("0x000", "0x001", "1", "0x0000", { slippage: 1 });
+        expect(executeSimulationWithReSimulationOnFailureSpy).toHaveBeenCalledTimes(1);
+        expect(partnerEncodeDepositMock).toHaveBeenCalledTimes(0);
+        expect(simulateVaultInteractionSpy).toHaveBeenCalledTimes(1);
+        expect(simulateVaultInteractionSpy).toHaveBeenCalledWith("0x000", "0x0000", "", "0x0000", {
+          forkId: undefined,
+          root: undefined,
+          save: undefined,
+          slippage: 1
+        });
+      });
+    });
+
+    describe("when it has the partner service", () => {
+      it("should call the partner contract", async () => {
+        const mockedYearn = new MockedYearnClass();
+        mockedYearn.services.partner = new ((PartnerService as unknown) as jest.Mock<PartnerService<ChainId>>)();
+        simulationInterface = new SimulationInterface(mockedYearn, 1, new Context({}));
+        tokenMock.mockReturnValueOnce(Promise.resolve("0x001"));
+        executeSimulationWithReSimulationOnFailureSpy.mockImplementationOnce(fn => fn());
+
+        await simulationInterface.deposit("0x000", "0x001", "1", "0x0000", { slippage: 1 });
+        expect(executeSimulationWithReSimulationOnFailureSpy).toHaveBeenCalledTimes(1);
+        expect(partnerEncodeDepositMock).toHaveBeenCalledTimes(1);
+        expect(simulateVaultInteractionSpy).toHaveBeenCalledTimes(1);
+        expect(simulateVaultInteractionSpy).toHaveBeenCalledWith("0x000", "0x00001", "", "0x0000", {
+          forkId: undefined,
+          root: undefined,
+          save: undefined,
+          slippage: 1
+        });
+      });
     });
   });
 

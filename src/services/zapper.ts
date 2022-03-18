@@ -242,7 +242,8 @@ export class ZapperService extends Service {
     gasPrice: Integer,
     slippagePercentage: number,
     skipGasEstimate: boolean,
-    zapProtocol: ZapProtocol = ZapProtocol.YEARN
+    zapProtocol: ZapProtocol = ZapProtocol.YEARN,
+    partnerId?: string
   ): Promise<ZapOutput> {
     let sellToken = token;
     if (EthAddress === token) {
@@ -260,7 +261,8 @@ export class ZapperService extends Service {
       gasPrice: gasPrice,
       slippagePercentage: slippagePercentage.toString(),
       api_key: this.ctx.zapper,
-      skipGasEstimate: skipGasEstimate ? "true" : "false"
+      skipGasEstimate: skipGasEstimate ? "true" : "false",
+      ...((partnerId && { partnerId }) || {})
     });
 
     const response: ZapOutput = await fetch(`${url}?${params}`)
