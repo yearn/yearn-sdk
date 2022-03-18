@@ -191,8 +191,8 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
 
     if (vaultToken === token) {
       const tokenContract = new Contract(token, TokenAbi, this.ctx.provider.read);
-      const addressToApprove =
-        (this.shouldUsePartnerService(address) && this.yearn.services.partner?.address) || address;
+      const partnerAddress = await this.yearn.services.partner?.address;
+      const addressToApprove = (this.shouldUsePartnerService(address) && partnerAddress) || address;
       const allowanceAmount = await tokenContract.allowance(account, addressToApprove);
 
       return {
@@ -236,8 +236,8 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
 
     if (vaultToken === token) {
       const tokenContract = new Contract(token, TokenAbi, signer);
-      const addressToApprove =
-        (this.shouldUsePartnerService(address) && this.yearn.services.partner?.address) || address;
+      const partnerAddress = await this.yearn.services.partner?.address;
+      const addressToApprove = (this.shouldUsePartnerService(address) && partnerAddress) || address;
       const tx = await tokenContract.populateTransaction.approve(addressToApprove, amount);
       return this.yearn.services.transaction.sendTransaction(tx);
     }

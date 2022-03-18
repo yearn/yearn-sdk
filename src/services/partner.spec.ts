@@ -1,5 +1,8 @@
-import { Context } from "..";
+import { ChainId, Context } from "..";
+import { AddressProvider } from "./addressProvider";
 import { PartnerService } from "./partner";
+
+const sendTransactionMock = jest.fn();
 
 jest.mock("../context", () => ({
   Context: jest.fn().mockImplementation(() => ({
@@ -7,18 +10,38 @@ jest.mock("../context", () => ({
       on: jest.fn()
     },
     provider: {},
-    partnerId: "partnerid"
+    partnerId: "partnerid",
+    write: {
+      getSigner: jest.fn().mockImplementation(() => ({
+        sendTransaction: sendTransactionMock
+      }))
+    }
+  }))
+}));
+
+jest.mock("./addressProvider", () => ({
+  AddressProvider: jest.fn().mockImplementation(() => ({
+    addressById: jest.fn().mockResolvedValue("0xe11dC9f2Ab122dC5978EACA41483Da0D7D7e6128")
   }))
 }));
 
 describe("PartnerService", () => {
   let partner: PartnerService<1>;
+  let mockedAddressProvider: AddressProvider<ChainId>;
+  let encodeFunctionDataMock: jest.Mock;
+  let depositMock: jest.Mock;
 
   beforeEach(() => {
-    partner = new PartnerService({
-      chainId: 1,
-      ctx: new Context({}),
-      address: "0x8ee392a4787397126c163cb9844d7c447da419d8"
+    mockedAddressProvider = new ((AddressProvider as unknown) as jest.Mock<AddressProvider<ChainId>>)();
+    partner = new PartnerService(1, new Context({}), mockedAddressProvider);
+    encodeFunctionDataMock = jest.fn();
+    depositMock = jest.fn();
+    Object.defineProperty(partner, "_getContract", {
+      value: jest.fn().mockResolvedValue({
+        write: { deposit: depositMock, interface: { encodeFunctionData: encodeFunctionDataMock } }
+      }),
+      configurable: true,
+      writable: true
     });
   });
 
@@ -27,30 +50,20 @@ describe("PartnerService", () => {
   });
 
   describe("deposit", () => {
-    it("should call the contract deposit", () => {
-      // got to work around the fact that write is read-only
-      Object.defineProperty(partner.contract, "write", {
-        value: { deposit: jest.fn() },
-        configurable: true,
-        writable: true
-      });
-      const spy = jest.spyOn(partner.contract.write, "deposit");
+    it("should call the contract deposit", async () => {
+      await partner.deposit("vault", "0.11", { from: "0x0001" });
 
-      partner.deposit("vault", "0.11", { from: "0x0001" });
-
-      expect(spy).toHaveBeenCalledTimes(1);
-      expect(spy).toHaveBeenCalledWith("vault", "partnerid", "0.11", { from: "0x0001" });
+      expect(depositMock).toHaveBeenCalledTimes(1);
+      expect(depositMock).toHaveBeenCalledWith("vault", "partnerid", "0.11", { from: "0x0001" });
     });
   });
 
   describe("encodeDeposit", () => {
-    it("should call the contract deposit", () => {
-      const spy = jest.spyOn(partner.contract.write.interface, "encodeFunctionData").mockImplementation();
+    it("should call the contract deposit", async () => {
+      await partner.encodeDeposit("vault", "0.11");
 
-      partner.encodeDeposit("vault", "0.11");
-
-      expect(spy).toHaveBeenCalledTimes(1);
-      expect(spy).toHaveBeenCalledWith("deposit", ["vault", "partnerid", "0.11"]);
+      expect(encodeFunctionDataMock).toHaveBeenCalledTimes(1);
+      expect(encodeFunctionDataMock).toHaveBeenCalledWith("deposit", ["vault", "partnerid", "0.11"]);
     });
   });
 });

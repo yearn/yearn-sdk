@@ -189,7 +189,8 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     const signer = this.ctx.provider.write.getSigner(from);
     const tokenContract = new Contract(token, TokenAbi, signer);
     const isUsingPartnerService = this.shouldUsePartnerService(vault);
-    const addressToApprove = (isUsingPartnerService && this.yearn.services.partner?.address) || vault;
+    const partnerServiceId = await this.yearn.services.partner?.address;
+    const addressToApprove = (isUsingPartnerService && partnerServiceId) || vault;
     const encodedInputData = tokenContract.interface.encodeFunctionData("approve", [addressToApprove, amount]);
     options.save = true;
 
@@ -228,13 +229,16 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     vaultContract: VaultContract,
     options: SimulationOptions
   ): Promise<TransactionOutcome> {
-    const encodedInputData = this.shouldUsePartnerService(toVault)
+    const encodedInputData = await (this.shouldUsePartnerService(toVault)
       ? this.yearn.services.partner!.encodeDeposit(toVault, amount)
-      : vaultContract.encodeDeposit(amount);
+      : vaultContract.encodeDeposit(amount));
+
+    const partnerAddress = await this.yearn.services.partner?.address;
+    const addressToDeposit = (this.shouldUsePartnerService(toVault) && partnerAddress) || toVault;
 
     const tokensReceived = await this.simulationExecutor.simulateVaultInteraction(
       from,
-      this.shouldUsePartnerService(toVault) ? this.yearn.services.partner!.address : toVault,
+      addressToDeposit,
       encodedInputData,
       toVault,
       options

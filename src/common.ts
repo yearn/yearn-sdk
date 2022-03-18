@@ -60,6 +60,7 @@ export enum ContractAddressId {
   adapter_registry_v2 = "REGISTRY_ADAPTER_V2_VAULTS",
   helper = "HELPER",
   allowlist = "ALLOW_LIST_REGISTRY",
+  partner = "PARTNER_TRACKER",
   unused = "UNUSED"
 }
 
@@ -83,6 +84,7 @@ export class ContractService<T extends ChainId, E = {}> extends Service<E> {
     }
 
     try {
+      console.log(this.addressProvider);
       const address = await this.addressProvider.addressById(contractId);
       return new WrappedContract(address, abi, ctx);
     } catch (e) {
