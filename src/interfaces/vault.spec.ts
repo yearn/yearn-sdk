@@ -670,7 +670,10 @@ describe("VaultInterface", () => {
             },
             name: "Dead Token",
             priceUsdc: "1",
-            supported: {}
+            dataSource: "vaults",
+            supported: {
+              vaults: true
+            }
           }
         ]);
         expect(lensAdaptersVaultsV2TokensMock).toHaveBeenCalledTimes(1);

@@ -7,13 +7,15 @@ import {
   Address,
   Balance,
   CyTokenUserMetadata,
+  ERC20,
   IronBankMarket,
   IronBankMarketDynamic,
   IronBankMarketStatic,
   IronBankUserSummary,
   Position,
   SdkError,
-  Token
+  Token,
+  TokenDataSource
 } from "../types";
 
 export class IronBankInterface<T extends ChainId> extends ServiceInterface<T> {
@@ -153,15 +155,20 @@ export class IronBankInterface<T extends ChainId> extends ServiceInterface<T> {
     }
 
     const tokenAddresses = await this.yearn.services.lens.adapters.ironBank.tokens(overrides);
-    const tokens = await this.yearn.services.helper.tokens(tokenAddresses, overrides);
+
     const icons = this.yearn.services.asset.icon(tokenAddresses);
-    return Promise.all(
-      tokens.map(async token => ({
-        ...token,
-        icon: icons[token.address],
-        supported: {},
-        priceUsdc: await this.yearn.services.oracle.getPriceUsdc(token.address, overrides)
-      }))
-    );
+
+    const erc20Tokens = await this.yearn.services.helper.tokens(tokenAddresses, overrides);
+    const erc20ToToken: (erc20Token: ERC20) => Promise<Token> = async (erc20Token: ERC20) => ({
+      ...erc20Token,
+      icon: icons[erc20Token.address],
+      dataSource: "ironbank" as TokenDataSource,
+      supported: {
+        ironBank: true
+      },
+      priceUsdc: await this.yearn.services.oracle.getPriceUsdc(erc20Token.address, overrides)
+    });
+
+    return Promise.all(erc20Tokens.map(erc20ToToken));
   }
 }

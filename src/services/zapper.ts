@@ -45,6 +45,7 @@ export class ZapperService extends Service {
           icon: `https://assets.yearn.network/tokens/${network}/${address}.png`,
           name: zapperToken.symbol,
           priceUsdc: usdc(zapperToken.price),
+          dataSource: "zapper",
           supported: { zapper: true },
           symbol: zapperToken.symbol
         };

@@ -62,6 +62,7 @@ describe("ZapperService", () => {
                 icon: `https://assets.yearn.network/tokens/${Chains[chainId]}/${mockZapperToken.address}.png`,
                 name: "DEAD",
                 priceUsdc: "10000",
+                dataSource: "zapper",
                 supported: { zapper: true },
                 symbol: "DEAD"
               }
