@@ -519,7 +519,7 @@ describe("TokenInterface", () => {
           mockedYearn.services.partner = new ((PartnerService as unknown) as jest.Mock<PartnerService<ChainId>>)();
           tokenInterface = new TokenInterface(mockedYearn, 1, new Context({}));
           approveMock.mockReturnValue("partner deposit");
-          const actualApprove = await tokenInterface.approveDeposit(vault, token, "1", "0x001");
+          const actualApprove = await tokenInterface.approveDeposit(vault.address, vault.token, token, "1", "0x001");
 
           expect(actualApprove).toEqual(true);
           expect(Contract).toHaveBeenCalledTimes(1);
@@ -542,7 +542,7 @@ describe("TokenInterface", () => {
 
       it("should approve vault to spend a token on a direct deposit", async () => {
         approveMock.mockReturnValue("direct deposit");
-        const actualApprove = await tokenInterface.approveDeposit(vault, token, "1", "0x001");
+        const actualApprove = await tokenInterface.approveDeposit(vault.address, vault.token, token, "1", "0x001");
 
         expect(actualApprove).toEqual(true);
 
@@ -574,7 +574,7 @@ describe("TokenInterface", () => {
       });
 
       it("should return true", async () => {
-        const actualApprove = await tokenInterface.approveDeposit(vault, token, "1", "0x001");
+        const actualApprove = await tokenInterface.approveDeposit(vault.address, vault.token, token, "1", "0x001");
 
         expect(actualApprove).toEqual(true);
       });
@@ -608,7 +608,7 @@ describe("TokenInterface", () => {
         });
 
         it("should approve vault to spend a token on zapIn", async () => {
-          const actualApprove = await tokenInterface.approveDeposit(vault, token, "1", "0x001");
+          const actualApprove = await tokenInterface.approveDeposit(vault.address, vault.token, token, "1", "0x001");
 
           expect(actualApprove).toEqual("transaction");
           expect(zapperZapInApprovalTransactionMock).toHaveBeenCalledTimes(1);
@@ -624,7 +624,7 @@ describe("TokenInterface", () => {
         });
 
         it("should return true", async () => {
-          const actualApprove = await tokenInterface.approveDeposit(vault, token, "1", "0x001");
+          const actualApprove = await tokenInterface.approveDeposit(vault.address, vault.token, token, "1", "0x001");
 
           expect(actualApprove).toEqual(true);
         });
@@ -649,7 +649,7 @@ describe("TokenInterface", () => {
           mockedYearn.services.partner = new ((PartnerService as unknown) as jest.Mock<PartnerService<ChainId>>)();
           tokenInterface = new TokenInterface(mockedYearn, 1, new Context({}));
           allowanceMock.mockReturnValue("10");
-          const actualAllowance = await tokenInterface.allowance(vault, token, "0x001");
+          const actualAllowance = await tokenInterface.allowance(vault.address, vault.token, token, "0x001");
 
           expect(Contract).toHaveBeenCalledTimes(1);
           expect(Contract).toHaveBeenCalledWith(
@@ -668,7 +668,7 @@ describe("TokenInterface", () => {
 
       it("should approve vault to spend a token on a direct deposit", async () => {
         allowanceMock.mockReturnValue("20");
-        const actualAllowance = await tokenInterface.allowance(vault, token, "0x001");
+        const actualAllowance = await tokenInterface.allowance(vault.address, vault.token, token, "0x001");
 
         expect(Contract).toHaveBeenCalledTimes(1);
         expect(Contract).toHaveBeenCalledWith(
@@ -695,7 +695,7 @@ describe("TokenInterface", () => {
       });
 
       it("should return true", async () => {
-        const actualApprove = await tokenInterface.allowance(vault, token, "0x00account");
+        const actualApprove = await tokenInterface.allowance(vault.address, vault.token, token, "0x00account");
 
         expect(actualApprove).toEqual({ amount: MaxUint256.toString(), owner: "0x00account", spender: "0x001", token });
       });
@@ -717,7 +717,7 @@ describe("TokenInterface", () => {
       });
 
       it("should approve vault to spend a token on zapIn", async () => {
-        const actualAllowance = await tokenInterface.allowance(vault, token, "0x001");
+        const actualAllowance = await tokenInterface.allowance(vault.address, vault.token, token, "0x001");
 
         expect(actualAllowance).toEqual({ amount: "allowance", owner: "owner", spender: "spender", token });
         expect(zapperZapInApprovalStateMock).toHaveBeenCalledTimes(1);
