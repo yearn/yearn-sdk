@@ -1,8 +1,10 @@
 import { ChainId, Context } from "..";
+import { ZeroAddress } from "../helpers";
 import { AddressProvider } from "./addressProvider";
 import { PartnerService } from "./partner";
 
 const sendTransactionMock = jest.fn();
+const addressByIdMock = jest.fn().mockResolvedValue("0xe11dC9f2Ab122dC5978EACA41483Da0D7D7e6128");
 
 jest.mock("../context", () => ({
   Context: jest.fn().mockImplementation(() => ({
@@ -21,7 +23,7 @@ jest.mock("../context", () => ({
 
 jest.mock("./addressProvider", () => ({
   AddressProvider: jest.fn().mockImplementation(() => ({
-    addressById: jest.fn().mockResolvedValue("0xe11dC9f2Ab122dC5978EACA41483Da0D7D7e6128")
+    addressById: addressByIdMock
   }))
 }));
 
@@ -47,6 +49,19 @@ describe("PartnerService", () => {
 
   afterEach(() => {
     jest.clearAllMocks();
+  });
+
+  describe("address", () => {
+    it("should return the partner address if it is provided by the addressprovider", async () => {
+      const partnerAddress = await partner.address;
+      expect(partnerAddress).toEqual("0xe11dC9f2Ab122dC5978EACA41483Da0D7D7e6128");
+    });
+
+    it("should return the undefined if the partner address is not provided by the addressprovider", async () => {
+      addressByIdMock.mockResolvedValue(ZeroAddress);
+      const partnerAddress = await partner.address;
+      expect(partnerAddress).toEqual(undefined);
+    });
   });
 
   describe("deposit", () => {

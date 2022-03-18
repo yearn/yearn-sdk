@@ -84,7 +84,6 @@ export class ContractService<T extends ChainId, E = {}> extends Service<E> {
     }
 
     try {
-      console.log(this.addressProvider);
       const address = await this.addressProvider.addressById(contractId);
       return new WrappedContract(address, abi, ctx);
     } catch (e) {

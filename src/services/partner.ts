@@ -3,6 +3,7 @@ import { CallOverrides } from "@ethersproject/contracts";
 import { ChainId } from "../chain";
 import { ContractAddressId, ContractService, WrappedContract } from "../common";
 import { Context } from "../context";
+import { ZeroAddress } from "../helpers";
 import { AddressProvider } from "./addressProvider";
 
 const YVECRV = "0xc5bDdf9843308380375a611c18B50Fb9341f502A";
@@ -23,8 +24,11 @@ export class PartnerService<T extends ChainId> extends ContractService<T> {
     return this._getContract(PartnerService.abi, PartnerService.contractId, this.ctx);
   }
 
-  get address(): Promise<string> {
-    return this.addressProvider.addressById(PartnerService.contractId);
+  get address(): Promise<string | undefined> {
+    return (async () => {
+      const partnerAddress = await this.addressProvider.addressById(PartnerService.contractId);
+      return partnerAddress !== ZeroAddress ? partnerAddress : undefined;
+    })();
   }
 
   constructor(chainId: T, ctx: Context, addressProvider: AddressProvider<T>) {
