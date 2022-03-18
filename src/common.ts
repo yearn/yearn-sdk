@@ -3,6 +3,7 @@ import Emittery from "emittery";
 
 import { ChainId } from "./chain";
 import { Context, ReadWriteProvider } from "./context";
+import { AddressProvider } from "./services/addressProvider";
 import { Address } from "./types";
 import { Yearn } from "./yearn";
 
@@ -53,25 +54,40 @@ export class WrappedContract {
   }
 }
 
+export enum ContractAddressId {
+  oracle = "ORACLE",
+  adapter_ironbank = "REGISTRY_ADAPTER_IRON_BANK",
+  adapter_registry_v2 = "REGISTRY_ADAPTER_V2_VAULTS",
+  helper = "HELPER",
+  allowlist = "ALLOW_LIST_REGISTRY",
+  unused = "UNUSED"
+}
+
 /**
  * A service that has a contract representation on chain.
  */
 export class ContractService<T extends ChainId, E = {}> extends Service<E> {
   static abi: string[] = [];
+  static contractId: ContractAddressId = ContractAddressId.unused;
 
-  address: string;
+  addressProvider: AddressProvider<T>;
 
-  contract: WrappedContract;
-
-  constructor(address: Address, chainId: T, ctx: Context) {
+  constructor(chainId: T, ctx: Context, addressProvider: AddressProvider<T>) {
     super(chainId, ctx);
-    this.address = address;
+    this.addressProvider = addressProvider;
+  }
 
-    this.contract = new WrappedContract(
-      this.address,
-      // @ts-ignore
-      this.constructor.abi,
-      ctx
-    );
+  protected async _getContract(abi: string[], contractId: ContractAddressId, ctx: Context): Promise<WrappedContract> {
+    if (contractId === ContractAddressId.unused) {
+      throw new Error(`Trying to get the contract instance on the generic class.`);
+    }
+
+    try {
+      const address = await this.addressProvider.addressById(contractId);
+      return new WrappedContract(address, abi, ctx);
+    } catch (e) {
+      console.error(`Contract address for ${contractId} is missing from Address Provider`);
+      throw e;
+    }
   }
 }

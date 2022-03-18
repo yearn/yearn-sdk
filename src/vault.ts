@@ -2,7 +2,7 @@ import { Contract } from "@ethersproject/contracts";
 import { JsonRpcSigner } from "@ethersproject/providers";
 import { BigNumber } from "bignumber.js";
 
-import { Address } from "./types/common";
+import { Address } from "./types";
 
 export abstract class VaultContract {
   protected static get abi() {

@@ -3,7 +3,7 @@ import { JsonRpcSigner } from "@ethersproject/providers";
 import { TelegramService } from ".";
 import { Context } from "./context";
 import { SimulationExecutor } from "./simulationExecutor";
-import { EthersError, SimulationError, TenderlyError } from "./types/custom/simulation";
+import { EthersError, SimulationError, TenderlyError } from "./types";
 
 global.fetch = jest.fn(() =>
   Promise.resolve({
@@ -56,7 +56,7 @@ jest.mock("./context", () => ({
   }))
 }));
 
-describe("Simualtion executor", () => {
+describe("Simulation executor", () => {
   let simulationExecutor: SimulationExecutor;
   const MockedTelegramServiceClass = TelegramService as jest.Mock<TelegramService>;
 
