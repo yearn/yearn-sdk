@@ -148,20 +148,22 @@ describe("TokenInterface", () => {
 
   describe("balances", () => {
     const vaultTokenWithBalance = createMockBalance({
-      address: "0x001"
+      address: "0x001",
+      token: createMockToken({
+        name: "vaultTokenWithBalance"
+      })
     });
-    const vaultTokenWithoutBalance = createMockBalance({
-      balance: "0"
+    const ironBankTokenWithBalance = createMockBalance({
+      address: "0x001",
+      token: createMockToken({
+        name: "ironBankTokenWithBalance"
+      })
     });
     const zapperTokenWithBalance = createMockBalance({
-      address: "0x002"
-    });
-    const zapperSameAddressTokenWithBalance = createMockBalance({
-      address: "0x001"
-    });
-
-    beforeEach(() => {
-      vaultsBalancesMock.mockResolvedValue([vaultTokenWithBalance, vaultTokenWithoutBalance]);
+      address: "0x001",
+      token: createMockToken({
+        name: "zapperTokenWithBalance"
+      })
     });
 
     ([1, 1337] as ChainId[]).forEach(chainId =>
@@ -170,62 +172,104 @@ describe("TokenInterface", () => {
           tokenInterface = new TokenInterface(mockedYearn, chainId, new Context({}));
         });
 
-        it("should fetch token balances from the TokenInterface.supported list", async () => {
-          zapperBalancesMock.mockResolvedValue([zapperTokenWithBalance, zapperSameAddressTokenWithBalance]);
+        it("should return balances from Vaults when the same token exists in all services", async () => {
+          vaultsBalancesMock.mockResolvedValue([vaultTokenWithBalance]);
+          ironBankBalancesMock.mockResolvedValue([ironBankTokenWithBalance]);
+          zapperBalancesMock.mockResolvedValue([zapperTokenWithBalance]);
 
-          const actualBalances = await tokenInterface.balances("0x000");
+          const actualBalances = await tokenInterface.balances("0x001");
 
-          expect(actualBalances).toEqual([zapperTokenWithBalance, vaultTokenWithBalance]);
-          expect(zapperBalancesMock).toHaveBeenCalledTimes(1);
-          expect(zapperBalancesMock).toHaveBeenCalledWith("0x000");
-          expect(ironBankBalancesMock).not.toHaveBeenCalled();
+          expect(actualBalances.length).toEqual(1);
+          expect(actualBalances).toEqual(expect.arrayContaining([vaultTokenWithBalance]));
+          expect(zapperBalancesMock).toHaveBeenCalledWith("0x001");
+          expect(vaultsBalancesMock).toHaveBeenCalledWith("0x001");
+          expect(ironBankBalancesMock).toHaveBeenCalledWith("0x001");
         });
 
-        it("should return only tokens from the vaults when zapper fails", async () => {
+        it("should return tokens from the iron bank when zapper fails and there are no vault tokens with that address", async () => {
+          vaultsBalancesMock.mockResolvedValue([]);
+          ironBankBalancesMock.mockResolvedValue([ironBankTokenWithBalance]);
           zapperBalancesMock.mockImplementation(() => {
             throw new Error("zapper balances failed!");
           });
 
-          const actualBalances = await tokenInterface.balances("0x000");
+          const actualBalances = await tokenInterface.balances("0x001");
 
-          expect(actualBalances).toEqual([vaultTokenWithBalance]);
-          expect(zapperBalancesMock).toHaveBeenCalledTimes(1);
-          expect(zapperBalancesMock).toHaveBeenCalledWith("0x000");
-          expect(ironBankBalancesMock).not.toHaveBeenCalled();
-          expect(console.error).toHaveBeenCalled();
+          expect(actualBalances.length).toEqual(1);
+          expect(actualBalances).toEqual(expect.arrayContaining([ironBankTokenWithBalance]));
+          expect(zapperBalancesMock).toHaveBeenCalledWith("0x001");
+          expect(vaultsBalancesMock).toHaveBeenCalledWith("0x001");
+          expect(ironBankBalancesMock).toHaveBeenCalledWith("0x001");
+          expect(console.error).toHaveBeenCalledWith(new Error("zapper balances failed!"));
+        });
+
+        it("should return tokens from the vaults when zapper fails and there are iron bank tokens with that address", async () => {
+          vaultsBalancesMock.mockResolvedValue([vaultTokenWithBalance]);
+          ironBankBalancesMock.mockResolvedValue([ironBankTokenWithBalance]);
+          zapperBalancesMock.mockImplementation(() => {
+            throw new Error("zapper balances failed!");
+          });
+
+          const actualBalances = await tokenInterface.balances("0x001");
+
+          expect(actualBalances.length).toEqual(1);
+          expect(actualBalances).toEqual(expect.arrayContaining([vaultTokenWithBalance]));
+          expect(zapperBalancesMock).toHaveBeenCalledWith("0x001");
+          expect(vaultsBalancesMock).toHaveBeenCalledWith("0x001");
+          expect(ironBankBalancesMock).toHaveBeenCalledWith("0x001");
         });
       })
     );
 
-    describe("when chainId is 250", () => {
-      beforeEach(() => {
-        tokenInterface = new TokenInterface(mockedYearn, 250, new Context({}));
-      });
+    ([250, 42161] as ChainId[]).forEach(chainId =>
+      describe(`when chainId is ${chainId}`, () => {
+        beforeEach(() => {
+          tokenInterface = new TokenInterface(mockedYearn, chainId, new Context({}));
+        });
 
-      it("should fetch token balances from the TokenInterface.supported list", async () => {
-        const ironBankBalance = createMockBalance();
-        ironBankBalancesMock.mockResolvedValue([ironBankBalance]);
+        it("should return vault balance if there is an iron bank token with the same address", async () => {
+          vaultsBalancesMock.mockResolvedValue([vaultTokenWithBalance]);
+          ironBankBalancesMock.mockResolvedValue([ironBankTokenWithBalance]);
 
-        const actualBalances = await tokenInterface.balances("0x000");
+          const actualBalances = await tokenInterface.balances("0x001");
 
-        expect(actualBalances).toEqual([ironBankBalance, vaultTokenWithBalance]);
-        expect(ironBankBalancesMock).toHaveBeenCalledTimes(1);
-        expect(ironBankBalancesMock).toHaveBeenCalledWith("0x000");
-        expect(zapperBalancesMock).not.toHaveBeenCalled();
-      });
-    });
+          expect(actualBalances.length).toEqual(1);
+          expect(actualBalances).toEqual(expect.arrayContaining([vaultTokenWithBalance]));
+          expect(vaultsBalancesMock).toHaveBeenCalledWith("0x001");
+          expect(ironBankBalancesMock).toHaveBeenCalledWith("0x001");
+          expect(zapperBalancesMock).not.toHaveBeenCalled();
+        });
+
+        it("should return iron bank balance if there is not a vault token with the same address", async () => {
+          vaultsBalancesMock.mockResolvedValue([]);
+          ironBankBalancesMock.mockResolvedValue([ironBankTokenWithBalance]);
+
+          const actualBalances = await tokenInterface.balances("0x001");
+
+          expect(actualBalances.length).toEqual(1);
+          expect(actualBalances).toEqual(expect.arrayContaining([ironBankTokenWithBalance]));
+          expect(vaultsBalancesMock).toHaveBeenCalledWith("0x001");
+          expect(ironBankBalancesMock).toHaveBeenCalledWith("0x001");
+          expect(zapperBalancesMock).not.toHaveBeenCalled();
+        });
+      })
+    );
 
     describe("when chainId is not supported", () => {
       beforeEach(() => {
-        tokenInterface = new TokenInterface(mockedYearn, 42 as any, new Context({}));
+        tokenInterface = new TokenInterface(mockedYearn, 42 as ChainId, new Context({}));
+        zapperBalancesMock.mockResolvedValue([zapperTokenWithBalance]);
+        vaultsBalancesMock.mockResolvedValue([vaultTokenWithBalance]);
+        ironBankBalancesMock.mockResolvedValue([ironBankTokenWithBalance]);
       });
 
       it("should return an empty array and log the error", async () => {
-        const actualBalances = await tokenInterface.balances("0x000");
+        const actualBalances = await tokenInterface.balances("0x001");
 
         expect(actualBalances).toEqual([]);
-        expect(console.error).toHaveBeenCalled();
+        expect(console.error).toHaveBeenCalledWith("the chain 42 hasn't been implemented yet");
         expect(zapperBalancesMock).not.toHaveBeenCalled();
+        expect(vaultsBalancesMock).not.toHaveBeenCalled();
         expect(ironBankBalancesMock).not.toHaveBeenCalled();
       });
     });

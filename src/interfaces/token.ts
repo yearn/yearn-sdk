@@ -59,39 +59,38 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
   }
 
   /**
-   * Fetch token balances from the {@link TokenInterface.supported} list
-   * for a particular address.
+   * Fetch token balance for a particular address.
    * @param address
    */
   async balances(address: Address): Promise<Balance[]> {
-    const vaultBalances = await this.yearn.vaults
-      .balances(address)
-      .then(balances => balances.filter(token => token.balance !== "0"));
+    let zapperBalances: Balance[] = [];
 
-    switch (this.chainId) {
-      case 1:
-      case 1337: {
-        let zapperBalances: Balance[] = [];
-        try {
-          zapperBalances = await this.yearn.services.zapper.balances(address);
-        } catch (error) {
-          console.error(error);
-        }
-        const vaultBalanceAddresses = new Set(vaultBalances.map(balance => balance.address));
-        zapperBalances = zapperBalances.filter(balance => !vaultBalanceAddresses.has(balance.address));
-        return zapperBalances.concat(vaultBalances);
+    if ([1, 1337].includes(this.chainId)) {
+      try {
+        zapperBalances = await this.yearn.services.zapper.balances(address);
+      } catch (error) {
+        console.error(error);
       }
-      case 250:
-      case 42161: {
-        let ironBankTokens = await this.yearn.ironBank.balances(address);
-        const vaultBalanceAddresses = new Set(vaultBalances.map(balance => balance.address));
-        ironBankTokens = ironBankTokens.filter(balance => !vaultBalanceAddresses.has(balance.address));
-        return ironBankTokens.concat(vaultBalances);
-      }
-      default:
-        console.error(`the chain ${this.chainId} hasn't been implemented yet`);
-        return [];
     }
+
+    if ([1, 1337, 250, 42161].includes(this.chainId)) {
+      const vaultBalances = await this.yearn.vaults.balances(address);
+      const nonZeroVaultBalances = vaultBalances.filter(token => token.balance !== "0");
+
+      let ironBankBalances = await this.yearn.ironBank.balances(address);
+
+      const combinedVaultsAndIronBankBalances = this.mergeAddressables(nonZeroVaultBalances, ironBankBalances);
+
+      if (!zapperBalances.length) {
+        return combinedVaultsAndIronBankBalances;
+      }
+
+      return this.mergeAddressables(combinedVaultsAndIronBankBalances, zapperBalances);
+    }
+
+    console.error(`the chain ${this.chainId} hasn't been implemented yet`);
+
+    return [];
   }
 
   /**
@@ -119,13 +118,13 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
       const vaultsTokens = await this.yearn.vaults.tokens();
       const ironBankTokens = await this.yearn.ironBank.tokens();
 
-      const combinedVaultsAndIronBankTokens = this.mergeTokens(vaultsTokens, ironBankTokens);
+      const combinedVaultsAndIronBankTokens = this.mergeAddressables(vaultsTokens, ironBankTokens);
 
       if (!zapperTokensWithIcon.length) {
         return combinedVaultsAndIronBankTokens;
       }
 
-      const allSupportedTokens = this.mergeTokens(combinedVaultsAndIronBankTokens, zapperTokensWithIcon);
+      const allSupportedTokens = this.mergeAddressables(combinedVaultsAndIronBankTokens, zapperTokensWithIcon);
 
       const zapperTokensUniqueAddresses = new Set(zapperTokensWithIcon.map(({ address }) => address));
 
@@ -344,12 +343,12 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
   }
 
   /**
-   * Merges token array b into a removing a duplicates from b
+   * Merges addressable array b into a removing a duplicates from b
    * @param a higher priority array
    * @param b lower priority array
-   * @returns combined token array without duplicates
+   * @returns combined addressable array without duplicates
    */
-  private mergeTokens(a: Token[], b: Token[]): Token[] {
+  private mergeAddressables<T extends { address: Address }>(a: T[], b: T[]): T[] {
     const filter = new Set(a.map(({ address }) => address));
 
     return [...a, ...b.filter(({ address }) => !filter.has(address))];
