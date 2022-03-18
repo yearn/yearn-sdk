@@ -188,7 +188,10 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     const TokenAbi = ["function approve(address spender, uint256 amount) returns (bool)"];
     const signer = this.ctx.provider.write.getSigner(from);
     const tokenContract = new Contract(token, TokenAbi, signer);
-    const encodedInputData = tokenContract.interface.encodeFunctionData("approve", [vault, amount]);
+    const isUsingPartnerService = this.shouldUsePartnerService(vault);
+    const partnerServiceId = await this.yearn.services.partner?.address;
+    const addressToApprove = (isUsingPartnerService && partnerServiceId) || vault;
+    const encodedInputData = tokenContract.interface.encodeFunctionData("approve", [addressToApprove, amount]);
     options.save = true;
 
     const simulationResponse: SimulationResponse = await this.simulationExecutor.makeSimulationRequest(
@@ -210,7 +213,9 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
   ): Promise<boolean> {
     const TokenAbi = ["function allowance(address owner, address spender) view returns (uint256)"];
     const contract = new Contract(token, TokenAbi, signer);
-    const result = await contract.allowance(from, vault).catch(() => {
+    const isUsingPartnerService = this.shouldUsePartnerService(vault);
+    const addressToCheck = (isUsingPartnerService && this.yearn.services.partner?.address) || vault;
+    const result = await contract.allowance(from, addressToCheck).catch(() => {
       "deposit needs approving";
     });
     return new BigNumber(result.toString()).lt(new BigNumber(amount));
@@ -224,11 +229,16 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     vaultContract: VaultContract,
     options: SimulationOptions
   ): Promise<TransactionOutcome> {
-    const encodedInputData = vaultContract.encodeDeposit(amount);
+    const encodedInputData = await (this.shouldUsePartnerService(toVault)
+      ? this.yearn.services.partner!.encodeDeposit(toVault, amount)
+      : vaultContract.encodeDeposit(amount));
+
+    const partnerAddress = await this.yearn.services.partner?.address;
+    const addressToDeposit = (this.shouldUsePartnerService(toVault) && partnerAddress) || toVault;
 
     const tokensReceived = await this.simulationExecutor.simulateVaultInteraction(
       from,
-      toVault,
+      addressToDeposit,
       encodedInputData,
       toVault,
       options
@@ -480,6 +490,10 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     };
 
     return result;
+  }
+
+  private shouldUsePartnerService(vault: string): boolean {
+    return !!this.yearn.services.partner?.isAllowed(vault);
   }
 
   private async simulateZapApprovalTransaction(

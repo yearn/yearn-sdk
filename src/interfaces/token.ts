@@ -1,3 +1,4 @@
+import { MaxUint256 } from "@ethersproject/constants";
 import { CallOverrides, Contract } from "@ethersproject/contracts";
 import { TransactionRequest, TransactionResponse } from "@ethersproject/providers";
 import BigNumber from "bignumber.js";
@@ -7,10 +8,13 @@ import { ChainId } from "../chain";
 import { ServiceInterface } from "../common";
 import { EthAddress } from "../helpers";
 import { PickleJars } from "../services/partners/pickle";
-import { Address, Integer, TokenMetadata, TypedMap, Usdc, Vault, ZapProtocol } from "../types";
+import { Address, Integer, TokenAllowance, TokenMetadata, TypedMap, Usdc, Vault, ZapProtocol } from "../types";
 import { Balance, Icon, IconMap, Token } from "../types";
 
-const TokenAbi = ["function approve(address _spender, uint256 _value) public"];
+const TokenAbi = [
+  "function approve(address _spender, uint256 _value) public",
+  "function allowance(address _owner, address _spender) public view returns (uint256)"
+];
 
 export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
   private cachedFetcherSupported = new CachedFetcher<Token[]>("tokens/supported", this.ctx, this.chainId);
@@ -167,15 +171,60 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
   }
 
   /**
-   * Approve vault to spend a token on zapIn
+   * Get allowance for a token either zapIn or direct deposit
    * @param vault
    * @param token
    * @param amount
    * @param account
    * @returns transaction
    */
-  async approve(
-    vault: Vault,
+  async allowance(address: Address, vaultToken: Address, token: Address, account: Address): Promise<TokenAllowance> {
+    // If Ether is being sent, no need for approval
+    let allowance: TokenAllowance = {
+      owner: account,
+      spender: address,
+      amount: MaxUint256.toString(),
+      token
+    };
+
+    if (EthAddress === token) return allowance;
+
+    if (vaultToken === token) {
+      const tokenContract = new Contract(token, TokenAbi, this.ctx.provider.read);
+      const partnerAddress = await this.yearn.services.partner?.address;
+      const addressToApprove = (this.shouldUsePartnerService(address) && partnerAddress) || address;
+      const allowanceAmount = await tokenContract.allowance(account, addressToApprove);
+
+      return {
+        ...allowance,
+        spender: addressToApprove,
+        amount: allowanceAmount.toString()
+      };
+    }
+
+    const zapProtocol = PickleJars.includes(address) ? ZapProtocol.PICKLE : ZapProtocol.YEARN;
+
+    const zapInApprovalState = await this.yearn.services.zapper.zapInApprovalState(account, token, zapProtocol);
+
+    return {
+      owner: zapInApprovalState.ownerAddress,
+      spender: zapInApprovalState.spenderAddress,
+      amount: zapInApprovalState.allowance,
+      token
+    };
+  }
+
+  /**
+   * Approve vault to spend a token on zapIn or direct deposit
+   * @param vault
+   * @param token
+   * @param amount
+   * @param account
+   * @returns transaction
+   */
+  async approveDeposit(
+    address: Address,
+    vaultToken: Address,
     token: Address,
     amount: Integer,
     account: Address
@@ -185,9 +234,11 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
 
     const signer = this.ctx.provider.write.getSigner(account);
 
-    if (vault.token === token) {
+    if (vaultToken === token) {
       const tokenContract = new Contract(token, TokenAbi, signer);
-      const tx = await tokenContract.populateTransaction.approve(vault.address, amount);
+      const partnerAddress = await this.yearn.services.partner?.address;
+      const addressToApprove = (this.shouldUsePartnerService(address) && partnerAddress) || address;
+      const tx = await tokenContract.populateTransaction.approve(addressToApprove, amount);
       return this.yearn.services.transaction.sendTransaction(tx);
     }
 
@@ -195,7 +246,7 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
 
     const gasPriceFastGwei = new BigNumber(gasPrice.fast).times(new BigNumber(10 ** 9));
 
-    const zapProtocol = PickleJars.includes(vault.address) ? ZapProtocol.PICKLE : ZapProtocol.YEARN;
+    const zapProtocol = PickleJars.includes(address) ? ZapProtocol.PICKLE : ZapProtocol.YEARN;
 
     const zapInApprovalState = await this.yearn.services.zapper.zapInApprovalState(account, token, zapProtocol);
 
@@ -270,6 +321,10 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
   }
 
   private cachedFetcher = new CachedFetcher<TokenMetadata[]>("tokens/metadata", this.ctx, this.chainId);
+
+  private shouldUsePartnerService(vault: string): boolean {
+    return !!this.yearn.services.partner?.isAllowed(vault);
+  }
 
   async metadata(addresses?: Address[]): Promise<TokenMetadata[]> {
     let result: TokenMetadata[];
