@@ -162,7 +162,7 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
       this.yearn.services.asset.icon(zapperTokensAddresses)
     );
 
-    const setIcon = (token: Token) => {
+    const setIcon = (token: Token): Token => {
       const icon = zapperTokensIcons[token.address];
       return icon ? { ...token, icon } : token;
     };
@@ -228,7 +228,7 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
     token: Address,
     amount: Integer,
     account: Address
-  ): Promise<TransactionResponse | Boolean> {
+  ): Promise<TransactionResponse | boolean> {
     // If Ether is being sent, no need for approval
     if (EthAddress === token) return true;
 
@@ -276,13 +276,13 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
    * @param account
    * @returns transaction
    */
-  async approveZapOut(vault: Vault, token: Address, account: Address): Promise<TransactionResponse | Boolean> {
+  async approveZapOut(vault: Vault, token: Address, account: Address): Promise<TransactionResponse | boolean> {
     const signer = this.ctx.provider.write.getSigner(account);
     if (vault.token === token) {
       const gasPrice = await this.yearn.services.zapper.gas();
       const gasPriceFastGwei = new BigNumber(gasPrice.fast).times(new BigNumber(10 ** 9));
 
-      let sellToken = token;
+      const sellToken = token;
 
       const zapOutApprovalState = await this.yearn.services.zapper.zapOutApprovalState(account, sellToken);
       if (!zapOutApprovalState.isApproved) {

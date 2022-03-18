@@ -30,7 +30,9 @@ export const DEFAULT_ACCOUNT_EARNINGS_RESPONSE: AccountEarningsResponse = {
   }
 };
 
-export const createMockAccountEarningsResponse = (overwrites: Partial<AccountEarningsResponse> = {}) => ({
+export const createMockAccountEarningsResponse = (
+  overwrites: Partial<AccountEarningsResponse> = {}
+): AccountEarningsResponse => ({
   ...DEFAULT_ACCOUNT_EARNINGS_RESPONSE,
   ...overwrites
 });

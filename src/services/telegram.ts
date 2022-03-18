@@ -1,7 +1,7 @@
 import { Service } from "../common";
 
 export class TelegramService extends Service {
-  sendMessage(text: string) {
+  sendMessage(text: string): void | undefined {
     if (!this.ctx.simulation.telegramChatId || !this.ctx.simulation.telegramBotId) {
       return;
     }

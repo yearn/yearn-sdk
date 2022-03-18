@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { PartialDeep } from "type-fest";
 
 import { CachedFetcher } from "./cache";
@@ -5,7 +6,7 @@ import { Context } from "./context";
 
 const contextCacheSpy = jest.spyOn(Context.prototype, "cache", "get");
 const currentValueSpy = jest.spyOn(CachedFetcher.prototype as any, "currentValue", "get");
-const consoleWarnSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
+const consoleWarnSpy = jest.spyOn(console, "warn").mockImplementation();
 const fetchWithTimeoutSpy: jest.SpyInstance<Promise<PartialDeep<Response>>> = jest.spyOn(
   CachedFetcher.prototype as any,
   "fetchWithTimeout"
@@ -66,7 +67,7 @@ describe("CachedFetcher", () => {
         const responseMock: PartialDeep<Response> = {
           status: 200,
           headers: {
-            get: _ => null
+            get: (_): null => null
           },
           json: () =>
             Promise.resolve({

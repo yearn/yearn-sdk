@@ -6,13 +6,13 @@ import { ContractAddressId } from "../common";
 import { structArray } from "../struct";
 import { Address, GenericAsset, Position } from "../types";
 import { IronBankAdapter } from "./adapters/ironbank";
-import { IRegistryAdapter, RegistryV2Adapter } from "./adapters/registry";
+import { RegistryAdapter, RegistryV2Adapter } from "./adapters/registry";
 
 export const LensAbi = ["function getRegistries() external view returns (address[] memory)"];
 
 export type Adapters<T extends ChainId> = {
   vaults: {
-    v1: IRegistryAdapter;
+    v1: RegistryAdapter;
     v2: RegistryV2Adapter<T>;
   };
   ironBank: IronBankAdapter<T>;

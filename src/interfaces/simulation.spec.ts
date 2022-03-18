@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Contract } from "@ethersproject/contracts";
 import { JsonRpcSigner } from "@ethersproject/providers";
 
@@ -48,7 +49,7 @@ jest.mock("../vault", () => ({
 
 const SignerMock = JsonRpcSigner as jest.Mocked<typeof JsonRpcSigner>;
 
-const buildSignerMock = (balance = 1, transactionCount = 1) => {
+const buildSignerMock = (balance = 1, transactionCount = 1): any => {
   const getBalanceMock = jest.fn().mockImplementation(() => Promise.resolve(balance));
 
   const getTransactionCountMock = jest.fn().mockImplementation(() => Promise.resolve(transactionCount));
@@ -56,7 +57,7 @@ const buildSignerMock = (balance = 1, transactionCount = 1) => {
   const signer = new SignerMock("0x00", "provider" as any) as any;
   signer.getBalance = getBalanceMock;
   signer.getTransactionCount = getTransactionCountMock;
-  signer.getSigner = () => signer;
+  signer.getSigner = (): any => signer;
   return signer;
 };
 
