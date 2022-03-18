@@ -7,6 +7,7 @@ import { SimulationInterface } from "./interfaces/simulation";
 import { StrategyInterface } from "./interfaces/strategy";
 import { TokenInterface } from "./interfaces/token";
 import { VaultInterface } from "./interfaces/vault";
+import { AddressProvider } from "./services/addressProvider";
 import { AllowListService } from "./services/allowlist";
 import { AssetService } from "./services/assets";
 import { HelperService } from "./services/helper";
@@ -19,13 +20,29 @@ import { TelegramService } from "./services/telegram";
 import { TransactionService } from "./services/transaction";
 import { VisionService } from "./services/vision";
 import { ZapperService } from "./services/zapper";
-import { AssetServiceState } from "./types/custom/assets";
+import { AssetServiceState } from "./types";
+
+type ServicesType<T extends ChainId> = {
+  lens: LensService<T>;
+  oracle: OracleService<T>;
+  zapper: ZapperService;
+  asset: AssetService;
+  vision: VisionService;
+  subgraph: SubgraphService;
+  telegram: TelegramService;
+  meta: MetaService;
+  allowList?: AllowListService<T>;
+  transaction: TransactionService<T>;
+  pickle: PickleService;
+  helper: HelperService<T>;
+};
 
 /**
  * [[Yearn]] is a wrapper for all the services and interfaces of the SDK.
  *
- * Yearn namespace can be instantiated as a class, providing configuration
- * options that will then be used by all the services and interfaces:
+ * Yearn namespace can be instantiated as a class or with an asynchronous
+ * initializer, providing configuration options that will then be used by all
+ * the services and interfaces:
  *
  * ```typescript
  * import { Yearn } from "@yfi/sdk";
@@ -35,23 +52,9 @@ import { AssetServiceState } from "./types/custom/assets";
  * ```
  */
 export class Yearn<T extends ChainId> {
-  services: {
-    lens: LensService<T>;
-    oracle: OracleService<T>;
-    zapper: ZapperService;
-    asset: AssetService;
-    vision: VisionService;
-    subgraph: SubgraphService;
-    telegram: TelegramService;
-    meta: MetaService;
-    allowList?: AllowListService<T>;
-    transaction: TransactionService<T>;
+  _ctxValue: ContextValue;
 
-    pickle: PickleService;
-
-    helper: HelperService<T>;
-  };
-
+  services: ServicesType<T>;
   vaults: VaultInterface<T>;
   tokens: TokenInterface<T>;
   earnings: EarningsInterface<T>;
@@ -72,6 +75,7 @@ export class Yearn<T extends ChainId> {
    * ```
    */
   ready: Promise<void[]>;
+  private addressProvider: AddressProvider<T>;
 
   /**
    * Create a new SDK instance.
@@ -80,27 +84,19 @@ export class Yearn<T extends ChainId> {
    * @param assetServiceState the asset service does some expensive computation at initialization, passing the state from a previous sdk instance can prevent this
    */
   constructor(chainId: T, context: ContextValue, assetServiceState?: AssetServiceState) {
+    this._ctxValue = context;
     this.context = new Context(context);
 
-    const allowlistAddress = AllowListService.addressByChain(chainId);
-    const allowListService = allowlistAddress
-      ? new AllowListService(chainId, this.context, allowlistAddress)
-      : undefined;
+    this.addressProvider = new AddressProvider(chainId, this.context);
+    const allowListService = new AllowListService(chainId, this.context, this.addressProvider);
 
-    this.services = {
-      lens: new LensService(chainId, this.context),
-      oracle: new OracleService(chainId, this.context),
-      zapper: new ZapperService(chainId, this.context),
-      asset: new AssetService(chainId, this.context, assetServiceState),
-      vision: new VisionService(chainId, this.context),
-      subgraph: new SubgraphService(chainId, this.context),
-      pickle: new PickleService(chainId, this.context),
-      helper: new HelperService(chainId, this.context),
-      telegram: new TelegramService(chainId, this.context),
-      meta: new MetaService(chainId, this.context),
-      allowList: allowListService,
-      transaction: new TransactionService(chainId, this.context, allowListService)
-    };
+    this.services = this._initServices(
+      chainId,
+      this.context,
+      this.addressProvider,
+      allowListService,
+      assetServiceState
+    );
 
     this.vaults = new VaultInterface(this, chainId, this.context);
     this.tokens = new TokenInterface(this, chainId, this.context);
@@ -114,25 +110,10 @@ export class Yearn<T extends ChainId> {
   }
 
   setChainId(chainId: ChainId) {
-    const allowlistAddress = AllowListService.addressByChain(chainId);
-    const allowListService = allowlistAddress
-      ? new AllowListService(chainId, this.context, allowlistAddress)
-      : undefined;
+    this.addressProvider = new AddressProvider(chainId, this.context);
+    const allowListService = new AllowListService(chainId, this.context, this.addressProvider);
 
-    this.services = {
-      lens: new LensService(chainId, this.context),
-      oracle: new OracleService(chainId, this.context),
-      zapper: new ZapperService(chainId, this.context),
-      asset: new AssetService(chainId, this.context),
-      vision: new VisionService(chainId, this.context),
-      subgraph: new SubgraphService(chainId, this.context),
-      pickle: new PickleService(chainId, this.context),
-      helper: new HelperService(chainId, this.context),
-      telegram: new TelegramService(chainId, this.context),
-      meta: new MetaService(chainId, this.context),
-      allowList: allowListService,
-      transaction: new TransactionService(chainId, this.context, allowListService)
-    };
+    this.services = this._initServices(chainId, this.context, this.addressProvider, allowListService);
 
     this.vaults = new VaultInterface(this, chainId, this.context);
     this.tokens = new TokenInterface(this, chainId, this.context);
@@ -143,5 +124,28 @@ export class Yearn<T extends ChainId> {
     this.strategies = new StrategyInterface(this, chainId, this.context);
 
     this.ready = Promise.all([this.services.asset.ready]);
+  }
+
+  _initServices<T extends ChainId>(
+    chainId: ChainId,
+    ctx: Context,
+    addressProvider: AddressProvider<T>,
+    allowlistService?: AllowListService<T>,
+    assetServiceState?: AssetServiceState
+  ) {
+    return {
+      lens: new LensService(chainId, ctx, addressProvider),
+      oracle: new OracleService(chainId, ctx, addressProvider),
+      zapper: new ZapperService(chainId, ctx),
+      asset: new AssetService(chainId, ctx, assetServiceState),
+      vision: new VisionService(chainId, ctx),
+      subgraph: new SubgraphService(chainId, ctx),
+      pickle: new PickleService(chainId, ctx),
+      helper: new HelperService(chainId, ctx, addressProvider),
+      telegram: new TelegramService(chainId, ctx),
+      meta: new MetaService(chainId, ctx),
+      allowList: allowlistService,
+      transaction: new TransactionService(chainId, ctx, allowlistService)
+    };
   }
 }

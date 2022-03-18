@@ -1,46 +1,29 @@
 import { BytesLike } from "@ethersproject/bytes";
 
 import { ChainId } from "../chain";
-import { ContractService } from "../common";
-import { Context } from "../context";
-import { Address } from "../types/common";
+import { ContractAddressId, ContractService, WrappedContract } from "../common";
+import { Address } from "../types";
 
 /**
  * [[AllowListService]] is used to interface with yearn's deployed AllowList contract. The purpose of it is to be able to
  * validate that all interactions that are about to be written to the blockchain follow the set of rules that the AllowList defines on chain.
  * It should be used to validate any transaction before it is written. For example, it can be used to check that an approval transaction that the sdk makes
  * is approving a token that is an underlying asset of a vault, and also that the first parameter in the approval transaction is the address of a valid yearn vault.
- * Similiarly, for a deposit transaction, it can be used to check whether the vault is a valid yearn vault
+ * Similarly, for a deposit transaction, it can be used to check whether the vault is a valid yearn vault
  */
 export class AllowListService<T extends ChainId> extends ContractService<T> {
   static abi = [
     "function validateCalldataByOrigin(string memory originName, address targetAddress, bytes calldata data) public view returns (bool)"
   ];
+  static contractId = ContractAddressId.allowlist;
 
   /**
    * This is used by the AllowListFactory to resolve which set of rules are applicable to which organization
    */
   private static originName = "yearn.finance";
 
-  /**
-   * Get most up-to-date address of the Allow List Factory contract for a particular chain id
-   * @param chainId
-   * @returns address
-   */
-  static addressByChain(chainId: ChainId): string | null {
-    switch (chainId) {
-      case 250:
-        return "0xD2322468e5Aa331381200754f6daAD3dF923539e";
-      case 1:
-      case 1337:
-      case 42161:
-      default:
-        return null;
-    }
-  }
-
-  constructor(chainId: T, ctx: Context, address: string) {
-    super(address, chainId, ctx);
+  get contract(): Promise<WrappedContract> {
+    return this._getContract(AllowListService.abi, AllowListService.contractId, this.ctx);
   }
 
   /**
@@ -59,13 +42,20 @@ export class AllowListService<T extends ChainId> extends ContractService<T> {
       return { success: false, error: "can't validate a tx that has no call data" };
     }
 
-    try {
-      const valid = await this.contract.read.validateCalldataByOrigin(
-        AllowListService.originName,
-        targetAddress,
-        callData
-      );
+    let contract;
 
+    try {
+      contract = await this.contract;
+      if (!contract) throw new Error("Contract missing");
+    } catch (e) {
+      // temporary workaround after deprecating the `disableAllowlist` param
+      // if allowlist has no onchain contract address, we skip validation altogether
+      console.warn("AllowList on-chain contract address missing. Skipping validation...");
+      return { success: true };
+    }
+
+    try {
+      const valid = await contract.read.validateCalldataByOrigin(AllowListService.originName, targetAddress, callData);
       if (!valid) {
         return { success: false, error: "tx is not permitted by the allow list" };
       }

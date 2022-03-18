@@ -1,9 +1,12 @@
-import { ChainId, Context } from "..";
+import { Context } from "..";
+import { AddressProvider } from "./addressProvider";
 import { AllowListService } from "./allowlist";
+
+let validateCalldataByOriginMock = jest.fn();
 
 jest.mock("@ethersproject/contracts", () => ({
   Contract: jest.fn().mockImplementation(() => ({
-    read: jest.fn()
+    validateCalldataByOrigin: validateCalldataByOriginMock
   }))
 }));
 
@@ -16,76 +19,53 @@ jest.mock("../context", () => ({
   }))
 }));
 
-describe("AllowListService", () => {
-  describe("addressByChain", () => {
-    describe("when chainId is 250", () => {
-      it("should return the address", () => {
-        const actualAddressByChain = AllowListService.addressByChain(250);
-
-        expect(actualAddressByChain).toEqual("0xD2322468e5Aa331381200754f6daAD3dF923539e");
-      });
-    });
-
-    ([1, 1337, 42161] as ChainId[]).forEach(chainId =>
-      describe(`when chainId is ${chainId}`, () => {
-        it("should return null", async () => {
-          const actualAddressByChain = AllowListService.addressByChain(chainId);
-
-          expect(actualAddressByChain).toBeNull();
-        });
-      })
-    );
-  });
-});
-
 describe("validateCalldata", () => {
   let allowListService: AllowListService<1>;
+  let addressProvider = new AddressProvider(1, new Context({}));
 
   beforeEach(() => {
-    allowListService = new AllowListService(1, new Context({}), "0x");
+    allowListService = new AllowListService(1, new Context({}), addressProvider);
   });
 
   afterEach(() => {
     jest.clearAllMocks();
   });
 
-  describe("addressByChain", () => {
+  describe("validateCalldata", () => {
     it("should return `false` with an error message when there is no target address", async () => {
-      const actualAddressByChain = await allowListService.validateCalldata(undefined, "callData");
+      const actual = await allowListService.validateCalldata(undefined, "callData");
 
-      expect(actualAddressByChain).toEqual({
+      expect(actual).toEqual({
         error: "can't validate a tx that isn't targeting an address",
         success: false
       });
     });
 
     it("should return `false` with an error message when there is no callData", async () => {
-      const actualAddressByChain = await allowListService.validateCalldata("0x00", undefined);
+      const actual = await allowListService.validateCalldata("0x00", undefined);
 
-      expect(actualAddressByChain).toEqual({ success: false, error: "can't validate a tx that has no call data" });
+      expect(actual).toEqual({ success: false, error: "can't validate a tx that has no call data" });
     });
 
     describe("when it reads from the contract", () => {
-      let validateCalldataByOriginMock = jest.fn();
-
       beforeEach(() => {
-        (allowListService.contract.read.validateCalldataByOrigin as any) = validateCalldataByOriginMock;
+        jest.spyOn(AddressProvider.prototype, "addressById").mockImplementation(() => Promise.resolve("0x00"));
       });
 
       it("should return `false` with an error message when calldata by origin is not valid", async () => {
         validateCalldataByOriginMock.mockResolvedValue(false);
 
-        const actualAddressByChain = await allowListService.validateCalldata("0x00", "callData");
+        const actual = await allowListService.validateCalldata("0x00", "callData");
 
-        expect(actualAddressByChain).toEqual({ success: false, error: "tx is not permitted by the allow list" });
+        expect(actual).toEqual({ success: false, error: "tx is not permitted by the allow list" });
       });
 
       it("should return `true` without an error message when calldata by origin is valid", async () => {
         validateCalldataByOriginMock.mockResolvedValue(true);
 
-        const actualAddressByChain = await allowListService.validateCalldata("0x00", "callData");
+        const actual = await allowListService.validateCalldata("0x00", "callData");
 
-        expect(actualAddressByChain).toEqual({ success: true, error: undefined });
+        expect(actual).toEqual({ success: true, error: undefined });
       });
 
       it("should return `false` with an error when try/catch throws", async () => {
@@ -93,12 +73,32 @@ describe("validateCalldata", () => {
           throw new Error();
         });
 
-        const actualAddressByChain = await allowListService.validateCalldata("0x00", "callData");
+        const actual = await allowListService.validateCalldata("0x00", "callData");
 
-        expect(actualAddressByChain).toEqual({
+        expect(actual).toEqual({
           success: false,
           error: "failed to read from the allow list whether the transaction is valid"
         });
+      });
+    });
+
+    describe("when it doesn't read from the contract", () => {
+      beforeEach(async () => {
+        jest.spyOn(AddressProvider.prototype, "addressById").mockImplementation(() => Promise.reject());
+      });
+
+      it("should return `true` skipping validation", async () => {
+        const consoleWarnSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
+        const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+        const actual = await allowListService.validateCalldata("0x00", "callData");
+
+        expect(actual).toEqual({ success: true, error: undefined });
+        expect(consoleErrorSpy).toHaveBeenCalledWith(
+          "Contract address for ALLOW_LIST_REGISTRY is missing from Address Provider"
+        );
+        expect(consoleWarnSpy).toHaveBeenCalledWith(
+          "AllowList on-chain contract address missing. Skipping validation..."
+        );
       });
     });
   });
