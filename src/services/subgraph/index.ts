@@ -4,31 +4,41 @@ import { Context } from "../../context";
 import { SdkError } from "../../types";
 
 export class SubgraphService extends Service {
-  yearnSubgraphEndpoint: string;
+  yearnSubgraphEndpoint?: string;
 
   constructor(chainId: ChainId, ctx: Context) {
     super(chainId, ctx);
 
-    let subgraphName: string;
     switch (chainId) {
       case 1:
       case 1337:
-        subgraphName = "salazarguille/yearn-vaults-v2-subgraph-mainnet";
+        try {
+          const subgraphConfig = ctx.subgraph;
+          this.yearnSubgraphEndpoint = `https://gateway.thegraph.com/api/${subgraphConfig.subgraphKey}/subgraphs/id/${subgraphConfig.mainnetSubgraphId}`;
+        } catch {
+          console.warn(
+            "no key has been provided for the mainnet subgraph - some data might be missing e.g. for earnings"
+          );
+        }
         break;
       case 250:
-        subgraphName = "yearn/yearn-vaults-v2-fantom";
+        this.yearnSubgraphEndpoint = "https://api.thegraph.com/subgraphs/name/yearn/yearn-vaults-v2-fantom";
         break;
       case 42161:
-        subgraphName = "yearn/yearn-vaults-v2-arbitrum";
+        this.yearnSubgraphEndpoint = "https://api.thegraph.com/subgraphs/name/yearn/yearn-vaults-v2-arbitrum";
         break;
       default:
         throw new SdkError(`No subgraph name for chain ${chainId}`);
     }
-
-    this.yearnSubgraphEndpoint = `https://api.thegraph.com/subgraphs/name/${subgraphName}`;
   }
 
   async fetchQuery<T>(query: string, variables: { [key: string]: any } = {}): Promise<T> {
+    if (!this.yearnSubgraphEndpoint) {
+      throw new SdkError(
+        "the subgraph service has not been configured to be able to make queries, configure it in the `Context` object"
+      );
+    }
+
     // the subgraph only works with lowercased addresses
     Object.keys(variables).forEach(key => {
       const variable = variables[key];

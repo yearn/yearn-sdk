@@ -45,6 +45,11 @@ export interface CacheConfiguration {
   url?: string;
 }
 
+export interface SubgraphConfiguration {
+  subgraphKey: string;
+  mainnetSubgraphId: string;
+}
+
 /**
  * Context options that are used to access all the data sources queried by the
  * SDK.
@@ -56,6 +61,7 @@ export interface ContextValue {
   addresses?: PartialDeep<AddressesOverride>;
   simulation?: SimulationConfiguration;
   cache?: CacheConfiguration;
+  subgraph?: SubgraphConfiguration;
 }
 
 const DefaultContext: ContextValue = {
@@ -136,5 +142,10 @@ export class Context implements Required<ContextValue> {
   get cache(): CacheConfiguration {
     if (this.ctx.cache) return this.ctx.cache;
     throw new SdkError("cache must be defined in Context for this feature to work.");
+  }
+
+  get subgraph(): SubgraphConfiguration {
+    if (this.ctx.subgraph) return this.ctx.subgraph;
+    throw new SdkError("subgraph configuration must be defined in Context for this feature to work.");
   }
 }
