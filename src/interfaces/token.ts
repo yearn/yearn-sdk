@@ -180,7 +180,7 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
    */
   async allowance(address: Address, vaultToken: Address, token: Address, account: Address): Promise<TokenAllowance> {
     // If Ether is being sent, no need for approval
-    let allowance: TokenAllowance = {
+    const allowance: TokenAllowance = {
       owner: account,
       spender: address,
       amount: MaxUint256.toString(),

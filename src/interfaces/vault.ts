@@ -333,10 +333,15 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
         const shouldUsePartner = this.shouldUsePartnerService(vault);
         const vaultContract = new Contract(vault, VaultAbi, signer);
 
-        const makeTransaction = async (overrides: CallOverrides) => {
+        const makeTransaction = async (overrides: CallOverrides): Promise<TransactionResponse> => {
           const tx = shouldUsePartner
-            ? await this.yearn.services.partner!.populateDepositTransaction(vault, amount, overrides)
+            ? await this.yearn.services.partner?.populateDepositTransaction(vault, amount, overrides)
             : await vaultContract.populateTransaction.deposit(amount, overrides);
+
+          if (!tx) {
+            throw new SdkError("deposit transaction failed");
+          }
+
           return this.yearn.services.transaction.sendTransaction(tx);
         };
 

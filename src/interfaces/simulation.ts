@@ -230,8 +230,12 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     options: SimulationOptions
   ): Promise<TransactionOutcome> {
     const encodedInputData = await (this.shouldUsePartnerService(toVault)
-      ? this.yearn.services.partner!.encodeDeposit(toVault, amount)
+      ? this.yearn.services.partner?.encodeDeposit(toVault, amount)
       : vaultContract.encodeDeposit(amount));
+
+    if (!encodedInputData) {
+      throw new Error("directDeposit#encodeDeposit failed");
+    }
 
     const partnerAddress = await this.yearn.services.partner?.address;
     const addressToDeposit = (this.shouldUsePartnerService(toVault) && partnerAddress) || toVault;

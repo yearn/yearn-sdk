@@ -20,7 +20,7 @@ const zapOutApprovalTransactionMock = jest.fn(() => Promise.resolve({ from: "0x0
 const getNormalizedValueUsdcMock = jest.fn(() => Promise.resolve("10"));
 const zapInMock = jest.fn(() => Promise.resolve(true));
 const zapOutMock = jest.fn(() => Promise.resolve(true));
-const partnerEncodeDepositMock = jest.fn().mockReturnValue("");
+const partnerEncodeDepositMock = jest.fn().mockReturnValue("encodedInputData");
 const partnerIsAllowedMock = jest.fn().mockReturnValue(true);
 
 jest.mock("../services/partner", () => ({
@@ -37,13 +37,13 @@ jest.mock("../vault", () => ({
     token: tokenMock,
     decimals: decimalsMock,
     pricePerShare: pricePerShareMock,
-    encodeDeposit: jest.fn().mockReturnValue(Promise.resolve(""))
+    encodeDeposit: jest.fn().mockReturnValue(Promise.resolve("encodeDeposit"))
   })),
   YearnVaultContract: jest.fn().mockImplementation(() => ({
     token: tokenMock,
     decimals: decimalsMock,
     pricePerShare: pricePerShareMock,
-    encodeDeposit: jest.fn().mockReturnValue("")
+    encodeDeposit: jest.fn().mockReturnValue("encodeDeposit")
   }))
 }));
 
@@ -259,7 +259,7 @@ describe("Simulation interface", () => {
         expect(executeSimulationWithReSimulationOnFailureSpy).toHaveBeenCalledTimes(1);
         expect(partnerEncodeDepositMock).toHaveBeenCalledTimes(0);
         expect(simulateVaultInteractionSpy).toHaveBeenCalledTimes(1);
-        expect(simulateVaultInteractionSpy).toHaveBeenCalledWith("0x000", "0x0000", "", "0x0000", {
+        expect(simulateVaultInteractionSpy).toHaveBeenCalledWith("0x000", "0x0000", "encodeDeposit", "0x0000", {
           forkId: undefined,
           root: undefined,
           save: undefined,
@@ -280,7 +280,7 @@ describe("Simulation interface", () => {
         expect(executeSimulationWithReSimulationOnFailureSpy).toHaveBeenCalledTimes(1);
         expect(partnerEncodeDepositMock).toHaveBeenCalledTimes(1);
         expect(simulateVaultInteractionSpy).toHaveBeenCalledTimes(1);
-        expect(simulateVaultInteractionSpy).toHaveBeenCalledWith("0x000", "0x00001", "", "0x0000", {
+        expect(simulateVaultInteractionSpy).toHaveBeenCalledWith("0x000", "0x00001", "encodedInputData", "0x0000", {
           forkId: undefined,
           root: undefined,
           save: undefined,
