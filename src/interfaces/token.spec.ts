@@ -155,6 +155,11 @@ describe("TokenInterface", () => {
       name: "vaultToken",
       dataSource: "vaults"
     });
+    const vaultTokenNoBalance = createMockToken({
+      address: "0x000",
+      name: "vaultToken without balance",
+      dataSource: "vaults"
+    });
     const ironBankToken = createMockToken({
       address: "0x002",
       name: "ironBankToken",
@@ -169,6 +174,13 @@ describe("TokenInterface", () => {
       address: "0x001",
       token: createMockToken({
         name: "vaultTokenWithBalance"
+      })
+    });
+    const vaultTokenWithoutBalance = createMockBalance({
+      address: "0x000",
+      balance: "0",
+      token: createMockToken({
+        name: "vaultTokenWithoutBalance"
       })
     });
     const ironBankTokenWithBalance = createMockBalance({
@@ -188,11 +200,13 @@ describe("TokenInterface", () => {
       describe(`when chainId is ${chainId}`, () => {
         beforeEach(() => {
           tokenInterface = new TokenInterface(mockedYearn, chainId, new Context({}));
-          tokenInterface.supported = jest.fn().mockResolvedValue([vaultToken, ironBankToken, zapperToken]);
+          tokenInterface.supported = jest
+            .fn()
+            .mockResolvedValue([vaultToken, vaultTokenNoBalance, ironBankToken, zapperToken]);
         });
 
         it("should return balances for all supported tokens", async () => {
-          vaultsBalancesMock.mockResolvedValue([vaultTokenWithBalance]);
+          vaultsBalancesMock.mockResolvedValue([vaultTokenWithBalance, vaultTokenWithoutBalance]);
           ironBankBalancesMock.mockResolvedValue([ironBankTokenWithBalance]);
           zapperBalancesMock.mockResolvedValue([zapperTokenWithBalance]);
 
@@ -208,7 +222,7 @@ describe("TokenInterface", () => {
         });
 
         it("should filter supported tokens when address list is given", async () => {
-          vaultsBalancesMock.mockResolvedValue([vaultTokenWithBalance]);
+          vaultsBalancesMock.mockResolvedValue([vaultTokenWithBalance, vaultTokenWithoutBalance]);
           ironBankBalancesMock.mockResolvedValue([ironBankTokenWithBalance]);
           zapperBalancesMock.mockResolvedValue([zapperTokenWithBalance]);
 
@@ -225,7 +239,7 @@ describe("TokenInterface", () => {
           zapperBalancesMock.mockImplementation(() => {
             throw new Error("zapper balances failed!");
           });
-          vaultsBalancesMock.mockResolvedValue([vaultTokenWithBalance]);
+          vaultsBalancesMock.mockResolvedValue([vaultTokenWithBalance, vaultTokenWithoutBalance]);
           ironBankBalancesMock.mockResolvedValue([ironBankTokenWithBalance]);
 
           const actualBalances = await tokenInterface.balances("0xAccount", [vaultToken.address]);
@@ -242,11 +256,11 @@ describe("TokenInterface", () => {
       describe(`when chainId is ${chainId}`, () => {
         beforeEach(() => {
           tokenInterface = new TokenInterface(mockedYearn, chainId, new Context({}));
-          tokenInterface.supported = jest.fn().mockResolvedValue([vaultToken, ironBankToken]);
+          tokenInterface.supported = jest.fn().mockResolvedValue([vaultToken, vaultTokenNoBalance, ironBankToken]);
         });
 
         it("should return balances for all supported tokens", async () => {
-          vaultsBalancesMock.mockResolvedValue([vaultTokenWithBalance]);
+          vaultsBalancesMock.mockResolvedValue([vaultTokenWithBalance, vaultTokenWithoutBalance]);
           ironBankBalancesMock.mockResolvedValue([ironBankTokenWithBalance]);
 
           const actualBalances = await tokenInterface.balances("0xAccount");
@@ -259,7 +273,7 @@ describe("TokenInterface", () => {
         });
 
         it("should filter supported tokens when address list is given", async () => {
-          vaultsBalancesMock.mockResolvedValue([vaultTokenWithBalance]);
+          vaultsBalancesMock.mockResolvedValue([vaultTokenWithBalance, vaultTokenWithoutBalance]);
           ironBankBalancesMock.mockResolvedValue([ironBankTokenWithBalance]);
 
           const actualBalances = await tokenInterface.balances("0xAccount", [vaultToken.address]);
@@ -277,7 +291,7 @@ describe("TokenInterface", () => {
       beforeEach(() => {
         tokenInterface = new TokenInterface(mockedYearn, 42 as ChainId, new Context({}));
         zapperBalancesMock.mockResolvedValue([zapperTokenWithBalance]);
-        vaultsBalancesMock.mockResolvedValue([vaultTokenWithBalance]);
+        vaultsBalancesMock.mockResolvedValue([vaultTokenWithBalance, vaultTokenWithoutBalance]);
         ironBankBalancesMock.mockResolvedValue([ironBankTokenWithBalance]);
       });
 
