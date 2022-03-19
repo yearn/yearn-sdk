@@ -8,7 +8,19 @@ import { ChainId } from "../chain";
 import { ServiceInterface } from "../common";
 import { EthAddress } from "../helpers";
 import { PickleJars } from "../services/partners/pickle";
-import { Address, Integer, TokenAllowance, TokenMetadata, TypedMap, Usdc, Vault, ZapProtocol } from "../types";
+import {
+  Address,
+  Integer,
+  SourceAddresses,
+  SourceBalances,
+  TokenAllowance,
+  TokenDataSource,
+  TokenMetadata,
+  TypedMap,
+  Usdc,
+  Vault,
+  ZapProtocol
+} from "../types";
 import { Balance, Icon, IconMap, Token } from "../types";
 
 const TokenAbi = [
@@ -59,33 +71,50 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
   }
 
   /**
-   * Fetch token balance for a particular address.
-   * @param address
+   * Fetch token balance for a particular account and token addresses.
+   *
+   * @param account user wallet address
+   * @param tokenAddresses list of token addresses
+   *
+   * @returns list of balances for the supported tokens
    */
-  async balances(address: Address): Promise<Balance[]> {
-    let zapperBalances: Balance[] = [];
+  async balances(account: Address, tokenAddresses?: Address[]): Promise<Balance[]> {
+    const allSupportedTokens = await this.supported();
+
+    const supportedTokens: Token[] = tokenAddresses
+      ? allSupportedTokens.filter(({ address }) => tokenAddresses.includes(address))
+      : allSupportedTokens;
+
+    const supportedAddresses: SourceAddresses = {
+      zapper: this.getAddressSetBySource({ tokens: supportedTokens, source: "zapper" }),
+      vaults: this.getAddressSetBySource({ tokens: supportedTokens, source: "vaults" }),
+      ironBank: this.getAddressSetBySource({ tokens: supportedTokens, source: "ironbank" })
+    };
+
+    const accountBalances: SourceBalances = {
+      zapper: [],
+      vaults: [],
+      ironBank: []
+    };
 
     if ([1, 1337].includes(this.chainId)) {
       try {
-        zapperBalances = await this.yearn.services.zapper.balances(address);
+        const zapperBalances = await this.yearn.services.zapper.balances(account);
+        accountBalances.zapper = zapperBalances.filter(({ address }) => supportedAddresses.zapper.has(address));
       } catch (error) {
         console.error(error);
       }
     }
 
     if ([1, 1337, 250, 42161].includes(this.chainId)) {
-      const vaultBalances = await this.yearn.vaults.balances(address);
-      const nonZeroVaultBalances = vaultBalances.filter(token => token.balance !== "0");
+      const vaultBalances = await this.yearn.vaults.balances(account);
+      const nonZeroVaultBalances = vaultBalances.filter(({ balance }) => balance !== "0");
+      accountBalances.vaults = nonZeroVaultBalances.filter(({ address }) => supportedAddresses.vaults.has(address));
 
-      let ironBankBalances = await this.yearn.ironBank.balances(address);
+      let ironBankBalances = await this.yearn.ironBank.balances(account);
+      accountBalances.ironBank = ironBankBalances.filter(({ address }) => supportedAddresses.ironBank.has(address));
 
-      const combinedVaultsAndIronBankBalances = this.mergeAddressables(nonZeroVaultBalances, ironBankBalances);
-
-      if (!zapperBalances.length) {
-        return combinedVaultsAndIronBankBalances;
-      }
-
-      return this.mergeAddressables(combinedVaultsAndIronBankBalances, zapperBalances);
+      return [...accountBalances.vaults, ...accountBalances.ironBank, ...accountBalances.zapper];
     }
 
     console.error(`the chain ${this.chainId} hasn't been implemented yet`);
@@ -352,5 +381,12 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
     const filter = new Set(a.map(({ address }) => address));
 
     return [...a, ...b.filter(({ address }) => !filter.has(address))];
+  }
+
+  private getAddressSetBySource({ tokens, source }: { tokens: Token[]; source: TokenDataSource }): Set<Address> {
+    const bySource = ({ dataSource }: Token) => dataSource === source;
+    const toAddress = ({ address }: Token) => address;
+
+    return new Set(tokens.filter(bySource).map(toAddress));
   }
 }
