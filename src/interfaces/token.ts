@@ -109,7 +109,7 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
     if ([1, 1337, 250, 42161].includes(this.chainId)) {
       const vaultBalances = await this.yearn.vaults.balances(account);
       balances.vaults = vaultBalances.filter(
-        ({ address, balance }) => addresses.vaults.has(address) && balance !== "0"
+        ({ address, balance }) => balance !== "0" && addresses.vaults.has(address)
       );
 
       let ironBankBalances = await this.yearn.ironBank.balances(account);
