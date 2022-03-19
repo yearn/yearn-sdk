@@ -16,7 +16,7 @@ export const LensAbi = ["function getRegistries() external view returns (address
  * It's implemented in the form of a contract that lives on all networks
  * supported by yearn.
  *
- * @deprecated since 1.2.2. Adapters accessed via [[LensService]] should
+ * @deprecated since v1.2.2. Adapters accessed via [[LensService]] should
  * now be accessed directly from the Yearn SDK object.
  */
 export class LensService<T extends ChainId> extends ContractService<T> {
@@ -25,6 +25,7 @@ export class LensService<T extends ChainId> extends ContractService<T> {
   static contractId = ContractAddressId.unused;
 
   get adapters(): Adapters<T> {
+    console.warn("Using method in deprecated service. Please use the adapters object in the Yearn SDK object instead.");
     return {
       vaults: {
         v2: new RegistryV2Adapter(this.chainId, this.ctx, this.addressProvider)
