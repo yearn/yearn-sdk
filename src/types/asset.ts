@@ -93,4 +93,4 @@ export type Asset<T extends TypeId> = AssetStatic<T> & AssetDynamic<T> & { typeI
  */
 export type GenericAsset = Asset<"VAULT_V1"> | Asset<"VAULT_V2"> | Asset<"IRON_BANK_MARKET">;
 
-export type TokenDataSource = "vaults" | "ironbank" | "zapper" | "labs";
+export type TokenDataSource = "vaults" | "ironBank" | "zapper" | "labs";

@@ -163,7 +163,7 @@ describe("TokenInterface", () => {
     const ironBankToken = createMockToken({
       address: "0x002",
       name: "ironBankToken",
-      dataSource: "ironbank"
+      dataSource: "ironBank"
     });
     const zapperToken = createMockToken({
       address: "0x003",

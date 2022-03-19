@@ -162,7 +162,7 @@ export class IronBankInterface<T extends ChainId> extends ServiceInterface<T> {
     const erc20ToToken: (erc20Token: ERC20) => Promise<Token> = async (erc20Token: ERC20) => ({
       ...erc20Token,
       icon: icons[erc20Token.address],
-      dataSource: "ironbank" as TokenDataSource,
+      dataSource: "ironBank" as TokenDataSource,
       supported: {
         ironBank: true
       },

@@ -14,7 +14,6 @@ import {
   SourceAddresses,
   SourceBalances,
   TokenAllowance,
-  TokenDataSource,
   TokenMetadata,
   TypedMap,
   Usdc,
@@ -85,11 +84,18 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
       tokens = tokens.filter(({ address }) => tokenAddresses.includes(address));
     }
 
-    const addresses: SourceAddresses = {
-      zapper: this.getAddressesBySource({ tokens, source: "zapper" }),
-      vaults: this.getAddressesBySource({ tokens, source: "vaults" }),
-      ironBank: this.getAddressesBySource({ tokens, source: "ironbank" })
-    };
+    const addresses: SourceAddresses = tokens.reduce(
+      (acc, { address, dataSource }) => {
+        acc[dataSource].add(address);
+        return acc;
+      },
+      {
+        zapper: new Set<Address>(),
+        vaults: new Set<Address>(),
+        ironBank: new Set<Address>(),
+        labs: new Set<Address>()
+      }
+    );
 
     const balances: SourceBalances = {
       zapper: [],
@@ -382,12 +388,5 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
     const filter = new Set(a.map(({ address }) => address));
 
     return [...a, ...b.filter(({ address }) => !filter.has(address))];
-  }
-
-  private getAddressesBySource({ tokens, source }: { tokens: Token[]; source: TokenDataSource }): Set<Address> {
-    const bySource = ({ dataSource }: Token) => dataSource === source;
-    const toAddress = ({ address }: Token) => address;
-
-    return new Set(tokens.filter(bySource).map(toAddress));
   }
 }
