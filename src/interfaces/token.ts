@@ -112,7 +112,7 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
         ({ address, balance }) => balance !== "0" && addresses.vaults.has(address)
       );
 
-      let ironBankBalances = await this.yearn.ironBank.balances(account);
+      const ironBankBalances = await this.yearn.ironBank.balances(account);
       balances.ironBank = ironBankBalances.filter(({ address }) => addresses.ironBank.has(address));
 
       return [...balances.vaults, ...balances.ironBank, ...balances.zapper];
