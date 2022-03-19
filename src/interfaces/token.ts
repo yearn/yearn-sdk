@@ -79,19 +79,19 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
    * @returns list of balances for the supported tokens
    */
   async balances(account: Address, tokenAddresses?: Address[]): Promise<Balance[]> {
-    const allSupportedTokens = await this.supported();
+    let tokens = await this.supported();
 
-    const supportedTokens: Token[] = tokenAddresses
-      ? allSupportedTokens.filter(({ address }) => tokenAddresses.includes(address))
-      : allSupportedTokens;
+    if (tokenAddresses) {
+      tokens = tokens.filter(({ address }) => tokenAddresses.includes(address));
+    }
 
-    const supportedAddresses: SourceAddresses = {
-      zapper: this.getAddressSetBySource({ tokens: supportedTokens, source: "zapper" }),
-      vaults: this.getAddressSetBySource({ tokens: supportedTokens, source: "vaults" }),
-      ironBank: this.getAddressSetBySource({ tokens: supportedTokens, source: "ironbank" })
+    const addresses: SourceAddresses = {
+      zapper: this.getAddressesBySource({ tokens, source: "zapper" }),
+      vaults: this.getAddressesBySource({ tokens, source: "vaults" }),
+      ironBank: this.getAddressesBySource({ tokens, source: "ironbank" })
     };
 
-    const accountBalances: SourceBalances = {
+    const balances: SourceBalances = {
       zapper: [],
       vaults: [],
       ironBank: []
@@ -100,7 +100,7 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
     if ([1, 1337].includes(this.chainId)) {
       try {
         const zapperBalances = await this.yearn.services.zapper.balances(account);
-        accountBalances.zapper = zapperBalances.filter(({ address }) => supportedAddresses.zapper.has(address));
+        balances.zapper = zapperBalances.filter(({ address }) => addresses.zapper.has(address));
       } catch (error) {
         console.error(error);
       }
@@ -108,13 +108,14 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
 
     if ([1, 1337, 250, 42161].includes(this.chainId)) {
       const vaultBalances = await this.yearn.vaults.balances(account);
-      const nonZeroVaultBalances = vaultBalances.filter(({ balance }) => balance !== "0");
-      accountBalances.vaults = nonZeroVaultBalances.filter(({ address }) => supportedAddresses.vaults.has(address));
+      balances.vaults = vaultBalances.filter(
+        ({ address, balance }) => addresses.vaults.has(address) && balance !== "0"
+      );
 
       let ironBankBalances = await this.yearn.ironBank.balances(account);
-      accountBalances.ironBank = ironBankBalances.filter(({ address }) => supportedAddresses.ironBank.has(address));
+      balances.ironBank = ironBankBalances.filter(({ address }) => addresses.ironBank.has(address));
 
-      return [...accountBalances.vaults, ...accountBalances.ironBank, ...accountBalances.zapper];
+      return [...balances.vaults, ...balances.ironBank, ...balances.zapper];
     }
 
     console.error(`the chain ${this.chainId} hasn't been implemented yet`);
@@ -383,7 +384,7 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
     return [...a, ...b.filter(({ address }) => !filter.has(address))];
   }
 
-  private getAddressSetBySource({ tokens, source }: { tokens: Token[]; source: TokenDataSource }): Set<Address> {
+  private getAddressesBySource({ tokens, source }: { tokens: Token[]; source: TokenDataSource }): Set<Address> {
     const bySource = ({ dataSource }: Token) => dataSource === source;
     const toAddress = ({ address }: Token) => address;
 
