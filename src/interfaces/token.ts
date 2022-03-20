@@ -35,7 +35,7 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
    * @param overrides
    * @returns Usdc exchange rate (6 decimals)
    */
-  async priceUsdc<T extends Address>(token: T, overrides?: CallOverrides): Promise<Usdc>;
+  async priceUsdc<T extends Address>(token: T, overrides?: CallOverrides): Promise<Usdc | null>;
 
   /**
    * Get the suggested Usdc exchange rate for list of tokens.
@@ -43,7 +43,7 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
    * @param overrides
    * @returns Usdc exchange rate map (6 decimals)
    */
-  async priceUsdc<T extends Address>(tokens: T[], overrides?: CallOverrides): Promise<TypedMap<T, Usdc>>;
+  async priceUsdc<T extends Address>(tokens: T[], overrides?: CallOverrides): Promise<TypedMap<T, Usdc> | null>;
 
   async priceUsdc<T extends Address>(
     tokens: T | T[],
