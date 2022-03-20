@@ -144,6 +144,16 @@ describe("TokenInterface", () => {
       expect(getPriceUsdcMock).toHaveBeenNthCalledWith(1, "0x000", undefined);
       expect(getPriceUsdcMock).toHaveBeenNthCalledWith(2, "0x001", undefined);
     });
+
+    it("should return `null` and log an error when network is not supported", async () => {
+      tokenInterface = new TokenInterface(mockedYearn, 42 as ChainId, new Context({}));
+
+      const actualPriceUsdc = await tokenInterface.priceUsdc(["0x000", "0x001"]);
+
+      expect(actualPriceUsdc).toEqual(null);
+      expect(getPriceUsdcMock).not.toHaveBeenCalled();
+      expect(console.error).toHaveBeenCalledWith("the chain 42 hasn't been implemented yet");
+    });
   });
 
   describe("balances", () => {

@@ -4,7 +4,7 @@ import { TransactionRequest, TransactionResponse } from "@ethersproject/provider
 import BigNumber from "bignumber.js";
 
 import { CachedFetcher } from "../cache";
-import { ChainId } from "../chain";
+import { ChainId, Chains } from "../chain";
 import { ServiceInterface } from "../common";
 import { EthAddress } from "../helpers";
 import { PickleJars } from "../services/partners/pickle";
@@ -45,7 +45,15 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
    */
   async priceUsdc<T extends Address>(tokens: T[], overrides?: CallOverrides): Promise<TypedMap<T, Usdc>>;
 
-  async priceUsdc<T extends Address>(tokens: T | T[], overrides?: CallOverrides): Promise<TypedMap<T, Usdc> | Usdc> {
+  async priceUsdc<T extends Address>(
+    tokens: T | T[],
+    overrides?: CallOverrides
+  ): Promise<TypedMap<T, Usdc> | Usdc | null> {
+    if (!Chains[this.chainId]) {
+      console.error(`the chain ${this.chainId} hasn't been implemented yet`);
+      return null;
+    }
+
     if (Array.isArray(tokens)) {
       const entries = await Promise.all(
         tokens.map(async token => {
