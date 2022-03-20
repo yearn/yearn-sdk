@@ -37,3 +37,21 @@ export function chunkArray<T>(array: T[], size: number) {
   }
   return result;
 }
+
+// converts timestamps from second and microsecond format to milliseconds
+export function anyTimestampToMillis(timestamp: string | number): number {
+  const testSeconds = /^\d{10}$/;
+  const testMillis = /^\d{13}$/;
+  const testMicros = /^\d{16}$/;
+
+  const input = typeof timestamp === "string" ? timestamp : timestamp.toString();
+  if (testMillis.test(input)) {
+    return +timestamp;
+  } else if (testMicros.test(input)) {
+    return +timestamp / 1000;
+  } else if (testSeconds.test(input)) {
+    return +timestamp * 1000;
+  } else {
+    throw new Error("Timestamp in invalid format");
+  }
+}
