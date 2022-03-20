@@ -100,7 +100,8 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
     const balances: SourceBalances = {
       zapper: [],
       vaults: [],
-      ironBank: []
+      ironBank: [],
+      labs: []
     };
 
     if ([1, 1337].includes(this.chainId)) {
