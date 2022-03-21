@@ -8,7 +8,17 @@ import { ChainId, Chains } from "../chain";
 import { ServiceInterface } from "../common";
 import { EthAddress } from "../helpers";
 import { PickleJars } from "../services/partners/pickle";
-import { Address, Integer, TokenAllowance, TokenMetadata, TypedMap, Usdc, Vault, ZapProtocol } from "../types";
+import {
+  Address,
+  Integer,
+  SdkError,
+  TokenAllowance,
+  TokenMetadata,
+  TypedMap,
+  Usdc,
+  Vault,
+  ZapProtocol
+} from "../types";
 import { Balance, Icon, IconMap, Token } from "../types";
 
 const TokenAbi = [
@@ -35,7 +45,7 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
    * @param overrides
    * @returns Usdc exchange rate (6 decimals)
    */
-  async priceUsdc<T extends Address>(token: T, overrides?: CallOverrides): Promise<Usdc | null>;
+  async priceUsdc<T extends Address>(token: T, overrides?: CallOverrides): Promise<Usdc>;
 
   /**
    * Get the suggested Usdc exchange rate for list of tokens.
@@ -43,15 +53,11 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
    * @param overrides
    * @returns Usdc exchange rate map (6 decimals)
    */
-  async priceUsdc<T extends Address>(tokens: T[], overrides?: CallOverrides): Promise<TypedMap<T, Usdc> | null>;
+  async priceUsdc<T extends Address>(tokens: T[], overrides?: CallOverrides): Promise<TypedMap<T, Usdc>>;
 
-  async priceUsdc<T extends Address>(
-    tokens: T | T[],
-    overrides?: CallOverrides
-  ): Promise<TypedMap<T, Usdc> | Usdc | null> {
+  async priceUsdc<T extends Address>(tokens: T | T[], overrides?: CallOverrides): Promise<TypedMap<T, Usdc> | Usdc> {
     if (!Chains[this.chainId]) {
-      console.error(`the chain ${this.chainId} hasn't been implemented yet`);
-      return null;
+      throw new SdkError(`the chain ${this.chainId} hasn't been implemented yet`);
     }
 
     if (Array.isArray(tokens)) {

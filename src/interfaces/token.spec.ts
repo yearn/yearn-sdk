@@ -1,7 +1,7 @@
 import { MaxUint256 } from "@ethersproject/constants";
 import { Contract } from "@ethersproject/contracts";
 
-import { Address, Asset, ChainId, Token, TokenInterface, TokenMetadata } from "..";
+import { Address, Asset, ChainId, SdkError, Token, TokenInterface, TokenMetadata } from "..";
 import { CachedFetcher } from "../cache";
 import { Context } from "../context";
 import { EthAddress } from "../helpers";
@@ -145,14 +145,15 @@ describe("TokenInterface", () => {
       expect(getPriceUsdcMock).toHaveBeenNthCalledWith(2, "0x001", undefined);
     });
 
-    it("should return `null` and log an error when network is not supported", async () => {
+    it("should throw when network is not supported", async () => {
       tokenInterface = new TokenInterface(mockedYearn, 42 as ChainId, new Context({}));
 
-      const actualPriceUsdc = await tokenInterface.priceUsdc(["0x000", "0x001"]);
-
-      expect(actualPriceUsdc).toEqual(null);
-      expect(getPriceUsdcMock).not.toHaveBeenCalled();
-      expect(console.error).toHaveBeenCalledWith("the chain 42 hasn't been implemented yet");
+      try {
+        await tokenInterface.priceUsdc(["0x000", "0x001"]);
+      } catch (error) {
+        expect(error).toStrictEqual(new SdkError("the chain 42 hasn't been implemented yet"));
+        expect(getPriceUsdcMock).not.toHaveBeenCalled();
+      }
     });
   });
 
