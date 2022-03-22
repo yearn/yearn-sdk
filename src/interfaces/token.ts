@@ -4,11 +4,21 @@ import { TransactionRequest, TransactionResponse } from "@ethersproject/provider
 import BigNumber from "bignumber.js";
 
 import { CachedFetcher } from "../cache";
-import { ChainId } from "../chain";
+import { ChainId, Chains } from "../chain";
 import { ServiceInterface } from "../common";
 import { EthAddress } from "../helpers";
 import { PickleJars } from "../services/partners/pickle";
-import { Address, Integer, TokenAllowance, TokenMetadata, TypedMap, Usdc, Vault, ZapProtocol } from "../types";
+import {
+  Address,
+  Integer,
+  SdkError,
+  TokenAllowance,
+  TokenMetadata,
+  TypedMap,
+  Usdc,
+  Vault,
+  ZapProtocol
+} from "../types";
 import { Balance, Icon, IconMap, Token } from "../types";
 
 const TokenAbi = [
@@ -46,6 +56,10 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
   async priceUsdc<T extends Address>(tokens: T[], overrides?: CallOverrides): Promise<TypedMap<T, Usdc>>;
 
   async priceUsdc<T extends Address>(tokens: T | T[], overrides?: CallOverrides): Promise<TypedMap<T, Usdc> | Usdc> {
+    if (!Chains[this.chainId]) {
+      throw new SdkError(`the chain ${this.chainId} hasn't been implemented yet`);
+    }
+
     if (Array.isArray(tokens)) {
       const entries = await Promise.all(
         tokens.map(async token => {
