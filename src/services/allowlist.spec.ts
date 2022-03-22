@@ -94,7 +94,7 @@ describe("validateCalldata", () => {
 
         expect(actual).toEqual({ success: true, error: undefined });
         expect(consoleErrorSpy).toHaveBeenCalledWith(
-          "Contract address for ALLOW_LIST_REGISTRY is missing from Address Provider"
+          "Contract address for ALLOW_LIST_REGISTRY is missing from the Address Provider"
         );
         expect(consoleWarnSpy).toHaveBeenCalledWith(
           "AllowList on-chain contract address missing. Skipping validation..."
