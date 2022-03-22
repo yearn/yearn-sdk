@@ -85,9 +85,11 @@ export class ContractService<T extends ChainId, E = {}> extends Service<E> {
 
     try {
       const address = await this.addressProvider.addressById(contractId);
+      // TODO - check whether `address` is zero, if it is then throw an error.
+      // Needs to be handled appropriately wherever this function is used
       return new WrappedContract(address, abi, ctx);
     } catch (e) {
-      console.error(`Contract address for ${contractId} is missing from Address Provider`);
+      console.error(`Contract address for ${contractId} is missing from the Address Provider`);
       throw e;
     }
   }
