@@ -72,8 +72,7 @@ const DefaultContext: ContextValue = {
   zapper: "96e0cc51-a62e-42ca-acee-910ea7d2a241",
   // The default tenderly dashboard for Yearn
   simulation: { dashboardUrl: "https://dashboard.tenderly.co/yearn/yearn-web" },
-  cache: { useCache: true, url: "https://cache.yearn.finance" },
-  partnerId: ""
+  cache: { useCache: true, url: "https://cache.yearn.finance" }
 };
 
 /**
@@ -84,7 +83,7 @@ const DefaultContext: ContextValue = {
  * [[Context]] **should not** be instantiated by users, as it's managed by
  * {@link Yearn.context}.
  */
-export class Context implements Required<ContextValue> {
+export class Context implements ContextValue {
   static PROVIDER = "refresh:provider";
 
   private ctx: ContextValue;
@@ -152,8 +151,7 @@ export class Context implements Required<ContextValue> {
     throw new SdkError("subgraph configuration must be defined in Context for this feature to work.");
   }
 
-  get partnerId(): string {
-    if (typeof this.ctx.partnerId !== "undefined") return this.ctx.partnerId;
-    throw new SdkError("partnerId must be defined in Context for this feature to work.");
+  get partnerId(): string | undefined {
+    return this.ctx.partnerId;
   }
 }
