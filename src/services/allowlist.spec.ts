@@ -2,7 +2,7 @@ import { Context } from "..";
 import { AddressProvider } from "./addressProvider";
 import { AllowListService } from "./allowlist";
 
-let validateCalldataByOriginMock = jest.fn();
+const validateCalldataByOriginMock = jest.fn();
 
 jest.mock("@ethersproject/contracts", () => ({
   Contract: jest.fn().mockImplementation(() => ({
@@ -21,7 +21,7 @@ jest.mock("../context", () => ({
 
 describe("validateCalldata", () => {
   let allowListService: AllowListService<1>;
-  let addressProvider = new AddressProvider(1, new Context({}));
+  const addressProvider = new AddressProvider(1, new Context({}));
 
   beforeEach(() => {
     allowListService = new AllowListService(1, new Context({}), addressProvider);
@@ -88,8 +88,8 @@ describe("validateCalldata", () => {
       });
 
       it("should return `true` skipping validation", async () => {
-        const consoleWarnSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
-        const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+        const consoleWarnSpy = jest.spyOn(console, "warn").mockImplementation();
+        const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation();
         const actual = await allowListService.validateCalldata("0x00", "callData");
 
         expect(actual).toEqual({ success: true, error: undefined });

@@ -69,20 +69,21 @@ export class StrategyInterface<T extends ChainId> extends ServiceInterface<T> {
 
     const strategiesMetadata = await this.yearn.services.meta.strategies();
 
-    let vaultsStrategiesMetadataPromises: Promise<VaultStrategiesMetadata | undefined>[];
-    vaultsStrategiesMetadataPromises = vaultAddresses.map(async vaultAddress => {
-      const vaultDatum = vaultsData.find(datum => datum.address === vaultAddress);
-      if (!vaultDatum) {
-        return undefined;
+    const vaultsStrategiesMetadataPromises: Promise<VaultStrategiesMetadata | undefined>[] = vaultAddresses.map(
+      async vaultAddress => {
+        const vaultDatum = vaultsData.find(datum => datum.address === vaultAddress);
+        if (!vaultDatum) {
+          return undefined;
+        }
+        const vaultContract = new Contract(vaultDatum.address, VaultAbi, this.ctx.provider.read);
+        return this.fetchVaultStrategiesMetadata(
+          vaultDatum.strategies,
+          strategiesMetadata,
+          vaultContract,
+          vaultDatum.token.symbol
+        );
       }
-      const vaultContract = new Contract(vaultDatum.address, VaultAbi, this.ctx.provider.read);
-      return this.fetchVaultStrategiesMetadata(
-        vaultDatum.strategies,
-        strategiesMetadata,
-        vaultContract,
-        vaultDatum.token.symbol
-      );
-    });
+    );
 
     return Promise.all(vaultsStrategiesMetadataPromises).then(vaultsStrategyData => {
       return vaultsStrategyData.flatMap(data => (data ? [data] : []));
@@ -93,24 +94,25 @@ export class StrategyInterface<T extends ChainId> extends ServiceInterface<T> {
     const strategiesMetadata = await this.yearn.services.meta.strategies();
     const provider = this.ctx.provider.read;
 
-    let vaultsStrategiesMetadataPromises: Promise<VaultStrategiesMetadata | undefined>[];
-    vaultsStrategiesMetadataPromises = vaultAddresses.map(async vaultAddress => {
-      const vaultContract = new Contract(vaultAddress, VaultAbi, provider);
+    const vaultsStrategiesMetadataPromises: Promise<VaultStrategiesMetadata | undefined>[] = vaultAddresses.map(
+      async vaultAddress => {
+        const vaultContract = new Contract(vaultAddress, VaultAbi, provider);
 
-      const strategiesPromise = this.yearn.services.helper.assetStrategiesAddresses(vaultAddress).then(addresses =>
-        addresses.map(strat => {
-          return {
-            address: strat
-          };
-        })
-      );
+        const strategiesPromise = this.yearn.services.helper.assetStrategiesAddresses(vaultAddress).then(addresses =>
+          addresses.map(strat => {
+            return {
+              address: strat
+            };
+          })
+        );
 
-      const [strategies, underlyingTokenAddress] = await Promise.all([strategiesPromise, vaultContract.token()]);
-      const underlyingTokenContract = new Contract(underlyingTokenAddress, TokenAbi, provider);
-      const underlyingTokenSymbol = await underlyingTokenContract.symbol();
+        const [strategies, underlyingTokenAddress] = await Promise.all([strategiesPromise, vaultContract.token()]);
+        const underlyingTokenContract = new Contract(underlyingTokenAddress, TokenAbi, provider);
+        const underlyingTokenSymbol = await underlyingTokenContract.symbol();
 
-      return this.fetchVaultStrategiesMetadata(strategies, strategiesMetadata, vaultContract, underlyingTokenSymbol);
-    });
+        return this.fetchVaultStrategiesMetadata(strategies, strategiesMetadata, vaultContract, underlyingTokenSymbol);
+      }
+    );
 
     return Promise.all(vaultsStrategiesMetadataPromises).then(vaultsStrategyData =>
       vaultsStrategyData.flatMap(data => (data ? [data] : []))
@@ -127,7 +129,7 @@ export class StrategyInterface<T extends ChainId> extends ServiceInterface<T> {
       return undefined;
     }
 
-    let metadata: StrategyMetadata[] = await Promise.all(
+    const metadata: StrategyMetadata[] = await Promise.all(
       strategies.map(async strategy => {
         let debtRatio: BigNumber;
 

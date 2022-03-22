@@ -4,7 +4,7 @@ import { TransactionRequest, TransactionResponse } from "@ethersproject/provider
 import BigNumber from "bignumber.js";
 
 import { CachedFetcher } from "../cache";
-import { ChainId } from "../chain";
+import { ChainId, Chains } from "../chain";
 import { ServiceInterface } from "../common";
 import { EthAddress } from "../helpers";
 import { PickleJars } from "../services/partners/pickle";
@@ -13,6 +13,7 @@ import {
   Integer,
   SourceAddresses,
   SourceBalances,
+  SdkError,
   TokenAllowance,
   TokenMetadata,
   TypedMap,
@@ -57,6 +58,10 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
   async priceUsdc<T extends Address>(tokens: T[], overrides?: CallOverrides): Promise<TypedMap<T, Usdc>>;
 
   async priceUsdc<T extends Address>(tokens: T | T[], overrides?: CallOverrides): Promise<TypedMap<T, Usdc> | Usdc> {
+    if (!Chains[this.chainId]) {
+      throw new SdkError(`the chain ${this.chainId} hasn't been implemented yet`);
+    }
+
     if (Array.isArray(tokens)) {
       const entries = await Promise.all(
         tokens.map(async token => {
@@ -198,7 +203,7 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
       this.yearn.services.asset.icon(zapperTokensAddresses)
     );
 
-    const setIcon = (token: Token) => {
+    const setIcon = (token: Token): Token => {
       const icon = zapperTokensIcons[token.address];
       return icon ? { ...token, icon } : token;
     };
@@ -216,7 +221,7 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
    */
   async allowance(address: Address, vaultToken: Address, token: Address, account: Address): Promise<TokenAllowance> {
     // If Ether is being sent, no need for approval
-    let allowance: TokenAllowance = {
+    const allowance: TokenAllowance = {
       owner: account,
       spender: address,
       amount: MaxUint256.toString(),
@@ -264,7 +269,7 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
     token: Address,
     amount: Integer,
     account: Address
-  ): Promise<TransactionResponse | Boolean> {
+  ): Promise<TransactionResponse | boolean> {
     // If Ether is being sent, no need for approval
     if (EthAddress === token) return true;
 
@@ -312,13 +317,13 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
    * @param account
    * @returns transaction
    */
-  async approveZapOut(vault: Vault, token: Address, account: Address): Promise<TransactionResponse | Boolean> {
+  async approveZapOut(vault: Vault, token: Address, account: Address): Promise<TransactionResponse | boolean> {
     const signer = this.ctx.provider.write.getSigner(account);
     if (vault.token === token) {
       const gasPrice = await this.yearn.services.zapper.gas();
       const gasPriceFastGwei = new BigNumber(gasPrice.fast).times(new BigNumber(10 ** 9));
 
-      let sellToken = token;
+      const sellToken = token;
 
       const zapOutApprovalState = await this.yearn.services.zapper.zapOutApprovalState(account, sellToken);
       if (!zapOutApprovalState.isApproved) {

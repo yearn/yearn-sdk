@@ -10,7 +10,7 @@ const DEFAULT_TOKEN: Token = {
   supported: {}
 };
 
-export const createMockToken = (overwrites: Partial<Token> = {}) => ({
+export const createMockToken = (overwrites: Partial<Token> = {}): Token => ({
   ...DEFAULT_TOKEN,
   ...overwrites
 });

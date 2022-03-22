@@ -1,7 +1,7 @@
 import { MaxUint256 } from "@ethersproject/constants";
 import { Contract } from "@ethersproject/contracts";
 
-import { Address, Asset, ChainId, Token, TokenInterface, TokenMetadata } from "..";
+import { Address, Asset, ChainId, SdkError, Token, TokenInterface, TokenMetadata } from "..";
 import { CachedFetcher } from "../cache";
 import { Context } from "../context";
 import { EthAddress } from "../helpers";
@@ -103,7 +103,7 @@ describe("TokenInterface", () => {
   beforeEach(() => {
     mockedYearn = new (Yearn as jest.Mock<Yearn<ChainId>>)();
     tokenInterface = new TokenInterface(mockedYearn, 1, new Context({}));
-    jest.spyOn(console, "error").mockImplementation(() => {});
+    jest.spyOn(console, "error").mockImplementation();
   });
 
   afterEach(() => {
@@ -143,6 +143,17 @@ describe("TokenInterface", () => {
       expect(getPriceUsdcMock).toHaveBeenCalledTimes(2);
       expect(getPriceUsdcMock).toHaveBeenNthCalledWith(1, "0x000", undefined);
       expect(getPriceUsdcMock).toHaveBeenNthCalledWith(2, "0x001", undefined);
+    });
+
+    it("should throw when network is not supported", async () => {
+      tokenInterface = new TokenInterface(mockedYearn, 42 as ChainId, new Context({}));
+
+      try {
+        await tokenInterface.priceUsdc(["0x000", "0x001"]);
+      } catch (error) {
+        expect(error).toStrictEqual(new SdkError("the chain 42 hasn't been implemented yet"));
+        expect(getPriceUsdcMock).not.toHaveBeenCalled();
+      }
     });
   });
 
@@ -309,7 +320,7 @@ describe("TokenInterface", () => {
 
   describe("supported", () => {
     describe("when the supported tokens are cached", () => {
-      let cachedToken = createMockToken();
+      const cachedToken = createMockToken();
 
       beforeEach(() => {
         jest.spyOn(CachedFetcher.prototype, "fetch").mockResolvedValue([cachedToken]);

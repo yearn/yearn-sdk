@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { getAddress } from "@ethersproject/address";
 import BigNumber from "bignumber.js";
 
@@ -225,7 +226,7 @@ describe("EarningsInterface", () => {
 
   describe("assetsHistoricEarnings", () => {
     const assetHistoricEarnings = createMockAssetHistoricEarnings();
-    let assetHistoricEarningsCacheFetchMock: jest.Mock<Promise<AssetHistoricEarnings[] | undefined>> = jest.fn();
+    const assetHistoricEarningsCacheFetchMock: jest.Mock<Promise<AssetHistoricEarnings[] | undefined>> = jest.fn();
 
     beforeEach(() => {
       (earningsInterface as any).assetHistoricEarningsCache.fetch = assetHistoricEarningsCacheFetchMock;
@@ -245,7 +246,7 @@ describe("EarningsInterface", () => {
     });
 
     describe("when there is no cached data", () => {
-      let assetHistoricEarningsMock: jest.Mock<Promise<AssetHistoricEarnings>> = jest.fn();
+      const assetHistoricEarningsMock: jest.Mock<Promise<AssetHistoricEarnings>> = jest.fn();
       const assetsStatic = [createMockAssetStaticVaultV2()];
       const assetHistoricEarnings = createMockAssetHistoricEarnings();
 
@@ -269,7 +270,9 @@ describe("EarningsInterface", () => {
     });
   });
 
-  describe("assetHistoricEarnings", () => {});
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
+  describe.skip("assetHistoricEarnings", () => {});
 
-  describe("accountHistoricEarnings", () => {});
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
+  describe.skip("accountHistoricEarnings", () => {});
 });
