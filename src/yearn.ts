@@ -7,6 +7,8 @@ import { SimulationInterface } from "./interfaces/simulation";
 import { StrategyInterface } from "./interfaces/strategy";
 import { TokenInterface } from "./interfaces/token";
 import { VaultInterface } from "./interfaces/vault";
+import { IronBankAdapter } from "./services/adapters/ironbank";
+import { IRegistryAdapter, RegistryV2Adapter } from "./services/adapters/registry";
 import { AddressProvider } from "./services/addressProvider";
 import { AllowListService } from "./services/allowlist";
 import { AssetService } from "./services/assets";
@@ -22,6 +24,14 @@ import { TransactionService } from "./services/transaction";
 import { VisionService } from "./services/vision";
 import { ZapperService } from "./services/zapper";
 import { AssetServiceState } from "./types";
+
+export type Adapters<T extends ChainId> = {
+  vaults: {
+    v1: IRegistryAdapter;
+    v2: RegistryV2Adapter<T>;
+  };
+  ironBank: IronBankAdapter<T>;
+};
 
 type ServicesType<T extends ChainId> = {
   lens: LensService<T>;
@@ -57,6 +67,7 @@ export class Yearn<T extends ChainId> {
   _ctxValue: ContextValue;
 
   services: ServicesType<T>;
+  adapters: Adapters<T>;
   vaults: VaultInterface<T>;
   tokens: TokenInterface<T>;
   earnings: EarningsInterface<T>;
@@ -100,6 +111,8 @@ export class Yearn<T extends ChainId> {
       assetServiceState
     );
 
+    this.adapters = this._initAdapters(chainId);
+
     this.vaults = new VaultInterface(this, chainId, this.context);
     this.tokens = new TokenInterface(this, chainId, this.context);
     this.earnings = new EarningsInterface(this, chainId, this.context);
@@ -116,6 +129,7 @@ export class Yearn<T extends ChainId> {
     const allowListService = new AllowListService(chainId, this.context, this.addressProvider);
 
     this.services = this._initServices(chainId, this.context, this.addressProvider, allowListService);
+    this.adapters = this._initAdapters(chainId);
 
     this.vaults = new VaultInterface(this, chainId, this.context);
     this.tokens = new TokenInterface(this, chainId, this.context);
@@ -150,5 +164,14 @@ export class Yearn<T extends ChainId> {
       transaction: new TransactionService(chainId, ctx, allowlistService),
       partner: ctx.partnerId ? new PartnerService(chainId, ctx, addressProvider, ctx.partnerId) : undefined
     };
+  }
+
+  _initAdapters<T extends ChainId>(chainId: ChainId) {
+    return {
+      vaults: {
+        v2: new RegistryV2Adapter(chainId, this.context, this.addressProvider)
+      },
+      ironBank: new IronBankAdapter(chainId, this.context, this.addressProvider)
+    } as Adapters<T>;
   }
 }
