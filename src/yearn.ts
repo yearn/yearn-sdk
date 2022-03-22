@@ -148,7 +148,7 @@ export class Yearn<T extends ChainId> {
       meta: new MetaService(chainId, ctx),
       allowList: allowlistService,
       transaction: new TransactionService(chainId, ctx, allowlistService),
-      partner: new PartnerService(chainId, ctx, addressProvider)
+      partner: ctx.partnerId ? new PartnerService(chainId, ctx, addressProvider, ctx.partnerId) : undefined
     };
   }
 }

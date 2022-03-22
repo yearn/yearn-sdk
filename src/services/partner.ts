@@ -31,9 +31,9 @@ export class PartnerService<T extends ChainId> extends ContractService<T> {
     })();
   }
 
-  constructor(chainId: T, ctx: Context, addressProvider: AddressProvider<T>) {
+  constructor(chainId: T, ctx: Context, addressProvider: AddressProvider<T>, partnerId: string) {
     super(chainId, ctx, addressProvider);
-    this.partnerId = ctx.partnerId;
+    this.partnerId = partnerId;
   }
 
   isAllowed(vault: string) {
