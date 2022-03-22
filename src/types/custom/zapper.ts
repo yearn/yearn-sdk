@@ -20,7 +20,7 @@ export interface ZapApprovalStateOutput {
   ownerAddress: Address;
   allowance: Integer;
   amount: Integer;
-  isApproved: Boolean;
+  isApproved: boolean;
 }
 
 export interface ZapApprovalTransactionOutput {

@@ -34,7 +34,7 @@ export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
    * @deprecated
    * Not able to be accurately calculated by the subgraph, this functionality will be removed in a future version
    */
-  async protocolEarnings(): Promise<String> {
+  async protocolEarnings(): Promise<string> {
     const response = await this.yearn.services.subgraph.fetchQuery<ProtocolEarningsResponse>(PROTOCOL_EARNINGS);
 
     let result = BigZero;
@@ -172,7 +172,7 @@ export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
     this.chainId
   );
 
-  async assetsHistoricEarnings(fromDaysAgo: number = 30): Promise<AssetHistoricEarnings[]> {
+  async assetsHistoricEarnings(fromDaysAgo = 30): Promise<AssetHistoricEarnings[]> {
     if (fromDaysAgo === 30) {
       const cached = await this.assetHistoricEarningsCache.fetch();
       if (cached) {
@@ -189,7 +189,7 @@ export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
       assetAddresses.map(async address => this.assetHistoricEarnings(address, fromDaysAgo, latestBlockNumber))
     );
 
-    let result = [];
+    const result = [];
 
     for (const resolvedPromise of resolvedPromises) {
       if (resolvedPromise.status === "fulfilled") {
@@ -225,6 +225,7 @@ export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
       .reverse()
       .map(day => blockNumber - day * this.blocksPerDay());
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const response = await this.yearn.services.subgraph.fetchQuery<any>(ASSET_HISTORIC_EARNINGS(blocks), {
       id: vault
     });
@@ -312,7 +313,7 @@ export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
       balanceShares: BigNumber;
     }
 
-    let snapshotTimeline: AccountSnapshot[] = [];
+    const snapshotTimeline: AccountSnapshot[] = [];
 
     const updates = vaultPositions
       .flatMap(vaultPosition => vaultPosition.updates)
@@ -374,9 +375,9 @@ export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
           const balanceTokens = snapshot.balanceShares
             .multipliedBy(new BigNumber(vaultDayDatum.pricePerShare))
             .dividedBy(new BigNumber(10 ** token.decimals));
-          let positives = balanceTokens.plus(snapshot.withdrawals).plus(snapshot.tokensSent);
-          let negatives = snapshot.deposits.plus(snapshot.tokensReceived);
-          let earnings = positives.minus(negatives);
+          const positives = balanceTokens.plus(snapshot.withdrawals).plus(snapshot.tokensSent);
+          const negatives = snapshot.deposits.plus(snapshot.tokensReceived);
+          const earnings = positives.minus(negatives);
 
           const amountUsdc = usdcPrice.multipliedBy(earnings).dividedBy(new BigNumber(10).pow(token.decimals));
 
@@ -412,8 +413,8 @@ export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
     return new BigNumber(tokenUsdcPrice).multipliedBy(tokenAmount).div(10 ** decimals);
   }
 
-  private getDate(daysAgo: number) {
-    let date = new Date();
+  private getDate(daysAgo: number): Date {
+    const date = new Date();
     date.setDate(date.getDate() - daysAgo);
     return date;
   }

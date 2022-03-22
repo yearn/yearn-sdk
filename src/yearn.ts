@@ -124,7 +124,7 @@ export class Yearn<T extends ChainId> {
     this.ready = Promise.all([this.services.asset.ready]);
   }
 
-  setChainId(chainId: ChainId) {
+  setChainId(chainId: ChainId): void {
     this.addressProvider = new AddressProvider(chainId, this.context);
     const allowListService = new AllowListService(chainId, this.context, this.addressProvider);
 
@@ -148,7 +148,7 @@ export class Yearn<T extends ChainId> {
     addressProvider: AddressProvider<T>,
     allowlistService?: AllowListService<T>,
     assetServiceState?: AssetServiceState
-  ) {
+  ): ServicesType<T> {
     return {
       lens: new LensService(chainId, ctx, addressProvider),
       oracle: new OracleService(chainId, ctx, addressProvider),
@@ -162,7 +162,7 @@ export class Yearn<T extends ChainId> {
       meta: new MetaService(chainId, ctx),
       allowList: allowlistService,
       transaction: new TransactionService(chainId, ctx, allowlistService),
-      partner: new PartnerService(chainId, ctx, addressProvider)
+      partner: ctx.partnerId ? new PartnerService(chainId, ctx, addressProvider, ctx.partnerId) : undefined
     };
   }
 

@@ -42,7 +42,7 @@ export interface Apy {
 
 export type ApyMap<T extends Address> = TypedMap<T, Apy | undefined>;
 
-export interface DepositOptions extends ZapOptions {}
+export type DepositOptions = ZapOptions;
 export interface WithdrawOptions extends ZapOptions {
   signature?: string;
 }

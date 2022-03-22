@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { CallOverrides } from "@ethersproject/contracts";
 
 import { AdapterAbi } from "../../abi";
@@ -7,7 +8,7 @@ import { ZeroAddress } from "../../helpers";
 import { structArray } from "../../struct";
 import { Address, Position, VaultDynamic, VaultStatic } from "../../types";
 
-export interface IRegistryAdapter {
+export interface RegistryAdapter {
   assetsStatic(addresses?: Address[], overrides?: CallOverrides): Promise<VaultStatic[]>;
   assetsDynamic(addresses?: Address[], overrides?: CallOverrides): Promise<VaultDynamic[]>;
   positionsOf(address: Address, addresses?: Address[], overrides?: CallOverrides): Promise<Position[]>;
@@ -22,7 +23,7 @@ const VaultV2MetadataAbi = `tuple(
   bool emergencyShutdown
 )`;
 
-export class RegistryV2Adapter<T extends ChainId> extends ContractService<T> implements IRegistryAdapter {
+export class RegistryV2Adapter<T extends ChainId> extends ContractService<T> implements RegistryAdapter {
   static abi = AdapterAbi(VaultV2MetadataAbi);
   static contractId = ContractAddressId.adapter_registry_v2;
 

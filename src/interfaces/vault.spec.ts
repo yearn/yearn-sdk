@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { BigNumber } from "@ethersproject/bignumber";
 import { Contract } from "@ethersproject/contracts";
 
@@ -783,6 +784,10 @@ describe("VaultInterface", () => {
             it("should deposit into a yearn vault through the partner service", async () => {
               mockedYearn = new (Yearn as jest.Mock<Yearn<ChainId>>)();
               mockedYearn.services.partner = new ((PartnerService as unknown) as jest.Mock<PartnerService<ChainId>>)();
+              mockedYearn.services.partner.populateDepositTransaction = jest.fn().mockResolvedValue({
+                vault: "0xVault",
+                amount: "1"
+              });
               vaultInterface = new VaultInterface(mockedYearn, 1, new Context({}));
               const assetStaticVaultV2 = createMockAssetStaticVaultV2({ token: "0xToken" });
               vaultInterface.getStatic = jest.fn().mockResolvedValue([assetStaticVaultV2]);
@@ -794,8 +799,12 @@ describe("VaultInterface", () => {
 
               await vaultInterface.deposit(vault, token, amount, account);
 
-              expect(partnerPopulateDepositTransactionMock).toHaveBeenCalledTimes(1);
-              expect(partnerPopulateDepositTransactionMock).toHaveBeenCalledWith("0xVault", "1", undefined);
+              expect(mockedYearn.services.partner.populateDepositTransaction).toHaveBeenCalledTimes(1);
+              expect(mockedYearn.services.partner.populateDepositTransaction).toHaveBeenCalledWith(
+                "0xVault",
+                "1",
+                undefined
+              );
             });
           });
         });

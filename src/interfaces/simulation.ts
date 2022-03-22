@@ -39,7 +39,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
   ): Promise<TransactionOutcome> {
     const signer = this.ctx.provider.write.getSigner(from);
     const zapProtocol = PickleJars.includes(toVault) ? ZapProtocol.PICKLE : ZapProtocol.YEARN;
-    let vaultContract =
+    const vaultContract =
       zapProtocol === ZapProtocol.PICKLE
         ? new PickleJarContract(toVault, signer)
         : new YearnVaultContract(toVault, signer);
@@ -85,7 +85,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
         : undefined;
       options.root = approvalTransactionId;
 
-      simulateDeposit = (save: boolean) => {
+      simulateDeposit = (save: boolean): Promise<TransactionOutcome> => {
         options.save = save;
         return this.zapIn(
           from,
@@ -110,7 +110,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
         : undefined;
       options.root = approvalTransactionId;
 
-      simulateDeposit = (save: boolean) => {
+      simulateDeposit = (save: boolean): Promise<TransactionOutcome> => {
         options.save = save;
         return this.directDeposit(from, sellToken, amount, toVault, vaultContract, options);
       };
@@ -165,12 +165,12 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
 
       options.root = approvalSimulationId;
 
-      simulateWithdrawal = (save: boolean) => {
+      simulateWithdrawal = (save: boolean): Promise<TransactionOutcome> => {
         options.save = save;
         return this.zapOut(from, toToken, underlyingToken, amount, fromVault, needsApproving, options);
       };
     } else {
-      simulateWithdrawal = (save: boolean) => {
+      simulateWithdrawal = (save: boolean): Promise<TransactionOutcome> => {
         options.save = save;
         return this.directWithdraw(from, toToken, amount, fromVault, vaultContract, options);
       };
@@ -230,8 +230,12 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     options: SimulationOptions
   ): Promise<TransactionOutcome> {
     const encodedInputData = await (this.shouldUsePartnerService(toVault)
-      ? this.yearn.services.partner!.encodeDeposit(toVault, amount)
+      ? this.yearn.services.partner?.encodeDeposit(toVault, amount)
       : vaultContract.encodeDeposit(amount));
+
+    if (!encodedInputData) {
+      throw new Error("directDeposit#encodeDeposit failed");
+    }
 
     const partnerAddress = await this.yearn.services.partner?.address;
     const addressToDeposit = (this.shouldUsePartnerService(toVault) && partnerAddress) || toVault;
@@ -404,7 +408,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
         throw new PriceFetchingError("error fetching price", PriceFetchingError.FETCHING_PRICE_ORACLE);
       });
 
-    let result: TransactionOutcome = {
+    const result: TransactionOutcome = {
       sourceTokenAddress: fromVault,
       sourceTokenAmount: amount,
       targetTokenAddress: toToken,
@@ -443,9 +447,9 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
       options.gasLimit = zapOutParams.gas;
     }
 
-    const tokensReceived = await (async () => {
+    const tokensReceived = await (async (): Promise<string> => {
       if (zapToken === ZeroAddress) {
-        let response: SimulationResponse = await this.simulationExecutor.makeSimulationRequest(
+        const response: SimulationResponse = await this.simulationExecutor.makeSimulationRequest(
           from,
           zapOutParams.to,
           zapOutParams.data,
@@ -477,7 +481,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
 
     const conversionRate = new BigNumber(zapOutAmountUsdc).div(new BigNumber(soldAssetAmountUsdc)).toNumber();
 
-    let result: TransactionOutcome = {
+    const result: TransactionOutcome = {
       sourceTokenAddress: fromVault,
       sourceTokenAmount: amount,
       targetTokenAddress: toToken,

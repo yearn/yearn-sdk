@@ -8,7 +8,7 @@ const DEFAULT_ZAPPER_TOKEN: ZapperToken = {
   hide: undefined
 };
 
-export const createMockZapperToken = (overwrites: Partial<ZapperToken> = {}) => ({
+export const createMockZapperToken = (overwrites: Partial<ZapperToken> = {}): ZapperToken => ({
   ...DEFAULT_ZAPPER_TOKEN,
   ...overwrites
 });

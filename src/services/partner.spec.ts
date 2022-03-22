@@ -29,13 +29,17 @@ jest.mock("./addressProvider", () => ({
 
 describe("PartnerService", () => {
   let partner: PartnerService<1>;
+  let partnerId: string;
+  let context: Context;
   let mockedAddressProvider: AddressProvider<ChainId>;
   let encodeFunctionDataMock: jest.Mock;
   let depositMock: jest.Mock;
 
   beforeEach(() => {
     mockedAddressProvider = new ((AddressProvider as unknown) as jest.Mock<AddressProvider<ChainId>>)();
-    partner = new PartnerService(1, new Context({}), mockedAddressProvider);
+    partnerId = "partnerid";
+    context = new Context({ partnerId: partnerId });
+    partner = new PartnerService(1, context, mockedAddressProvider, partnerId);
     encodeFunctionDataMock = jest.fn();
     depositMock = jest.fn();
     Object.defineProperty(partner, "_getContract", {

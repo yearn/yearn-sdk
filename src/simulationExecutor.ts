@@ -65,7 +65,7 @@ export class SimulationExecutor {
     input: string,
     options: SimulationOptions = {},
     value: Integer = "0"
-  ): Promise<any> {
+  ): Promise<SimulationResponse> {
     return await this.makeSimulationRequest(from, to, input, options, value);
   }
 
@@ -90,9 +90,9 @@ export class SimulationExecutor {
     options: SimulationOptions,
     value: Integer = "0"
   ): Promise<Integer> {
-    let response: SimulationResponse = await this.makeSimulationRequest(from, to, data, options, value);
+    const response: SimulationResponse = await this.makeSimulationRequest(from, to, data, options, value);
 
-    const getAddressFromTopic = (topic: string) => {
+    const getAddressFromTopic = (topic: string): Address => {
       return getAddress(topic.slice(-40)); // the last 20 bytes of the topic is the address
     };
 
@@ -206,7 +206,9 @@ export class SimulationExecutor {
       // re-simulate the transaction with `save` set to true so the failure can be analyzed later
       try {
         simulate(true);
-      } catch {}
+      } catch (error) {
+        console.error(error);
+      }
 
       throw error;
     }
@@ -313,7 +315,7 @@ export class SimulationExecutor {
    * @param forkId the fork to be deleted
    * @returns the deletion response
    */
-  private async deleteFork(forkId: string) {
+  private async deleteFork(forkId: string): Promise<Response> {
     return await fetch(`${baseUrl}/fork/${forkId}`, { method: "DELETE" });
   }
 
@@ -323,7 +325,7 @@ export class SimulationExecutor {
    * @param simulationId the id of the simulation so the simulation failure can be inspected in the dashboard
    * @param forkId the optional id of the fork so the simulation failure can be inspected in the dashboard
    */
-  private sendErrorMessage(errorMessage: string, simulationId: string, forkId?: string) {
+  private sendErrorMessage(errorMessage: string, simulationId: string, forkId?: string): void {
     let transactionUrl: string | undefined;
     if (this.ctx.simulation.dashboardUrl) {
       transactionUrl = `${this.ctx.simulation.dashboardUrl}/${

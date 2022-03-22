@@ -30,7 +30,7 @@ export const PROTOCOL_EARNINGS = `query ProtocolEarnings {
   }
 `;
 
-export const buildAccountEarningsVariables = (id: string) => ({
+export const buildAccountEarningsVariables = (id: string): { id: string; ignoredVaults: string[] } => ({
   id,
   ignoredVaults: LAB_ADDRESSESS
 });
@@ -64,8 +64,8 @@ export const ACCOUNT_EARNINGS = `
   }
 `;
 
-export const ASSET_HISTORIC_EARNINGS = (blocks: number[]) => {
-  const makeBlockQuery = (block: number) => {
+export const ASSET_HISTORIC_EARNINGS = (blocks: number[]): string => {
+  const makeBlockQuery = (block: number): string => {
     return `
     block_${block}: vault(id: $id, block: { number: ${block} } ) {
       vaultDayData(orderBy: timestamp, orderDirection: desc, first: 1) {

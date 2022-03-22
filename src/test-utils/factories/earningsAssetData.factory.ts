@@ -5,7 +5,7 @@ const DEFAULT_EARNINGS_ASSET_DATA: EarningsAssetData = {
   earned: "1"
 };
 
-export const createMockEarningsAssetData = (overwrites: Partial<EarningsAssetData> = {}) => ({
+export const createMockEarningsAssetData = (overwrites: Partial<EarningsAssetData> = {}): EarningsAssetData => ({
   ...DEFAULT_EARNINGS_ASSET_DATA,
   ...overwrites
 });
