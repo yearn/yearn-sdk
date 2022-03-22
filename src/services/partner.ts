@@ -1,4 +1,4 @@
-import { CallOverrides } from "@ethersproject/contracts";
+import { CallOverrides, PopulatedTransaction } from "@ethersproject/contracts";
 
 import { ChainId } from "../chain";
 import { ContractAddressId, ContractService, WrappedContract } from "../common";
@@ -25,7 +25,7 @@ export class PartnerService<T extends ChainId> extends ContractService<T> {
   }
 
   get address(): Promise<string | undefined> {
-    return (async () => {
+    return (async (): Promise<string | undefined> => {
       const partnerAddress = await this.addressProvider.addressById(PartnerService.contractId);
       return partnerAddress !== ZeroAddress ? partnerAddress : undefined;
     })();
@@ -36,21 +36,25 @@ export class PartnerService<T extends ChainId> extends ContractService<T> {
     this.partnerId = partnerId;
   }
 
-  isAllowed(vault: string) {
+  isAllowed(vault: string): boolean {
     return !PartnerService.IGNORED_ADDRESSES.includes(vault);
   }
 
-  async deposit(vault: string, amount: string, overrides: CallOverrides) {
+  async deposit(vault: string, amount: string, overrides: CallOverrides): Promise<unknown> {
     const contract = await this.contract;
     return contract.write.deposit(vault, this.partnerId, amount, overrides);
   }
 
-  async populateDepositTransaction(vault: string, amount: string, overrides: CallOverrides) {
+  async populateDepositTransaction(
+    vault: string,
+    amount: string,
+    overrides: CallOverrides
+  ): Promise<PopulatedTransaction> {
     const contract = await this.contract;
     return contract.write.populateTransaction.deposit(vault, this.partnerId, amount, overrides);
   }
 
-  async encodeDeposit(vault: string, amount: string) {
+  async encodeDeposit(vault: string, amount: string): Promise<string> {
     const contract = await this.contract;
     return contract.write.interface.encodeFunctionData("deposit", [vault, this.partnerId, amount]);
   }

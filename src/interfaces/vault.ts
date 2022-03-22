@@ -76,7 +76,7 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
         return Promise.resolve([]);
       });
 
-    let assetsHistoricEarningsPromise = this.yearn.earnings.assetsHistoricEarnings().catch(error => {
+    const assetsHistoricEarningsPromise = this.yearn.earnings.assetsHistoricEarnings().catch(error => {
       console.error(error);
       return Promise.resolve([]);
     });
@@ -142,7 +142,7 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
       return addresses ? cached.filter(vault => addresses.includes(vault.address)) : cached;
     }
 
-    let metadataOverrides = vaultMetadataOverrides
+    const metadataOverrides = vaultMetadataOverrides
       ? vaultMetadataOverrides
       : await this.yearn.services.meta.vaults().catch(error => {
           console.error(error);
@@ -333,10 +333,15 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
         const shouldUsePartner = this.shouldUsePartnerService(vault);
         const vaultContract = new Contract(vault, VaultAbi, signer);
 
-        const makeTransaction = async (overrides: CallOverrides) => {
+        const makeTransaction = async (overrides: CallOverrides): Promise<TransactionResponse> => {
           const tx = shouldUsePartner
-            ? await this.yearn.services.partner!.populateDepositTransaction(vault, amount, overrides)
+            ? await this.yearn.services.partner?.populateDepositTransaction(vault, amount, overrides)
             : await vaultContract.populateTransaction.deposit(amount, overrides);
+
+          if (!tx) {
+            throw new SdkError("deposit transaction failed");
+          }
+
           return this.yearn.services.transaction.sendTransaction(tx);
         };
 
@@ -368,7 +373,7 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
     const signer = this.ctx.provider.write.getSigner(account);
     if (vaultRef.token === token) {
       const vaultContract = new Contract(vault, VaultAbi, signer);
-      const makeTransaction = async (overrides: CallOverrides) => {
+      const makeTransaction = async (overrides: CallOverrides): Promise<TransactionResponse> => {
         const tx = await vaultContract.populateTransaction.withdraw(amount, overrides);
         return this.yearn.services.transaction.sendTransaction(tx);
       };
@@ -449,7 +454,7 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
       combinedParams.gasPrice = undefined;
       return await this.yearn.services.transaction.sendTransaction(combinedParams);
     } catch (error) {
-      if ((error as any).code === -32602) {
+      if ((error as { code: number }).code === -32602) {
         const combinedParams = { ...transactionRequest, ...overrides };
         combinedParams.maxFeePerGas = undefined;
         combinedParams.maxPriorityFeePerGas = undefined;
@@ -471,7 +476,7 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
       const tx = await makeTransaction(overrides);
       return tx;
     } catch (error) {
-      if ((error as any).code === -32602) {
+      if ((error as { code: number }).code === -32602) {
         overrides.maxFeePerGas = undefined;
         overrides.maxPriorityFeePerGas = undefined;
         overrides.gasPrice = originalGasPrice;
@@ -483,7 +488,7 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
     }
   }
 
-  private fillTokenMetadataOverrides(token: Token, overrides: TokenMetadata) {
+  private fillTokenMetadataOverrides(token: Token, overrides: TokenMetadata): void {
     if (overrides.tokenIconOverride) {
       token.icon = overrides.tokenIconOverride;
     }
@@ -495,7 +500,7 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
     }
   }
 
-  private fillMetadataOverrides(dynamic: VaultDynamic, overrides: VaultMetadataOverrides) {
+  private fillMetadataOverrides(dynamic: VaultDynamic, overrides: VaultMetadataOverrides): void {
     if (overrides.displayName) {
       dynamic.metadata.displayName = overrides.displayName;
     }

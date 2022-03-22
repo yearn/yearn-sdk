@@ -32,7 +32,7 @@ export class SubgraphService extends Service {
     }
   }
 
-  async fetchQuery<T>(query: string, variables: { [key: string]: any } = {}): Promise<T> {
+  async fetchQuery<T>(query: string, variables: { [key: string]: unknown } = {}): Promise<T> {
     if (!this.yearnSubgraphEndpoint) {
       throw new SdkError(
         "the subgraph service has not been configured to be able to make queries, configure it in the `Context` object"

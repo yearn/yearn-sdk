@@ -16,7 +16,7 @@ export async function handleHttpError(response: Response): Promise<Response> {
 }
 
 // formally convert USD values to USDC values (* 1e6), using Usdc type alias.
-export function usdc(usd: any): Usdc {
+export function usdc(usd: unknown): Usdc {
   return BigNumber.from(Math.floor(Number(usd) * 1e6)).toString();
 }
 
@@ -25,14 +25,14 @@ export function int(value: BigNumber): Integer {
   return value.toString();
 }
 
-export function chunkArray<T>(array: T[], size: number) {
+export function chunkArray<T>(array: T[], size: number): T[][] {
   if (size < 1) {
     throw new Error(`Size needs to be positive: ${size}`);
   }
 
-  let result = [];
+  const result = [];
   for (let i = 0; i < array.length; i += size) {
-    let chunk = array.slice(i, i + size);
+    const chunk = array.slice(i, i + size);
     result.push(chunk);
   }
   return result;

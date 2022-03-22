@@ -15,7 +15,7 @@ export const DEFAULT_APY: Apy = {
   composite: null
 };
 
-export const createMockApy = (overwrites: Partial<Apy> = {}) => ({
+export const createMockApy = (overwrites: Partial<Apy> = {}): Apy => ({
   ...DEFAULT_APY,
   ...overwrites
 });
