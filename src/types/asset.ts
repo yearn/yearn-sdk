@@ -22,8 +22,12 @@ export interface TokenAmount {
 export interface Token extends ERC20 {
   icon?: string;
   priceUsdc: Usdc;
+  dataSource: TokenDataSource;
   supported: {
     zapper?: boolean;
+    vaults?: boolean;
+    ironBank?: boolean;
+    labs?: boolean;
   };
   metadata?: TokenMetadata;
 }
@@ -88,3 +92,5 @@ export type Asset<T extends TypeId> = AssetStatic<T> & AssetDynamic<T> & { typeI
  * Possible assets that lens can return.
  */
 export type GenericAsset = Asset<"VAULT_V1"> | Asset<"VAULT_V2"> | Asset<"IRON_BANK_MARKET">;
+
+export type TokenDataSource = "vaults" | "ironBank" | "zapper" | "labs";

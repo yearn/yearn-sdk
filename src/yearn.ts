@@ -8,7 +8,7 @@ import { StrategyInterface } from "./interfaces/strategy";
 import { TokenInterface } from "./interfaces/token";
 import { VaultInterface } from "./interfaces/vault";
 import { IronBankAdapter } from "./services/adapters/ironbank";
-import { IRegistryAdapter, RegistryV2Adapter } from "./services/adapters/registry";
+import { RegistryAdapter, RegistryV2Adapter } from "./services/adapters/registry";
 import { AddressProvider } from "./services/addressProvider";
 import { AllowListService } from "./services/allowlist";
 import { AssetService } from "./services/assets";
@@ -27,7 +27,7 @@ import { AssetServiceState } from "./types";
 
 export type Adapters<T extends ChainId> = {
   vaults: {
-    v1: IRegistryAdapter;
+    v1: RegistryAdapter;
     v2: RegistryV2Adapter<T>;
   };
   ironBank: IronBankAdapter<T>;
@@ -166,7 +166,7 @@ export class Yearn<T extends ChainId> {
     };
   }
 
-  _initAdapters<T extends ChainId>(chainId: ChainId) {
+  _initAdapters<T extends ChainId>(chainId: ChainId): Adapters<T> {
     return {
       vaults: {
         v2: new RegistryV2Adapter(chainId, this.context, this.addressProvider)

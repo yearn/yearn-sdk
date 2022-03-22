@@ -283,7 +283,10 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
             const result: Token = {
               ...token,
               icon: icons[token.address],
-              supported: {},
+              dataSource: "vaults",
+              supported: {
+                vaults: true
+              },
               priceUsdc: await this.yearn.services.oracle.getPriceUsdc(token.address, overrides),
               metadata: tokenMetadata
             };
