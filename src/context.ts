@@ -104,7 +104,7 @@ export class Context implements ContextValue {
    * interaction.
    * @param provider new provider(s)
    */
-  setProvider(provider?: JsonRpcProvider | ReadWriteProvider) {
+  setProvider(provider?: JsonRpcProvider | ReadWriteProvider): void {
     if (provider instanceof JsonRpcProvider) {
       this.ctx.provider = { read: provider, write: provider };
     } else if (provider) {

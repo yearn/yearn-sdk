@@ -5,7 +5,7 @@ import { BigNumber } from "bignumber.js";
 import { Address } from "./types";
 
 export abstract class VaultContract {
-  protected static get abi() {
+  protected static get abi(): string[] {
     return [
       "function token() view returns (address)",
       "function decimals() view returns (uint256)",
@@ -37,7 +37,7 @@ export abstract class VaultContract {
 }
 
 export class PickleJarContract extends VaultContract {
-  private static get pickleJarAbi() {
+  private static get pickleJarAbi(): string[] {
     return ["function getRatio() public view returns (uint256)"];
   }
 
@@ -52,7 +52,7 @@ export class PickleJarContract extends VaultContract {
 }
 
 export class YearnVaultContract extends VaultContract {
-  private static get yearnVaultAbi() {
+  private static get yearnVaultAbi(): string[] {
     return ["function pricePerShare() view returns (uint256)"];
   }
 

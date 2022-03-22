@@ -61,12 +61,14 @@ const DEFAULT_ASSET_DYNAMIC_VAULT_V2: AssetDynamic<"VAULT_V2"> = {
   }
 };
 
-export const createMockAssetStaticVaultV2 = (overwrites: Partial<Asset<"VAULT_V2">> = {}) => ({
+export const createMockAssetStaticVaultV2 = (overwrites: Partial<Asset<"VAULT_V2">> = {}): Asset<"VAULT_V2"> => ({
   ...DEFAULT_ASSET_STATIC_VAULT_V2,
   ...overwrites
 });
 
-export const createMockAssetDynamicVaultV2 = (overwrites: Partial<AssetDynamic<"VAULT_V2">> = {}) => ({
+export const createMockAssetDynamicVaultV2 = (
+  overwrites: Partial<AssetDynamic<"VAULT_V2">> = {}
+): AssetDynamic<"VAULT_V2"> => ({
   ...DEFAULT_ASSET_DYNAMIC_VAULT_V2,
   ...overwrites
 });

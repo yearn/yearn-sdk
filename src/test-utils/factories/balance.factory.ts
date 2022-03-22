@@ -9,7 +9,7 @@ const DEFAULT_BALANCE: Balance = {
   priceUsdc: "1"
 };
 
-export const createMockBalance = (overwrites: Partial<Balance> = {}) => ({
+export const createMockBalance = (overwrites: Partial<Balance> = {}): Balance => ({
   ...DEFAULT_BALANCE,
   ...overwrites
 });

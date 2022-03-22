@@ -103,7 +103,7 @@ describe("TokenInterface", () => {
   beforeEach(() => {
     mockedYearn = new (Yearn as jest.Mock<Yearn<ChainId>>)();
     tokenInterface = new TokenInterface(mockedYearn, 1, new Context({}));
-    jest.spyOn(console, "error").mockImplementation(() => {});
+    jest.spyOn(console, "error").mockImplementation();
   });
 
   afterEach(() => {
@@ -217,7 +217,7 @@ describe("TokenInterface", () => {
 
     describe("when chainId is not supported", () => {
       beforeEach(() => {
-        tokenInterface = new TokenInterface(mockedYearn, 42 as any, new Context({}));
+        tokenInterface = new TokenInterface(mockedYearn, 42 as ChainId, new Context({}));
       });
 
       it("should return an empty array and log the error", async () => {
@@ -233,7 +233,7 @@ describe("TokenInterface", () => {
 
   describe("supported", () => {
     describe("when the supported tokens are cached", () => {
-      let cachedToken = createMockToken();
+      const cachedToken = createMockToken();
 
       beforeEach(() => {
         jest.spyOn(CachedFetcher.prototype, "fetch").mockResolvedValue([cachedToken]);

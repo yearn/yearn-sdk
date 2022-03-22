@@ -6,7 +6,9 @@ export const DEFAULT_ASSET_HISTORIC_EARNINGS: AssetHistoricEarnings = {
   dayData: [{ earnings: { amount: "1", amountUsdc: "1" }, date: "15-02-2022" }]
 };
 
-export const createMockAssetHistoricEarnings = (overwrites: Partial<AssetHistoricEarnings> = {}) => ({
+export const createMockAssetHistoricEarnings = (
+  overwrites: Partial<AssetHistoricEarnings> = {}
+): AssetHistoricEarnings => ({
   ...DEFAULT_ASSET_HISTORIC_EARNINGS,
   ...overwrites
 });

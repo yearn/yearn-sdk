@@ -7,7 +7,7 @@ const DEFAULT_TOKEN_BALANCE: TokenBalance = {
   balanceUsdc: "1"
 };
 
-export const createMockTokenBalance = (overwrites: Partial<TokenBalance> = {}) => ({
+export const createMockTokenBalance = (overwrites: Partial<TokenBalance> = {}): TokenBalance => ({
   ...DEFAULT_TOKEN_BALANCE,
   ...overwrites
 });

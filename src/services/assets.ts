@@ -7,15 +7,15 @@ import { handleHttpError, WethAddress } from "../helpers";
 import { Address, Alias, AliasMap, AssetServiceState, Icon, IconMap } from "../types";
 
 const YearnAliases = "https://raw.githubusercontent.com/yearn/yearn-assets/master/icons/aliases.json";
-const YearnAssets = (chainId: ChainId) =>
+const YearnAssets = (chainId: ChainId): string =>
   `https://api.github.com/repos/yearn/yearn-assets/contents/icons/multichain-tokens/${chainId}`;
 const TrustAssets = "https://raw.githack.com/trustwallet/assets/master/blockchains/ethereum/tokenlist.json";
 
-const YearnAsset = (address: Address, chainId: ChainId) =>
+const YearnAsset = (address: Address, chainId: ChainId): string =>
   `https://raw.githack.com/yearn/yearn-assets/master/icons/multichain-tokens/${chainId}/${address}/logo-128.png`;
-const YearnAssetAlt = (address: Address, chainId: ChainId) =>
+const YearnAssetAlt = (address: Address, chainId: ChainId): string =>
   `https://raw.githack.com/yearn/yearn-assets/master/icons/multichain-tokens/${chainId}/${address}/logo-alt-128.png`;
-const TrustAsset = (address: Address) =>
+const TrustAsset = (address: Address): string =>
   `https://raw.githack.com/trustwallet/assets/master/blockchains/ethereum/assets/${address}/logo.png`;
 
 /**

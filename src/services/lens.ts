@@ -6,13 +6,13 @@ import { ContractAddressId } from "../common";
 import { structArray } from "../struct";
 import { Address, GenericAsset, Position } from "../types";
 import { IronBankAdapter } from "./adapters/ironbank";
-import { IRegistryAdapter, RegistryV2Adapter } from "./adapters/registry";
+import { RegistryAdapter, RegistryV2Adapter } from "./adapters/registry";
 
 export const LensAbi = ["function getRegistries() external view returns (address[] memory)"];
 
 export type Adapters<T extends ChainId> = {
   vaults: {
-    v1: IRegistryAdapter;
+    v1: RegistryAdapter;
     v2: RegistryV2Adapter<T>;
   };
   ironBank: IronBankAdapter<T>;
@@ -49,7 +49,7 @@ export class LensService<T extends ChainId> extends ContractService<T> {
    * @returns list of registry addresses
    */
   async getAdapters(overrides: CallOverrides = {}): Promise<string[]> {
-    let contract = await this.contract;
+    const contract = await this.contract;
     return contract.read.getRegistries(overrides);
   }
 
@@ -59,7 +59,7 @@ export class LensService<T extends ChainId> extends ContractService<T> {
    * @returns list of assets
    */
   async getAssets(overrides: CallOverrides = {}): Promise<GenericAsset[]> {
-    let contract = await this.contract;
+    const contract = await this.contract;
     return contract.read.getAssets(overrides).then(structArray);
   }
 
@@ -71,7 +71,7 @@ export class LensService<T extends ChainId> extends ContractService<T> {
    * @returns list of user positions
    */
   async getPositions(address: string, overrides: CallOverrides = {}): Promise<Position[]> {
-    let contract = await this.contract;
+    const contract = await this.contract;
     return contract.read.getPositionsOf(address, overrides).then(structArray);
   }
 
@@ -82,7 +82,7 @@ export class LensService<T extends ChainId> extends ContractService<T> {
    * @returns list of assets
    */
   async getAssetsFromAdapter(adapter: Address, overrides: CallOverrides = {}): Promise<GenericAsset[]> {
-    let contract = await this.contract;
+    const contract = await this.contract;
     return contract.read.getAssetsFromAdapter(adapter, overrides).then(structArray);
   }
 }

@@ -30,7 +30,7 @@ export class PickleService extends Service {
     return usdc(this.pickleJarUSDPrices.get(jar)?.toFixed(0)) || "0";
   }
 
-  private async fetchPickleJarPrices() {
+  private async fetchPickleJarPrices(): Promise<void> {
     interface JarDatum {
       liquidity_locked: number;
       jarAddress: Address;
