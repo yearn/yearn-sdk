@@ -29,3 +29,17 @@ export interface Balance {
 }
 
 export type BalancesMap<T extends Address> = TypedMap<T, Balance[]>;
+
+export interface SourceAddresses {
+  zapper: Set<Address>;
+  vaults: Set<Address>;
+  ironBank: Set<Address>;
+  labs: Set<Address>;
+}
+
+export interface SourceBalances {
+  zapper: Balance[];
+  vaults: Balance[];
+  ironBank: Balance[];
+  labs: Balance[];
+}
