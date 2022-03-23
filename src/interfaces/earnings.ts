@@ -4,7 +4,7 @@ import { BigNumber } from "bignumber.js";
 import { CachedFetcher } from "../cache";
 import { ChainId } from "../chain";
 import { ServiceInterface } from "../common";
-import { anyTimestampToMillis } from "../helpers";
+import { convertSecondsMillisOrMicrosToMillis } from "../helpers";
 import {
   ACCOUNT_EARNINGS,
   ACCOUNT_HISTORIC_EARNINGS,
@@ -258,7 +258,7 @@ export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
           amountUsdc: amountUsdc.toFixed(0),
           amount: amountEarnt.toFixed(0)
         },
-        date: new Date(anyTimestampToMillis(data[label].vaultDayData[0].timestamp)).toJSON()
+        date: new Date(convertSecondsMillisOrMicrosToMillis(data[label].vaultDayData[0].timestamp)).toJSON()
       };
 
       return dayData;
@@ -318,14 +318,14 @@ export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
     const updates = vaultPositions
       .flatMap(vaultPosition => vaultPosition.updates)
       .sort((lhs, rhs) => {
-        return anyTimestampToMillis(+lhs.timestamp - +rhs.timestamp);
+        return convertSecondsMillisOrMicrosToMillis(+lhs.timestamp - +rhs.timestamp);
       });
 
     for (const [index, vaultPositionUpdate] of updates.entries()) {
       if (index === 0) {
         const snapshot: AccountSnapshot = {
           startDate: new Date(0),
-          endDate: new Date(anyTimestampToMillis(vaultPositionUpdate.timestamp)),
+          endDate: new Date(convertSecondsMillisOrMicrosToMillis(vaultPositionUpdate.timestamp)),
           deposits: new BigNumber(vaultPositionUpdate.deposits),
           withdrawals: new BigNumber(vaultPositionUpdate.withdrawals),
           tokensReceived: new BigNumber(vaultPositionUpdate.tokensReceived),
@@ -337,7 +337,7 @@ export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
         const previousSnapshot = snapshotTimeline[index - 1];
         const snapshot: AccountSnapshot = {
           startDate: previousSnapshot.endDate,
-          endDate: new Date(anyTimestampToMillis(vaultPositionUpdate.timestamp)),
+          endDate: new Date(convertSecondsMillisOrMicrosToMillis(vaultPositionUpdate.timestamp)),
           deposits: previousSnapshot.deposits.plus(new BigNumber(vaultPositionUpdate.deposits)),
           withdrawals: previousSnapshot.withdrawals.plus(new BigNumber(vaultPositionUpdate.withdrawals)),
           tokensReceived: previousSnapshot.tokensReceived.plus(new BigNumber(vaultPositionUpdate.tokensReceived)),
@@ -369,7 +369,7 @@ export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
 
     const earningsDayData = await Promise.all(
       vaultDayData.map(async vaultDayDatum => {
-        const date = new Date(anyTimestampToMillis(vaultDayDatum.timestamp));
+        const date = new Date(convertSecondsMillisOrMicrosToMillis(vaultDayDatum.timestamp));
         const snapshot = snapshotTimeline.find(snapshot => date >= snapshot.startDate && date < snapshot.endDate);
         if (snapshot) {
           const balanceTokens = snapshot.balanceShares

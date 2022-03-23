@@ -39,7 +39,7 @@ export function chunkArray<T>(array: T[], size: number) {
 }
 
 // converts timestamps from second and microsecond format to milliseconds
-export function anyTimestampToMillis(timestamp: string | number): number {
+export function convertSecondsMillisOrMicrosToMillis(timestamp: string | number): number {
   const testSeconds = /^\d{10}$/;
   const testMillis = /^\d{13}$/;
   const testMicros = /^\d{16}$/;
