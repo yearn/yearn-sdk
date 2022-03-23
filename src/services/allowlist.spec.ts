@@ -49,7 +49,7 @@ describe("validateCalldata", () => {
       expect(actual).toEqual({ success: false, error: "can't validate a tx that has no call data" });
     });
 
-    it("should throw when contract address is `ZeroAddress`", async () => {
+    it("should return `true` and log warn message when contract address is `ZeroAddress`", async () => {
       jest.spyOn(AddressProvider.prototype, "addressById").mockResolvedValue(ZeroAddress);
 
       const actual = await allowListService.validateCalldata("0x00", "callData");
