@@ -44,7 +44,8 @@ export function anyTimestampToMillis(timestamp: string | number): number {
   const testMillis = /^\d{13}$/;
   const testMicros = /^\d{16}$/;
 
-  const input = typeof timestamp === "string" ? timestamp : timestamp.toString();
+  let input = typeof timestamp === "string" ? timestamp : timestamp.toString();
+  input = input.padStart(10, "0"); // optional padding in case of a number input
   if (testMillis.test(input)) {
     return +timestamp;
   } else if (testMicros.test(input)) {
