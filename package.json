@@ -16,7 +16,7 @@
     "test": "tsdx test",
     "test:coverage": "tsdx test --coverage",
     "lint": "run-p lint:*",
-    "lint:eslint": "tsdx lint src test",
+    "lint:eslint": "tsdx lint src",
     "lint:typescript": "tsc --noEmit",
     "docs": "typedoc --out docs src/index.ts",
     "size": "size-limit",
