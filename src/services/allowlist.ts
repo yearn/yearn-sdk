@@ -2,6 +2,7 @@ import { BytesLike } from "@ethersproject/bytes";
 
 import { ChainId } from "../chain";
 import { ContractAddressId, ContractService, WrappedContract } from "../common";
+import { ZeroAddress } from "../helpers";
 import { Address } from "../types";
 
 /**
@@ -46,7 +47,9 @@ export class AllowListService<T extends ChainId> extends ContractService<T> {
 
     try {
       contract = await this.contract;
-      if (!contract) throw new Error("Contract missing");
+      if (!contract || contract.address === ZeroAddress) {
+        throw new Error("Contract missing");
+      }
     } catch (e) {
       // temporary workaround after deprecating the `disableAllowlist` param
       // if allowlist has no onchain contract address, we skip validation altogether

@@ -1,4 +1,5 @@
 import { Context } from "..";
+import { ZeroAddress } from "../helpers";
 import { AddressProvider } from "./addressProvider";
 import { AllowListService } from "./allowlist";
 
@@ -25,6 +26,7 @@ describe("validateCalldata", () => {
 
   beforeEach(() => {
     allowListService = new AllowListService(1, new Context({}), addressProvider);
+    jest.spyOn(console, "warn").mockImplementation();
   });
 
   afterEach(() => {
@@ -45,6 +47,15 @@ describe("validateCalldata", () => {
       const actual = await allowListService.validateCalldata("0x00", undefined);
 
       expect(actual).toEqual({ success: false, error: "can't validate a tx that has no call data" });
+    });
+
+    it("should return `true` and log warn message when contract address is `ZeroAddress`", async () => {
+      jest.spyOn(AddressProvider.prototype, "addressById").mockResolvedValue(ZeroAddress);
+
+      const actual = await allowListService.validateCalldata("0x00", "callData");
+
+      expect(actual).toEqual({ success: true });
+      expect(console.warn).toHaveBeenCalledWith("AllowList on-chain contract address missing. Skipping validation...");
     });
 
     describe("when it reads from the contract", () => {
@@ -94,7 +105,7 @@ describe("validateCalldata", () => {
 
         expect(actual).toEqual({ success: true, error: undefined });
         expect(consoleErrorSpy).toHaveBeenCalledWith(
-          "Contract address for ALLOW_LIST_REGISTRY is missing from Address Provider"
+          "Contract address for ALLOW_LIST_REGISTRY is missing from the Address Provider"
         );
         expect(consoleWarnSpy).toHaveBeenCalledWith(
           "AllowList on-chain contract address missing. Skipping validation..."
