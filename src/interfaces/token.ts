@@ -4,9 +4,9 @@ import { TransactionRequest, TransactionResponse } from "@ethersproject/provider
 import BigNumber from "bignumber.js";
 
 import { CachedFetcher } from "../cache";
-import { ChainId, Chains } from "../chain";
+import { allSupportedChains, ChainId, Chains, isEthereum, isFantom } from "../chain";
 import { ServiceInterface } from "../common";
-import { EthAddress, ZAPPER_OUT_ADDRESSES, ZeroAddress } from "../helpers";
+import { EthAddress, FANTOM_TOKEN, ZAPPER_OUT_ADDRESSES } from "../helpers";
 import { PickleJars } from "../services/partners/pickle";
 import {
   Address,
@@ -111,7 +111,7 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
       fantom: []
     };
 
-    if ([1, 1337].includes(this.chainId)) {
+    if (isEthereum(this.chainId)) {
       try {
         const zapperBalances = await this.yearn.services.zapper.balances(account);
         balances.zapper = zapperBalances.filter(({ address }) => addresses.zapper.has(address));
@@ -121,11 +121,11 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
     }
 
     // TODO
-    if (250 === this.chainId) {
+    if (isFantom(this.chainId)) {
       balances.fantom = [];
     }
 
-    if ([1, 1337, 250, 42161].includes(this.chainId)) {
+    if (allSupportedChains.includes(this.chainId)) {
       const vaultBalances = await this.yearn.vaults.balances(account);
       balances.vaults = vaultBalances.filter(
         ({ address, balance }) => balance !== "0" && addresses.vaults.has(address)
@@ -147,6 +147,12 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
    * @returns list of tokens supported.
    */
   async supported(): Promise<Token[]> {
+    if (!allSupportedChains.includes(this.chainId)) {
+      console.error(`the chain ${this.chainId} hasn't been implemented yet`);
+
+      return [];
+    }
+
     const cached = await this.cachedFetcherSupported.fetch();
     if (cached) {
       return cached;
@@ -155,7 +161,7 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
     let zapperTokensWithIcon: Token[] = [];
 
     // Zapper only supported in Ethereum
-    if ([1, 1337].includes(this.chainId)) {
+    if (isEthereum(this.chainId)) {
       try {
         zapperTokensWithIcon = await this.getZapperTokensWithIcons();
       } catch (error) {
@@ -163,54 +169,38 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
       }
     }
 
-    if ([1, 1337, 250, 42161].includes(this.chainId)) {
-      const vaultsTokens = await this.yearn.vaults.tokens();
-      const ironBankTokens = await this.yearn.ironBank.tokens();
+    const vaultsTokens = await this.yearn.vaults.tokens();
+    const ironBankTokens = await this.yearn.ironBank.tokens();
 
-      const combinedVaultsAndIronBankTokens = this.mergeAddressables(vaultsTokens, ironBankTokens);
+    const combinedVaultsAndIronBankTokens = this.mergeAddressables(vaultsTokens, ironBankTokens);
 
-      if (this.chainId === 250) {
-        combinedVaultsAndIronBankTokens.push({
-          address: ZeroAddress,
-          name: "Fantom",
-          dataSource: "fantom",
-          decimals: "18",
-          priceUsdc: "0",
-          supported: {
-            ftmApeZap: true
-          },
-          symbol: "FTM"
-        });
-      }
-
-      if (!zapperTokensWithIcon.length) {
-        return combinedVaultsAndIronBankTokens;
-      }
-
-      const allSupportedTokens = this.mergeAddressables(combinedVaultsAndIronBankTokens, zapperTokensWithIcon);
-
-      const zapperTokensUniqueAddresses = new Set(zapperTokensWithIcon.map(({ address }) => address));
-
-      return allSupportedTokens.map(token => {
-        const isZapperToken = zapperTokensUniqueAddresses.has(token.address);
-
-        return {
-          ...token,
-          ...(isZapperToken && {
-            supported: {
-              ...token.supported,
-              zapper: true,
-              zapperZapIn: true,
-              zapperZapOut: Object.values(ZAPPER_OUT_ADDRESSES).includes(token.address)
-            }
-          })
-        };
-      });
+    if (isFantom(this.chainId)) {
+      combinedVaultsAndIronBankTokens.push(FANTOM_TOKEN);
     }
 
-    console.error(`the chain ${this.chainId} hasn't been implemented yet`);
+    if (!zapperTokensWithIcon.length) {
+      return combinedVaultsAndIronBankTokens;
+    }
 
-    return [];
+    const allSupportedTokens = this.mergeAddressables(combinedVaultsAndIronBankTokens, zapperTokensWithIcon);
+
+    const zapperTokensUniqueAddresses = new Set(zapperTokensWithIcon.map(({ address }) => address));
+
+    return allSupportedTokens.map(token => {
+      const isZapperToken = zapperTokensUniqueAddresses.has(token.address);
+
+      return {
+        ...token,
+        ...(isZapperToken && {
+          supported: {
+            ...token.supported,
+            zapper: true,
+            zapperZapIn: true,
+            zapperZapOut: Object.values(ZAPPER_OUT_ADDRESSES).includes(token.address)
+          }
+        })
+      };
+    });
   }
 
   /**

@@ -1,6 +1,6 @@
 import { BigNumber } from "@ethersproject/bignumber";
 
-import { Integer, SdkError, Usdc } from "./types";
+import { Integer, SdkError, Token, Usdc } from "./types";
 
 export const ZeroAddress = "0x0000000000000000000000000000000000000000";
 export const EthAddress = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";
@@ -12,6 +12,18 @@ export const ZAPPER_OUT_ADDRESSES = {
   USDC: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
   USDT: "0xdAC17F958D2ee523a2206206994597C13D831ec7",
   WBTC: "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599"
+};
+
+export const FANTOM_TOKEN: Token = {
+  address: ZeroAddress,
+  name: "Fantom",
+  dataSource: "fantom",
+  decimals: "18",
+  priceUsdc: "0",
+  supported: {
+    ftmApeZap: true
+  },
+  symbol: "FTM"
 };
 
 // handle a non-200 `fetch` response.
