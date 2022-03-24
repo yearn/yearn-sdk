@@ -5,7 +5,7 @@ import { TransactionRequest, TransactionResponse } from "@ethersproject/provider
 import { CachedFetcher } from "../cache";
 import { ChainId } from "../chain";
 import { ServiceInterface } from "../common";
-import { chunkArray, EthAddress, WethAddress } from "../helpers";
+import { ADDRESSES, chunkArray, WethAddress } from "../helpers";
 import { PickleJars } from "../services/partners/pickle";
 import {
   Address,
@@ -158,10 +158,10 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
           const overrides = metadataOverrides.find(override => override.address === dynamic.address);
           dynamic.metadata.apy = assetsApy[dynamic.address];
           if (dynamic.tokenId === WethAddress) {
-            const icon = this.yearn.services.asset.icon(EthAddress) ?? "";
+            const icon = this.yearn.services.asset.icon(ADDRESSES.ETH) ?? "";
             dynamic.metadata.displayIcon = icon;
             dynamic.metadata.displayName = "ETH";
-            dynamic.metadata.defaultDisplayToken = EthAddress;
+            dynamic.metadata.defaultDisplayToken = ADDRESSES.ETH;
           } else {
             const icon = this.yearn.services.asset.icon(dynamic.tokenId) ?? "";
             dynamic.metadata.displayIcon = icon;
@@ -271,7 +271,7 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
     return await Promise.all(
       adapters.map(async adapter => {
         const tokenAddresses = await adapter.tokens(overrides);
-        const icons = this.yearn.services.asset.icon(tokenAddresses.concat(EthAddress));
+        const icons = this.yearn.services.asset.icon(tokenAddresses.concat(ADDRESSES.ETH));
         const tokensPromise = this.yearn.services.helper.tokens(tokenAddresses, overrides);
         const tokensMetadataPromise = this.yearn.tokens.metadata(tokenAddresses);
 
@@ -330,7 +330,7 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
 
     const [vaultRef] = await this.getStatic([vault], overrides);
     if (vaultRef.token === token) {
-      if (token === EthAddress) {
+      if (token === ADDRESSES.ETH) {
         throw new SdkError("deposit:v2:eth not implemented");
       } else {
         const shouldUsePartner = this.shouldUsePartnerService(vault);

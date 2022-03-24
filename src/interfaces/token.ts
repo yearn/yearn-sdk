@@ -6,7 +6,7 @@ import BigNumber from "bignumber.js";
 import { CachedFetcher } from "../cache";
 import { ChainId, Chains } from "../chain";
 import { ServiceInterface } from "../common";
-import { EthAddress } from "../helpers";
+import { ADDRESSES, ZeroAddress } from "../helpers";
 import { PickleJars } from "../services/partners/pickle";
 import {
   Address,
@@ -98,7 +98,8 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
         zapper: new Set<Address>(),
         vaults: new Set<Address>(),
         ironBank: new Set<Address>(),
-        labs: new Set<Address>()
+        labs: new Set<Address>(),
+        fantom: new Set<Address>()
       }
     );
 
@@ -106,7 +107,8 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
       zapper: [],
       vaults: [],
       ironBank: [],
-      labs: []
+      labs: [],
+      fantom: []
     };
 
     if ([1, 1337].includes(this.chainId)) {
@@ -118,6 +120,11 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
       }
     }
 
+    // TODO
+    if (250 === this.chainId) {
+      balances.fantom = [];
+    }
+
     if ([1, 1337, 250, 42161].includes(this.chainId)) {
       const vaultBalances = await this.yearn.vaults.balances(account);
       balances.vaults = vaultBalances.filter(
@@ -127,7 +134,7 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
       const ironBankBalances = await this.yearn.ironBank.balances(account);
       balances.ironBank = ironBankBalances.filter(({ address }) => addresses.ironBank.has(address));
 
-      return [...balances.vaults, ...balances.ironBank, ...balances.zapper];
+      return [...balances.vaults, ...balances.ironBank, ...balances.zapper, ...balances.fantom];
     }
 
     console.error(`the chain ${this.chainId} hasn't been implemented yet`);
@@ -162,6 +169,20 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
 
       const combinedVaultsAndIronBankTokens = this.mergeAddressables(vaultsTokens, ironBankTokens);
 
+      if (this.chainId === 250) {
+        combinedVaultsAndIronBankTokens.push({
+          address: ZeroAddress,
+          name: "Fantom",
+          dataSource: "fantom",
+          decimals: "18",
+          priceUsdc: "0",
+          supported: {
+            ftmApeZap: true
+          },
+          symbol: "FTM"
+        });
+      }
+
       if (!zapperTokensWithIcon.length) {
         return combinedVaultsAndIronBankTokens;
       }
@@ -178,7 +199,9 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
           ...(isZapperToken && {
             supported: {
               ...token.supported,
-              zapper: true
+              zapper: true,
+              zapperZapIn: true,
+              zapperZapOut: Object.values(ADDRESSES).includes(token.address)
             }
           })
         };
@@ -228,7 +251,7 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
       token
     };
 
-    if (EthAddress === token) return allowance;
+    if (ADDRESSES.ETH === token) return allowance;
 
     if (vaultToken === token) {
       const tokenContract = new Contract(token, TokenAbi, this.ctx.provider.read);
@@ -271,7 +294,7 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
     account: Address
   ): Promise<TransactionResponse | boolean> {
     // If Ether is being sent, no need for approval
-    if (EthAddress === token) return true;
+    if (ADDRESSES.ETH === token) return true;
 
     const signer = this.ctx.provider.write.getSigner(account);
 

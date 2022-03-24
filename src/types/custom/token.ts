@@ -35,6 +35,7 @@ export interface SourceAddresses {
   vaults: Set<Address>;
   ironBank: Set<Address>;
   labs: Set<Address>;
+  fantom: Set<Address>;
 }
 
 export interface SourceBalances {
@@ -42,4 +43,5 @@ export interface SourceBalances {
   vaults: Balance[];
   ironBank: Balance[];
   labs: Balance[];
+  fantom: Balance[];
 }

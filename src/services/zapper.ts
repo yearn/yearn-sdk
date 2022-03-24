@@ -2,7 +2,7 @@ import { getAddress } from "@ethersproject/address";
 
 import { Chains } from "../chain";
 import { Service } from "../common";
-import { EthAddress, handleHttpError, usdc, ZeroAddress } from "../helpers";
+import { ADDRESSES, handleHttpError, usdc, ZeroAddress } from "../helpers";
 import { Address, Balance, BalancesMap, Integer, Token, ZapperToken } from "../types";
 import {
   GasPrice,
@@ -37,7 +37,7 @@ export class ZapperService extends Service {
 
     return visibleZapperTokens.map(
       (zapperToken): Token => {
-        const address = zapperToken.address === ZeroAddress ? EthAddress : getAddress(zapperToken.address);
+        const address = zapperToken.address === ZeroAddress ? ADDRESSES.ETH : getAddress(zapperToken.address);
 
         return {
           address,
@@ -86,7 +86,7 @@ export class ZapperService extends Service {
         const assets = copy.products[0].assets;
         balances[getAddress(address)] = assets.map(
           (balance: Record<string, string>): Balance => {
-            const address = balance.address === ZeroAddress ? EthAddress : getAddress(String(balance.address));
+            const address = balance.address === ZeroAddress ? ADDRESSES.ETH : getAddress(String(balance.address));
             return {
               address,
               token: {
@@ -247,7 +247,7 @@ export class ZapperService extends Service {
     partnerId?: string
   ): Promise<ZapOutput> {
     let sellToken = token;
-    if (EthAddress === token) {
+    if (ADDRESSES.ETH === token) {
       // If Ether is being sent, the sellTokenAddress should be the zero address
       sellToken = ZeroAddress;
     }
@@ -297,7 +297,7 @@ export class ZapperService extends Service {
     signature?: string
   ): Promise<ZapOutput> {
     let toToken = token;
-    if (EthAddress === token) {
+    if (ADDRESSES.ETH === token) {
       // If Ether is being received, the toTokenAddress should be the zero address
       toToken = ZeroAddress;
     }
