@@ -25,6 +25,9 @@ export interface Token extends ERC20 {
   dataSource: TokenDataSource;
   supported: {
     zapper?: boolean;
+    zapperZapIn?: boolean;
+    zapperZapOut?: boolean;
+    ftmApeZap?: boolean;
     vaults?: boolean;
     ironBank?: boolean;
     labs?: boolean;
