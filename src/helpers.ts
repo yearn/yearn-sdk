@@ -1,6 +1,6 @@
 import { BigNumber } from "@ethersproject/bignumber";
 
-import { Integer, SdkError, Token, Usdc } from "./types";
+import { Address, Integer, SdkError, Token, Usdc } from "./types";
 
 export const ZeroAddress = "0x0000000000000000000000000000000000000000";
 export const EthAddress = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";
@@ -75,4 +75,18 @@ export function convertSecondsMillisOrMicrosToMillis(timestamp: string | number)
   } else {
     throw new Error("Timestamp in invalid format");
   }
+}
+
+/**
+ * Merges array b into a by address removing a duplicates from b
+ *
+ * @param a higher priority array
+ * @param b lower priority array
+ *
+ * @returns combined arrays by address without duplicates
+ */
+export function mergeByAddress<T extends { address: Address }>(a: T[], b: T[]): T[] {
+  const filter = new Set(a.map(({ address }) => address));
+
+  return [...a, ...b.filter(({ address }) => !filter.has(address))];
 }

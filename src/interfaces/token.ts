@@ -6,7 +6,7 @@ import BigNumber from "bignumber.js";
 import { CachedFetcher } from "../cache";
 import { allSupportedChains, ChainId, Chains, isEthereum, isFantom } from "../chain";
 import { ServiceInterface } from "../common";
-import { EthAddress, FANTOM_TOKEN, ZAPPER_OUT_ADDRESSES } from "../helpers";
+import { EthAddress, FANTOM_TOKEN, mergeByAddress, ZAPPER_OUT_ADDRESSES } from "../helpers";
 import { PickleJars } from "../services/partners/pickle";
 import {
   Address,
@@ -158,12 +158,11 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
       return cached;
     }
 
-    let zapperTokensWithIcon: Token[] = [];
-
     // Zapper only supported in Ethereum
+    let zapperTokens: Token[] = [];
     if (isEthereum(this.chainId)) {
       try {
-        zapperTokensWithIcon = await this.getZapperTokensWithIcons();
+        zapperTokens = await this.getZapperTokensWithIcons();
       } catch (error) {
         console.error(error);
       }
@@ -172,19 +171,19 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
     const vaultsTokens = await this.yearn.vaults.tokens();
     const ironBankTokens = await this.yearn.ironBank.tokens();
 
-    const combinedVaultsAndIronBankTokens = this.mergeAddressables(vaultsTokens, ironBankTokens);
+    const vaultsAndIronBankTokens = mergeByAddress(vaultsTokens, ironBankTokens);
 
     if (isFantom(this.chainId)) {
-      combinedVaultsAndIronBankTokens.push(FANTOM_TOKEN);
+      vaultsAndIronBankTokens.push(FANTOM_TOKEN);
     }
 
-    if (!zapperTokensWithIcon.length) {
-      return combinedVaultsAndIronBankTokens;
+    if (!zapperTokens.length) {
+      return vaultsAndIronBankTokens;
     }
 
-    const allSupportedTokens = this.mergeAddressables(combinedVaultsAndIronBankTokens, zapperTokensWithIcon);
+    const allSupportedTokens = mergeByAddress(vaultsAndIronBankTokens, zapperTokens);
 
-    const zapperTokensUniqueAddresses = new Set(zapperTokensWithIcon.map(({ address }) => address));
+    const zapperTokensUniqueAddresses = new Set(zapperTokens.map(({ address }) => address));
 
     return allSupportedTokens.map(token => {
       const isZapperToken = zapperTokensUniqueAddresses.has(token.address);
@@ -395,17 +394,5 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
     } else {
       return result;
     }
-  }
-
-  /**
-   * Merges addressable array b into a removing a duplicates from b
-   * @param a higher priority array
-   * @param b lower priority array
-   * @returns combined addressable array without duplicates
-   */
-  private mergeAddressables<T extends { address: Address }>(a: T[], b: T[]): T[] {
-    const filter = new Set(a.map(({ address }) => address));
-
-    return [...a, ...b.filter(({ address }) => !filter.has(address))];
   }
 }
