@@ -4,7 +4,7 @@ import { Contract } from "@ethersproject/contracts";
 import { Address, Asset, ChainId, SdkError, Token, TokenInterface, TokenMetadata } from "..";
 import { CachedFetcher } from "../cache";
 import { Context } from "../context";
-import { ADDRESSES, ZeroAddress } from "../helpers";
+import { EthAddress, ZAPPER_OUT_ADDRESSES, ZeroAddress } from "../helpers";
 import { PartnerService } from "../services/partner";
 import { createMockAssetStaticVaultV2, createMockBalance, createMockToken } from "../test-utils/factories";
 import { Yearn } from "../yearn";
@@ -355,19 +355,21 @@ describe("TokenInterface", () => {
             ironBankTokensMock.mockResolvedValue([ironBankToken]);
           });
 
-          it("should fetch all the tokens from Zapper, Vaults and Iron", async () => {
+          fit("should fetch all the tokens from Zapper, Vaults and Iron", async () => {
             const supportedZapperTokenWithIcon = createMockToken({ address: "0x003" });
             const supportedZapperTokenWithoutIcon = createMockToken({ address: "0x004" });
+            const supportedZapperTokenWithZapOut = createMockToken({ address: ZAPPER_OUT_ADDRESSES.USDC });
 
             zapperSupportedTokensMock.mockResolvedValue([
               supportedZapperTokenWithIcon,
-              supportedZapperTokenWithoutIcon
+              supportedZapperTokenWithoutIcon,
+              supportedZapperTokenWithZapOut
             ]);
             assetReadyThenMock.mockResolvedValue({ "0x003": "image.png" });
 
             const actualSupportedTokens = await tokenInterface.supported();
 
-            expect(actualSupportedTokens.length).toEqual(4);
+            expect(actualSupportedTokens.length).toEqual(5);
             expect(actualSupportedTokens).toEqual(
               expect.arrayContaining([
                 {
@@ -378,6 +380,10 @@ describe("TokenInterface", () => {
                 {
                   ...supportedZapperTokenWithoutIcon,
                   supported: { zapper: true, zapperZapIn: true, zapperZapOut: false }
+                },
+                {
+                  ...supportedZapperTokenWithZapOut,
+                  supported: { zapper: true, zapperZapIn: true, zapperZapOut: true }
                 },
                 vaultsToken,
                 ironBankToken
@@ -751,7 +757,7 @@ describe("TokenInterface", () => {
 
       beforeEach(() => {
         vault = createMockAssetStaticVaultV2();
-        token = ADDRESSES.ETH;
+        token = EthAddress;
       });
 
       it("should return true", async () => {
@@ -872,7 +878,7 @@ describe("TokenInterface", () => {
 
       beforeEach(() => {
         vault = createMockAssetStaticVaultV2();
-        token = ADDRESSES.ETH;
+        token = EthAddress;
       });
 
       it("should return true", async () => {

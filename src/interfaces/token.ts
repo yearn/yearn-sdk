@@ -6,7 +6,7 @@ import BigNumber from "bignumber.js";
 import { CachedFetcher } from "../cache";
 import { ChainId, Chains } from "../chain";
 import { ServiceInterface } from "../common";
-import { ADDRESSES, ZeroAddress } from "../helpers";
+import { EthAddress, ZAPPER_OUT_ADDRESSES, ZeroAddress } from "../helpers";
 import { PickleJars } from "../services/partners/pickle";
 import {
   Address,
@@ -201,7 +201,7 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
               ...token.supported,
               zapper: true,
               zapperZapIn: true,
-              zapperZapOut: Object.values(ADDRESSES).includes(token.address)
+              zapperZapOut: Object.values(ZAPPER_OUT_ADDRESSES).includes(token.address)
             }
           })
         };
@@ -251,7 +251,7 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
       token
     };
 
-    if (ADDRESSES.ETH === token) return allowance;
+    if (EthAddress === token) return allowance;
 
     if (vaultToken === token) {
       const tokenContract = new Contract(token, TokenAbi, this.ctx.provider.read);
@@ -294,7 +294,7 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
     account: Address
   ): Promise<TransactionResponse | boolean> {
     // If Ether is being sent, no need for approval
-    if (ADDRESSES.ETH === token) return true;
+    if (EthAddress === token) return true;
 
     const signer = this.ctx.provider.write.getSigner(account);
 

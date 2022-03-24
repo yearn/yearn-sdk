@@ -18,7 +18,7 @@ import {
   Yearn,
   ZapProtocol
 } from "..";
-import { ADDRESSES, WethAddress } from "../helpers";
+import { EthAddress, WethAddress } from "../helpers";
 import { PartnerService } from "../services/partner";
 import {
   createMockAssetDynamicVaultV2,
@@ -388,7 +388,7 @@ describe("VaultInterface", () => {
           });
           lensAdaptersVaultsV2AssetsDynamicMock.mockResolvedValue([assetsDynamic]);
           visionApyMock.mockResolvedValue([]);
-          assetIconMock.mockReturnValue({ [ADDRESSES.ETH]: "eth.png" });
+          assetIconMock.mockReturnValue({ [EthAddress]: "eth.png" });
         });
 
         it("should set the ETH metadata", async () => {
@@ -409,7 +409,7 @@ describe("VaultInterface", () => {
           expect(lensAdaptersVaultsV2AssetsDynamicMock).toHaveBeenCalledWith(undefined, undefined);
           expect(assetIconMock).toHaveBeenCalledTimes(1);
           expect(assetIconMock).not.toHaveBeenCalledWith(WethAddress);
-          expect(assetIconMock).toHaveBeenCalledWith(ADDRESSES.ETH);
+          expect(assetIconMock).toHaveBeenCalledWith(EthAddress);
         });
       });
 
@@ -459,7 +459,7 @@ describe("VaultInterface", () => {
     let position: Position;
 
     beforeEach(() => {
-      const assetStaticVaultV2 = createMockAssetStaticVaultV2({ token: ADDRESSES.ETH });
+      const assetStaticVaultV2 = createMockAssetStaticVaultV2({ token: EthAddress });
       vaultInterface.getStatic = jest.fn().mockResolvedValue([assetStaticVaultV2]);
       position = {
         assetAddress: "0xPositionAssetAddress",
@@ -681,7 +681,7 @@ describe("VaultInterface", () => {
         expect(lensAdaptersVaultsV2TokensMock).toHaveBeenCalledTimes(1);
         expect(lensAdaptersVaultsV2TokensMock).toHaveBeenCalledWith(undefined); // no overrides
         expect(assetIconMock).toHaveBeenCalledTimes(1);
-        expect(assetIconMock).toHaveBeenCalledWith(["0x001", ADDRESSES.ETH]);
+        expect(assetIconMock).toHaveBeenCalledWith(["0x001", EthAddress]);
         expect(helperTokensMock).toHaveBeenCalledTimes(1);
         expect(helperTokensMock).toHaveBeenCalledWith(["0x001"], undefined);
         expect(tokensMetadataMock).toHaveBeenCalledTimes(1);
@@ -744,11 +744,11 @@ describe("VaultInterface", () => {
       describe("when vault ref token is the same as the token", () => {
         describe("when token is eth address", () => {
           it("should throw", async () => {
-            const assetStaticVaultV2 = createMockAssetStaticVaultV2({ token: ADDRESSES.ETH });
+            const assetStaticVaultV2 = createMockAssetStaticVaultV2({ token: EthAddress });
             vaultInterface.getStatic = jest.fn().mockResolvedValue([assetStaticVaultV2]);
 
             try {
-              await vaultInterface.deposit("0xVault", ADDRESSES.ETH, "1", "0xAccount");
+              await vaultInterface.deposit("0xVault", EthAddress, "1", "0xAccount");
             } catch (error) {
               expect(error).toStrictEqual(new SdkError("deposit:v2:eth not implemented"));
             }

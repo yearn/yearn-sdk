@@ -5,7 +5,7 @@ import BigNumber from "bignumber.js";
 
 import { ChainId } from "../chain";
 import { ServiceInterface } from "../common";
-import { ADDRESSES, WethAddress, ZeroAddress } from "../helpers";
+import { EthAddress, WethAddress, ZeroAddress } from "../helpers";
 import { PickleJars } from "../services/partners/pickle";
 import { SimulationExecutor, SimulationResponse } from "../simulationExecutor";
 import {
@@ -58,7 +58,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
 
       let needsApproving: boolean;
 
-      if (sellToken === ADDRESSES.ETH) {
+      if (sellToken === EthAddress) {
         needsApproving = false;
       } else {
         needsApproving = await this.yearn.services.zapper
@@ -138,7 +138,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
       }
       let needsApproving: boolean;
 
-      if (fromVault === ADDRESSES.ETH) {
+      if (fromVault === EthAddress) {
         needsApproving = false;
       } else {
         needsApproving = await this.yearn.services.zapper
@@ -294,7 +294,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     skipGasEstimate: boolean,
     options: SimulationOptions
   ): Promise<TransactionOutcome> {
-    const zapToken = sellToken === ADDRESSES.ETH ? ZeroAddress : sellToken;
+    const zapToken = sellToken === EthAddress ? ZeroAddress : sellToken;
 
     if (!options.slippage) {
       throw new SdkError("slippage needs to be set", SdkError.NO_SLIPPAGE);
@@ -360,7 +360,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
         break;
     }
 
-    const oracleToken = sellToken === ADDRESSES.ETH ? WethAddress : sellToken;
+    const oracleToken = sellToken === EthAddress ? WethAddress : sellToken;
     const zapInAmountUsdc = new BigNumber(
       await this.yearn.services.oracle.getNormalizedValueUsdc(oracleToken, amount).catch(() => {
         throw new PriceFetchingError("error fetching price", PriceFetchingError.FETCHING_PRICE_ORACLE);
@@ -436,7 +436,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
       throw new SdkError("slippage needs to be set", SdkError.NO_SLIPPAGE);
     }
 
-    const zapToken = toToken === ADDRESSES.ETH ? ZeroAddress : toToken;
+    const zapToken = toToken === EthAddress ? ZeroAddress : toToken;
     const zapOutParams = await this.yearn.services.zapper
       .zapOut(from, zapToken, amount, fromVault, "0", options.slippage, skipGasEstimate)
       .catch(() => {
@@ -469,7 +469,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
       }
     })();
 
-    const oracleToken = toToken === ADDRESSES.ETH ? WethAddress : toToken;
+    const oracleToken = toToken === EthAddress ? WethAddress : toToken;
     const zapOutAmountUsdc = await this.yearn.services.oracle
       .getNormalizedValueUsdc(oracleToken, tokensReceived)
       .catch(() => {
