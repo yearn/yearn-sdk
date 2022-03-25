@@ -1,5 +1,5 @@
 import { Service } from "../common";
-import { StrategiesMetadata, TokenMetadata, VaultMetadataOverrides } from "../types";
+import { Address, StrategiesMetadata, TokenMetadata, VaultMetadataOverrides } from "../types";
 
 const MetaURL = "https://meta.yearn.network";
 
@@ -20,6 +20,10 @@ export class MetaService extends Service {
 
   async vaults(): Promise<VaultMetadataOverrides[]> {
     return fetch(this.buildUrl(`vaults/${CHAIN_ID_KEY}/all`)).then(res => res.json());
+  }
+
+  async findOne(address: Address): Promise<VaultMetadataOverrides> {
+    return fetch(this.buildUrl(`vaults/${CHAIN_ID_KEY}/${address}`)).then(res => res.json());
   }
 
   private buildUrl(path: string): string {

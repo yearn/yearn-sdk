@@ -19,6 +19,7 @@ import {
   TypedMap,
   Usdc,
   Vault,
+  VaultMetadataOverrides,
   ZapProtocol
 } from "../types";
 import { Balance, Icon, IconMap, Token } from "../types";
@@ -382,6 +383,10 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
     } else {
       return result;
     }
+  }
+
+  async findMetadataOverrides(address: Address): Promise<VaultMetadataOverrides> {
+    return this.yearn.services.meta.findOne(address);
   }
 
   /**
