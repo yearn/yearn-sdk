@@ -4,7 +4,7 @@ import { Contract } from "@ethersproject/contracts";
 import { Address, Asset, ChainId, SdkError, Token, TokenInterface, TokenMetadata } from "..";
 import { CachedFetcher } from "../cache";
 import { Context } from "../context";
-import { EthAddress, ZAPPER_OUT_ADDRESSES, ZeroAddress } from "../helpers";
+import { EthAddress, SUPPORTED_ZAP_OUT_ADDRESSES_MAINNET, ZeroAddress } from "../helpers";
 import { PartnerService } from "../services/partner";
 import { createMockAssetStaticVaultV2, createMockBalance, createMockToken } from "../test-utils/factories";
 import { Yearn } from "../yearn";
@@ -358,7 +358,9 @@ describe("TokenInterface", () => {
           fit("should fetch all the tokens from Zapper, Vaults and Iron", async () => {
             const supportedZapperTokenWithIcon = createMockToken({ address: "0x003" });
             const supportedZapperTokenWithoutIcon = createMockToken({ address: "0x004" });
-            const supportedZapperTokenWithZapOut = createMockToken({ address: ZAPPER_OUT_ADDRESSES.USDC });
+            const supportedZapperTokenWithZapOut = createMockToken({
+              address: SUPPORTED_ZAP_OUT_ADDRESSES_MAINNET.USDC
+            });
 
             zapperSupportedTokensMock.mockResolvedValue([
               supportedZapperTokenWithIcon,

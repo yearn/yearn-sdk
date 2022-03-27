@@ -6,7 +6,13 @@ import BigNumber from "bignumber.js";
 import { CachedFetcher } from "../cache";
 import { allSupportedChains, ChainId, Chains, isEthereum, isFantom } from "../chain";
 import { ServiceInterface } from "../common";
-import { EthAddress, FANTOM_TOKEN, mergeByAddress, WrappedFantomAddress, ZAPPER_OUT_ADDRESSES } from "../helpers";
+import {
+  EthAddress,
+  FANTOM_TOKEN,
+  mergeByAddress,
+  SUPPORTED_ZAP_OUT_ADDRESSES_MAINNET,
+  WrappedFantomAddress
+} from "../helpers";
 import { PickleJars } from "../services/partners/pickle";
 import {
   Address,
@@ -196,7 +202,7 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
             ...token.supported,
             zapper: true,
             zapperZapIn: true,
-            zapperZapOut: Object.values(ZAPPER_OUT_ADDRESSES).includes(token.address)
+            zapperZapOut: Object.values(SUPPORTED_ZAP_OUT_ADDRESSES_MAINNET).includes(token.address)
           }
         })
       };

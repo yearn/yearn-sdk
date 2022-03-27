@@ -7,7 +7,7 @@ export const EthAddress = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";
 export const WethAddress = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2";
 export const WrappedFantomAddress = "0x21be370D5312f44cB42ce377BC9b8a0cEF1A4C83";
 
-export const ZAPPER_OUT_ADDRESSES = {
+export const SUPPORTED_ZAP_OUT_ADDRESSES_MAINNET = {
   ETH: "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE",
   DAI: "0x6B175474E89094C44Da98b954EedeAC495271d0F",
   USDC: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
