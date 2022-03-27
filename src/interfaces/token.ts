@@ -105,7 +105,7 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
         vaults: new Set<Address>(),
         ironBank: new Set<Address>(),
         labs: new Set<Address>(),
-        fantom: new Set<Address>()
+        sdk: new Set<Address>()
       }
     );
 
@@ -114,7 +114,7 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
       vaults: [],
       ironBank: [],
       labs: [],
-      fantom: []
+      sdk: []
     };
 
     if (isEthereum(this.chainId)) {
@@ -128,7 +128,7 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
 
     // TODO
     if (isFantom(this.chainId)) {
-      balances.fantom = [];
+      balances.sdk = [];
     }
 
     if (allSupportedChains.includes(this.chainId)) {
@@ -140,7 +140,7 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
       const ironBankBalances = await this.yearn.ironBank.balances(account);
       balances.ironBank = ironBankBalances.filter(({ address }) => addresses.ironBank.has(address));
 
-      return [...balances.vaults, ...balances.ironBank, ...balances.zapper, ...balances.fantom];
+      return [...balances.vaults, ...balances.ironBank, ...balances.zapper, ...balances.sdk];
     }
 
     console.error(`the chain ${this.chainId} hasn't been implemented yet`);

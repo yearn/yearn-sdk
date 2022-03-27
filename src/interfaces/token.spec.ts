@@ -535,7 +535,7 @@ describe("TokenInterface", () => {
           fantomToken = {
             address: ZeroAddress,
             name: "Fantom",
-            dataSource: "fantom",
+            dataSource: "sdk",
             decimals: "18",
             priceUsdc: "0",
             supported: {

@@ -18,7 +18,7 @@ export const SUPPORTED_ZAP_OUT_ADDRESSES_MAINNET = {
 export const FANTOM_TOKEN: Token = {
   address: ZeroAddress,
   name: "Fantom",
-  dataSource: "fantom",
+  dataSource: "sdk",
   decimals: "18",
   priceUsdc: "0",
   supported: {
