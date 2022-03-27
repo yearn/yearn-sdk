@@ -1,32 +1,42 @@
 import { Service } from "../common";
 import { Address, StrategiesMetadata, TokenMetadata, VaultMetadataOverrides } from "../types";
 
-const MetaURL = "https://meta.yearn.network";
-
-const CHAIN_ID_KEY = "{chain_id}";
+const META_URL = "https://meta.yearn.network";
 
 /**
  * [[MetaService]] fetches meta data about things such as vaults and tokens
  * from yearn-meta
  */
 export class MetaService extends Service {
-  async tokens(): Promise<TokenMetadata[]> {
-    return fetch(this.buildUrl(`tokens/${CHAIN_ID_KEY}/all`)).then(res => res.json());
+  async tokens(addresses?: Address[]): Promise<TokenMetadata[]> {
+    if (!addresses) {
+      return fetch(`${META_URL}/tokens/${this.chainId}/all`).then(res => res.json());
+    }
+
+    return Promise.all(
+      addresses.map(address => fetch(`${META_URL}/tokens/${this.chainId}/${address}`).then(e => e.json()))
+    ).then(data => data.flat());
+  }
+
+  async token(address: Address): Promise<TokenMetadata> {
+    return fetch(`${META_URL}/tokens/${this.chainId}/${address}`).then(res => res.json());
   }
 
   async strategies(): Promise<StrategiesMetadata[]> {
-    return fetch(this.buildUrl(`strategies/${CHAIN_ID_KEY}/all`)).then(res => res.json());
+    return fetch(`${META_URL}/strategies/${this.chainId}/all`).then(res => res.json());
   }
 
-  async vaults(): Promise<VaultMetadataOverrides[]> {
-    return fetch(this.buildUrl(`vaults/${CHAIN_ID_KEY}/all`)).then(res => res.json());
+  async vaults(addresses?: Address[]): Promise<VaultMetadataOverrides[]> {
+    if (!addresses) {
+      return fetch(`${META_URL}/vaults/${this.chainId}/all`).then(res => res.json());
+    }
+
+    return Promise.all(
+      addresses.map(address => fetch(`${META_URL}/vaults/${this.chainId}/${address}`).then(e => e.json()))
+    ).then(data => data.flat());
   }
 
-  async findOne(address: Address): Promise<VaultMetadataOverrides> {
-    return fetch(this.buildUrl(`vaults/${CHAIN_ID_KEY}/${address}`)).then(res => res.json());
-  }
-
-  private buildUrl(path: string): string {
-    return `${MetaURL}/${path}`.replace(CHAIN_ID_KEY, this.chainId.toString());
+  async vault(address: Address): Promise<VaultMetadataOverrides> {
+    return fetch(`${META_URL}/vaults/${this.chainId}/${address}`).then(res => res.json());
   }
 }
