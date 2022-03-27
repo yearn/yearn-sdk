@@ -385,10 +385,6 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
     }
   }
 
-  async findMetadataOverrides(address: Address): Promise<VaultMetadataOverrides> {
-    return this.yearn.services.meta.findOne(address);
-  }
-
   /**
    * Merges addressable array b into a removing a duplicates from b
    * @param a higher priority array
