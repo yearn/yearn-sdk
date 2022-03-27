@@ -19,7 +19,6 @@ import {
   TypedMap,
   Usdc,
   Vault,
-  VaultMetadataOverrides,
   ZapProtocol
 } from "../types";
 import { Balance, Icon, IconMap, Token } from "../types";
