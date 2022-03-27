@@ -128,7 +128,16 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
 
     // TODO
     if (isFantom(this.chainId)) {
-      balances.sdk = [];
+      const balance = await this.ctx.provider.read.getBalance(account);
+      balances.sdk = [
+        {
+          address: account,
+          token: FANTOM_TOKEN,
+          balance: balance.toString(),
+          balanceUsdc: "0",
+          priceUsdc: "0"
+        }
+      ];
     }
 
     if (allSupportedChains.includes(this.chainId)) {
