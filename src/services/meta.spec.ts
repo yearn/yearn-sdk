@@ -1,9 +1,12 @@
 import { Context } from "../context";
+import { createMockTokenMetadata, createMockVaultMetadata } from "../test-utils/factories";
 import { MetaService } from "./meta";
+
+const globalFetchJsonMock = jest.fn().mockResolvedValue({});
 
 global.fetch = jest.fn(() =>
   Promise.resolve({
-    json: jest.fn().mockReturnValue({})
+    json: globalFetchJsonMock
   })
 ) as jest.Mock;
 
@@ -26,11 +29,23 @@ describe("MetaService", () => {
     });
 
     it("should fetch all tokens metadata from the addresses given", async () => {
-      await meta.tokens(["0x01", "0x02"]);
+      const tokenMetadata1 = createMockTokenMetadata({ address: "0x001" });
+      const tokenMetadataIgnored = createMockTokenMetadata({ address: "0x002" });
+      const tokenMetadata2 = createMockTokenMetadata({ address: "0x003" });
+      globalFetchJsonMock.mockResolvedValue([tokenMetadata1, tokenMetadataIgnored, tokenMetadata2]);
 
-      expect(global.fetch).toHaveBeenCalledTimes(2);
-      expect(global.fetch).toHaveBeenNthCalledWith(1, "https://meta.yearn.network/tokens/1/0x01");
-      expect(global.fetch).toHaveBeenNthCalledWith(2, "https://meta.yearn.network/tokens/1/0x02");
+      const actual = await meta.tokens(["0x001", "0x003"]);
+
+      expect(global.fetch).toHaveBeenCalledTimes(1);
+      expect(global.fetch).toHaveBeenCalledWith("https://meta.yearn.network/tokens/1/all");
+      expect(actual).toEqual(expect.arrayContaining([tokenMetadata1, tokenMetadata2]));
+      expect(actual).not.toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            address: "0x002"
+          })
+        ])
+      );
     });
   });
 
@@ -58,11 +73,23 @@ describe("MetaService", () => {
     });
 
     it("should fetch all vaults metadata from the addresses given", async () => {
-      await meta.vaults(["0x01", "0x02"]);
+      const vaultMetadata1 = createMockVaultMetadata({ address: "0x001" });
+      const vaultMetadata2 = createMockVaultMetadata({ address: "0x002" });
+      const vaultMetadataIgnored = createMockVaultMetadata({ address: "0x003" });
+      globalFetchJsonMock.mockResolvedValue([vaultMetadata1, vaultMetadataIgnored, vaultMetadata2]);
 
-      expect(global.fetch).toHaveBeenCalledTimes(2);
-      expect(global.fetch).toHaveBeenNthCalledWith(1, "https://meta.yearn.network/vaults/1/0x01");
-      expect(global.fetch).toHaveBeenNthCalledWith(2, "https://meta.yearn.network/vaults/1/0x02");
+      const actual = await meta.vaults(["0x001", "0x002"]);
+
+      expect(global.fetch).toHaveBeenCalledTimes(1);
+      expect(global.fetch).toHaveBeenCalledWith("https://meta.yearn.network/vaults/1/all");
+      expect(actual).toEqual(expect.arrayContaining([vaultMetadata1, vaultMetadata2]));
+      expect(actual).not.toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            address: "0x003"
+          })
+        ])
+      );
     });
   });
 

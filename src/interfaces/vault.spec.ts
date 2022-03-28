@@ -364,7 +364,10 @@ describe("VaultInterface", () => {
 
         describe("when is provided", () => {
           it("should not call meta vaults", async () => {
-            await vaultInterface.getDynamic([], [{ address: "0xVaultMetadataOverrides" }]);
+            await vaultInterface.getDynamic(
+              [],
+              [{ address: "0xVaultMetadataOverrides", comment: "", hideAlways: false }]
+            );
 
             expect(metaVaultsMock).not.toHaveBeenCalled();
           });
@@ -648,7 +651,9 @@ describe("VaultInterface", () => {
           Promise.resolve<Token[]>([tokenMock])
         );
         tokensMetadataMock.mockReturnValue(
-          Promise.resolve<TokenMetadata[]>([{ ...tokenMock, description: "Token mock metadata" }])
+          Promise.resolve<TokenMetadata[]>([
+            { ...tokenMock, description: "Token mock metadata", website: "foo.bar", localization: {} }
+          ])
         );
         oracleGetPriceUsdcMock.mockResolvedValue("1");
         const fillTokenMetadataOverridesMock = jest.fn();
@@ -664,10 +669,12 @@ describe("VaultInterface", () => {
               address: "0x001",
               decimals: "18",
               description: "Token mock metadata",
+              localization: {},
               symbol: "DEAD",
               name: "Dead Token",
               priceUsdc: "0",
               dataSource: "vaults",
+              website: "foo.bar",
               supported: {}
             },
             name: "Dead Token",

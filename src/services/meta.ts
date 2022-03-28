@@ -9,13 +9,13 @@ const META_URL = "https://meta.yearn.network";
  */
 export class MetaService extends Service {
   async tokens(addresses?: Address[]): Promise<TokenMetadata[]> {
+    const tokensMetadata = await fetch(`${META_URL}/tokens/${this.chainId}/all`).then(res => res.json());
+
     if (!addresses) {
-      return fetch(`${META_URL}/tokens/${this.chainId}/all`).then(res => res.json());
+      return tokensMetadata;
     }
 
-    return Promise.all(
-      addresses.map(address => fetch(`${META_URL}/tokens/${this.chainId}/${address}`).then(e => e.json()))
-    ).then(data => data.flat());
+    return tokensMetadata.filter((tokenMetadata: TokenMetadata) => addresses.includes(tokenMetadata.address));
   }
 
   async token(address: Address): Promise<TokenMetadata> {
@@ -27,13 +27,13 @@ export class MetaService extends Service {
   }
 
   async vaults(addresses?: Address[]): Promise<VaultMetadataOverrides[]> {
+    const vaultsMetadata = await fetch(`${META_URL}/vaults/${this.chainId}/all`).then(res => res.json());
+
     if (!addresses) {
-      return fetch(`${META_URL}/vaults/${this.chainId}/all`).then(res => res.json());
+      return vaultsMetadata;
     }
 
-    return Promise.all(
-      addresses.map(address => fetch(`${META_URL}/vaults/${this.chainId}/${address}`).then(e => e.json()))
-    ).then(data => data.flat());
+    return vaultsMetadata.filter((vaultMetadata: VaultMetadataOverrides) => addresses.includes(vaultMetadata.address));
   }
 
   async vault(address: Address): Promise<VaultMetadataOverrides> {

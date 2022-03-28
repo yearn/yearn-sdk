@@ -9,7 +9,7 @@ import { VaultStrategiesMetadata } from "./strategy";
 export interface VaultMetadata {
   symbol: string;
   pricePerShare: Integer;
-  migrationAvailable: boolean;
+  migrationAvailable?: boolean | null;
   latestVaultAddress: Address;
   depositLimit: Integer;
   emergencyShutdown: boolean;
@@ -19,17 +19,17 @@ export interface VaultMetadata {
   totalSupply: Integer;
 
   apy?: Apy;
-  displayName: string;
+  displayName?: string | null;
   displayIcon: string;
   defaultDisplayToken: Address;
   strategies?: VaultStrategiesMetadata;
   historicEarnings?: EarningsDayData[];
-  depositsDisabled?: boolean;
-  withdrawalsDisabled?: boolean;
-  allowZapIn?: boolean;
-  allowZapOut?: boolean;
-  migrationContract?: Address;
-  migrationTargetVault?: Address;
+  depositsDisabled?: boolean | null;
+  withdrawalsDisabled?: boolean | null;
+  allowZapIn?: boolean | null;
+  allowZapOut?: boolean | null;
+  migrationContract?: Address | null;
+  migrationTargetVault?: Address | null;
   vaultNameOverride?: string;
   vaultDetailPageAssets?: string[];
   hideIfNoDeposits: boolean;
@@ -75,12 +75,13 @@ export type TypeId = keyof Metadata;
  */
 export interface TokenMetadata {
   address: Address;
-  categories?: string[];
-  description?: string;
-  website?: string;
+  categories?: string[] | null;
+  description: string;
+  website: string;
   tokenIconOverride?: string;
-  tokenSymbolOverride?: string;
-  tokenNameOverride?: string;
+  tokenSymbolOverride?: string | null;
+  tokenNameOverride?: string | null;
+  localization: Record<string, unknown>;
 }
 
 export interface StrategyMetadata {
@@ -99,22 +100,23 @@ export interface StrategiesMetadata {
 
 export interface VaultMetadataOverrides {
   address: Address;
-  comment?: string;
-  hideAlways?: boolean;
-  depositsDisabled?: boolean;
-  withdrawalsDisabled?: boolean;
-  apyOverride?: number;
-  apyTypeOverride?: string;
-  order?: number;
-  migrationAvailable?: boolean;
-  allowZapIn?: boolean;
-  allowZapOut?: boolean;
-  migrationContract?: Address;
-  migrationTargetVault?: Address;
-  displayName?: string;
-  vaultIconOverride?: string;
-  vaultSymbolOverride?: string;
-  vaultNameOverride?: string;
+  allowZapIn?: boolean | null;
+  allowZapOut?: boolean | null;
+  apyOverride?: number | null;
+  apyTypeOverride?: string | null;
+  comment: string;
+  depositsDisabled?: boolean | null;
+  displayName?: string | null;
+  hideAlways: boolean;
+  migrationAvailable?: boolean | null;
+  migrationContract?: Address | null;
+  migrationTargetVault?: Address | null;
+  order?: number | null;
+  retired?: boolean | null;
+  useVaultDataAsDefault?: boolean | null;
   vaultDetailPageAssets?: string[];
-  retired?: boolean;
+  vaultIconOverride?: string;
+  vaultNameOverride?: string;
+  vaultSymbolOverride?: string;
+  withdrawalsDisabled?: boolean | null;
 }
