@@ -355,7 +355,7 @@ describe("TokenInterface", () => {
             ironBankTokensMock.mockResolvedValue([ironBankToken]);
           });
 
-          fit("should fetch all the tokens from Zapper, Vaults and Iron", async () => {
+          it("should fetch all the tokens from Zapper, Vaults and Iron", async () => {
             const supportedZapperTokenWithIcon = createMockToken({ address: "0x003" });
             const supportedZapperTokenWithoutIcon = createMockToken({ address: "0x004" });
             const supportedZapperTokenWithZapOut = createMockToken({
