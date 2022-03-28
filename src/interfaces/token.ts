@@ -1,3 +1,4 @@
+import { BigNumber as EthersBigNumber } from "@ethersproject/bignumber";
 import { MaxUint256 } from "@ethersproject/constants";
 import { CallOverrides, Contract } from "@ethersproject/contracts";
 import { TransactionRequest, TransactionResponse } from "@ethersproject/providers";
@@ -126,16 +127,16 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
       }
     }
 
-    // TODO
     if (isFantom(this.chainId)) {
       const balance = await this.ctx.provider.read.getBalance(account);
+      const priceUsdc = await this.yearn.services.oracle.getPriceUsdc(WrappedFantomAddress);
       balances.sdk = [
         {
           address: account,
           token: FANTOM_TOKEN,
           balance: balance.toString(),
-          balanceUsdc: "0",
-          priceUsdc: "0"
+          balanceUsdc: balance.mul(EthersBigNumber.from(priceUsdc)).toString(),
+          priceUsdc
         }
       ];
     }
