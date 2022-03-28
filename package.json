@@ -1,6 +1,6 @@
 {
   "name": "@yfi/sdk",
-  "version": "1.2.1-0",
+  "version": "1.2.1-1",
   "description": "Interaction framework for the yearn protocol",
   "author": "nymmrx <nymmrx@protonmail.com>",
   "license": "MIT",
