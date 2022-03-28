@@ -1,3 +1,4 @@
+import { BigNumber } from "@ethersproject/bignumber";
 import { MaxUint256 } from "@ethersproject/constants";
 import { Contract } from "@ethersproject/contracts";
 
@@ -90,7 +91,9 @@ jest.mock("../context", () => ({
           sendTransaction: jest.fn().mockResolvedValue("transaction")
         }))
       },
-      read: "reader"
+      read: {
+        getBalance: jest.fn().mockResolvedValue(BigNumber.from("42000000"))
+      }
     }
   }))
 }));
@@ -122,22 +125,22 @@ describe("TokenInterface", () => {
 
   describe("priceUsdc", () => {
     it("should get the suggested Usdc exchange rate for a token", async () => {
-      getPriceUsdcMock.mockResolvedValue(0.000001);
+      getPriceUsdcMock.mockResolvedValue("0.000001");
 
       const actualPriceUsdc = await tokenInterface.priceUsdc("0x000");
 
-      expect(actualPriceUsdc).toEqual(0.000001);
+      expect(actualPriceUsdc).toEqual("0.000001");
       expect(getPriceUsdcMock).toHaveBeenCalledTimes(1);
       expect(getPriceUsdcMock).toHaveBeenCalledWith("0x000", undefined);
     });
 
     it("should get the suggested Usdc exchange rate for list of tokens", async () => {
-      getPriceUsdcMock.mockResolvedValueOnce(0.000001).mockResolvedValueOnce(0.000002);
+      getPriceUsdcMock.mockResolvedValueOnce("0.000001").mockResolvedValueOnce(0.000002);
 
       const actualPriceUsdc = await tokenInterface.priceUsdc(["0x000", "0x001"]);
 
       expect(actualPriceUsdc).toEqual({
-        "0x000": 0.000001,
+        "0x000": "0.000001",
         "0x001": 0.000002
       });
       expect(getPriceUsdcMock).toHaveBeenCalledTimes(2);
@@ -263,40 +266,110 @@ describe("TokenInterface", () => {
       })
     );
 
-    ([250, 42161] as ChainId[]).forEach(chainId =>
-      describe(`when chainId is ${chainId}`, () => {
-        beforeEach(() => {
-          tokenInterface = new TokenInterface(mockedYearn, chainId, new Context({}));
-          tokenInterface.supported = jest.fn().mockResolvedValue([vaultToken, vaultTokenNoBalance, ironBankToken]);
-        });
+    describe("when chainId is 250", () => {
+      beforeEach(() => {
+        tokenInterface = new TokenInterface(mockedYearn, 250, new Context({}));
+        tokenInterface.supported = jest.fn().mockResolvedValue([vaultToken, vaultTokenNoBalance, ironBankToken]);
+      });
 
-        it("should return balances for all supported tokens", async () => {
-          vaultsBalancesMock.mockResolvedValue([vaultTokenWithBalance, vaultTokenWithoutBalance]);
-          ironBankBalancesMock.mockResolvedValue([ironBankTokenWithBalance]);
+      it("should return balances for all supported tokens", async () => {
+        vaultsBalancesMock.mockResolvedValue([vaultTokenWithBalance, vaultTokenWithoutBalance]);
+        ironBankBalancesMock.mockResolvedValue([ironBankTokenWithBalance]);
 
-          const actualBalances = await tokenInterface.balances("0xAccount");
+        const actualBalances = await tokenInterface.balances("0xAccount");
 
-          expect(actualBalances.length).toEqual(2);
-          expect(actualBalances).toEqual(expect.arrayContaining([vaultTokenWithBalance, ironBankTokenWithBalance]));
-          expect(zapperBalancesMock).not.toHaveBeenCalled();
-          expect(vaultsBalancesMock).toHaveBeenCalledWith("0xAccount");
-          expect(ironBankBalancesMock).toHaveBeenCalledWith("0xAccount");
-        });
+        expect(actualBalances.length).toEqual(3);
+        expect(actualBalances).toEqual(
+          expect.arrayContaining([
+            vaultTokenWithBalance,
+            ironBankTokenWithBalance,
+            {
+              address: "0xAccount",
+              balance: "42000000",
+              balanceUsdc: "42",
+              priceUsdc: "0.000001",
+              token: {
+                address: "0x0000000000000000000000000000000000000000",
+                dataSource: "sdk",
+                decimals: "18",
+                name: "Fantom",
+                priceUsdc: "0",
+                supported: { ftmApeZap: true },
+                symbol: "FTM"
+              }
+            }
+          ])
+        );
+        expect(zapperBalancesMock).not.toHaveBeenCalled();
+        expect(vaultsBalancesMock).toHaveBeenCalledWith("0xAccount");
+        expect(ironBankBalancesMock).toHaveBeenCalledWith("0xAccount");
+      });
 
-        it("should filter supported tokens when address list is given", async () => {
-          vaultsBalancesMock.mockResolvedValue([vaultTokenWithBalance, vaultTokenWithoutBalance]);
-          ironBankBalancesMock.mockResolvedValue([ironBankTokenWithBalance]);
+      it("should filter supported tokens when address list is given", async () => {
+        vaultsBalancesMock.mockResolvedValue([vaultTokenWithBalance, vaultTokenWithoutBalance]);
+        ironBankBalancesMock.mockResolvedValue([ironBankTokenWithBalance]);
 
-          const actualBalances = await tokenInterface.balances("0xAccount", [vaultToken.address]);
+        const actualBalances = await tokenInterface.balances("0xAccount", [vaultToken.address]);
 
-          expect(actualBalances.length).toEqual(1);
-          expect(actualBalances).toEqual(expect.arrayContaining([vaultTokenWithBalance]));
-          expect(zapperBalancesMock).not.toHaveBeenCalled();
-          expect(vaultsBalancesMock).toHaveBeenCalledWith("0xAccount");
-          expect(ironBankBalancesMock).toHaveBeenCalledWith("0xAccount");
-        });
-      })
-    );
+        expect(actualBalances.length).toEqual(2);
+        expect(actualBalances).toEqual(
+          expect.arrayContaining([
+            vaultTokenWithBalance,
+            {
+              address: "0xAccount",
+              balance: "42000000",
+              balanceUsdc: "42",
+              priceUsdc: "0.000001",
+              token: {
+                address: "0x0000000000000000000000000000000000000000",
+                dataSource: "sdk",
+                decimals: "18",
+                name: "Fantom",
+                priceUsdc: "0",
+                supported: { ftmApeZap: true },
+                symbol: "FTM"
+              }
+            }
+          ])
+        );
+        expect(zapperBalancesMock).not.toHaveBeenCalled();
+        expect(vaultsBalancesMock).toHaveBeenCalledWith("0xAccount");
+        expect(ironBankBalancesMock).toHaveBeenCalledWith("0xAccount");
+      });
+    });
+
+    describe("when chainId is 42161", () => {
+      beforeEach(() => {
+        tokenInterface = new TokenInterface(mockedYearn, 42161, new Context({}));
+        tokenInterface.supported = jest.fn().mockResolvedValue([vaultToken, vaultTokenNoBalance, ironBankToken]);
+      });
+
+      it("should return balances for all supported tokens", async () => {
+        vaultsBalancesMock.mockResolvedValue([vaultTokenWithBalance, vaultTokenWithoutBalance]);
+        ironBankBalancesMock.mockResolvedValue([ironBankTokenWithBalance]);
+
+        const actualBalances = await tokenInterface.balances("0xAccount");
+
+        expect(actualBalances.length).toEqual(2);
+        expect(actualBalances).toEqual(expect.arrayContaining([vaultTokenWithBalance, ironBankTokenWithBalance]));
+        expect(zapperBalancesMock).not.toHaveBeenCalled();
+        expect(vaultsBalancesMock).toHaveBeenCalledWith("0xAccount");
+        expect(ironBankBalancesMock).toHaveBeenCalledWith("0xAccount");
+      });
+
+      it("should filter supported tokens when address list is given", async () => {
+        vaultsBalancesMock.mockResolvedValue([vaultTokenWithBalance, vaultTokenWithoutBalance]);
+        ironBankBalancesMock.mockResolvedValue([ironBankTokenWithBalance]);
+
+        const actualBalances = await tokenInterface.balances("0xAccount", [vaultToken.address]);
+
+        expect(actualBalances.length).toEqual(1);
+        expect(actualBalances).toEqual(expect.arrayContaining([vaultTokenWithBalance]));
+        expect(zapperBalancesMock).not.toHaveBeenCalled();
+        expect(vaultsBalancesMock).toHaveBeenCalledWith("0xAccount");
+        expect(ironBankBalancesMock).toHaveBeenCalledWith("0xAccount");
+      });
+    });
 
     describe("when chainId is not supported", () => {
       beforeEach(() => {
@@ -537,7 +610,7 @@ describe("TokenInterface", () => {
             name: "Fantom",
             dataSource: "sdk",
             decimals: "18",
-            priceUsdc: "0",
+            priceUsdc: "0.000001",
             supported: {
               ftmApeZap: true
             },
@@ -847,7 +920,7 @@ describe("TokenInterface", () => {
               "function approve(address _spender, uint256 _value) public",
               "function allowance(address _owner, address _spender) public view returns (uint256)"
             ],
-            "reader"
+            { getBalance: expect.anything() }
           );
           expect(actualAllowance).toEqual({ amount: "10", owner: "0x001", spender: "0x0001partner", token });
           expect(allowanceMock).toHaveBeenCalledTimes(1);
@@ -866,7 +939,7 @@ describe("TokenInterface", () => {
             "function approve(address _spender, uint256 _value) public",
             "function allowance(address _owner, address _spender) public view returns (uint256)"
           ],
-          "reader"
+          { getBalance: expect.anything() }
         );
         expect(actualAllowance).toEqual({ amount: "20", owner: "0x001", spender: vault.address, token });
         expect(allowanceMock).toHaveBeenCalledTimes(1);

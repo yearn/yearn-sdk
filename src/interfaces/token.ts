@@ -1,4 +1,3 @@
-import { BigNumber as EthersBigNumber } from "@ethersproject/bignumber";
 import { MaxUint256 } from "@ethersproject/constants";
 import { CallOverrides, Contract } from "@ethersproject/contracts";
 import { TransactionRequest, TransactionResponse } from "@ethersproject/providers";
@@ -135,7 +134,7 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
           address: account,
           token: FANTOM_TOKEN,
           balance: balance.toString(),
-          balanceUsdc: balance.mul(EthersBigNumber.from(priceUsdc)).toString(),
+          balanceUsdc: new BigNumber(balance.toString()).times(new BigNumber(priceUsdc)).toString(),
           priceUsdc
         }
       ];
