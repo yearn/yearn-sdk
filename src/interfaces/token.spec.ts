@@ -125,23 +125,23 @@ describe("TokenInterface", () => {
 
   describe("priceUsdc", () => {
     it("should get the suggested Usdc exchange rate for a token", async () => {
-      getPriceUsdcMock.mockResolvedValue("0.000001");
+      getPriceUsdcMock.mockResolvedValue("1000000");
 
       const actualPriceUsdc = await tokenInterface.priceUsdc("0x000");
 
-      expect(actualPriceUsdc).toEqual("0.000001");
+      expect(actualPriceUsdc).toEqual("1000000");
       expect(getPriceUsdcMock).toHaveBeenCalledTimes(1);
       expect(getPriceUsdcMock).toHaveBeenCalledWith("0x000", undefined);
     });
 
     it("should get the suggested Usdc exchange rate for list of tokens", async () => {
-      getPriceUsdcMock.mockResolvedValueOnce("0.000001").mockResolvedValueOnce(0.000002);
+      getPriceUsdcMock.mockResolvedValueOnce("1000000").mockResolvedValueOnce("2000000");
 
       const actualPriceUsdc = await tokenInterface.priceUsdc(["0x000", "0x001"]);
 
       expect(actualPriceUsdc).toEqual({
-        "0x000": "0.000001",
-        "0x001": 0.000002
+        "0x000": "1000000",
+        "0x001": "2000000"
       });
       expect(getPriceUsdcMock).toHaveBeenCalledTimes(2);
       expect(getPriceUsdcMock).toHaveBeenNthCalledWith(1, "0x000", undefined);
@@ -286,8 +286,8 @@ describe("TokenInterface", () => {
             {
               address: "0xAccount",
               balance: "42000000",
-              balanceUsdc: "42",
-              priceUsdc: "0.000001",
+              balanceUsdc: "42000000000000",
+              priceUsdc: "1000000", // $1
               token: {
                 address: "0x0000000000000000000000000000000000000000",
                 dataSource: "sdk",
@@ -318,8 +318,8 @@ describe("TokenInterface", () => {
             {
               address: "0xAccount",
               balance: "42000000",
-              balanceUsdc: "42",
-              priceUsdc: "0.000001",
+              balanceUsdc: "42000000000000",
+              priceUsdc: "1000000", // $1
               token: {
                 address: "0x0000000000000000000000000000000000000000",
                 dataSource: "sdk",
@@ -610,7 +610,7 @@ describe("TokenInterface", () => {
             name: "Fantom",
             dataSource: "sdk",
             decimals: "18",
-            priceUsdc: "0.000001",
+            priceUsdc: "1000000", // $1
             supported: {
               ftmApeZap: true
             },
