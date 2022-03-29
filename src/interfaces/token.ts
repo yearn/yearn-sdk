@@ -134,7 +134,10 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
           address: account,
           token: FANTOM_TOKEN,
           balance: balance.toString(),
-          balanceUsdc: new BigNumber(balance.toString()).times(new BigNumber(priceUsdc)).toString(),
+          balanceUsdc: new BigNumber(balance.toString())
+            .div(10 ** 18)
+            .times(new BigNumber(priceUsdc))
+            .toString(),
           priceUsdc
         }
       ];

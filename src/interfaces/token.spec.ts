@@ -92,7 +92,7 @@ jest.mock("../context", () => ({
         }))
       },
       read: {
-        getBalance: jest.fn().mockResolvedValue(BigNumber.from("42000000"))
+        getBalance: jest.fn().mockResolvedValue(BigNumber.from("42000000000000000000")) // 42
       }
     }
   }))
@@ -285,8 +285,8 @@ describe("TokenInterface", () => {
             ironBankTokenWithBalance,
             {
               address: "0xAccount",
-              balance: "42000000",
-              balanceUsdc: "42000000000000",
+              balance: "42000000000000000000", // 42 FTM
+              balanceUsdc: "42000000", // $42
               priceUsdc: "1000000", // $1
               token: {
                 address: "0x0000000000000000000000000000000000000000",
@@ -317,8 +317,8 @@ describe("TokenInterface", () => {
             vaultTokenWithBalance,
             {
               address: "0xAccount",
-              balance: "42000000",
-              balanceUsdc: "42000000000000",
+              balance: "42000000000000000000", // 42 FTM
+              balanceUsdc: "42000000", // $42
               priceUsdc: "1000000", // $1
               token: {
                 address: "0x0000000000000000000000000000000000000000",
