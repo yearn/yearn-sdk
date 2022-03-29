@@ -9,7 +9,7 @@ import { VaultStrategiesMetadata } from "./strategy";
 export interface VaultMetadata {
   symbol: string;
   pricePerShare: Integer;
-  migrationAvailable?: boolean | null;
+  migrationAvailable: boolean; // TODO: should be optional
   latestVaultAddress: Address;
   depositLimit: Integer;
   emergencyShutdown: boolean;
@@ -19,17 +19,17 @@ export interface VaultMetadata {
   totalSupply: Integer;
 
   apy?: Apy;
-  displayName?: string | null;
+  displayName: string; // TODO: should be optional
   displayIcon: string;
   defaultDisplayToken: Address;
   strategies?: VaultStrategiesMetadata;
   historicEarnings?: EarningsDayData[];
-  depositsDisabled?: boolean | null;
-  withdrawalsDisabled?: boolean | null;
-  allowZapIn?: boolean | null;
-  allowZapOut?: boolean | null;
-  migrationContract?: Address | null;
-  migrationTargetVault?: Address | null;
+  depositsDisabled?: boolean;
+  withdrawalsDisabled?: boolean;
+  allowZapIn?: boolean;
+  allowZapOut?: boolean;
+  migrationContract?: Address;
+  migrationTargetVault?: Address;
   vaultNameOverride?: string;
   vaultDetailPageAssets?: string[];
   hideIfNoDeposits: boolean;
