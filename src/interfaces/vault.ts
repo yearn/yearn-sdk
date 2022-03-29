@@ -411,10 +411,6 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
     }
   }
 
-  async findMetadataOverrides(address: Address): Promise<VaultMetadataOverrides> {
-    return this.yearn.services.meta.vault(address);
-  }
-
   private async zapIn(
     vault: Address,
     token: Address,
