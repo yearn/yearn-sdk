@@ -100,23 +100,23 @@ export interface StrategiesMetadata {
 
 export interface VaultMetadataOverrides {
   address: Address;
-  allowZapIn?: boolean | null;
-  allowZapOut?: boolean | null;
-  apyOverride?: number | null;
-  apyTypeOverride?: string | null;
-  comment: string;
-  depositsDisabled?: boolean | null;
-  displayName?: string | null;
-  hideAlways: boolean;
-  migrationAvailable?: boolean | null;
-  migrationContract?: Address | null;
-  migrationTargetVault?: Address | null;
-  order?: number | null;
-  retired?: boolean | null;
-  useVaultDataAsDefault?: boolean | null;
+  allowZapIn?: boolean;
+  allowZapOut?: boolean;
+  apyOverride?: number;
+  apyTypeOverride?: string;
+  comment?: string;
+  depositsDisabled?: boolean;
+  displayName?: string;
+  hideAlways?: boolean;
+  migrationAvailable?: boolean;
+  migrationContract?: Address;
+  migrationTargetVault?: Address;
+  order?: number;
+  retired?: boolean;
+  useVaultDataAsDefault?: boolean;
   vaultDetailPageAssets?: string[];
   vaultIconOverride?: string;
   vaultNameOverride?: string;
   vaultSymbolOverride?: string;
-  withdrawalsDisabled?: boolean | null;
+  withdrawalsDisabled?: boolean;
 }
