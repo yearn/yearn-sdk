@@ -75,12 +75,12 @@ export type TypeId = keyof Metadata;
  */
 export interface TokenMetadata {
   address: Address;
-  categories?: string[] | null;
+  categories?: string[];
   description: string;
   website: string;
   tokenIconOverride?: string;
-  tokenSymbolOverride?: string | null;
-  tokenNameOverride?: string | null;
+  tokenSymbolOverride?: string;
+  tokenNameOverride?: string;
   localization: Record<string, unknown>;
 }
 
