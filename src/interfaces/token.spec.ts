@@ -622,7 +622,7 @@ describe("TokenInterface", () => {
       try {
         await tokenInterface.approve(ownerAddress, ZeroAddress, spenderAddress, amount);
       } catch (error) {
-        expect(error).toStrictEqual(new SdkError(`Native tokens cant be approved`));
+        expect(error).toStrictEqual(new SdkError(`Native tokens cant be approved: ${ZeroAddress}`));
         expect(Contract).not.toHaveBeenCalled();
         expect(approveMock).not.toHaveBeenCalled();
         expect(sendTransactionMock).not.toHaveBeenCalled();
@@ -633,7 +633,7 @@ describe("TokenInterface", () => {
       try {
         await tokenInterface.approve(ownerAddress, spenderAddress, spenderAddress, amount);
       } catch (error) {
-        expect(error).toStrictEqual(new SdkError(`Cant approve token as its spender`));
+        expect(error).toStrictEqual(new SdkError(`Cant approve token as its spender: ${spenderAddress}`));
         expect(Contract).not.toHaveBeenCalled();
         expect(approveMock).not.toHaveBeenCalled();
         expect(sendTransactionMock).not.toHaveBeenCalled();

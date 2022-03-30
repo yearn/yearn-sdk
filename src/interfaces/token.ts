@@ -228,8 +228,8 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
     amount: Integer,
     overrides?: CallOverrides
   ): Promise<TransactionResponse> {
-    if (isNativeToken(tokenAddress)) throw new SdkError(`Native tokens cant be approved`);
-    if (tokenAddress === spenderAddress) throw new SdkError(`Cant approve token as its spender`);
+    if (isNativeToken(tokenAddress)) throw new SdkError(`Native tokens cant be approved: ${tokenAddress}`);
+    if (tokenAddress === spenderAddress) throw new SdkError(`Cant approve token as its spender: ${tokenAddress}`);
 
     const signer = this.ctx.provider.write.getSigner(ownerAddress);
     const tokenContract = new Contract(tokenAddress, TokenAbi, signer);
