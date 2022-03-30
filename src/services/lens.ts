@@ -9,7 +9,7 @@ import { AddressProvider } from "./addressProvider";
 /**
  * [[LensService]] provides access to all yearn's adapters for assets and user positions.
  */
-export class LensService<T extends ChainId> extends Service<T> {
+export class LensService<T extends ChainId> extends Service {
   private addressProvider: AddressProvider<T>;
 
   constructor(chainId: ChainId, ctx: Context, addressProvider: AddressProvider<T>) {
