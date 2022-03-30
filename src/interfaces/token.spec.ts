@@ -95,9 +95,9 @@ jest.mock("../context", () => ({
 }));
 
 describe("TokenInterface", () => {
-  const owner: Address = "0xOwner";
-  const spender: Address = "0xSpender";
-  const token: Address = "0xToken";
+  const ownerAddress: Address = "0xOwner";
+  const spenderAddress: Address = "0xSpender";
+  const tokenAddress: Address = "0xToken";
   const amount: Integer = "1000000";
   let tokenInterface: TokenInterface<1>;
   let mockedYearn: Yearn<ChainId>;
@@ -598,12 +598,12 @@ describe("TokenInterface", () => {
 
     it("should return a transaction response when approving non native token", async () => {
       approveMock.mockReturnValue("approved");
-      const approveResult = await tokenInterface.approve(owner, token, spender, amount);
+      const approveResult = await tokenInterface.approve(ownerAddress, tokenAddress, spenderAddress, amount);
 
       expect(approveResult).toEqual(true);
       expect(Contract).toHaveBeenCalledTimes(1);
       expect(Contract).toHaveBeenCalledWith(
-        token,
+        tokenAddress,
         [
           "function approve(address _spender, uint256 _value) public",
           "function allowance(address _owner, address _spender) public view returns (uint256)"
@@ -613,14 +613,14 @@ describe("TokenInterface", () => {
         }
       );
       expect(approveMock).toHaveBeenCalledTimes(1);
-      expect(approveMock).toHaveBeenCalledWith(spender, amount, undefined);
+      expect(approveMock).toHaveBeenCalledWith(spenderAddress, amount, undefined);
       expect(sendTransactionMock).toHaveBeenCalledTimes(1);
       expect(sendTransactionMock).toHaveBeenCalledWith("approved");
     });
 
     it("should throw when approving native token", async () => {
       try {
-        await tokenInterface.approve(owner, ZeroAddress, spender, amount);
+        await tokenInterface.approve(ownerAddress, ZeroAddress, spenderAddress, amount);
       } catch (error) {
         expect(error).toStrictEqual(new SdkError(`Native tokens cant be approved`));
         expect(Contract).not.toHaveBeenCalled();
@@ -631,7 +631,7 @@ describe("TokenInterface", () => {
 
     it("should throw if approving token as its spender", async () => {
       try {
-        await tokenInterface.approve(owner, spender, spender, amount);
+        await tokenInterface.approve(ownerAddress, spenderAddress, spenderAddress, amount);
       } catch (error) {
         expect(error).toStrictEqual(new SdkError(`Cant approve token as its spender`));
         expect(Contract).not.toHaveBeenCalled();
@@ -643,14 +643,14 @@ describe("TokenInterface", () => {
 
   describe("allowance", () => {
     it("should return allowance when is a non native token", async () => {
-      const allowance = { owner, token, spender, amount };
+      const allowance = { owner: ownerAddress, token: tokenAddress, spender: spenderAddress, amount };
       allowanceMock.mockReturnValue(amount);
-      const allowanceResult = await tokenInterface.allowance(owner, token, spender);
+      const allowanceResult = await tokenInterface.allowance(ownerAddress, tokenAddress, spenderAddress);
 
       expect(allowanceResult).toEqual(allowance);
       expect(Contract).toHaveBeenCalledTimes(1);
       expect(Contract).toHaveBeenCalledWith(
-        token,
+        tokenAddress,
         [
           "function approve(address _spender, uint256 _value) public",
           "function allowance(address _owner, address _spender) public view returns (uint256)"
@@ -658,12 +658,17 @@ describe("TokenInterface", () => {
         "reader"
       );
       expect(allowanceMock).toHaveBeenCalledTimes(1);
-      expect(allowanceMock).toHaveBeenCalledWith(owner, spender);
+      expect(allowanceMock).toHaveBeenCalledWith(ownerAddress, spenderAddress);
     });
 
     it("should return max allowance when is a native token", async () => {
-      const allowance = { owner, token: ZeroAddress, spender, amount: MaxUint256.toString() };
-      const allowanceResult = await tokenInterface.allowance(owner, ZeroAddress, spender);
+      const allowance = {
+        owner: ownerAddress,
+        token: ZeroAddress,
+        spender: spenderAddress,
+        amount: MaxUint256.toString()
+      };
+      const allowanceResult = await tokenInterface.allowance(ownerAddress, ZeroAddress, spenderAddress);
 
       expect(allowanceResult).toEqual(allowance);
       expect(Contract).not.toBeCalled();
