@@ -319,7 +319,7 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
     tokenAddress: Address
   ): Promise<TokenAllowance> {
     const spenderAddress = await this.getDepositSpenderAddress(vaultAddress, tokenAddress);
-    return this.yearn.tokens._allowance(accountAddress, tokenAddress, spenderAddress);
+    return this.yearn.tokens.allowance(accountAddress, tokenAddress, spenderAddress);
   }
 
   /**
@@ -339,7 +339,7 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
     overrides?: CallOverrides
   ): Promise<TransactionResponse> {
     const spenderAddress = await this.getDepositSpenderAddress(vaultAddress, tokenAddress);
-    return this.yearn.tokens._approve(
+    return this.yearn.tokens.approve(
       accountAddress,
       tokenAddress,
       spenderAddress,

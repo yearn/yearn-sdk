@@ -123,8 +123,8 @@ jest.mock("../yearn", () => ({
     },
     tokens: {
       metadata: tokensMetadataMock,
-      _allowance: tokenAllowanceMock,
-      _approve: tokenApproveMock
+      allowance: tokenAllowanceMock,
+      approve: tokenApproveMock
     }
   }))
 }));
