@@ -1,4 +1,5 @@
 import { BigNumber } from "@ethersproject/bignumber";
+import { MaxUint256 } from "@ethersproject/constants";
 import { CallOverrides, Contract } from "@ethersproject/contracts";
 import { TransactionRequest, TransactionResponse } from "@ethersproject/providers";
 
@@ -15,6 +16,7 @@ import {
   Integer,
   SdkError,
   Token,
+  TokenAllowance,
   TokenMetadata,
   VaultDynamic,
   VaultMetadataOverrides,
@@ -302,6 +304,75 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
         );
       })
     ).then(arr => arr.flat());
+  }
+
+  /**
+   * Fetch the token amount that has been allowed to be used for deposits
+   * @param accountAddress
+   * @param vaultAddress
+   * @param tokenAddress
+   * @returns TokenAllowance
+   */
+  async getDepositAllowance(
+    accountAddress: Address,
+    vaultAddress: Address,
+    tokenAddress: Address
+  ): Promise<TokenAllowance> {
+    const spenderAddress = await this.getDepositSpenderAddress(vaultAddress, tokenAddress);
+    return this.yearn.tokens._allowance(accountAddress, tokenAddress, spenderAddress);
+  }
+
+  /**
+   * Approve the token amount to allow to be used for deposits
+   * @param accountAddress
+   * @param vaultAddress
+   * @param tokenAddress
+   * @param amount
+   * @param overrides
+   * @returns TransactionResponse
+   */
+  async approveDeposit(
+    accountAddress: Address,
+    vaultAddress: Address,
+    tokenAddress: Address,
+    amount?: Integer,
+    overrides?: CallOverrides
+  ): Promise<TransactionResponse> {
+    const spenderAddress = await this.getDepositSpenderAddress(vaultAddress, tokenAddress);
+    return this.yearn.tokens._approve(
+      accountAddress,
+      tokenAddress,
+      spenderAddress,
+      amount ?? MaxUint256.toString(),
+      overrides
+    );
+  }
+
+  private async getDepositSpenderAddress(vaultAddress: Address, tokenAddress: Address): Promise<Address> {
+    const willDepositUnderlyingToken = await this.isUnderlyingToken(vaultAddress, tokenAddress);
+    const shouldUsePartnerService = this.shouldUsePartnerService(vaultAddress);
+
+    if (willDepositUnderlyingToken && shouldUsePartnerService) {
+      const partnerTrackingContractAddress = await this.yearn.services.partner?.address;
+      if (!partnerTrackingContractAddress) throw new SdkError("Partner Tracking Contract Address not defined");
+      return partnerTrackingContractAddress;
+    }
+
+    if (willDepositUnderlyingToken && !shouldUsePartnerService) {
+      return vaultAddress;
+    }
+
+    const willZapToPickleJar = PickleJars.includes(vaultAddress);
+    const zapProtocol = willZapToPickleJar ? ZapProtocol.PICKLE : ZapProtocol.YEARN;
+    console.log(zapProtocol);
+    // TODO: Waiting for correct endpoint from zapper to get latest zapIn contract address
+    // const zapInApprovalState = await this.yearn.services.zapper.zapInApprovalState(account, token, zapProtocol);
+    return "0xZapInContract";
+  }
+
+  private async isUnderlyingToken(vaultAddress: Address, tokenAddress: Address): Promise<boolean> {
+    const [vault] = await this.getStatic([vaultAddress]);
+    return vault.token === tokenAddress;
   }
 
   /**
