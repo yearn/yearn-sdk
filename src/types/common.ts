@@ -41,6 +41,12 @@ export type Integer = string;
 export type Usdc = string;
 
 /**
+ * Utility type to help distinguish [[Integer]]s that represent a Wei (18 dec)
+ * value.
+ */
+export type Wei = string;
+
+/**
  * Utility type to describe a map of predefined keys with the same value.
  */
 export type TypedMap<K extends string | number | symbol, V> = { [key in K]: V };
