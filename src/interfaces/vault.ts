@@ -407,8 +407,8 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
     }
 
     const willZapToPickleJar = PickleJars.includes(vaultAddress);
-    const zapContract = willZapToPickleJar ? ContractAddressId.pickleZapIn : ContractAddressId.zapperZapIn;
-    const zapContractAddress = await this.yearn.addressProvider.addressById(zapContract);
+    const zapContractId = willZapToPickleJar ? ContractAddressId.pickleZapIn : ContractAddressId.zapperZapIn;
+    const zapContractAddress = await this.yearn.addressProvider.addressById(zapContractId);
     return zapContractAddress;
   }
 
