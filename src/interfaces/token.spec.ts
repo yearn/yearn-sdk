@@ -1,11 +1,11 @@
 import { MaxUint256 } from "@ethersproject/constants";
 import { Contract } from "@ethersproject/contracts";
 
-import { Address, Asset, ChainId, Integer, SdkError, Token, TokenInterface, TokenMetadata } from "..";
+import { Address, ChainId, Integer, SdkError, Token, TokenInterface, TokenMetadata } from "..";
 import { CachedFetcher } from "../cache";
 import { Context } from "../context";
 import { ZeroAddress } from "../helpers";
-import { createMockAssetStaticVaultV2, createMockBalance, createMockToken } from "../test-utils/factories";
+import { createMockBalance, createMockToken } from "../test-utils/factories";
 import { Yearn } from "../yearn";
 
 const getPriceUsdcMock = jest.fn();
@@ -680,77 +680,6 @@ describe("TokenInterface", () => {
       expect(allowanceResult).toEqual(allowance);
       expect(Contract).not.toBeCalled();
       expect(allowanceMock).not.toBeCalled();
-    });
-  });
-
-  describe("approveZapOut", () => {
-    describe("when the vault token is not the same as the token", () => {
-      let vault: Asset<"VAULT_V2">;
-      let token: Address;
-
-      beforeEach(() => {
-        vault = createMockAssetStaticVaultV2();
-        token = createMockToken({ address: "0x999" }).address;
-      });
-
-      it("should return false", async () => {
-        const actualApproveZapOut = await tokenInterface.approveZapOut(vault, token, "0x001");
-
-        expect(actualApproveZapOut).toEqual(false);
-      });
-    });
-
-    describe("zapInApprovalState", () => {
-      let vault: Asset<"VAULT_V2">;
-      let token: Address;
-
-      beforeEach(() => {
-        vault = createMockAssetStaticVaultV2();
-        token = createMockToken().address;
-        zapperGasMock.mockResolvedValue({
-          standard: 1,
-          instant: 2,
-          fast: 3
-        });
-      });
-
-      describe("when is not approved", () => {
-        beforeEach(() => {
-          zapperZapOutApprovalStateMock.mockResolvedValue({
-            isApproved: false
-          });
-          zapperZapOutApprovalTransactionMock.mockResolvedValue({
-            data: "data",
-            to: "0x000",
-            from: "0x001",
-            gasPrice: "1"
-          });
-        });
-
-        it("should approve vault to spend a vault token on zapOut", async () => {
-          const actualApproveZapOut = await tokenInterface.approveZapOut(vault, token, "0x001");
-
-          expect(actualApproveZapOut).toEqual("transaction");
-          expect(zapperZapOutApprovalStateMock).toHaveBeenCalledTimes(1);
-          expect(zapperZapOutApprovalStateMock).toHaveBeenCalledWith("0x001", "0x001");
-          expect(zapperZapOutApprovalTransactionMock).toHaveBeenCalledTimes(1);
-          expect(zapperZapOutApprovalTransactionMock).toHaveBeenCalledWith("0x001", "0x001", "3000000000");
-        });
-      });
-
-      describe("when is approved", () => {
-        beforeEach(() => {
-          zapperZapOutApprovalStateMock.mockResolvedValue({
-            isApproved: true
-          });
-        });
-
-        it("should return false", async () => {
-          const actualApproveZapOut = await tokenInterface.approveZapOut(vault, token, "0x001");
-
-          expect(actualApproveZapOut).toEqual(false);
-        });
-      });
     });
   });
 

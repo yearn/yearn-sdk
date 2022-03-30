@@ -1,7 +1,6 @@
 import { MaxUint256 } from "@ethersproject/constants";
 import { CallOverrides, Contract } from "@ethersproject/contracts";
-import { TransactionRequest, TransactionResponse } from "@ethersproject/providers";
-import BigNumber from "bignumber.js";
+import { TransactionResponse } from "@ethersproject/providers";
 
 import { CachedFetcher } from "../cache";
 import { ChainId, Chains } from "../chain";
@@ -16,8 +15,7 @@ import {
   TokenAllowance,
   TokenMetadata,
   TypedMap,
-  Usdc,
-  Vault
+  Usdc
 } from "../types";
 import { Balance, Icon, IconMap, Token } from "../types";
 
@@ -259,40 +257,6 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
     };
 
     return zapperTokens.map(setIcon);
-  }
-
-  /**
-   * Approve vault to spend a vault token on zapOut
-   * @param vault
-   * @param token
-   * @param account
-   * @returns transaction
-   */
-  async approveZapOut(vault: Vault, token: Address, account: Address): Promise<TransactionResponse | boolean> {
-    const signer = this.ctx.provider.write.getSigner(account);
-    if (vault.token === token) {
-      const gasPrice = await this.yearn.services.zapper.gas();
-      const gasPriceFastGwei = new BigNumber(gasPrice.fast).times(new BigNumber(10 ** 9));
-
-      const sellToken = token;
-
-      const zapOutApprovalState = await this.yearn.services.zapper.zapOutApprovalState(account, sellToken);
-      if (!zapOutApprovalState.isApproved) {
-        const zapOutApprovalParams = await this.yearn.services.zapper.zapOutApprovalTransaction(
-          account,
-          sellToken,
-          gasPriceFastGwei.toString()
-        );
-        const transaction: TransactionRequest = {
-          to: zapOutApprovalParams.to,
-          from: zapOutApprovalParams.from,
-          gasPrice: zapOutApprovalParams.gasPrice,
-          data: zapOutApprovalParams.data as string
-        };
-        return signer.sendTransaction(transaction);
-      }
-    }
-    return false;
   }
 
   /**
