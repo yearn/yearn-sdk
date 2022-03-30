@@ -157,8 +157,11 @@ jest.mock("@ethersproject/contracts", () => ({
 }));
 
 describe("VaultInterface", () => {
+  const account: Address = "0xAccount";
+  const vault: Address = "0xVault";
+  const token: Address = "0xToken";
+  const spender: Address = "0xSpender";
   let vaultInterface: VaultInterface<1>;
-
   let mockedYearn: Yearn<ChainId>;
 
   beforeEach(() => {
@@ -704,10 +707,6 @@ describe("VaultInterface", () => {
 
   describe("getDepositAllowance", () => {
     it("should fetch token deposit allowance", async () => {
-      const account: Address = "0xAccount";
-      const vault: Address = "0xVault";
-      const token: Address = "0xToken";
-      const spender: Address = "0xSpender";
       const getDepositSpenderAddressMock = jest.fn().mockResolvedValue(spender);
       (vaultInterface as any).getDepositSpenderAddress = getDepositSpenderAddressMock;
 
@@ -722,10 +721,6 @@ describe("VaultInterface", () => {
 
   describe("getWithdrawAllowance", () => {
     it("should fetch token withdraw allowance", async () => {
-      const account: Address = "0xAccount";
-      const vault: Address = "0xVault";
-      const token: Address = "0xToken";
-      const spender: Address = "0xSpender";
       const getWithdrawSpenderAddressMock = jest.fn().mockResolvedValue(spender);
       (vaultInterface as any).getWithdrawSpenderAddress = getWithdrawSpenderAddressMock;
 
@@ -739,11 +734,6 @@ describe("VaultInterface", () => {
   });
 
   describe("approveDeposit", () => {
-    const account: Address = "0xAccount";
-    const vault: Address = "0xVault";
-    const token: Address = "0xToken";
-    const spender: Address = "0xSpender";
-
     describe("when no amount provided", () => {
       it("should infinite approve", async () => {
         const getDepositSpenderAddressMock = jest.fn().mockResolvedValue(spender);
@@ -775,11 +765,6 @@ describe("VaultInterface", () => {
   });
 
   describe("withdrawDeposit", () => {
-    const account: Address = "0xAccount";
-    const vault: Address = "0xVault";
-    const token: Address = "0xToken";
-    const spender: Address = "0xSpender";
-
     describe("when no amount provided", () => {
       it("should infinite approve", async () => {
         const getWithdrawSpenderAddressMock = jest.fn().mockResolvedValue(spender);
