@@ -61,6 +61,9 @@ export enum ContractAddressId {
   helper = "HELPER",
   allowlist = "ALLOW_LIST_REGISTRY",
   partner = "PARTNER_TRACKER",
+  zapperZapIn = "ZAPPER_ZAP_IN",
+  zapperZapOut = "ZAPPER_ZAP_OUT",
+  pickleZapIn = "PICKLE_ZAP_IN",
   unused = "UNUSED"
 }
 

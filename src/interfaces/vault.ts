@@ -5,7 +5,7 @@ import { TransactionRequest, TransactionResponse } from "@ethersproject/provider
 
 import { CachedFetcher } from "../cache";
 import { ChainId } from "../chain";
-import { ServiceInterface } from "../common";
+import { ContractAddressId, ServiceInterface } from "../common";
 import { chunkArray, EthAddress, WethAddress } from "../helpers";
 import { PickleJars } from "../services/partners/pickle";
 import {
@@ -363,11 +363,9 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
     }
 
     const willZapToPickleJar = PickleJars.includes(vaultAddress);
-    const zapProtocol = willZapToPickleJar ? ZapProtocol.PICKLE : ZapProtocol.YEARN;
-    console.log(zapProtocol);
-    // TODO: Waiting for correct endpoint from zapper to get latest zapIn contract address
-    // const zapInApprovalState = await this.yearn.services.zapper.zapInApprovalState(account, token, zapProtocol);
-    return "0xZapInContract";
+    const zapContract = willZapToPickleJar ? ContractAddressId.pickleZapIn : ContractAddressId.zapperZapIn;
+    const zapContractAddress = await this.yearn.addressProvider.addressById(zapContract);
+    return zapContractAddress;
   }
 
   private async isUnderlyingToken(vaultAddress: Address, tokenAddress: Address): Promise<boolean> {
