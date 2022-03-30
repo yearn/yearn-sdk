@@ -703,7 +703,7 @@ describe("VaultInterface", () => {
   });
 
   describe("getDepositAllowance", () => {
-    it("should fetch token allowance", async () => {
+    it("should fetch token deposit allowance", async () => {
       const account: Address = "0xAccount";
       const vault: Address = "0xVault";
       const token: Address = "0xToken";
@@ -717,6 +717,24 @@ describe("VaultInterface", () => {
       expect(getDepositSpenderAddressMock).toHaveBeenCalledWith(vault, token);
       expect(tokenAllowanceMock).toHaveBeenCalledTimes(1);
       expect(tokenAllowanceMock).toHaveBeenCalledWith(account, token, spender);
+    });
+  });
+
+  describe("getWithdrawAllowance", () => {
+    it("should fetch token withdraw allowance", async () => {
+      const account: Address = "0xAccount";
+      const vault: Address = "0xVault";
+      const token: Address = "0xToken";
+      const spender: Address = "0xSpender";
+      const getWithdrawSpenderAddressMock = jest.fn().mockResolvedValue(spender);
+      (vaultInterface as any).getWithdrawSpenderAddress = getWithdrawSpenderAddressMock;
+
+      await vaultInterface.getWithdrawAllowance(account, vault, token);
+
+      expect(getWithdrawSpenderAddressMock).toHaveBeenCalledTimes(1);
+      expect(getWithdrawSpenderAddressMock).toHaveBeenCalledWith(vault, token);
+      expect(tokenAllowanceMock).toHaveBeenCalledTimes(1);
+      expect(tokenAllowanceMock).toHaveBeenCalledWith(account, vault, spender);
     });
   });
 
@@ -752,6 +770,42 @@ describe("VaultInterface", () => {
         expect(getDepositSpenderAddressMock).toHaveBeenCalledWith(vault, token);
         expect(tokenApproveMock).toHaveBeenCalledTimes(1);
         expect(tokenApproveMock).toHaveBeenCalledWith(account, token, spender, amount, undefined);
+      });
+    });
+  });
+
+  describe("withdrawDeposit", () => {
+    const account: Address = "0xAccount";
+    const vault: Address = "0xVault";
+    const token: Address = "0xToken";
+    const spender: Address = "0xSpender";
+
+    describe("when no amount provided", () => {
+      it("should infinite approve", async () => {
+        const getWithdrawSpenderAddressMock = jest.fn().mockResolvedValue(spender);
+        (vaultInterface as any).getWithdrawSpenderAddress = getWithdrawSpenderAddressMock;
+
+        await vaultInterface.approveWithdraw(account, vault, token);
+
+        expect(getWithdrawSpenderAddressMock).toHaveBeenCalledTimes(1);
+        expect(getWithdrawSpenderAddressMock).toHaveBeenCalledWith(vault, token);
+        expect(tokenApproveMock).toHaveBeenCalledTimes(1);
+        expect(tokenApproveMock).toHaveBeenCalledWith(account, vault, spender, MaxUint256.toString(), undefined);
+      });
+    });
+
+    describe("when amount provided", () => {
+      it("should approve exact amount", async () => {
+        const amount: Integer = "1000000";
+        const getWithdrawSpenderAddressMock = jest.fn().mockResolvedValue(spender);
+        (vaultInterface as any).getWithdrawSpenderAddress = getWithdrawSpenderAddressMock;
+
+        await vaultInterface.approveWithdraw(account, vault, token, amount);
+
+        expect(getWithdrawSpenderAddressMock).toHaveBeenCalledTimes(1);
+        expect(getWithdrawSpenderAddressMock).toHaveBeenCalledWith(vault, token);
+        expect(tokenApproveMock).toHaveBeenCalledTimes(1);
+        expect(tokenApproveMock).toHaveBeenCalledWith(account, vault, spender, amount, undefined);
       });
     });
   });

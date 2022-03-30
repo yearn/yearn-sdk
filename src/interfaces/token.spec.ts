@@ -631,6 +631,17 @@ describe("TokenInterface", () => {
         expect(sendTransactionMock).not.toHaveBeenCalled();
       }
     });
+
+    it("should throw if approving token as its spender", async () => {
+      try {
+        await tokenInterface.approve(owner, spender, spender, amount);
+      } catch (error) {
+        expect(error).toStrictEqual(new SdkError(`Cant approve token as its spender`));
+        expect(Contract).not.toHaveBeenCalled();
+        expect(approveMock).not.toHaveBeenCalled();
+        expect(sendTransactionMock).not.toHaveBeenCalled();
+      }
+    });
   });
 
   describe("allowance", () => {

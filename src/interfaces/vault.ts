@@ -6,7 +6,7 @@ import { TransactionRequest, TransactionResponse } from "@ethersproject/provider
 import { CachedFetcher } from "../cache";
 import { ChainId } from "../chain";
 import { ContractAddressId, ServiceInterface } from "../common";
-import { chunkArray, EthAddress, WethAddress } from "../helpers";
+import { chunkArray, EthAddress, isNativeToken, WethAddress } from "../helpers";
 import { PickleJars } from "../services/partners/pickle";
 import {
   Address,
@@ -323,6 +323,22 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
   }
 
   /**
+   * Fetch the token amount that has been allowed to be used for withdraw
+   * @param accountAddress
+   * @param vaultAddress
+   * @param tokenAddress
+   * @returns TokenAllowance
+   */
+  async getWithdrawAllowance(
+    accountAddress: Address,
+    vaultAddress: Address,
+    tokenAddress: Address
+  ): Promise<TokenAllowance> {
+    const spenderAddress = await this.getWithdrawSpenderAddress(vaultAddress, tokenAddress);
+    return this.yearn.tokens.allowance(accountAddress, vaultAddress, spenderAddress);
+  }
+
+  /**
    * Approve the token amount to allow to be used for deposits
    * @param accountAddress
    * @param vaultAddress
@@ -348,7 +364,35 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
     );
   }
 
+  /**
+   * Approve the token amount to allow to be used for withdraw
+   * @param accountAddress
+   * @param vaultAddress
+   * @param tokenAddress
+   * @param amount
+   * @param overrides
+   * @returns TransactionResponse
+   */
+  async approveWithdraw(
+    accountAddress: Address,
+    vaultAddress: Address,
+    tokenAddress: Address,
+    amount?: Integer,
+    overrides?: CallOverrides
+  ): Promise<TransactionResponse> {
+    const spenderAddress = await this.getWithdrawSpenderAddress(vaultAddress, tokenAddress);
+    return this.yearn.tokens.approve(
+      accountAddress,
+      vaultAddress,
+      spenderAddress,
+      amount ?? MaxUint256.toString(),
+      overrides
+    );
+  }
+
   private async getDepositSpenderAddress(vaultAddress: Address, tokenAddress: Address): Promise<Address> {
+    if (isNativeToken(tokenAddress)) return vaultAddress;
+
     const willDepositUnderlyingToken = await this.isUnderlyingToken(vaultAddress, tokenAddress);
     const shouldUsePartnerService = this.shouldUsePartnerService(vaultAddress);
 
@@ -365,6 +409,14 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
     const willZapToPickleJar = PickleJars.includes(vaultAddress);
     const zapContract = willZapToPickleJar ? ContractAddressId.pickleZapIn : ContractAddressId.zapperZapIn;
     const zapContractAddress = await this.yearn.addressProvider.addressById(zapContract);
+    return zapContractAddress;
+  }
+
+  private async getWithdrawSpenderAddress(vaultAddress: Address, tokenAddress: Address): Promise<Address> {
+    const willWithdrawToUnderlyingToken = await this.isUnderlyingToken(vaultAddress, tokenAddress);
+    if (willWithdrawToUnderlyingToken) return vaultAddress;
+
+    const zapContractAddress = await this.yearn.addressProvider.addressById(ContractAddressId.zapperZapOut);
     return zapContractAddress;
   }
 
