@@ -47,8 +47,10 @@ export interface CacheConfiguration {
 }
 
 export interface SubgraphConfiguration {
-  subgraphKey: string;
-  mainnetSubgraphId: string;
+  subgraphKey?: string;
+  mainnetSubgraphId?: string;
+  fantomSubgraphEndpoint?: string;
+  arbitrumSubgraphEndpoint?: string;
 }
 
 /**
@@ -146,9 +148,8 @@ export class Context implements ContextValue {
     throw new SdkError("cache must be defined in Context for this feature to work.");
   }
 
-  get subgraph(): SubgraphConfiguration {
-    if (this.ctx.subgraph) return this.ctx.subgraph;
-    throw new SdkError("subgraph configuration must be defined in Context for this feature to work.");
+  get subgraph(): SubgraphConfiguration | undefined {
+    return this.ctx.subgraph;
   }
 
   get partnerId(): string | undefined {
