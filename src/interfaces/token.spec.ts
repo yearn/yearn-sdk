@@ -95,8 +95,11 @@ jest.mock("../context", () => ({
 }));
 
 describe("TokenInterface", () => {
+  const owner: Address = "0xOwner";
+  const spender: Address = "0xSpender";
+  const token: Address = "0xToken";
+  const amount: Integer = "1000000";
   let tokenInterface: TokenInterface<1>;
-
   let mockedYearn: Yearn<ChainId>;
 
   beforeEach(() => {
@@ -589,13 +592,7 @@ describe("TokenInterface", () => {
   });
 
   describe("approve", () => {
-    const owner: Address = "0xOwner";
-    const spender: Address = "0xSpender";
-    const amount: Integer = "1000000";
-    let token: Address;
-
     beforeEach(() => {
-      token = createMockToken().address;
       sendTransactionMock.mockResolvedValue(true);
     });
 
@@ -645,15 +642,6 @@ describe("TokenInterface", () => {
   });
 
   describe("allowance", () => {
-    const owner: Address = "0xOwner";
-    const spender: Address = "0xSpender";
-    const amount: Integer = "1000000";
-    let token: Address;
-
-    beforeEach(() => {
-      token = createMockToken().address;
-    });
-
     it("should return allowance when is a non native token", async () => {
       const allowance = { owner, token, spender, amount };
       allowanceMock.mockReturnValue(amount);
