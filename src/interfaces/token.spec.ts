@@ -634,6 +634,45 @@ describe("TokenInterface", () => {
     });
   });
 
+  describe("_allowance", () => {
+    const owner: Address = "0xOwner";
+    const spender: Address = "0xSpender";
+    const amount: Integer = "1000000";
+    let token: Address;
+
+    beforeEach(() => {
+      token = createMockToken().address;
+    });
+
+    it("should return allowance when is a non native token", async () => {
+      const allowance = { owner, token, spender, amount };
+      allowanceMock.mockReturnValue(amount);
+      const allowanceResult = await tokenInterface._allowance(owner, token, spender);
+
+      expect(allowanceResult).toEqual(allowance);
+      expect(Contract).toHaveBeenCalledTimes(1);
+      expect(Contract).toHaveBeenCalledWith(
+        token,
+        [
+          "function approve(address _spender, uint256 _value) public",
+          "function allowance(address _owner, address _spender) public view returns (uint256)"
+        ],
+        "reader"
+      );
+      expect(allowanceMock).toHaveBeenCalledTimes(1);
+      expect(allowanceMock).toHaveBeenCalledWith(owner, spender);
+    });
+
+    it("should return max allowance when is a native token", async () => {
+      const allowance = { owner, token: ZeroAddress, spender, amount: MaxUint256.toString() };
+      const allowanceResult = await tokenInterface._allowance(owner, ZeroAddress, spender);
+
+      expect(allowanceResult).toEqual(allowance);
+      expect(Contract).not.toBeCalled();
+      expect(allowanceMock).not.toBeCalled();
+    });
+  });
+
   describe("approve", () => {
     describe("when the vault token is the same as the token", () => {
       let vault: Asset<"VAULT_V2">;
