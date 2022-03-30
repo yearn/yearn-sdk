@@ -1,10 +1,10 @@
 import { MaxUint256 } from "@ethersproject/constants";
 import { Contract } from "@ethersproject/contracts";
 
-import { Address, Asset, ChainId, SdkError, Token, TokenInterface, TokenMetadata } from "..";
+import { Address, Asset, ChainId, Integer, SdkError, Token, TokenInterface, TokenMetadata } from "..";
 import { CachedFetcher } from "../cache";
 import { Context } from "../context";
-import { EthAddress } from "../helpers";
+import { EthAddress, ZeroAddress } from "../helpers";
 import { PartnerService } from "../services/partner";
 import { createMockAssetStaticVaultV2, createMockBalance, createMockToken } from "../test-utils/factories";
 import { Yearn } from "../yearn";
@@ -586,6 +586,51 @@ describe("TokenInterface", () => {
           expect(assetReadyThenMock).not.toHaveBeenCalled();
         })
       );
+    });
+  });
+
+  describe("_approve", () => {
+    const owner: Address = "0xOwner";
+    const spender: Address = "0xSpender";
+    const amount: Integer = "1000000";
+    let token: Address;
+
+    beforeEach(() => {
+      token = createMockToken().address;
+      sendTransactionMock.mockResolvedValue(true);
+    });
+
+    it("should return a transaction response when approving non native token", async () => {
+      approveMock.mockReturnValue("approved");
+      const approveResult = await tokenInterface._approve(owner, token, spender, amount);
+
+      expect(approveResult).toEqual(true);
+      expect(Contract).toHaveBeenCalledTimes(1);
+      expect(Contract).toHaveBeenCalledWith(
+        token,
+        [
+          "function approve(address _spender, uint256 _value) public",
+          "function allowance(address _owner, address _spender) public view returns (uint256)"
+        ],
+        {
+          sendTransaction: expect.any(Function)
+        }
+      );
+      expect(approveMock).toHaveBeenCalledTimes(1);
+      expect(approveMock).toHaveBeenCalledWith(spender, amount, undefined);
+      expect(sendTransactionMock).toHaveBeenCalledTimes(1);
+      expect(sendTransactionMock).toHaveBeenCalledWith("approved");
+    });
+
+    it("should throw when approving native token", async () => {
+      try {
+        await tokenInterface._approve(owner, ZeroAddress, spender, amount);
+      } catch (error) {
+        expect(error).toStrictEqual(new SdkError(`Native tokens cant be approved`));
+        expect(Contract).not.toHaveBeenCalled();
+        expect(approveMock).not.toHaveBeenCalled();
+        expect(sendTransactionMock).not.toHaveBeenCalled();
+      }
     });
   });
 

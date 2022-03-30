@@ -6,7 +6,7 @@ import BigNumber from "bignumber.js";
 import { CachedFetcher } from "../cache";
 import { ChainId, Chains } from "../chain";
 import { ServiceInterface } from "../common";
-import { EthAddress } from "../helpers";
+import { EthAddress, isNativeToken } from "../helpers";
 import { PickleJars } from "../services/partners/pickle";
 import {
   Address,
@@ -188,6 +188,57 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
     console.error(`the chain ${this.chainId} hasn't been implemented yet`);
 
     return [];
+  }
+
+  /**
+   * Fetch the token amount that spender is allowed to spend on behalf of owner
+   * @param ownerAddress
+   * @param tokenAddress
+   * @param spenderAddress
+   * @returns TokenAllowance
+   */
+  async _allowance(ownerAddress: Address, tokenAddress: Address, spenderAddress: Address): Promise<TokenAllowance> {
+    const allowance: TokenAllowance = {
+      owner: ownerAddress,
+      token: tokenAddress,
+      spender: spenderAddress,
+      amount: MaxUint256.toString()
+    };
+
+    if (isNativeToken(tokenAddress)) return allowance;
+
+    const tokenContract = new Contract(tokenAddress, TokenAbi, this.ctx.provider.read);
+    const allowanceAmount = await tokenContract.allowance(ownerAddress, spenderAddress);
+
+    return {
+      ...allowance,
+      amount: allowanceAmount.toString()
+    };
+  }
+
+  /**
+   * Approve the token amount that spender is allowed to spend on behalf of owner
+   * @param ownerAddress
+   * @param tokenAddress
+   * @param spenderAddress
+   * @param amount
+   * @param overrides
+   * @returns TokenAllowance
+   */
+  async _approve(
+    ownerAddress: Address,
+    tokenAddress: Address,
+    spenderAddress: Address,
+    amount: Integer,
+    overrides?: CallOverrides
+  ): Promise<TransactionResponse> {
+    if (isNativeToken(tokenAddress)) throw new SdkError(`Native tokens cant be approved`);
+
+    const signer = this.ctx.provider.write.getSigner(ownerAddress);
+    const tokenContract = new Contract(tokenAddress, TokenAbi, signer);
+    const tx = await tokenContract.populateTransaction.approve(spenderAddress, amount, overrides);
+
+    return this.yearn.services.transaction.sendTransaction(tx);
   }
 
   /**
