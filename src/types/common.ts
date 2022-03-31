@@ -41,10 +41,10 @@ export type Integer = string;
 export type Usdc = string;
 
 /**
- * Utility type to help distinguish [[Integer]]s that represent a Wei (18 dec)
- * value.
+ * Utility type to help distinguish [[Integer]]s that represents an already
+ * normalized value with the corresponding decimals from their Integer form.
  */
-export type Wei = string;
+export type Unit = string;
 
 /**
  * Utility type to describe a map of predefined keys with the same value.
