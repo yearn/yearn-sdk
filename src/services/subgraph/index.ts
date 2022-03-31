@@ -12,9 +12,8 @@ export class SubgraphService extends Service {
     switch (chainId) {
       case 1:
       case 1337:
-        if (ctx.subgraph?.subgraphKey && ctx.subgraph.mainnetSubgraphId) {
-          this.yearnSubgraphEndpoint = `https://gateway.thegraph.com/api/${ctx.subgraph.subgraphKey}/subgraphs/id/${ctx.subgraph.mainnetSubgraphId}`;
-        }
+        // no fallback for mainnet as the hosted version has been deprecated.
+        this.yearnSubgraphEndpoint = ctx.subgraph?.mainnetSubgraphEndpoint;
         break;
       case 250:
         this.yearnSubgraphEndpoint =

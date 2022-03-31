@@ -47,8 +47,7 @@ export interface CacheConfiguration {
 }
 
 export interface SubgraphConfiguration {
-  subgraphKey?: string;
-  mainnetSubgraphId?: string;
+  mainnetSubgraphEndpoint?: string;
   fantomSubgraphEndpoint?: string;
   arbitrumSubgraphEndpoint?: string;
 }
