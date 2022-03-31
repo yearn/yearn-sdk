@@ -1,4 +1,4 @@
-import { chunkArray, convertSecondsMillisOrMicrosToMillis } from "./helpers";
+import { chunkArray, convertSecondsMillisOrMicrosToMillis, mergeByAddress } from "./helpers";
 
 describe("Helpers", () => {
   describe("chunkArray", () => {
@@ -87,6 +87,27 @@ describe("Helpers", () => {
         expect(() => convertSecondsMillisOrMicrosToMillis(10000000000000000)).toThrowError(
           "Timestamp in invalid format"
         );
+      });
+    });
+  });
+
+  describe("mergeByAddress", () => {
+    describe("when there are objects with the same address", () => {
+      it("should merge", () => {
+        const actual = mergeByAddress([{ address: "0x00", foo: "foo" }], [{ address: "0x00", foo: "bar", bar: "bar" }]);
+
+        expect(actual).toStrictEqual([{ address: "0x00", foo: "foo" }]);
+      });
+    });
+
+    describe("when there are not objects with the same address", () => {
+      it("should not merge", () => {
+        const actual = mergeByAddress([{ address: "0x00", foo: "foo" }], [{ address: "0x01", bar: "bar" }]);
+
+        expect(actual).toStrictEqual([
+          { address: "0x00", foo: "foo" },
+          { address: "0x01", bar: "bar" }
+        ]);
       });
     });
   });

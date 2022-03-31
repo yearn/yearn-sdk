@@ -1,10 +1,11 @@
+import { BigNumber } from "@ethersproject/bignumber";
 import { MaxUint256 } from "@ethersproject/constants";
 import { Contract } from "@ethersproject/contracts";
 
 import { Address, Asset, ChainId, SdkError, Token, TokenInterface, TokenMetadata } from "..";
 import { CachedFetcher } from "../cache";
 import { Context } from "../context";
-import { EthAddress } from "../helpers";
+import { EthAddress, SUPPORTED_ZAP_OUT_ADDRESSES_MAINNET, ZeroAddress } from "../helpers";
 import { PartnerService } from "../services/partner";
 import { createMockAssetStaticVaultV2, createMockBalance, createMockToken } from "../test-utils/factories";
 import { Yearn } from "../yearn";
@@ -90,7 +91,9 @@ jest.mock("../context", () => ({
           sendTransaction: jest.fn().mockResolvedValue("transaction")
         }))
       },
-      read: "reader"
+      read: {
+        getBalance: jest.fn().mockResolvedValue(BigNumber.from("42000000000000000000")) // 42
+      }
     }
   }))
 }));
@@ -122,23 +125,23 @@ describe("TokenInterface", () => {
 
   describe("priceUsdc", () => {
     it("should get the suggested Usdc exchange rate for a token", async () => {
-      getPriceUsdcMock.mockResolvedValue(0.000001);
+      getPriceUsdcMock.mockResolvedValue("1000000");
 
       const actualPriceUsdc = await tokenInterface.priceUsdc("0x000");
 
-      expect(actualPriceUsdc).toEqual(0.000001);
+      expect(actualPriceUsdc).toEqual("1000000");
       expect(getPriceUsdcMock).toHaveBeenCalledTimes(1);
       expect(getPriceUsdcMock).toHaveBeenCalledWith("0x000", undefined);
     });
 
     it("should get the suggested Usdc exchange rate for list of tokens", async () => {
-      getPriceUsdcMock.mockResolvedValueOnce(0.000001).mockResolvedValueOnce(0.000002);
+      getPriceUsdcMock.mockResolvedValueOnce("1000000").mockResolvedValueOnce("2000000");
 
       const actualPriceUsdc = await tokenInterface.priceUsdc(["0x000", "0x001"]);
 
       expect(actualPriceUsdc).toEqual({
-        "0x000": 0.000001,
-        "0x001": 0.000002
+        "0x000": "1000000",
+        "0x001": "2000000"
       });
       expect(getPriceUsdcMock).toHaveBeenCalledTimes(2);
       expect(getPriceUsdcMock).toHaveBeenNthCalledWith(1, "0x000", undefined);
@@ -263,40 +266,110 @@ describe("TokenInterface", () => {
       })
     );
 
-    ([250, 42161] as ChainId[]).forEach(chainId =>
-      describe(`when chainId is ${chainId}`, () => {
-        beforeEach(() => {
-          tokenInterface = new TokenInterface(mockedYearn, chainId, new Context({}));
-          tokenInterface.supported = jest.fn().mockResolvedValue([vaultToken, vaultTokenNoBalance, ironBankToken]);
-        });
+    describe("when chainId is 250", () => {
+      beforeEach(() => {
+        tokenInterface = new TokenInterface(mockedYearn, 250, new Context({}));
+        tokenInterface.supported = jest.fn().mockResolvedValue([vaultToken, vaultTokenNoBalance, ironBankToken]);
+      });
 
-        it("should return balances for all supported tokens", async () => {
-          vaultsBalancesMock.mockResolvedValue([vaultTokenWithBalance, vaultTokenWithoutBalance]);
-          ironBankBalancesMock.mockResolvedValue([ironBankTokenWithBalance]);
+      it("should return balances for all supported tokens", async () => {
+        vaultsBalancesMock.mockResolvedValue([vaultTokenWithBalance, vaultTokenWithoutBalance]);
+        ironBankBalancesMock.mockResolvedValue([ironBankTokenWithBalance]);
 
-          const actualBalances = await tokenInterface.balances("0xAccount");
+        const actualBalances = await tokenInterface.balances("0xAccount");
 
-          expect(actualBalances.length).toEqual(2);
-          expect(actualBalances).toEqual(expect.arrayContaining([vaultTokenWithBalance, ironBankTokenWithBalance]));
-          expect(zapperBalancesMock).not.toHaveBeenCalled();
-          expect(vaultsBalancesMock).toHaveBeenCalledWith("0xAccount");
-          expect(ironBankBalancesMock).toHaveBeenCalledWith("0xAccount");
-        });
+        expect(actualBalances.length).toEqual(3);
+        expect(actualBalances).toEqual(
+          expect.arrayContaining([
+            vaultTokenWithBalance,
+            ironBankTokenWithBalance,
+            {
+              address: "0xAccount",
+              balance: "42000000000000000000", // 42 FTM
+              balanceUsdc: "42000000", // $42
+              priceUsdc: "1000000", // $1
+              token: {
+                address: "0x0000000000000000000000000000000000000000",
+                dataSource: "sdk",
+                decimals: "18",
+                name: "Fantom",
+                priceUsdc: "0",
+                supported: { ftmApeZap: true },
+                symbol: "FTM"
+              }
+            }
+          ])
+        );
+        expect(zapperBalancesMock).not.toHaveBeenCalled();
+        expect(vaultsBalancesMock).toHaveBeenCalledWith("0xAccount");
+        expect(ironBankBalancesMock).toHaveBeenCalledWith("0xAccount");
+      });
 
-        it("should filter supported tokens when address list is given", async () => {
-          vaultsBalancesMock.mockResolvedValue([vaultTokenWithBalance, vaultTokenWithoutBalance]);
-          ironBankBalancesMock.mockResolvedValue([ironBankTokenWithBalance]);
+      it("should filter supported tokens when address list is given", async () => {
+        vaultsBalancesMock.mockResolvedValue([vaultTokenWithBalance, vaultTokenWithoutBalance]);
+        ironBankBalancesMock.mockResolvedValue([ironBankTokenWithBalance]);
 
-          const actualBalances = await tokenInterface.balances("0xAccount", [vaultToken.address]);
+        const actualBalances = await tokenInterface.balances("0xAccount", [vaultToken.address]);
 
-          expect(actualBalances.length).toEqual(1);
-          expect(actualBalances).toEqual(expect.arrayContaining([vaultTokenWithBalance]));
-          expect(zapperBalancesMock).not.toHaveBeenCalled();
-          expect(vaultsBalancesMock).toHaveBeenCalledWith("0xAccount");
-          expect(ironBankBalancesMock).toHaveBeenCalledWith("0xAccount");
-        });
-      })
-    );
+        expect(actualBalances.length).toEqual(2);
+        expect(actualBalances).toEqual(
+          expect.arrayContaining([
+            vaultTokenWithBalance,
+            {
+              address: "0xAccount",
+              balance: "42000000000000000000", // 42 FTM
+              balanceUsdc: "42000000", // $42
+              priceUsdc: "1000000", // $1
+              token: {
+                address: "0x0000000000000000000000000000000000000000",
+                dataSource: "sdk",
+                decimals: "18",
+                name: "Fantom",
+                priceUsdc: "0",
+                supported: { ftmApeZap: true },
+                symbol: "FTM"
+              }
+            }
+          ])
+        );
+        expect(zapperBalancesMock).not.toHaveBeenCalled();
+        expect(vaultsBalancesMock).toHaveBeenCalledWith("0xAccount");
+        expect(ironBankBalancesMock).toHaveBeenCalledWith("0xAccount");
+      });
+    });
+
+    describe("when chainId is 42161", () => {
+      beforeEach(() => {
+        tokenInterface = new TokenInterface(mockedYearn, 42161, new Context({}));
+        tokenInterface.supported = jest.fn().mockResolvedValue([vaultToken, vaultTokenNoBalance, ironBankToken]);
+      });
+
+      it("should return balances for all supported tokens", async () => {
+        vaultsBalancesMock.mockResolvedValue([vaultTokenWithBalance, vaultTokenWithoutBalance]);
+        ironBankBalancesMock.mockResolvedValue([ironBankTokenWithBalance]);
+
+        const actualBalances = await tokenInterface.balances("0xAccount");
+
+        expect(actualBalances.length).toEqual(2);
+        expect(actualBalances).toEqual(expect.arrayContaining([vaultTokenWithBalance, ironBankTokenWithBalance]));
+        expect(zapperBalancesMock).not.toHaveBeenCalled();
+        expect(vaultsBalancesMock).toHaveBeenCalledWith("0xAccount");
+        expect(ironBankBalancesMock).toHaveBeenCalledWith("0xAccount");
+      });
+
+      it("should filter supported tokens when address list is given", async () => {
+        vaultsBalancesMock.mockResolvedValue([vaultTokenWithBalance, vaultTokenWithoutBalance]);
+        ironBankBalancesMock.mockResolvedValue([ironBankTokenWithBalance]);
+
+        const actualBalances = await tokenInterface.balances("0xAccount", [vaultToken.address]);
+
+        expect(actualBalances.length).toEqual(1);
+        expect(actualBalances).toEqual(expect.arrayContaining([vaultTokenWithBalance]));
+        expect(zapperBalancesMock).not.toHaveBeenCalled();
+        expect(vaultsBalancesMock).toHaveBeenCalledWith("0xAccount");
+        expect(ironBankBalancesMock).toHaveBeenCalledWith("0xAccount");
+      });
+    });
 
     describe("when chainId is not supported", () => {
       beforeEach(() => {
@@ -339,7 +412,7 @@ describe("TokenInterface", () => {
       });
 
       ([1, 1337] as ChainId[]).forEach(chainId =>
-        describe(`when chainId is ${chainId}`, () => {
+        describe(`when chainId is ${chainId} (ethereum)`, () => {
           let ironBankToken: Token;
           let vaultsToken: Token;
 
@@ -358,20 +431,35 @@ describe("TokenInterface", () => {
           it("should fetch all the tokens from Zapper, Vaults and Iron", async () => {
             const supportedZapperTokenWithIcon = createMockToken({ address: "0x003" });
             const supportedZapperTokenWithoutIcon = createMockToken({ address: "0x004" });
+            const supportedZapperTokenWithZapOut = createMockToken({
+              address: SUPPORTED_ZAP_OUT_ADDRESSES_MAINNET.USDC
+            });
 
             zapperSupportedTokensMock.mockResolvedValue([
               supportedZapperTokenWithIcon,
-              supportedZapperTokenWithoutIcon
+              supportedZapperTokenWithoutIcon,
+              supportedZapperTokenWithZapOut
             ]);
             assetReadyThenMock.mockResolvedValue({ "0x003": "image.png" });
 
             const actualSupportedTokens = await tokenInterface.supported();
 
-            expect(actualSupportedTokens.length).toEqual(4);
+            expect(actualSupportedTokens.length).toEqual(5);
             expect(actualSupportedTokens).toEqual(
               expect.arrayContaining([
-                { ...supportedZapperTokenWithIcon, icon: "image.png", supported: { zapper: true } },
-                { ...supportedZapperTokenWithoutIcon, supported: { zapper: true } },
+                {
+                  ...supportedZapperTokenWithIcon,
+                  icon: "image.png",
+                  supported: { zapper: true, zapperZapIn: true, zapperZapOut: false }
+                },
+                {
+                  ...supportedZapperTokenWithoutIcon,
+                  supported: { zapper: true, zapperZapIn: true, zapperZapOut: false }
+                },
+                {
+                  ...supportedZapperTokenWithZapOut,
+                  supported: { zapper: true, zapperZapIn: true, zapperZapOut: true }
+                },
                 vaultsToken,
                 ironBankToken
               ])
@@ -462,14 +550,18 @@ describe("TokenInterface", () => {
                 {
                   ...ironBankTokenAlsoInZapper,
                   supported: {
-                    zapper: true
+                    zapper: true,
+                    zapperZapIn: true,
+                    zapperZapOut: false
                   }
                 },
                 vaultsTokenNotInZapper,
                 {
                   ...vaultsTokenAlsoInZapper,
                   supported: {
-                    zapper: true
+                    zapper: true,
+                    zapperZapIn: true,
+                    zapperZapOut: false
                   }
                 },
                 ironBankTokenNotInZapper,
@@ -500,80 +592,163 @@ describe("TokenInterface", () => {
         })
       );
 
-      ([250, 42161] as ChainId[]).forEach(chainId =>
-        describe(`when chainId is ${chainId}`, () => {
-          let ironBankToken: Token;
-          let vaultsToken: Token;
+      describe("when chainId is 250 (fantom)", () => {
+        let ironBankToken: Token;
+        let vaultsToken: Token;
+        let fantomToken: Token;
 
-          beforeEach(() => {
-            tokenInterface = new TokenInterface(mockedYearn, chainId, new Context({}));
-            ironBankToken = createMockToken({ address: "0x001", symbol: "IRON", name: "Iron Token" });
-            vaultsToken = createMockToken({
-              address: "0x002",
-              symbol: "VAULT",
-              name: "Vault Token"
-            });
-            vaultsTokensMock.mockResolvedValue([vaultsToken]);
-            ironBankTokensMock.mockResolvedValue([ironBankToken]);
+        beforeEach(() => {
+          tokenInterface = new TokenInterface(mockedYearn, 250, new Context({}));
+          ironBankToken = createMockToken({ address: "0x001", symbol: "IRON", name: "Iron Token" });
+          vaultsToken = createMockToken({
+            address: "0x002",
+            symbol: "VAULT",
+            name: "Vault Token"
+          });
+          fantomToken = {
+            address: ZeroAddress,
+            name: "Fantom",
+            dataSource: "sdk",
+            decimals: "18",
+            priceUsdc: "1000000", // $1
+            supported: {
+              ftmApeZap: true
+            },
+            symbol: "FTM"
+          };
+          vaultsTokensMock.mockResolvedValue([vaultsToken]);
+          ironBankTokensMock.mockResolvedValue([ironBankToken]);
+        });
+
+        it("should fetch all the tokens only from Vaults and Iron Bank (not Zapper)", async () => {
+          const actualSupportedTokens = await tokenInterface.supported();
+
+          expect(actualSupportedTokens.length).toEqual(3);
+          expect(actualSupportedTokens).toEqual(expect.arrayContaining([vaultsToken, ironBankToken, fantomToken]));
+          expect(zapperSupportedTokensMock).not.toHaveBeenCalled();
+          expect(assetReadyThenMock).not.toHaveBeenCalled();
+          expect(vaultsTokensMock).toHaveBeenCalledTimes(1);
+          expect(ironBankTokensMock).toHaveBeenCalledTimes(1);
+        });
+
+        it("should return vaults token instead of iron bank tokens in case of duplicates", async () => {
+          const ironBankToken = createMockToken({
+            address: "0x001",
+            symbol: "IRON",
+            name: "Iron Token",
+            icon: "iron-bank.svg",
+            priceUsdc: "10"
+          });
+          const vaultsToken = createMockToken({
+            address: "0x002",
+            symbol: "VAULT",
+            name: "Vault Token",
+            icon: "vaults.svg",
+            priceUsdc: "20"
+          });
+          const ironBankTokenInVaults = createMockToken({
+            address: "0x003",
+            symbol: "IRON3",
+            name: "Iron Token in Vaults",
+            icon: "iron-bank-3.svg",
+            priceUsdc: "13"
+          });
+          const vaultsTokenInIronBank = createMockToken({
+            address: "0x003",
+            symbol: "VAULT3",
+            name: "Vault Token in Iron Bank",
+            icon: "vaults-3.svg",
+            priceUsdc: "23"
           });
 
-          it("should fetch all the tokens only from Vaults and Iron Bank (not Zapper)", async () => {
-            const actualSupportedTokens = await tokenInterface.supported();
+          ironBankTokensMock.mockResolvedValue([ironBankToken, ironBankTokenInVaults]);
+          vaultsTokensMock.mockResolvedValue([vaultsToken, vaultsTokenInIronBank]);
 
-            expect(actualSupportedTokens.length).toEqual(2);
-            expect(actualSupportedTokens).toEqual(expect.arrayContaining([vaultsToken, ironBankToken]));
-            expect(zapperSupportedTokensMock).not.toHaveBeenCalled();
-            expect(assetReadyThenMock).not.toHaveBeenCalled();
-            expect(vaultsTokensMock).toHaveBeenCalledTimes(1);
-            expect(ironBankTokensMock).toHaveBeenCalledTimes(1);
+          const actualSupportedTokens = await tokenInterface.supported();
+
+          expect(actualSupportedTokens.length).toEqual(4);
+          expect(actualSupportedTokens).toEqual(
+            expect.arrayContaining([ironBankToken, vaultsToken, vaultsTokenInIronBank, fantomToken])
+          );
+          expect(zapperSupportedTokensMock).not.toHaveBeenCalled();
+          expect(assetReadyThenMock).not.toHaveBeenCalled();
+          expect(vaultsTokensMock).toHaveBeenCalledTimes(1);
+          expect(ironBankTokensMock).toHaveBeenCalledTimes(1);
+        });
+      });
+
+      describe("when chainId is 42161 (arbitrum)", () => {
+        let ironBankToken: Token;
+        let vaultsToken: Token;
+
+        beforeEach(() => {
+          tokenInterface = new TokenInterface(mockedYearn, 42161, new Context({}));
+          ironBankToken = createMockToken({ address: "0x001", symbol: "IRON", name: "Iron Token" });
+          vaultsToken = createMockToken({
+            address: "0x002",
+            symbol: "VAULT",
+            name: "Vault Token"
+          });
+          vaultsTokensMock.mockResolvedValue([vaultsToken]);
+          ironBankTokensMock.mockResolvedValue([ironBankToken]);
+        });
+
+        it("should fetch all the tokens only from Vaults and Iron Bank (not Zapper)", async () => {
+          const actualSupportedTokens = await tokenInterface.supported();
+
+          expect(actualSupportedTokens.length).toEqual(2);
+          expect(actualSupportedTokens).toEqual(expect.arrayContaining([vaultsToken, ironBankToken]));
+          expect(zapperSupportedTokensMock).not.toHaveBeenCalled();
+          expect(assetReadyThenMock).not.toHaveBeenCalled();
+          expect(vaultsTokensMock).toHaveBeenCalledTimes(1);
+          expect(ironBankTokensMock).toHaveBeenCalledTimes(1);
+        });
+
+        it("should return vaults token instead of iron bank tokens in case of duplicates", async () => {
+          const ironBankToken = createMockToken({
+            address: "0x001",
+            symbol: "IRON",
+            name: "Iron Token",
+            icon: "iron-bank.svg",
+            priceUsdc: "10"
+          });
+          const vaultsToken = createMockToken({
+            address: "0x002",
+            symbol: "VAULT",
+            name: "Vault Token",
+            icon: "vaults.svg",
+            priceUsdc: "20"
+          });
+          const ironBankTokenInVaults = createMockToken({
+            address: "0x003",
+            symbol: "IRON3",
+            name: "Iron Token in Vaults",
+            icon: "iron-bank-3.svg",
+            priceUsdc: "13"
+          });
+          const vaultsTokenInIronBank = createMockToken({
+            address: "0x003",
+            symbol: "VAULT3",
+            name: "Vault Token in Iron Bank",
+            icon: "vaults-3.svg",
+            priceUsdc: "23"
           });
 
-          it("should return vaults token instead of iron bank tokens in case of duplicates", async () => {
-            const ironBankToken = createMockToken({
-              address: "0x001",
-              symbol: "IRON",
-              name: "Iron Token",
-              icon: "iron-bank.svg",
-              priceUsdc: "10"
-            });
-            const vaultsToken = createMockToken({
-              address: "0x002",
-              symbol: "VAULT",
-              name: "Vault Token",
-              icon: "vaults.svg",
-              priceUsdc: "20"
-            });
-            const ironBankTokenInVaults = createMockToken({
-              address: "0x003",
-              symbol: "IRON3",
-              name: "Iron Token in Vaults",
-              icon: "iron-bank-3.svg",
-              priceUsdc: "13"
-            });
-            const vaultsTokenInIronBank = createMockToken({
-              address: "0x003",
-              symbol: "VAULT3",
-              name: "Vault Token in Iron Bank",
-              icon: "vaults-3.svg",
-              priceUsdc: "23"
-            });
+          ironBankTokensMock.mockResolvedValue([ironBankToken, ironBankTokenInVaults]);
+          vaultsTokensMock.mockResolvedValue([vaultsToken, vaultsTokenInIronBank]);
 
-            ironBankTokensMock.mockResolvedValue([ironBankToken, ironBankTokenInVaults]);
-            vaultsTokensMock.mockResolvedValue([vaultsToken, vaultsTokenInIronBank]);
+          const actualSupportedTokens = await tokenInterface.supported();
 
-            const actualSupportedTokens = await tokenInterface.supported();
-
-            expect(actualSupportedTokens.length).toEqual(3);
-            expect(actualSupportedTokens).toEqual(
-              expect.arrayContaining([ironBankToken, vaultsToken, vaultsTokenInIronBank])
-            );
-            expect(zapperSupportedTokensMock).not.toHaveBeenCalled();
-            expect(assetReadyThenMock).not.toHaveBeenCalled();
-            expect(vaultsTokensMock).toHaveBeenCalledTimes(1);
-            expect(ironBankTokensMock).toHaveBeenCalledTimes(1);
-          });
-        })
-      );
+          expect(actualSupportedTokens.length).toEqual(3);
+          expect(actualSupportedTokens).toEqual(
+            expect.arrayContaining([ironBankToken, vaultsToken, vaultsTokenInIronBank])
+          );
+          expect(zapperSupportedTokensMock).not.toHaveBeenCalled();
+          expect(assetReadyThenMock).not.toHaveBeenCalled();
+          expect(vaultsTokensMock).toHaveBeenCalledTimes(1);
+          expect(ironBankTokensMock).toHaveBeenCalledTimes(1);
+        });
+      });
 
       (([42] as unknown) as ChainId[]).forEach(chainId =>
         it(`should return an empty array when chainId is ${chainId}`, async () => {
@@ -745,7 +920,7 @@ describe("TokenInterface", () => {
               "function approve(address _spender, uint256 _value) public",
               "function allowance(address _owner, address _spender) public view returns (uint256)"
             ],
-            "reader"
+            { getBalance: expect.anything() }
           );
           expect(actualAllowance).toEqual({ amount: "10", owner: "0x001", spender: "0x0001partner", token });
           expect(allowanceMock).toHaveBeenCalledTimes(1);
@@ -764,7 +939,7 @@ describe("TokenInterface", () => {
             "function approve(address _spender, uint256 _value) public",
             "function allowance(address _owner, address _spender) public view returns (uint256)"
           ],
-          "reader"
+          { getBalance: expect.anything() }
         );
         expect(actualAllowance).toEqual({ amount: "20", owner: "0x001", spender: vault.address, token });
         expect(allowanceMock).toHaveBeenCalledTimes(1);
