@@ -1,5 +1,5 @@
 import { Service } from "../common";
-import { Address, StrategiesMetadata, TokenMetadata, VaultMetadataOverrides } from "../types";
+import { Address, SdkError, StrategiesMetadata, TokenMetadata, VaultMetadataOverrides } from "../types";
 
 const META_URL = "https://meta.yearn.network";
 
@@ -18,8 +18,20 @@ export class MetaService extends Service {
     return tokensMetadata.filter((tokenMetadata: TokenMetadata) => addresses.includes(tokenMetadata.address));
   }
 
-  async token(address: Address): Promise<TokenMetadata> {
-    return fetch(`${META_URL}/tokens/${this.chainId}/${address}`).then(res => res.json());
+  async token(address: Address): Promise<TokenMetadata | null> {
+    try {
+      const response = await fetch(`${META_URL}/tokens/${this.chainId}/${address}`);
+
+      if (!response.ok) {
+        throw new SdkError(`Failed to fetch token with address "${address}". HTTP error: ${response.status}`);
+      }
+
+      return response.json();
+    } catch (error) {
+      console.error(error);
+    }
+
+    return null;
   }
 
   async strategies(): Promise<StrategiesMetadata[]> {
@@ -36,7 +48,19 @@ export class MetaService extends Service {
     return vaultsMetadata.filter((vaultMetadata: VaultMetadataOverrides) => addresses.includes(vaultMetadata.address));
   }
 
-  async vault(address: Address): Promise<VaultMetadataOverrides> {
-    return fetch(`${META_URL}/vaults/${this.chainId}/${address}`).then(res => res.json());
+  async vault(address: Address): Promise<VaultMetadataOverrides | null> {
+    try {
+      const response = await fetch(`${META_URL}/vaults/${this.chainId}/${address}`);
+
+      if (!response.ok) {
+        throw new SdkError(`Failed to fetch token with address "${address}". HTTP error: ${response.status}`);
+      }
+
+      return response.json();
+    } catch (error) {
+      console.error(error);
+    }
+
+    return null;
   }
 }

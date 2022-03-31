@@ -1,20 +1,18 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Context } from "../context";
 import { createMockTokenMetadata, createMockVaultMetadata } from "../test-utils/factories";
 import { MetaService } from "./meta";
 
-const globalFetchJsonMock = jest.fn().mockResolvedValue({});
-
-global.fetch = jest.fn(() =>
-  Promise.resolve({
-    json: globalFetchJsonMock
-  })
-) as jest.Mock;
-
 describe("MetaService", () => {
   let meta: MetaService;
 
+  beforeAll(() => {
+    global.fetch = jest.fn().mockResolvedValue({ ok: true, json: async () => ({}) });
+  });
+
   beforeEach(() => {
     meta = new MetaService(1, new Context({}));
+    jest.spyOn(console, "error").mockImplementation();
   });
 
   afterEach(() => {
@@ -32,7 +30,10 @@ describe("MetaService", () => {
       const tokenMetadata1 = createMockTokenMetadata({ address: "0x001" });
       const tokenMetadataIgnored = createMockTokenMetadata({ address: "0x002" });
       const tokenMetadata2 = createMockTokenMetadata({ address: "0x003" });
-      globalFetchJsonMock.mockResolvedValue([tokenMetadata1, tokenMetadataIgnored, tokenMetadata2]);
+      (global.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        json: async () => [tokenMetadata1, tokenMetadataIgnored, tokenMetadata2]
+      });
 
       const actual = await meta.tokens(["0x001", "0x003"]);
 
@@ -55,6 +56,23 @@ describe("MetaService", () => {
 
       expect(global.fetch).toHaveBeenCalledWith("https://meta.yearn.network/tokens/1/0x00");
     });
+
+    it("should throw when it fails to fetch a single token metadata from the address given", async () => {
+      (global.fetch as any).mockResolvedValueOnce({
+        ok: false,
+        status: `ipfs resolve -r /ipns/meta.yearn.network/tokens/1/0x00: no link named "0x00"`
+      });
+
+      const actual = await meta.token("0x00");
+
+      expect(global.fetch).toHaveBeenCalledWith("https://meta.yearn.network/tokens/1/0x00");
+      expect(actual).toBe(null);
+      expect(console.error).toHaveBeenCalledWith(
+        new Error(
+          `Failed to fetch token with address "0x00". HTTP error: ipfs resolve -r /ipns/meta.yearn.network/tokens/1/0x00: no link named "0x00"`
+        )
+      );
+    });
   });
 
   describe("strategies", () => {
@@ -76,7 +94,10 @@ describe("MetaService", () => {
       const vaultMetadata1 = createMockVaultMetadata({ address: "0x001" });
       const vaultMetadata2 = createMockVaultMetadata({ address: "0x002" });
       const vaultMetadataIgnored = createMockVaultMetadata({ address: "0x003" });
-      globalFetchJsonMock.mockResolvedValue([vaultMetadata1, vaultMetadataIgnored, vaultMetadata2]);
+      (global.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        json: async () => [vaultMetadata1, vaultMetadataIgnored, vaultMetadata2]
+      });
 
       const actual = await meta.vaults(["0x001", "0x002"]);
 
@@ -98,6 +119,23 @@ describe("MetaService", () => {
       await meta.vault("0x00");
 
       expect(global.fetch).toHaveBeenCalledWith("https://meta.yearn.network/vaults/1/0x00");
+    });
+
+    it("should throw when it fails to fetch a single vault metadata from the address given", async () => {
+      (global.fetch as any).mockResolvedValueOnce({
+        ok: false,
+        status: `ipfs resolve -r /ipns/meta.yearn.network/tokens/1/0x00: no link named "0x00"`
+      });
+
+      const actual = await meta.vault("0x00");
+
+      expect(global.fetch).toHaveBeenCalledWith("https://meta.yearn.network/vaults/1/0x00");
+      expect(actual).toBe(null);
+      expect(console.error).toHaveBeenCalledWith(
+        new Error(
+          `Failed to fetch token with address "0x00". HTTP error: ipfs resolve -r /ipns/meta.yearn.network/tokens/1/0x00: no link named "0x00"`
+        )
+      );
     });
   });
 });
