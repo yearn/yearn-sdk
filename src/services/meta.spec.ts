@@ -60,7 +60,7 @@ describe("MetaService", () => {
     it("should throw when it fails to fetch a single token metadata from the address given", async () => {
       (global.fetch as any).mockResolvedValueOnce({
         ok: false,
-        status: `ipfs resolve -r /ipns/meta.yearn.network/tokens/1/0x00: no link named "0x00"`
+        status: 404
       });
 
       const actual = await meta.token("0x00");
@@ -68,9 +68,7 @@ describe("MetaService", () => {
       expect(global.fetch).toHaveBeenCalledWith("https://meta.yearn.network/tokens/1/0x00");
       expect(actual).toBe(null);
       expect(console.error).toHaveBeenCalledWith(
-        new Error(
-          `Failed to fetch token with address "0x00". HTTP error: ipfs resolve -r /ipns/meta.yearn.network/tokens/1/0x00: no link named "0x00"`
-        )
+        new Error(`Failed to fetch token with address "0x00". HTTP error: 404`)
       );
     });
   });
@@ -124,7 +122,7 @@ describe("MetaService", () => {
     it("should throw when it fails to fetch a single vault metadata from the address given", async () => {
       (global.fetch as any).mockResolvedValueOnce({
         ok: false,
-        status: `ipfs resolve -r /ipns/meta.yearn.network/tokens/1/0x00: no link named "0x00"`
+        status: 404
       });
 
       const actual = await meta.vault("0x00");
@@ -132,9 +130,7 @@ describe("MetaService", () => {
       expect(global.fetch).toHaveBeenCalledWith("https://meta.yearn.network/vaults/1/0x00");
       expect(actual).toBe(null);
       expect(console.error).toHaveBeenCalledWith(
-        new Error(
-          `Failed to fetch token with address "0x00". HTTP error: ipfs resolve -r /ipns/meta.yearn.network/tokens/1/0x00: no link named "0x00"`
-        )
+        new Error(`Failed to fetch token with address "0x00". HTTP error: 404`)
       );
     });
   });
