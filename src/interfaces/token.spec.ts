@@ -5,15 +5,8 @@ import { Contract } from "@ethersproject/contracts";
 import { Address, ChainId, Integer, SdkError, Token, TokenInterface, TokenMetadata } from "..";
 import { CachedFetcher } from "../cache";
 import { Context } from "../context";
-import { EthAddress } from "../helpers";
-import { PartnerService } from "../services/partner";
-import {
-  createMockAssetStaticVaultV2,
-  createMockBalance,
-  createMockToken,
-  createMockTokenMetadata
-} from "../test-utils/factories";
 import { SUPPORTED_ZAP_OUT_ADDRESSES_MAINNET, ZeroAddress } from "../helpers";
+import { createMockBalance, createMockToken, createMockTokenMetadata } from "../test-utils/factories";
 import { Yearn } from "../yearn";
 
 const getPriceUsdcMock = jest.fn();
