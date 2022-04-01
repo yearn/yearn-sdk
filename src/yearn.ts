@@ -88,7 +88,7 @@ export class Yearn<T extends ChainId> {
    * ```
    */
   ready: Promise<void[]>;
-  private addressProvider: AddressProvider<T>;
+  addressProvider: AddressProvider<T>;
 
   /**
    * Create a new SDK instance.

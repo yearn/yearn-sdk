@@ -1,5 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { TransactionResponse } from "@ethersproject/abstract-provider";
 import { BigNumber } from "@ethersproject/bignumber";
+import { MaxUint256 } from "@ethersproject/constants";
 import { Contract } from "@ethersproject/contracts";
 
 import {
@@ -9,9 +11,11 @@ import {
   Context,
   ERC20,
   IconMap,
+  Integer,
   Position,
   SdkError,
   Token,
+  TokenAllowance,
   TokenMetadata,
   Usdc,
   VaultInterface,
@@ -30,6 +34,8 @@ import {
 
 const earningsAccountAssetsDataMock = jest.fn();
 const tokensMetadataMock: jest.Mock<Promise<TokenMetadata[]>> = jest.fn();
+const tokenAllowanceMock: jest.Mock<Promise<TokenAllowance>> = jest.fn();
+const tokenApproveMock: jest.Mock<Promise<TransactionResponse>> = jest.fn();
 const zapperZapOutMock = jest.fn();
 const zapperZapInMock = jest.fn().mockResolvedValue({
   to: "to",
@@ -116,7 +122,9 @@ jest.mock("../yearn", () => ({
       assetsHistoricEarnings: assetsHistoricEarningsMock
     },
     tokens: {
-      metadata: tokensMetadataMock
+      metadata: tokensMetadataMock,
+      allowance: tokenAllowanceMock,
+      approve: tokenApproveMock
     }
   }))
 }));
@@ -149,8 +157,11 @@ jest.mock("@ethersproject/contracts", () => ({
 }));
 
 describe("VaultInterface", () => {
+  const accountAddress: Address = "0xAccount";
+  const vaultAddress: Address = "0xVault";
+  const tokenAddress: Address = "0xToken";
+  const spenderAddress: Address = "0xSpender";
   let vaultInterface: VaultInterface<1>;
-
   let mockedYearn: Yearn<ChainId>;
 
   beforeEach(() => {
@@ -697,6 +708,108 @@ describe("VaultInterface", () => {
         expect(assetAliasMock).toHaveBeenCalledWith("0x001");
         expect(fillTokenMetadataOverridesMock).toHaveBeenCalledTimes(1);
         expect(fillTokenMetadataOverridesMock).toHaveBeenCalledWith(actualTokens[0], actualTokens[0].metadata);
+      });
+    });
+  });
+
+  describe("getDepositAllowance", () => {
+    it("should fetch token deposit allowance", async () => {
+      const getDepositContractAddressMock = jest.fn().mockResolvedValue(spenderAddress);
+      (vaultInterface as any).getDepositContractAddress = getDepositContractAddressMock;
+
+      await vaultInterface.getDepositAllowance(accountAddress, vaultAddress, tokenAddress);
+
+      expect(getDepositContractAddressMock).toHaveBeenCalledTimes(1);
+      expect(getDepositContractAddressMock).toHaveBeenCalledWith(vaultAddress, tokenAddress);
+      expect(tokenAllowanceMock).toHaveBeenCalledTimes(1);
+      expect(tokenAllowanceMock).toHaveBeenCalledWith(accountAddress, tokenAddress, spenderAddress);
+    });
+  });
+
+  describe("getWithdrawAllowance", () => {
+    it("should fetch token withdraw allowance", async () => {
+      const getWithdrawContractAddressMock = jest.fn().mockResolvedValue(spenderAddress);
+      (vaultInterface as any).getWithdrawContractAddress = getWithdrawContractAddressMock;
+
+      await vaultInterface.getWithdrawAllowance(accountAddress, vaultAddress, tokenAddress);
+
+      expect(getWithdrawContractAddressMock).toHaveBeenCalledTimes(1);
+      expect(getWithdrawContractAddressMock).toHaveBeenCalledWith(vaultAddress, tokenAddress);
+      expect(tokenAllowanceMock).toHaveBeenCalledTimes(1);
+      expect(tokenAllowanceMock).toHaveBeenCalledWith(accountAddress, vaultAddress, spenderAddress);
+    });
+  });
+
+  describe("approveDeposit", () => {
+    describe("when no amount provided", () => {
+      it("should infinite approve", async () => {
+        const getDepositContractAddressMock = jest.fn().mockResolvedValue(spenderAddress);
+        (vaultInterface as any).getDepositContractAddress = getDepositContractAddressMock;
+
+        await vaultInterface.approveDeposit(accountAddress, vaultAddress, tokenAddress);
+
+        expect(getDepositContractAddressMock).toHaveBeenCalledTimes(1);
+        expect(getDepositContractAddressMock).toHaveBeenCalledWith(vaultAddress, tokenAddress);
+        expect(tokenApproveMock).toHaveBeenCalledTimes(1);
+        expect(tokenApproveMock).toHaveBeenCalledWith(
+          accountAddress,
+          tokenAddress,
+          spenderAddress,
+          MaxUint256.toString(),
+          undefined
+        );
+      });
+    });
+
+    describe("when amount provided", () => {
+      it("should approve exact amount", async () => {
+        const amount: Integer = "1000000";
+        const getDepositContractAddressMock = jest.fn().mockResolvedValue(spenderAddress);
+        (vaultInterface as any).getDepositContractAddress = getDepositContractAddressMock;
+
+        await vaultInterface.approveDeposit(accountAddress, vaultAddress, tokenAddress, amount);
+
+        expect(getDepositContractAddressMock).toHaveBeenCalledTimes(1);
+        expect(getDepositContractAddressMock).toHaveBeenCalledWith(vaultAddress, tokenAddress);
+        expect(tokenApproveMock).toHaveBeenCalledTimes(1);
+        expect(tokenApproveMock).toHaveBeenCalledWith(accountAddress, tokenAddress, spenderAddress, amount, undefined);
+      });
+    });
+  });
+
+  describe("withdrawDeposit", () => {
+    describe("when no amount provided", () => {
+      it("should infinite approve", async () => {
+        const getWithdrawContractAddressMock = jest.fn().mockResolvedValue(spenderAddress);
+        (vaultInterface as any).getWithdrawContractAddress = getWithdrawContractAddressMock;
+
+        await vaultInterface.approveWithdraw(accountAddress, vaultAddress, tokenAddress);
+
+        expect(getWithdrawContractAddressMock).toHaveBeenCalledTimes(1);
+        expect(getWithdrawContractAddressMock).toHaveBeenCalledWith(vaultAddress, tokenAddress);
+        expect(tokenApproveMock).toHaveBeenCalledTimes(1);
+        expect(tokenApproveMock).toHaveBeenCalledWith(
+          accountAddress,
+          vaultAddress,
+          spenderAddress,
+          MaxUint256.toString(),
+          undefined
+        );
+      });
+    });
+
+    describe("when amount provided", () => {
+      it("should approve exact amount", async () => {
+        const amount: Integer = "1000000";
+        const getWithdrawContractAddressMock = jest.fn().mockResolvedValue(spenderAddress);
+        (vaultInterface as any).getWithdrawContractAddress = getWithdrawContractAddressMock;
+
+        await vaultInterface.approveWithdraw(accountAddress, vaultAddress, tokenAddress, amount);
+
+        expect(getWithdrawContractAddressMock).toHaveBeenCalledTimes(1);
+        expect(getWithdrawContractAddressMock).toHaveBeenCalledWith(vaultAddress, tokenAddress);
+        expect(tokenApproveMock).toHaveBeenCalledTimes(1);
+        expect(tokenApproveMock).toHaveBeenCalledWith(accountAddress, vaultAddress, spenderAddress, amount, undefined);
       });
     });
   });

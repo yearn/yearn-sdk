@@ -1,13 +1,13 @@
 import { MaxUint256 } from "@ethersproject/constants";
 import { CallOverrides, Contract } from "@ethersproject/contracts";
-import { TransactionRequest, TransactionResponse } from "@ethersproject/providers";
+import { TransactionResponse } from "@ethersproject/providers";
 import BigNumber from "bignumber.js";
 
 import { CachedFetcher } from "../cache";
-import { ChainId, Chains } from "../chain";
+import { allSupportedChains, ChainId, Chains, isEthereum, isFantom } from "../chain";
 import { ServiceInterface } from "../common";
-import { EthAddress } from "../helpers";
-import { PickleJars } from "../services/partners/pickle";
+import { isNativeToken } from "../helpers";
+import { FANTOM_TOKEN, mergeByAddress, SUPPORTED_ZAP_OUT_ADDRESSES_MAINNET, WrappedFantomAddress } from "../helpers";
 import {
   Address,
   Integer,
@@ -17,9 +17,7 @@ import {
   TokenAllowance,
   TokenMetadata,
   TypedMap,
-  Usdc,
-  Vault,
-  ZapProtocol
+  Usdc
 } from "../types";
 import { Balance, Icon, IconMap, Token } from "../types";
 
@@ -98,7 +96,8 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
         zapper: new Set<Address>(),
         vaults: new Set<Address>(),
         ironBank: new Set<Address>(),
-        labs: new Set<Address>()
+        labs: new Set<Address>(),
+        sdk: new Set<Address>()
       }
     );
 
@@ -106,10 +105,11 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
       zapper: [],
       vaults: [],
       ironBank: [],
-      labs: []
+      labs: [],
+      sdk: []
     };
 
-    if ([1, 1337].includes(this.chainId)) {
+    if (isEthereum(this.chainId)) {
       try {
         const zapperBalances = await this.yearn.services.zapper.balances(account);
         balances.zapper = zapperBalances.filter(({ address }) => addresses.zapper.has(address));
@@ -118,7 +118,24 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
       }
     }
 
-    if ([1, 1337, 250, 42161].includes(this.chainId)) {
+    if (isFantom(this.chainId)) {
+      const balance = await this.ctx.provider.read.getBalance(account);
+      const priceUsdc = await this.yearn.services.oracle.getPriceUsdc(WrappedFantomAddress);
+      balances.sdk = [
+        {
+          address: account,
+          token: FANTOM_TOKEN,
+          balance: balance.toString(),
+          balanceUsdc: new BigNumber(balance.toString())
+            .div(10 ** 18)
+            .times(new BigNumber(priceUsdc))
+            .toString(),
+          priceUsdc
+        }
+      ];
+    }
+
+    if (allSupportedChains.includes(this.chainId)) {
       const vaultBalances = await this.yearn.vaults.balances(account);
       balances.vaults = vaultBalances.filter(
         ({ address, balance }) => balance !== "0" && addresses.vaults.has(address)
@@ -127,7 +144,7 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
       const ironBankBalances = await this.yearn.ironBank.balances(account);
       balances.ironBank = ironBankBalances.filter(({ address }) => addresses.ironBank.has(address));
 
-      return [...balances.vaults, ...balances.ironBank, ...balances.zapper];
+      return [...balances.vaults, ...balances.ironBank, ...balances.zapper, ...balances.sdk];
     }
 
     console.error(`the chain ${this.chainId} hasn't been implemented yet`);
@@ -140,54 +157,112 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
    * @returns list of tokens supported.
    */
   async supported(): Promise<Token[]> {
+    if (!allSupportedChains.includes(this.chainId)) {
+      console.error(`the chain ${this.chainId} hasn't been implemented yet`);
+
+      return [];
+    }
+
     const cached = await this.cachedFetcherSupported.fetch();
     if (cached) {
       return cached;
     }
 
-    let zapperTokensWithIcon: Token[] = [];
-
     // Zapper only supported in Ethereum
-    if ([1, 1337].includes(this.chainId)) {
+    let zapperTokens: Token[] = [];
+    if (isEthereum(this.chainId)) {
       try {
-        zapperTokensWithIcon = await this.getZapperTokensWithIcons();
+        zapperTokens = await this.getZapperTokensWithIcons();
       } catch (error) {
         console.error(error);
       }
     }
 
-    if ([1, 1337, 250, 42161].includes(this.chainId)) {
-      const vaultsTokens = await this.yearn.vaults.tokens();
-      const ironBankTokens = await this.yearn.ironBank.tokens();
+    const vaultsTokens = await this.yearn.vaults.tokens();
+    const ironBankTokens = await this.yearn.ironBank.tokens();
 
-      const combinedVaultsAndIronBankTokens = this.mergeAddressables(vaultsTokens, ironBankTokens);
+    const vaultsAndIronBankTokens = mergeByAddress(vaultsTokens, ironBankTokens);
 
-      if (!zapperTokensWithIcon.length) {
-        return combinedVaultsAndIronBankTokens;
-      }
-
-      const allSupportedTokens = this.mergeAddressables(combinedVaultsAndIronBankTokens, zapperTokensWithIcon);
-
-      const zapperTokensUniqueAddresses = new Set(zapperTokensWithIcon.map(({ address }) => address));
-
-      return allSupportedTokens.map(token => {
-        const isZapperToken = zapperTokensUniqueAddresses.has(token.address);
-
-        return {
-          ...token,
-          ...(isZapperToken && {
-            supported: {
-              ...token.supported,
-              zapper: true
-            }
-          })
-        };
-      });
+    if (isFantom(this.chainId)) {
+      const priceUsdc = await this.yearn.services.oracle.getPriceUsdc(WrappedFantomAddress);
+      vaultsAndIronBankTokens.push({ ...FANTOM_TOKEN, priceUsdc });
     }
 
-    console.error(`the chain ${this.chainId} hasn't been implemented yet`);
+    if (!zapperTokens.length) {
+      return vaultsAndIronBankTokens;
+    }
 
-    return [];
+    const allSupportedTokens = mergeByAddress(vaultsAndIronBankTokens, zapperTokens);
+
+    const zapperTokensUniqueAddresses = new Set(zapperTokens.map(({ address }) => address));
+
+    return allSupportedTokens.map(token => {
+      const isZapperToken = zapperTokensUniqueAddresses.has(token.address);
+
+      return {
+        ...token,
+        ...(isZapperToken && {
+          supported: {
+            ...token.supported,
+            zapper: true,
+            zapperZapIn: true,
+            zapperZapOut: Object.values(SUPPORTED_ZAP_OUT_ADDRESSES_MAINNET).includes(token.address)
+          }
+        })
+      };
+    });
+  }
+
+  /**
+   * Fetch the token amount that spender is allowed to spend on behalf of owner
+   * @param ownerAddress
+   * @param tokenAddress
+   * @param spenderAddress
+   * @returns TokenAllowance
+   */
+  async allowance(ownerAddress: Address, tokenAddress: Address, spenderAddress: Address): Promise<TokenAllowance> {
+    const allowance: TokenAllowance = {
+      owner: ownerAddress,
+      token: tokenAddress,
+      spender: spenderAddress,
+      amount: MaxUint256.toString()
+    };
+
+    if (isNativeToken(tokenAddress) || tokenAddress === spenderAddress) return allowance;
+
+    const tokenContract = new Contract(tokenAddress, TokenAbi, this.ctx.provider.read);
+    const allowanceAmount = await tokenContract.allowance(ownerAddress, spenderAddress);
+
+    return {
+      ...allowance,
+      amount: allowanceAmount.toString()
+    };
+  }
+
+  /**
+   * Approve the token amount that spender is allowed to spend on behalf of owner
+   * @param ownerAddress
+   * @param tokenAddress
+   * @param spenderAddress
+   * @param amount
+   * @param overrides
+   * @returns TokenAllowance
+   */
+  async approve(
+    ownerAddress: Address,
+    tokenAddress: Address,
+    spenderAddress: Address,
+    amount: Integer,
+    overrides?: CallOverrides
+  ): Promise<TransactionResponse> {
+    if (isNativeToken(tokenAddress)) throw new SdkError(`Native tokens cant be approved: ${tokenAddress}`);
+    if (tokenAddress === spenderAddress) throw new SdkError(`Cant approve token as its spender: ${tokenAddress}`);
+
+    const signer = this.ctx.provider.write.getSigner(ownerAddress);
+    const tokenContract = new Contract(tokenAddress, TokenAbi, signer);
+    const tx = await tokenContract.populateTransaction.approve(spenderAddress, amount, overrides);
+
+    return this.yearn.services.transaction.sendTransaction(tx);
   }
 
   /**
@@ -212,139 +287,6 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
   }
 
   /**
-   * Get allowance for a token either zapIn or direct deposit
-   * @param vault
-   * @param token
-   * @param amount
-   * @param account
-   * @returns transaction
-   */
-  async allowance(address: Address, vaultToken: Address, token: Address, account: Address): Promise<TokenAllowance> {
-    // If Ether is being sent, no need for approval
-    const allowance: TokenAllowance = {
-      owner: account,
-      spender: address,
-      amount: MaxUint256.toString(),
-      token
-    };
-
-    if (EthAddress === token) return allowance;
-
-    if (vaultToken === token) {
-      const tokenContract = new Contract(token, TokenAbi, this.ctx.provider.read);
-      const partnerAddress = await this.yearn.services.partner?.address;
-      const addressToApprove = (this.shouldUsePartnerService(address) && partnerAddress) || address;
-      const allowanceAmount = await tokenContract.allowance(account, addressToApprove);
-
-      return {
-        ...allowance,
-        spender: addressToApprove,
-        amount: allowanceAmount.toString()
-      };
-    }
-
-    const zapProtocol = PickleJars.includes(address) ? ZapProtocol.PICKLE : ZapProtocol.YEARN;
-
-    const zapInApprovalState = await this.yearn.services.zapper.zapInApprovalState(account, token, zapProtocol);
-
-    return {
-      owner: zapInApprovalState.ownerAddress,
-      spender: zapInApprovalState.spenderAddress,
-      amount: zapInApprovalState.allowance,
-      token
-    };
-  }
-
-  /**
-   * Approve vault to spend a token on zapIn or direct deposit
-   * @param vault
-   * @param token
-   * @param amount
-   * @param account
-   * @returns transaction
-   */
-  async approveDeposit(
-    address: Address,
-    vaultToken: Address,
-    token: Address,
-    amount: Integer,
-    account: Address
-  ): Promise<TransactionResponse | boolean> {
-    // If Ether is being sent, no need for approval
-    if (EthAddress === token) return true;
-
-    const signer = this.ctx.provider.write.getSigner(account);
-
-    if (vaultToken === token) {
-      const tokenContract = new Contract(token, TokenAbi, signer);
-      const partnerAddress = await this.yearn.services.partner?.address;
-      const addressToApprove = (this.shouldUsePartnerService(address) && partnerAddress) || address;
-      const tx = await tokenContract.populateTransaction.approve(addressToApprove, amount);
-      return this.yearn.services.transaction.sendTransaction(tx);
-    }
-
-    const gasPrice = await this.yearn.services.zapper.gas();
-
-    const gasPriceFastGwei = new BigNumber(gasPrice.fast).times(new BigNumber(10 ** 9));
-
-    const zapProtocol = PickleJars.includes(address) ? ZapProtocol.PICKLE : ZapProtocol.YEARN;
-
-    const zapInApprovalState = await this.yearn.services.zapper.zapInApprovalState(account, token, zapProtocol);
-
-    if (!zapInApprovalState.isApproved) {
-      const zapInApprovalParams = await this.yearn.services.zapper.zapInApprovalTransaction(
-        account,
-        token,
-        gasPriceFastGwei.toString(),
-        zapProtocol
-      );
-      const transaction: TransactionRequest = {
-        to: zapInApprovalParams.to,
-        from: zapInApprovalParams.from,
-        gasPrice: zapInApprovalParams.gasPrice,
-        data: zapInApprovalParams.data as string
-      };
-      return signer.sendTransaction(transaction);
-    }
-
-    return true;
-  }
-
-  /**
-   * Approve vault to spend a vault token on zapOut
-   * @param vault
-   * @param token
-   * @param account
-   * @returns transaction
-   */
-  async approveZapOut(vault: Vault, token: Address, account: Address): Promise<TransactionResponse | boolean> {
-    const signer = this.ctx.provider.write.getSigner(account);
-    if (vault.token === token) {
-      const gasPrice = await this.yearn.services.zapper.gas();
-      const gasPriceFastGwei = new BigNumber(gasPrice.fast).times(new BigNumber(10 ** 9));
-
-      const sellToken = token;
-
-      const zapOutApprovalState = await this.yearn.services.zapper.zapOutApprovalState(account, sellToken);
-      if (!zapOutApprovalState.isApproved) {
-        const zapOutApprovalParams = await this.yearn.services.zapper.zapOutApprovalTransaction(
-          account,
-          sellToken,
-          gasPriceFastGwei.toString()
-        );
-        const transaction: TransactionRequest = {
-          to: zapOutApprovalParams.to,
-          from: zapOutApprovalParams.from,
-          gasPrice: zapOutApprovalParams.gasPrice,
-          data: zapOutApprovalParams.data as string
-        };
-        return signer.sendTransaction(transaction);
-      }
-    }
-    return false;
-  }
-
-  /**
    * Get an icon url for a particular address.
    * @param address
    */
@@ -363,10 +305,6 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
 
   private cachedFetcher = new CachedFetcher<TokenMetadata[]>("tokens/metadata", this.ctx, this.chainId);
 
-  private shouldUsePartnerService(vault: string): boolean {
-    return !!this.yearn.services.partner?.isAllowed(vault);
-  }
-
   async metadata(addresses?: Address[]): Promise<TokenMetadata[]> {
     let result: TokenMetadata[];
 
@@ -382,17 +320,5 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
     } else {
       return result;
     }
-  }
-
-  /**
-   * Merges addressable array b into a removing a duplicates from b
-   * @param a higher priority array
-   * @param b lower priority array
-   * @returns combined addressable array without duplicates
-   */
-  private mergeAddressables<T extends { address: Address }>(a: T[], b: T[]): T[] {
-    const filter = new Set(a.map(({ address }) => address));
-
-    return [...a, ...b.filter(({ address }) => !filter.has(address))];
   }
 }

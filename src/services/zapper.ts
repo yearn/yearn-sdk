@@ -42,7 +42,8 @@ export class ZapperService extends Service {
         return {
           address,
           decimals: String(zapperToken.decimals),
-          icon: `https://assets.yearn.network/tokens/${network}/${address}.png`,
+          // addresses in the icon url should always be lowercase to be fetched correctly
+          icon: `https://assets.yearn.network/tokens/${network}/${zapperToken.address}.png`,
           name: zapperToken.symbol,
           priceUsdc: usdc(zapperToken.price),
           dataSource: "zapper",
