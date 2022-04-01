@@ -402,7 +402,7 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
       return partnerTrackingContractAddress;
     }
 
-    if (willDepositUnderlyingToken && !shouldUsePartnerService) {
+    if (willDepositUnderlyingToken) {
       return vaultAddress;
     }
 
