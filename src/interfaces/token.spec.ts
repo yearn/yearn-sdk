@@ -830,7 +830,7 @@ describe("TokenInterface", () => {
           "function approve(address _spender, uint256 _value) public",
           "function allowance(address _owner, address _spender) public view returns (uint256)"
         ],
-        "reader"
+        expect.any(Object)
       );
       expect(allowanceMock).toHaveBeenCalledTimes(1);
       expect(allowanceMock).toHaveBeenCalledWith(ownerAddress, spenderAddress);
