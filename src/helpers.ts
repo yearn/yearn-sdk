@@ -1,10 +1,31 @@
 import { BigNumber } from "@ethersproject/bignumber";
 
-import { Address, Integer, SdkError, Usdc } from "./types";
+import { Address, Integer, SdkError, Token, Usdc } from "./types";
 
 export const ZeroAddress = "0x0000000000000000000000000000000000000000";
 export const EthAddress = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";
 export const WethAddress = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2";
+export const WrappedFantomAddress = "0x21be370D5312f44cB42ce377BC9b8a0cEF1A4C83";
+
+export const SUPPORTED_ZAP_OUT_ADDRESSES_MAINNET = {
+  ETH: "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE",
+  DAI: "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+  USDC: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+  USDT: "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+  WBTC: "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599"
+};
+
+export const FANTOM_TOKEN: Token = {
+  address: ZeroAddress,
+  name: "Fantom",
+  dataSource: "sdk",
+  decimals: "18",
+  priceUsdc: "0",
+  supported: {
+    ftmApeZap: true
+  },
+  symbol: "FTM"
+};
 
 // Returns truthy if address is defined as a native token address of a network
 export function isNativeToken(address: Address): boolean {
@@ -60,4 +81,18 @@ export function convertSecondsMillisOrMicrosToMillis(timestamp: string | number)
   } else {
     throw new Error("Timestamp in invalid format");
   }
+}
+
+/**
+ * Merges array b into a by address removing a duplicates from b
+ *
+ * @param a higher priority array
+ * @param b lower priority array
+ *
+ * @returns combined arrays by address without duplicates
+ */
+export function mergeByAddress<T extends { address: Address }>(a: T[], b: T[]): T[] {
+  const filter = new Set(a.map(({ address }) => address));
+
+  return [...a, ...b.filter(({ address }) => !filter.has(address))];
 }

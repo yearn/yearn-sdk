@@ -1,11 +1,13 @@
 import { MaxUint256 } from "@ethersproject/constants";
 import { CallOverrides, Contract } from "@ethersproject/contracts";
 import { TransactionResponse } from "@ethersproject/providers";
+import BigNumber from "bignumber.js";
 
 import { CachedFetcher } from "../cache";
-import { ChainId, Chains } from "../chain";
+import { allSupportedChains, ChainId, Chains, isEthereum, isFantom } from "../chain";
 import { ServiceInterface } from "../common";
 import { isNativeToken } from "../helpers";
+import { FANTOM_TOKEN, mergeByAddress, SUPPORTED_ZAP_OUT_ADDRESSES_MAINNET, WrappedFantomAddress } from "../helpers";
 import {
   Address,
   Integer,
@@ -94,7 +96,8 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
         zapper: new Set<Address>(),
         vaults: new Set<Address>(),
         ironBank: new Set<Address>(),
-        labs: new Set<Address>()
+        labs: new Set<Address>(),
+        sdk: new Set<Address>()
       }
     );
 
@@ -102,10 +105,11 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
       zapper: [],
       vaults: [],
       ironBank: [],
-      labs: []
+      labs: [],
+      sdk: []
     };
 
-    if ([1, 1337].includes(this.chainId)) {
+    if (isEthereum(this.chainId)) {
       try {
         const zapperBalances = await this.yearn.services.zapper.balances(account);
         balances.zapper = zapperBalances.filter(({ address }) => addresses.zapper.has(address));
@@ -114,7 +118,24 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
       }
     }
 
-    if ([1, 1337, 250, 42161].includes(this.chainId)) {
+    if (isFantom(this.chainId)) {
+      const balance = await this.ctx.provider.read.getBalance(account);
+      const priceUsdc = await this.yearn.services.oracle.getPriceUsdc(WrappedFantomAddress);
+      balances.sdk = [
+        {
+          address: account,
+          token: FANTOM_TOKEN,
+          balance: balance.toString(),
+          balanceUsdc: new BigNumber(balance.toString())
+            .div(10 ** 18)
+            .times(new BigNumber(priceUsdc))
+            .toString(),
+          priceUsdc
+        }
+      ];
+    }
+
+    if (allSupportedChains.includes(this.chainId)) {
       const vaultBalances = await this.yearn.vaults.balances(account);
       balances.vaults = vaultBalances.filter(
         ({ address, balance }) => balance !== "0" && addresses.vaults.has(address)
@@ -123,7 +144,7 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
       const ironBankBalances = await this.yearn.ironBank.balances(account);
       balances.ironBank = ironBankBalances.filter(({ address }) => addresses.ironBank.has(address));
 
-      return [...balances.vaults, ...balances.ironBank, ...balances.zapper];
+      return [...balances.vaults, ...balances.ironBank, ...balances.zapper, ...balances.sdk];
     }
 
     console.error(`the chain ${this.chainId} hasn't been implemented yet`);
@@ -136,54 +157,60 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
    * @returns list of tokens supported.
    */
   async supported(): Promise<Token[]> {
+    if (!allSupportedChains.includes(this.chainId)) {
+      console.error(`the chain ${this.chainId} hasn't been implemented yet`);
+
+      return [];
+    }
+
     const cached = await this.cachedFetcherSupported.fetch();
     if (cached) {
       return cached;
     }
 
-    let zapperTokensWithIcon: Token[] = [];
-
     // Zapper only supported in Ethereum
-    if ([1, 1337].includes(this.chainId)) {
+    let zapperTokens: Token[] = [];
+    if (isEthereum(this.chainId)) {
       try {
-        zapperTokensWithIcon = await this.getZapperTokensWithIcons();
+        zapperTokens = await this.getZapperTokensWithIcons();
       } catch (error) {
         console.error(error);
       }
     }
 
-    if ([1, 1337, 250, 42161].includes(this.chainId)) {
-      const vaultsTokens = await this.yearn.vaults.tokens();
-      const ironBankTokens = await this.yearn.ironBank.tokens();
+    const vaultsTokens = await this.yearn.vaults.tokens();
+    const ironBankTokens = await this.yearn.ironBank.tokens();
 
-      const combinedVaultsAndIronBankTokens = this.mergeAddressables(vaultsTokens, ironBankTokens);
+    const vaultsAndIronBankTokens = mergeByAddress(vaultsTokens, ironBankTokens);
 
-      if (!zapperTokensWithIcon.length) {
-        return combinedVaultsAndIronBankTokens;
-      }
-
-      const allSupportedTokens = this.mergeAddressables(combinedVaultsAndIronBankTokens, zapperTokensWithIcon);
-
-      const zapperTokensUniqueAddresses = new Set(zapperTokensWithIcon.map(({ address }) => address));
-
-      return allSupportedTokens.map(token => {
-        const isZapperToken = zapperTokensUniqueAddresses.has(token.address);
-
-        return {
-          ...token,
-          ...(isZapperToken && {
-            supported: {
-              ...token.supported,
-              zapper: true
-            }
-          })
-        };
-      });
+    if (isFantom(this.chainId)) {
+      const priceUsdc = await this.yearn.services.oracle.getPriceUsdc(WrappedFantomAddress);
+      vaultsAndIronBankTokens.push({ ...FANTOM_TOKEN, priceUsdc });
     }
 
-    console.error(`the chain ${this.chainId} hasn't been implemented yet`);
+    if (!zapperTokens.length) {
+      return vaultsAndIronBankTokens;
+    }
 
-    return [];
+    const allSupportedTokens = mergeByAddress(vaultsAndIronBankTokens, zapperTokens);
+
+    const zapperTokensUniqueAddresses = new Set(zapperTokens.map(({ address }) => address));
+
+    return allSupportedTokens.map(token => {
+      const isZapperToken = zapperTokensUniqueAddresses.has(token.address);
+
+      return {
+        ...token,
+        ...(isZapperToken && {
+          supported: {
+            ...token.supported,
+            zapper: true,
+            zapperZapIn: true,
+            zapperZapOut: Object.values(SUPPORTED_ZAP_OUT_ADDRESSES_MAINNET).includes(token.address)
+          }
+        })
+      };
+    });
   }
 
   /**
@@ -293,17 +320,5 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
     } else {
       return result;
     }
-  }
-
-  /**
-   * Merges addressable array b into a removing a duplicates from b
-   * @param a higher priority array
-   * @param b lower priority array
-   * @returns combined addressable array without duplicates
-   */
-  private mergeAddressables<T extends { address: Address }>(a: T[], b: T[]): T[] {
-    const filter = new Set(a.map(({ address }) => address));
-
-    return [...a, ...b.filter(({ address }) => !filter.has(address))];
   }
 }

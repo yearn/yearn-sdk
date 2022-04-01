@@ -1,4 +1,11 @@
-import { chunkArray, convertSecondsMillisOrMicrosToMillis, EthAddress, isNativeToken, ZeroAddress } from "./helpers";
+import {
+  chunkArray,
+  convertSecondsMillisOrMicrosToMillis,
+  EthAddress,
+  isNativeToken,
+  mergeByAddress,
+  ZeroAddress
+} from "./helpers";
 
 describe("Helpers", () => {
   describe("chunkArray", () => {
@@ -108,6 +115,27 @@ describe("Helpers", () => {
       it("should be falsy", () => {
         const result = isNativeToken("0xNonNative");
         expect(result).toBeFalsy();
+      });
+    });
+  });
+
+  describe("mergeByAddress", () => {
+    describe("when there are objects with the same address", () => {
+      it("should merge", () => {
+        const actual = mergeByAddress([{ address: "0x00", foo: "foo" }], [{ address: "0x00", foo: "bar", bar: "bar" }]);
+
+        expect(actual).toStrictEqual([{ address: "0x00", foo: "foo" }]);
+      });
+    });
+
+    describe("when there are not objects with the same address", () => {
+      it("should not merge", () => {
+        const actual = mergeByAddress([{ address: "0x00", foo: "foo" }], [{ address: "0x01", bar: "bar" }]);
+
+        expect(actual).toStrictEqual([
+          { address: "0x00", foo: "foo" },
+          { address: "0x01", bar: "bar" }
+        ]);
       });
     });
   });
