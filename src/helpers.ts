@@ -27,6 +27,11 @@ export const FANTOM_TOKEN: Token = {
   symbol: "FTM"
 };
 
+// Returns truthy if address is defined as a native token address of a network
+export function isNativeToken(address: Address): boolean {
+  return [EthAddress, ZeroAddress].includes(address);
+}
+
 // handle a non-200 `fetch` response.
 export async function handleHttpError(response: Response): Promise<Response> {
   if (response.status !== 200) {

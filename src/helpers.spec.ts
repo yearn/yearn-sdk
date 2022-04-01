@@ -1,4 +1,11 @@
-import { chunkArray, convertSecondsMillisOrMicrosToMillis, mergeByAddress } from "./helpers";
+import {
+  chunkArray,
+  convertSecondsMillisOrMicrosToMillis,
+  EthAddress,
+  isNativeToken,
+  mergeByAddress,
+  ZeroAddress
+} from "./helpers";
 
 describe("Helpers", () => {
   describe("chunkArray", () => {
@@ -87,6 +94,27 @@ describe("Helpers", () => {
         expect(() => convertSecondsMillisOrMicrosToMillis(10000000000000000)).toThrowError(
           "Timestamp in invalid format"
         );
+      });
+    });
+  });
+
+  describe("isNativeToken", () => {
+    describe("with EthAddress", () => {
+      it("should be truthy", () => {
+        const result = isNativeToken(EthAddress);
+        expect(result).toBeTruthy();
+      });
+    });
+    describe("with ZeroAddress", () => {
+      it("should be truthy", () => {
+        const result = isNativeToken(ZeroAddress);
+        expect(result).toBeTruthy();
+      });
+    });
+    describe("with non native address", () => {
+      it("should be falsy", () => {
+        const result = isNativeToken("0xNonNative");
+        expect(result).toBeFalsy();
       });
     });
   });
