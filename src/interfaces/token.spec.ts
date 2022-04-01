@@ -6,7 +6,7 @@ import { Address, ChainId, Integer, SdkError, Token, TokenInterface, TokenMetada
 import { CachedFetcher } from "../cache";
 import { Context } from "../context";
 import { SUPPORTED_ZAP_OUT_ADDRESSES_MAINNET, ZeroAddress } from "../helpers";
-import { createMockBalance, createMockToken } from "../test-utils/factories";
+import { createMockBalance, createMockToken, createMockTokenMetadata } from "../test-utils/factories";
 import { Yearn } from "../yearn";
 
 const getPriceUsdcMock = jest.fn();
@@ -869,14 +869,14 @@ describe("TokenInterface", () => {
 
   describe("metadata", () => {
     const tokenMetadataFromMetaService: TokenMetadata[] = [
-      {
+      createMockTokenMetadata({
         address: "tokenMetadataAddressFromMetaService",
         description: "foo"
-      },
-      {
+      }),
+      createMockTokenMetadata({
         address: "0x001",
         description: "bar"
-      }
+      })
     ];
 
     beforeEach(() => {
@@ -888,14 +888,14 @@ describe("TokenInterface", () => {
 
       beforeEach(() => {
         tokenMetadata = [
-          {
+          createMockTokenMetadata({
             address: "tokenMetadataAddress",
             description: "foo"
-          },
-          {
+          }),
+          createMockTokenMetadata({
             address: "0x002",
             description: "bar"
-          }
+          })
         ];
         jest.spyOn(CachedFetcher.prototype, "fetch").mockResolvedValue(tokenMetadata);
       });
@@ -907,7 +907,12 @@ describe("TokenInterface", () => {
           expect(actualMetadata).toEqual([
             {
               address: "0x002",
-              description: "bar"
+              categories: ["Tokens Metadata"],
+              description: "bar",
+              localization: {},
+              tokenNameOverride: "Token Name Override",
+              tokenSymbolOverride: "tokenSymbolOverride",
+              website: "https://token.metadata/"
             }
           ]);
         });
@@ -935,7 +940,12 @@ describe("TokenInterface", () => {
           expect(actualMetadata).toEqual([
             {
               address: "0x001",
-              description: "bar"
+              categories: ["Tokens Metadata"],
+              description: "bar",
+              localization: {},
+              tokenNameOverride: "Token Name Override",
+              tokenSymbolOverride: "tokenSymbolOverride",
+              website: "https://token.metadata/"
             }
           ]);
         });
