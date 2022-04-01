@@ -788,7 +788,7 @@ describe("TokenInterface", () => {
         }
       );
       expect(approveMock).toHaveBeenCalledTimes(1);
-      expect(approveMock).toHaveBeenCalledWith(spenderAddress, amount, undefined);
+      expect(approveMock).toHaveBeenCalledWith(spenderAddress, amount, {});
       expect(sendTransactionMock).toHaveBeenCalledTimes(1);
       expect(sendTransactionMock).toHaveBeenCalledWith("approved");
     });

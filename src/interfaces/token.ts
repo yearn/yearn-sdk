@@ -253,7 +253,7 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
     tokenAddress: Address,
     spenderAddress: Address,
     amount: Integer,
-    overrides?: CallOverrides
+    overrides: CallOverrides = {}
   ): Promise<TransactionResponse> {
     if (isNativeToken(tokenAddress)) throw new SdkError(`Native tokens cant be approved: ${tokenAddress}`);
     if (tokenAddress === spenderAddress) throw new SdkError(`Cant approve token as its spender: ${tokenAddress}`);
