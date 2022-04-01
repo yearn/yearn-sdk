@@ -707,13 +707,13 @@ describe("VaultInterface", () => {
 
   describe("getDepositAllowance", () => {
     it("should fetch token deposit allowance", async () => {
-      const getDepositSpenderAddressMock = jest.fn().mockResolvedValue(spenderAddress);
-      (vaultInterface as any).getDepositSpenderAddress = getDepositSpenderAddressMock;
+      const getDepositContractAddressMock = jest.fn().mockResolvedValue(spenderAddress);
+      (vaultInterface as any).getDepositContractAddress = getDepositContractAddressMock;
 
       await vaultInterface.getDepositAllowance(accountAddress, vaultAddress, tokenAddress);
 
-      expect(getDepositSpenderAddressMock).toHaveBeenCalledTimes(1);
-      expect(getDepositSpenderAddressMock).toHaveBeenCalledWith(vaultAddress, tokenAddress);
+      expect(getDepositContractAddressMock).toHaveBeenCalledTimes(1);
+      expect(getDepositContractAddressMock).toHaveBeenCalledWith(vaultAddress, tokenAddress);
       expect(tokenAllowanceMock).toHaveBeenCalledTimes(1);
       expect(tokenAllowanceMock).toHaveBeenCalledWith(accountAddress, tokenAddress, spenderAddress);
     });
@@ -721,13 +721,13 @@ describe("VaultInterface", () => {
 
   describe("getWithdrawAllowance", () => {
     it("should fetch token withdraw allowance", async () => {
-      const getWithdrawSpenderAddressMock = jest.fn().mockResolvedValue(spenderAddress);
-      (vaultInterface as any).getWithdrawSpenderAddress = getWithdrawSpenderAddressMock;
+      const getWithdrawContractAddressMock = jest.fn().mockResolvedValue(spenderAddress);
+      (vaultInterface as any).getWithdrawContractAddress = getWithdrawContractAddressMock;
 
       await vaultInterface.getWithdrawAllowance(accountAddress, vaultAddress, tokenAddress);
 
-      expect(getWithdrawSpenderAddressMock).toHaveBeenCalledTimes(1);
-      expect(getWithdrawSpenderAddressMock).toHaveBeenCalledWith(vaultAddress, tokenAddress);
+      expect(getWithdrawContractAddressMock).toHaveBeenCalledTimes(1);
+      expect(getWithdrawContractAddressMock).toHaveBeenCalledWith(vaultAddress, tokenAddress);
       expect(tokenAllowanceMock).toHaveBeenCalledTimes(1);
       expect(tokenAllowanceMock).toHaveBeenCalledWith(accountAddress, vaultAddress, spenderAddress);
     });
@@ -736,13 +736,13 @@ describe("VaultInterface", () => {
   describe("approveDeposit", () => {
     describe("when no amount provided", () => {
       it("should infinite approve", async () => {
-        const getDepositSpenderAddressMock = jest.fn().mockResolvedValue(spenderAddress);
-        (vaultInterface as any).getDepositSpenderAddress = getDepositSpenderAddressMock;
+        const getDepositContractAddressMock = jest.fn().mockResolvedValue(spenderAddress);
+        (vaultInterface as any).getDepositContractAddress = getDepositContractAddressMock;
 
         await vaultInterface.approveDeposit(accountAddress, vaultAddress, tokenAddress);
 
-        expect(getDepositSpenderAddressMock).toHaveBeenCalledTimes(1);
-        expect(getDepositSpenderAddressMock).toHaveBeenCalledWith(vaultAddress, tokenAddress);
+        expect(getDepositContractAddressMock).toHaveBeenCalledTimes(1);
+        expect(getDepositContractAddressMock).toHaveBeenCalledWith(vaultAddress, tokenAddress);
         expect(tokenApproveMock).toHaveBeenCalledTimes(1);
         expect(tokenApproveMock).toHaveBeenCalledWith(
           accountAddress,
@@ -757,13 +757,13 @@ describe("VaultInterface", () => {
     describe("when amount provided", () => {
       it("should approve exact amount", async () => {
         const amount: Integer = "1000000";
-        const getDepositSpenderAddressMock = jest.fn().mockResolvedValue(spenderAddress);
-        (vaultInterface as any).getDepositSpenderAddress = getDepositSpenderAddressMock;
+        const getDepositContractAddressMock = jest.fn().mockResolvedValue(spenderAddress);
+        (vaultInterface as any).getDepositContractAddress = getDepositContractAddressMock;
 
         await vaultInterface.approveDeposit(accountAddress, vaultAddress, tokenAddress, amount);
 
-        expect(getDepositSpenderAddressMock).toHaveBeenCalledTimes(1);
-        expect(getDepositSpenderAddressMock).toHaveBeenCalledWith(vaultAddress, tokenAddress);
+        expect(getDepositContractAddressMock).toHaveBeenCalledTimes(1);
+        expect(getDepositContractAddressMock).toHaveBeenCalledWith(vaultAddress, tokenAddress);
         expect(tokenApproveMock).toHaveBeenCalledTimes(1);
         expect(tokenApproveMock).toHaveBeenCalledWith(accountAddress, tokenAddress, spenderAddress, amount, undefined);
       });
@@ -773,13 +773,13 @@ describe("VaultInterface", () => {
   describe("withdrawDeposit", () => {
     describe("when no amount provided", () => {
       it("should infinite approve", async () => {
-        const getWithdrawSpenderAddressMock = jest.fn().mockResolvedValue(spenderAddress);
-        (vaultInterface as any).getWithdrawSpenderAddress = getWithdrawSpenderAddressMock;
+        const getWithdrawContractAddressMock = jest.fn().mockResolvedValue(spenderAddress);
+        (vaultInterface as any).getWithdrawContractAddress = getWithdrawContractAddressMock;
 
         await vaultInterface.approveWithdraw(accountAddress, vaultAddress, tokenAddress);
 
-        expect(getWithdrawSpenderAddressMock).toHaveBeenCalledTimes(1);
-        expect(getWithdrawSpenderAddressMock).toHaveBeenCalledWith(vaultAddress, tokenAddress);
+        expect(getWithdrawContractAddressMock).toHaveBeenCalledTimes(1);
+        expect(getWithdrawContractAddressMock).toHaveBeenCalledWith(vaultAddress, tokenAddress);
         expect(tokenApproveMock).toHaveBeenCalledTimes(1);
         expect(tokenApproveMock).toHaveBeenCalledWith(
           accountAddress,
@@ -794,13 +794,13 @@ describe("VaultInterface", () => {
     describe("when amount provided", () => {
       it("should approve exact amount", async () => {
         const amount: Integer = "1000000";
-        const getWithdrawSpenderAddressMock = jest.fn().mockResolvedValue(spenderAddress);
-        (vaultInterface as any).getWithdrawSpenderAddress = getWithdrawSpenderAddressMock;
+        const getWithdrawContractAddressMock = jest.fn().mockResolvedValue(spenderAddress);
+        (vaultInterface as any).getWithdrawContractAddress = getWithdrawContractAddressMock;
 
         await vaultInterface.approveWithdraw(accountAddress, vaultAddress, tokenAddress, amount);
 
-        expect(getWithdrawSpenderAddressMock).toHaveBeenCalledTimes(1);
-        expect(getWithdrawSpenderAddressMock).toHaveBeenCalledWith(vaultAddress, tokenAddress);
+        expect(getWithdrawContractAddressMock).toHaveBeenCalledTimes(1);
+        expect(getWithdrawContractAddressMock).toHaveBeenCalledWith(vaultAddress, tokenAddress);
         expect(tokenApproveMock).toHaveBeenCalledTimes(1);
         expect(tokenApproveMock).toHaveBeenCalledWith(accountAddress, vaultAddress, spenderAddress, amount, undefined);
       });
