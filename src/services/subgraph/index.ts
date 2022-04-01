@@ -12,20 +12,18 @@ export class SubgraphService extends Service {
     switch (chainId) {
       case 1:
       case 1337:
-        try {
-          const subgraphConfig = ctx.subgraph;
-          this.yearnSubgraphEndpoint = `https://gateway.thegraph.com/api/${subgraphConfig.subgraphKey}/subgraphs/id/${subgraphConfig.mainnetSubgraphId}`;
-        } catch {
-          console.warn(
-            "no key has been provided for the mainnet subgraph - some data might be missing e.g. for earnings"
-          );
-        }
+        // no fallback for mainnet as the hosted version has been deprecated.
+        this.yearnSubgraphEndpoint = ctx.subgraph?.mainnetSubgraphEndpoint;
         break;
       case 250:
-        this.yearnSubgraphEndpoint = "https://api.thegraph.com/subgraphs/name/yearn/yearn-vaults-v2-fantom";
+        this.yearnSubgraphEndpoint =
+          ctx.subgraph?.fantomSubgraphEndpoint ||
+          "https://api.thegraph.com/subgraphs/name/yearn/yearn-vaults-v2-fantom";
         break;
       case 42161:
-        this.yearnSubgraphEndpoint = "https://api.thegraph.com/subgraphs/name/yearn/yearn-vaults-v2-arbitrum";
+        this.yearnSubgraphEndpoint =
+          ctx.subgraph?.arbitrumSubgraphEndpoint ||
+          "https://api.thegraph.com/subgraphs/name/yearn/yearn-vaults-v2-arbitrum";
         break;
       default:
         throw new SdkError(`No subgraph name for chain ${chainId}`);
