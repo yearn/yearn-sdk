@@ -1,28 +1,66 @@
 import { Service } from "../common";
-import { StrategiesMetadata, TokenMetadata, VaultMetadataOverrides } from "../types";
+import { Address, SdkError, StrategiesMetadata, TokenMetadata, VaultMetadataOverrides } from "../types";
 
-const MetaURL = "https://meta.yearn.network";
-
-const CHAIN_ID_KEY = "{chain_id}";
+const META_URL = "https://meta.yearn.network";
 
 /**
  * [[MetaService]] fetches meta data about things such as vaults and tokens
  * from yearn-meta
  */
 export class MetaService extends Service {
-  async tokens(): Promise<TokenMetadata[]> {
-    return fetch(this.buildUrl(`tokens/${CHAIN_ID_KEY}/all`)).then(res => res.json());
+  async tokens(addresses?: Address[]): Promise<TokenMetadata[]> {
+    const tokensMetadata = await fetch(`${META_URL}/tokens/${this.chainId}/all`).then(res => res.json());
+
+    if (!addresses) {
+      return tokensMetadata;
+    }
+
+    return tokensMetadata.filter((tokenMetadata: TokenMetadata) => addresses.includes(tokenMetadata.address));
+  }
+
+  async token(address: Address): Promise<TokenMetadata | null> {
+    try {
+      const response = await fetch(`${META_URL}/tokens/${this.chainId}/${address}`);
+
+      if (!response.ok) {
+        throw new SdkError(`Failed to fetch token with address "${address}". HTTP error: ${response.status}`);
+      }
+
+      return response.json();
+    } catch (error) {
+      console.error(error);
+    }
+
+    return null;
   }
 
   async strategies(): Promise<StrategiesMetadata[]> {
-    return fetch(this.buildUrl(`strategies/${CHAIN_ID_KEY}/all`)).then(res => res.json());
+    return fetch(`${META_URL}/strategies/${this.chainId}/all`).then(res => res.json());
   }
 
-  async vaults(): Promise<VaultMetadataOverrides[]> {
-    return fetch(this.buildUrl(`vaults/${CHAIN_ID_KEY}/all`)).then(res => res.json());
+  async vaults(addresses?: Address[]): Promise<VaultMetadataOverrides[]> {
+    const vaultsMetadata = await fetch(`${META_URL}/vaults/${this.chainId}/all`).then(res => res.json());
+
+    if (!addresses) {
+      return vaultsMetadata;
+    }
+
+    return vaultsMetadata.filter((vaultMetadata: VaultMetadataOverrides) => addresses.includes(vaultMetadata.address));
   }
 
-  private buildUrl(path: string): string {
-    return `${MetaURL}/${path}`.replace(CHAIN_ID_KEY, this.chainId.toString());
+  async vault(address: Address): Promise<VaultMetadataOverrides | null> {
+    try {
+      const response = await fetch(`${META_URL}/vaults/${this.chainId}/${address}`);
+
+      if (!response.ok) {
+        throw new SdkError(`Failed to fetch token with address "${address}". HTTP error: ${response.status}`);
+      }
+
+      return response.json();
+    } catch (error) {
+      console.error(error);
+    }
+
+    return null;
   }
 }

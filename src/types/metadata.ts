@@ -9,7 +9,7 @@ import { VaultStrategiesMetadata } from "./strategy";
 export interface VaultMetadata {
   symbol: string;
   pricePerShare: Integer;
-  migrationAvailable: boolean;
+  migrationAvailable: boolean; // TODO: should be optional
   latestVaultAddress: Address;
   depositLimit: Integer;
   emergencyShutdown: boolean;
@@ -19,7 +19,7 @@ export interface VaultMetadata {
   totalSupply: Integer;
 
   apy?: Apy;
-  displayName: string;
+  displayName: string; // TODO: should be optional
   displayIcon: string;
   defaultDisplayToken: Address;
   strategies?: VaultStrategiesMetadata;
@@ -76,11 +76,12 @@ export type TypeId = keyof Metadata;
 export interface TokenMetadata {
   address: Address;
   categories?: string[];
-  description?: string;
-  website?: string;
+  description: string;
+  website: string;
   tokenIconOverride?: string;
   tokenSymbolOverride?: string;
   tokenNameOverride?: string;
+  localization: Record<string, unknown>;
 }
 
 export interface StrategyMetadata {
@@ -99,22 +100,23 @@ export interface StrategiesMetadata {
 
 export interface VaultMetadataOverrides {
   address: Address;
-  comment?: string;
-  hideAlways?: boolean;
-  depositsDisabled?: boolean;
-  withdrawalsDisabled?: boolean;
-  apyOverride?: number;
-  apyTypeOverride?: string;
-  order?: number;
-  migrationAvailable?: boolean;
   allowZapIn?: boolean;
   allowZapOut?: boolean;
+  apyOverride?: number;
+  apyTypeOverride?: string;
+  comment?: string;
+  depositsDisabled?: boolean;
+  displayName?: string;
+  hideAlways?: boolean;
+  migrationAvailable?: boolean;
   migrationContract?: Address;
   migrationTargetVault?: Address;
-  displayName?: string;
-  vaultIconOverride?: string;
-  vaultSymbolOverride?: string;
-  vaultNameOverride?: string;
-  vaultDetailPageAssets?: string[];
+  order?: number;
   retired?: boolean;
+  useVaultDataAsDefault?: boolean;
+  vaultDetailPageAssets?: string[];
+  vaultIconOverride?: string;
+  vaultNameOverride?: string;
+  vaultSymbolOverride?: string;
+  withdrawalsDisabled?: boolean;
 }
