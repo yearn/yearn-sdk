@@ -274,7 +274,7 @@ describe("EarningsInterface", () => {
     beforeEach(() => {
       subgraphFetchQueryMock.mockResolvedValue({
         data: {
-          ["block_30380"]: {
+          block_30380: {
             strategies: [
               {
                 latestReport: {
@@ -285,7 +285,7 @@ describe("EarningsInterface", () => {
             ],
             vaultDayData: [{ timestamp: "1648887421" }]
           },
-          ["block_36140"]: {
+          block_36140: {
             strategies: [
               {
                 latestReport: {
@@ -296,7 +296,7 @@ describe("EarningsInterface", () => {
             ],
             vaultDayData: [{ timestamp: "1648801021" }]
           },
-          ["block_41900"]: {
+          block_41900: {
             strategies: [
               {
                 latestReport: {
