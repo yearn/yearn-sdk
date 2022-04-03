@@ -28,6 +28,28 @@ export interface VaultEarningsResponse {
   };
 }
 
+export type BlockLabel = `block_${number}`;
+
+export interface AssetHistoricEarningsResponse {
+  data: {
+    [label: BlockLabel]: {
+      strategies: {
+        latestReport: {
+          totalGain: string;
+          totalLoss: string;
+        };
+      }[];
+      vaultDayData: [{ timestamp: number }];
+    };
+    vault: {
+      token: {
+        id: string;
+        decimals: number;
+      };
+    };
+  };
+}
+
 export interface AccountEarningsResponse {
   data: {
     account?: {
