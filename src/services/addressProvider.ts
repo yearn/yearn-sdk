@@ -21,7 +21,7 @@ export class AddressProvider<T extends ChainId> extends Service {
     "function addresses() public view returns (address[] memory)",
     "function addressesIds() public view returns (string[] memory)",
     `function addressesMetadata() public view returns (${AddressMetadataAbi}[] memory)`,
-    `function addressesMetadataByIdStartsWith(string) public view returns (${AddressMetadataAbi}[] memory)`
+    `function addressesMetadataByIdStartsWith(string) public view returns (${AddressMetadataAbi}[] memory)`,
   ];
   private contract: WrappedContract;
 

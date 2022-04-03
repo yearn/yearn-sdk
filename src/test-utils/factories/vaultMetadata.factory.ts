@@ -11,10 +11,10 @@ const DEFAULT_VAULT_METADATA: VaultMetadataOverrides = {
   allowZapOut: true,
   retired: false,
   displayName: "Vault Metadata",
-  address: "0x001"
+  address: "0x001",
 };
 
 export const createMockVaultMetadata = (overwrites: Partial<VaultMetadataOverrides> = {}): VaultMetadataOverrides => ({
   ...DEFAULT_VAULT_METADATA,
-  ...overwrites
+  ...overwrites,
 });

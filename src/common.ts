@@ -7,7 +7,7 @@ import { AddressProvider } from "./services/addressProvider";
 import { Address } from "./types";
 import { Yearn } from "./yearn";
 
-export class Service<E = {}> {
+export class Service<E = Record<string, unknown>> {
   ctx: Context;
   chainId: ChainId;
 
@@ -21,7 +21,7 @@ export class Service<E = {}> {
   }
 }
 
-export class ServiceInterface<T extends ChainId, E = {}> extends Service<E> {
+export class ServiceInterface<T extends ChainId, E = Record<string, unknown>> extends Service<E> {
   protected yearn: Yearn<T>;
 
   constructor(yearn: Yearn<T>, chainId: T, ctx: Context) {
@@ -64,13 +64,13 @@ export enum ContractAddressId {
   zapperZapIn = "ZAPPER_ZAP_IN",
   zapperZapOut = "ZAPPER_ZAP_OUT",
   pickleZapIn = "PICKLE_ZAP_IN",
-  unused = "UNUSED"
+  unused = "UNUSED",
 }
 
 /**
  * A service that has a contract representation on chain.
  */
-export class ContractService<T extends ChainId, E = {}> extends Service<E> {
+export class ContractService<T extends ChainId, E = Record<string, unknown>> extends Service<E> {
   static abi: string[] = [];
   static contractId: ContractAddressId = ContractAddressId.unused;
 

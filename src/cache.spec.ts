@@ -29,7 +29,7 @@ describe("CachedFetcher", () => {
     it("should return undefined when `useCache` is set to `false`", async () => {
       contextCacheSpy.mockReturnValue({
         useCache: false,
-        url: "url"
+        url: "url",
       });
 
       const actualFetch = await cachedFetcher.fetch();
@@ -39,7 +39,7 @@ describe("CachedFetcher", () => {
 
     it("should return undefined when `url` is not defined", async () => {
       contextCacheSpy.mockReturnValue({
-        useCache: true
+        useCache: true,
       });
 
       const actualFetch = await cachedFetcher.fetch();
@@ -51,7 +51,7 @@ describe("CachedFetcher", () => {
       beforeAll(() => {
         contextCacheSpy.mockReturnValue({
           useCache: true,
-          url: "url"
+          url: "url",
         });
       });
 
@@ -67,12 +67,12 @@ describe("CachedFetcher", () => {
         const responseMock: PartialDeep<Response> = {
           status: 200,
           headers: {
-            get: (_): null => null
+            get: (_): null => null,
           },
           json: () =>
             Promise.resolve({
-              foo: "bar"
-            })
+              foo: "bar",
+            }),
         };
         fetchWithTimeoutSpy.mockResolvedValueOnce(responseMock);
 
@@ -80,12 +80,12 @@ describe("CachedFetcher", () => {
 
         expect(fetchWithTimeoutSpy).toHaveBeenCalledWith("url/v1/chains/1/path?fooParam", 5000);
         expect(actualFetch).toEqual({
-          foo: "bar"
+          foo: "bar",
         });
 
         expect(cachedFetcher.expiryDate).toEqual(new Date(nowMock + 30 * 1000));
         expect(cachedFetcher.cachedValue).toEqual({
-          foo: "bar"
+          foo: "bar",
         });
       });
 
@@ -104,7 +104,7 @@ describe("CachedFetcher", () => {
         const responseMock: PartialDeep<Response> = {
           status: 42,
           url: "url42",
-          statusText: "ultimate question of life, the universe, and everything"
+          statusText: "ultimate question of life, the universe, and everything",
         };
         fetchWithTimeoutSpy.mockResolvedValueOnce(responseMock);
 
@@ -119,7 +119,7 @@ describe("CachedFetcher", () => {
       it("should return when there's no JSON", async () => {
         const responseMock: PartialDeep<Response> = {
           status: 200,
-          json: () => Promise.resolve(null)
+          json: () => Promise.resolve(null),
         };
         fetchWithTimeoutSpy.mockResolvedValueOnce(responseMock);
 

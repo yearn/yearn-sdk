@@ -9,13 +9,13 @@ export const DEFAULT_APY: Apy = {
     withdrawal: null,
     management: null,
     keep_crv: null,
-    cvx_keep_crv: null
+    cvx_keep_crv: null,
   },
   points: null,
-  composite: null
+  composite: null,
 };
 
 export const createMockApy = (overwrites: Partial<Apy> = {}): Apy => ({
   ...DEFAULT_APY,
-  ...overwrites
+  ...overwrites,
 });

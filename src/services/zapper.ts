@@ -9,7 +9,7 @@ import {
   ZapApprovalStateOutput,
   ZapApprovalTransactionOutput,
   ZapOutput,
-  ZapProtocol
+  ZapProtocol,
 } from "../types/custom/zapper";
 
 const ZAPPER_AFFILIATE_ADDRESS = "0xFEB4acf3df3cDEA7399794D0869ef76A6EfAff52";
@@ -29,29 +29,27 @@ export class ZapperService extends Service {
     const params = new URLSearchParams({ api_key: this.ctx.zapper });
     const zapperTokens: ZapperToken[] = await fetch(`${url}?${params}`)
       .then(handleHttpError)
-      .then(res => res.json());
+      .then((res) => res.json());
 
     const network = Chains[this.chainId];
 
-    const visibleZapperTokens = zapperTokens.filter(zapperToken => !zapperToken.hide);
+    const visibleZapperTokens = zapperTokens.filter((zapperToken) => !zapperToken.hide);
 
-    return visibleZapperTokens.map(
-      (zapperToken): Token => {
-        const address = zapperToken.address === ZeroAddress ? EthAddress : getAddress(zapperToken.address);
+    return visibleZapperTokens.map((zapperToken): Token => {
+      const address = zapperToken.address === ZeroAddress ? EthAddress : getAddress(zapperToken.address);
 
-        return {
-          address,
-          decimals: String(zapperToken.decimals),
-          // addresses in the icon url should always be lowercase to be fetched correctly
-          icon: `https://assets.yearn.network/tokens/${network}/${zapperToken.address}.png`,
-          name: zapperToken.symbol,
-          priceUsdc: usdc(zapperToken.price),
-          dataSource: "zapper",
-          supported: { zapper: true },
-          symbol: zapperToken.symbol
-        };
-      }
-    );
+      return {
+        address,
+        decimals: String(zapperToken.decimals),
+        // addresses in the icon url should always be lowercase to be fetched correctly
+        icon: `https://assets.yearn.network/tokens/${network}/${zapperToken.address}.png`,
+        name: zapperToken.symbol,
+        priceUsdc: usdc(zapperToken.price),
+        dataSource: "zapper",
+        supported: { zapper: true },
+        symbol: zapperToken.symbol,
+      };
+    });
   }
 
   /**
@@ -73,35 +71,33 @@ export class ZapperService extends Service {
     const url = "https://api.zapper.fi/v1/protocols/tokens/balances";
     const params = new URLSearchParams({
       "addresses[]": Array.isArray(addresses) ? addresses.join() : addresses,
-      api_key: this.ctx.zapper
+      api_key: this.ctx.zapper,
     });
     const balances = await fetch(`${url}?${params}`)
       .then(handleHttpError)
-      .then(res => res.json());
-    Object.keys(balances).forEach(address => {
+      .then((res) => res.json());
+    Object.keys(balances).forEach((address) => {
       const copy = balances[address];
       delete balances[address];
       if (copy.products.length === 0) {
         balances[getAddress(address)] = [];
       } else {
         const assets = copy.products[0].assets;
-        balances[getAddress(address)] = assets.map(
-          (balance: Record<string, string>): Balance => {
-            const address = balance.address === ZeroAddress ? EthAddress : getAddress(String(balance.address));
-            return {
+        balances[getAddress(address)] = assets.map((balance: Record<string, string>): Balance => {
+          const address = balance.address === ZeroAddress ? EthAddress : getAddress(String(balance.address));
+          return {
+            address,
+            token: {
               address,
-              token: {
-                address,
-                name: balance.symbol,
-                symbol: balance.symbol,
-                decimals: balance.decimals
-              },
-              balance: balance.balanceRaw,
-              balanceUsdc: usdc(balance.balanceUSD),
-              priceUsdc: usdc(balance.price)
-            };
-          }
-        );
+              name: balance.symbol,
+              symbol: balance.symbol,
+              decimals: balance.decimals,
+            },
+            balance: balance.balanceRaw,
+            balanceUsdc: usdc(balance.balanceUSD),
+            priceUsdc: usdc(balance.price),
+          };
+        });
       }
     });
     if (!Array.isArray(addresses)) return balances[addresses];
@@ -115,11 +111,11 @@ export class ZapperService extends Service {
   async gas(): Promise<GasPrice> {
     const url = "https://api.zapper.fi/v1/gas-price";
     const params = new URLSearchParams({
-      api_key: this.ctx.zapper
+      api_key: this.ctx.zapper,
     });
     const gas = await fetch(`${url}?${params}`)
       .then(handleHttpError)
-      .then(res => res.json());
+      .then((res) => res.json());
     return gas;
   }
 
@@ -138,11 +134,11 @@ export class ZapperService extends Service {
     const params = new URLSearchParams({
       ownerAddress: from,
       sellTokenAddress: token,
-      api_key: this.ctx.zapper
+      api_key: this.ctx.zapper,
     });
     const response: ZapApprovalStateOutput = await fetch(`${url}?${params}`)
       .then(handleHttpError)
-      .then(res => res.json());
+      .then((res) => res.json());
 
     return response;
   }
@@ -165,11 +161,11 @@ export class ZapperService extends Service {
       gasPrice,
       ownerAddress: from,
       sellTokenAddress: token,
-      api_key: this.ctx.zapper
+      api_key: this.ctx.zapper,
     });
     const response: ZapApprovalTransactionOutput = await fetch(`${url}?${params}`)
       .then(handleHttpError)
-      .then(res => res.json());
+      .then((res) => res.json());
 
     return response;
   }
@@ -189,11 +185,11 @@ export class ZapperService extends Service {
     const params = new URLSearchParams({
       ownerAddress: from,
       sellTokenAddress: token,
-      api_key: this.ctx.zapper
+      api_key: this.ctx.zapper,
     });
     const response: ZapApprovalStateOutput = await fetch(`${url}?${params}`)
       .then(handleHttpError)
-      .then(res => res.json());
+      .then((res) => res.json());
 
     return response;
   }
@@ -216,11 +212,11 @@ export class ZapperService extends Service {
       gasPrice,
       ownerAddress: from,
       sellTokenAddress: token,
-      api_key: this.ctx.zapper
+      api_key: this.ctx.zapper,
     });
     const response: ZapApprovalTransactionOutput = await fetch(`${url}?${params}`)
       .then(handleHttpError)
-      .then(res => res.json());
+      .then((res) => res.json());
 
     return response;
   }
@@ -264,12 +260,12 @@ export class ZapperService extends Service {
       slippagePercentage: slippagePercentage.toString(),
       api_key: this.ctx.zapper,
       skipGasEstimate: skipGasEstimate ? "true" : "false",
-      ...((partnerId && { partnerId }) || {})
+      ...((partnerId && { partnerId }) || {}),
     });
 
     const response: ZapOutput = await fetch(`${url}?${params}`)
       .then(handleHttpError)
-      .then(res => res.json());
+      .then((res) => res.json());
 
     return response;
   }
@@ -315,11 +311,11 @@ export class ZapperService extends Service {
       api_key: this.ctx.zapper,
       shouldSellEntireBalance: "true",
       skipGasEstimate: skipGasEstimate ? "true" : "false",
-      ...(signature && { signature })
+      ...(signature && { signature }),
     });
     const response: ZapOutput = await fetch(`${url}?${params}`)
       .then(handleHttpError)
-      .then(res => res.json());
+      .then((res) => res.json());
 
     return response;
   }

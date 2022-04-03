@@ -22,18 +22,18 @@ export function convertCompositeApyToSnakeCase(apy: Apy | undefined): Apy | unde
               ...apy.composite,
               boost: apy.composite.boost
                 ? apy.composite.boost
-                : ((apy.composite as unknown) as BackscracherApyComposite).currentBoost,
+                : (apy.composite as unknown as BackscracherApyComposite).currentBoost,
               pool_apy: apy.composite.pool_apy
                 ? apy.composite.pool_apy
-                : ((apy.composite as unknown) as BackscracherApyComposite).poolApy,
+                : (apy.composite as unknown as BackscracherApyComposite).poolApy,
               boosted_apr: apy.composite.boosted_apr
                 ? apy.composite.boosted_apr
-                : ((apy.composite as unknown) as BackscracherApyComposite).boostedApy,
+                : (apy.composite as unknown as BackscracherApyComposite).boostedApy,
               base_apr: apy.composite.base_apr
                 ? apy.composite.base_apr
-                : ((apy.composite as unknown) as BackscracherApyComposite).baseApy
+                : (apy.composite as unknown as BackscracherApyComposite).baseApy,
             }
-          : null
+          : null,
       }
     : undefined;
 }
@@ -60,10 +60,10 @@ export class VisionService extends Service {
     const url = `https://d28fcsszptni1s.cloudfront.net/v1/chains/${this.chainId}/vaults/all`;
     let vaults: ApiVault[] = await fetch(url)
       .then(handleHttpError)
-      .then(res => res.json());
+      .then((res) => res.json());
 
     // fix backscratcher apys
-    vaults = vaults.map(vault =>
+    vaults = vaults.map((vault) =>
       vault.apy && vault.apy.type === "backscratcher"
         ? { ...vault, apy: convertCompositeApyToSnakeCase(vault.apy) }
         : vault
@@ -72,16 +72,16 @@ export class VisionService extends Service {
     if (Array.isArray(addresses)) {
       const map = new Map<T, Apy | undefined>();
       for (const address of addresses) {
-        const vault = vaults.find(vault => vault.address === address);
+        const vault = vaults.find((vault) => vault.address === address);
         map.set(address, vault ? vault.apy : undefined);
       }
       return Object.fromEntries(map) as ApyMap<T>;
     } else if (addresses) {
-      const vault = vaults.find(vault => vault.address === addresses);
+      const vault = vaults.find((vault) => vault.address === addresses);
       if (!vault) return undefined;
       return vault.apy;
     } else {
-      return Object.fromEntries(vaults.map(vault => [vault.address, vault.apy])) as ApyMap<T>;
+      return Object.fromEntries(vaults.map((vault) => [vault.address, vault.apy])) as ApyMap<T>;
     }
   }
 }

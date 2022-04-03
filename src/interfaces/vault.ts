@@ -24,7 +24,7 @@ import {
   VaultsUserSummary,
   VaultUserMetadata,
   WithdrawOptions,
-  ZapProtocol
+  ZapProtocol,
 } from "../types";
 import { Position, Vault } from "../types";
 
@@ -45,47 +45,47 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
     const cached = await this.cachedFetcherGet.fetch();
     if (cached) {
       if (addresses) {
-        return cached.filter(vault => addresses.includes(vault.address));
+        return cached.filter((vault) => addresses.includes(vault.address));
       } else {
         return cached;
       }
     }
 
-    const vaultMetadataOverridesPromise = this.yearn.services.meta.vaults().catch(error => {
+    const vaultMetadataOverridesPromise = this.yearn.services.meta.vaults().catch((error) => {
       console.error(error);
       return Promise.resolve([]);
     });
 
     const [vaultMetadataOverrides, assetsStatic] = await Promise.all([
       vaultMetadataOverridesPromise,
-      this.getStatic(addresses, overrides)
+      this.getStatic(addresses, overrides),
     ]);
 
     let assetsDynamic: VaultDynamic[] = [];
     try {
       assetsDynamic = await this.getDynamic(addresses, vaultMetadataOverrides, overrides);
     } catch {
-      const allAddresses = assetsStatic.map(asset => asset.address);
+      const allAddresses = assetsStatic.map((asset) => asset.address);
       const chunks = chunkArray(allAddresses, 30);
-      const promises = chunks.map(async chunk => this.getDynamic(chunk, vaultMetadataOverrides, overrides));
-      assetsDynamic = await Promise.all(promises).then(chunks => chunks.flat());
+      const promises = chunks.map(async (chunk) => this.getDynamic(chunk, vaultMetadataOverrides, overrides));
+      assetsDynamic = await Promise.all(promises).then((chunks) => chunks.flat());
     }
 
     const strategiesMetadataPromise = this.yearn.strategies
-      .vaultsStrategiesMetadata(assetsDynamic.map(asset => asset.address))
-      .catch(error => {
+      .vaultsStrategiesMetadata(assetsDynamic.map((asset) => asset.address))
+      .catch((error) => {
         console.error(error);
         return Promise.resolve([]);
       });
 
-    const assetsHistoricEarningsPromise = this.yearn.earnings.assetsHistoricEarnings().catch(error => {
+    const assetsHistoricEarningsPromise = this.yearn.earnings.assetsHistoricEarnings().catch((error) => {
       console.error(error);
       return Promise.resolve([]);
     });
 
     const [strategiesMetadata, assetsHistoricEarnings] = await Promise.all([
       strategiesMetadataPromise,
-      assetsHistoricEarningsPromise
+      assetsHistoricEarningsPromise,
     ]);
 
     const assetsWithOrder: { vault: Vault; order: number }[] = [];
@@ -95,22 +95,22 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
       if (!dynamic) {
         throw new SdkError(`Dynamic asset does not exist for ${asset.address}`);
       }
-      const overrides = vaultMetadataOverrides.find(override => override.address === asset.address);
+      const overrides = vaultMetadataOverrides.find((override) => override.address === asset.address);
       if (overrides?.hideAlways) {
         continue;
       }
       const order = overrides?.order ?? Math.max();
 
       dynamic.metadata.displayName = dynamic.metadata.displayName || asset.name;
-      dynamic.metadata.strategies = strategiesMetadata.find(metadata => metadata.vaultAddress === asset.address);
+      dynamic.metadata.strategies = strategiesMetadata.find((metadata) => metadata.vaultAddress === asset.address);
       dynamic.metadata.historicEarnings = assetsHistoricEarnings.find(
-        earnings => earnings.assetAddress === asset.address
+        (earnings) => earnings.assetAddress === asset.address
       )?.dayData;
 
       assetsWithOrder.push({ vault: { ...asset, ...dynamic }, order });
     }
 
-    return assetsWithOrder.sort((lhs, rhs) => lhs.order - rhs.order).map(asset => asset.vault);
+    return assetsWithOrder.sort((lhs, rhs) => lhs.order - rhs.order).map((asset) => asset.vault);
   }
 
   /**
@@ -122,10 +122,10 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
   async getStatic(addresses?: Address[], overrides?: CallOverrides): Promise<VaultStatic[]> {
     const adapters = Object.values(this.yearn.services.lens.adapters.vaults);
     return await Promise.all(
-      adapters.map(async adapter => {
+      adapters.map(async (adapter) => {
         return await adapter.assetsStatic(addresses, overrides);
       })
-    ).then(arr => arr.flat());
+    ).then((arr) => arr.flat());
   }
 
   /**
@@ -141,23 +141,23 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
   ): Promise<VaultDynamic[]> {
     const cached = await this.cachedFetcherGetDynamic.fetch();
     if (cached) {
-      return addresses ? cached.filter(vault => addresses.includes(vault.address)) : cached;
+      return addresses ? cached.filter((vault) => addresses.includes(vault.address)) : cached;
     }
 
     const metadataOverrides = vaultMetadataOverrides
       ? vaultMetadataOverrides
-      : await this.yearn.services.meta.vaults().catch(error => {
+      : await this.yearn.services.meta.vaults().catch((error) => {
           console.error(error);
           return Promise.resolve([]);
         });
 
     const adapters = Object.values(this.yearn.services.lens.adapters.vaults);
     return await Promise.all(
-      adapters.map(async adapter => {
+      adapters.map(async (adapter) => {
         const data = await adapter.assetsDynamic(addresses, overrides);
-        const assetsApy = await this.yearn.services.vision.apy(data.map(dynamic => dynamic.address));
-        return data.map(dynamic => {
-          const overrides = metadataOverrides.find(override => override.address === dynamic.address);
+        const assetsApy = await this.yearn.services.vision.apy(data.map((dynamic) => dynamic.address));
+        return data.map((dynamic) => {
+          const overrides = metadataOverrides.find((override) => override.address === dynamic.address);
           dynamic.metadata.apy = assetsApy[dynamic.address];
           if (dynamic.tokenId === WethAddress) {
             const icon = this.yearn.services.asset.icon(EthAddress) ?? "";
@@ -177,7 +177,7 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
           return dynamic;
         });
       })
-    ).then(arr => arr.flat());
+    ).then((arr) => arr.flat());
   }
 
   /**
@@ -190,7 +190,7 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
   async positionsOf(address: Address, addresses?: Address[], overrides?: CallOverrides): Promise<Position[]> {
     const adapters = Object.values(this.yearn.services.lens.adapters.vaults);
     return await Promise.all(
-      adapters.map(async adapter => {
+      adapters.map(async (adapter) => {
         try {
           return await adapter.positionsOf(address, addresses, overrides);
         } catch {
@@ -198,16 +198,16 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
           if (addresses) {
             allAddresses = addresses;
           } else {
-            allAddresses = await this.getStatic(addresses, overrides).then(assets =>
-              assets.map(asset => asset.address)
+            allAddresses = await this.getStatic(addresses, overrides).then((assets) =>
+              assets.map((asset) => asset.address)
             );
           }
           const chunks = chunkArray(allAddresses, 30);
-          const promises = chunks.map(async chunk => adapter.positionsOf(address, chunk, overrides));
-          return await Promise.all(promises).then(chunks => chunks.flat());
+          const promises = chunks.map(async (chunk) => adapter.positionsOf(address, chunk, overrides));
+          return await Promise.all(promises).then((chunks) => chunks.flat());
         }
       })
-    ).then(arr => arr.flat());
+    ).then((arr) => arr.flat());
   }
 
   /**
@@ -229,7 +229,7 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
   async metadataOf(address: Address, addresses?: Address[]): Promise<VaultUserMetadata[]> {
     const { earningsAssetData } = await this.yearn.earnings.accountAssetsData(address);
     if (!addresses) return earningsAssetData;
-    return earningsAssetData.filter(asset => addresses.includes(asset.assetAddress));
+    return earningsAssetData.filter((asset) => addresses.includes(asset.assetAddress));
   }
 
   /**
@@ -242,17 +242,17 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
     const tokens = await this.tokens();
     const balances = await this.yearn.services.helper.tokenBalances(
       address,
-      tokens.map(token => token.address),
+      tokens.map((token) => token.address),
       overrides
     );
-    return balances.map(balance => {
-      const token = tokens.find(token => token.address === balance.address);
+    return balances.map((balance) => {
+      const token = tokens.find((token) => token.address === balance.address);
       if (!token) {
         throw new SdkError(`Token does not exist for Balance(${balance.address})`);
       }
       return {
         ...balance,
-        token
+        token,
       };
     });
   }
@@ -271,7 +271,7 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
     const adapters = Object.values(this.yearn.services.lens.adapters.vaults);
     await this.yearn.services.asset.ready;
     return await Promise.all(
-      adapters.map(async adapter => {
+      adapters.map(async (adapter) => {
         const tokenAddresses = await adapter.tokens(overrides);
         const icons = this.yearn.services.asset.icon(tokenAddresses.concat(EthAddress));
         const tokensPromise = this.yearn.services.helper.tokens(tokenAddresses, overrides);
@@ -280,17 +280,17 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
         const [tokens, tokensMetadata] = await Promise.all([tokensPromise, tokensMetadataPromise]);
 
         return Promise.all(
-          tokens.map(async token => {
-            const tokenMetadata = tokensMetadata.find(metadata => metadata.address === token.address);
+          tokens.map(async (token) => {
+            const tokenMetadata = tokensMetadata.find((metadata) => metadata.address === token.address);
             const result: Token = {
               ...token,
               icon: icons[token.address],
               dataSource: "vaults",
               supported: {
-                vaults: true
+                vaults: true,
               },
               priceUsdc: await this.yearn.services.oracle.getPriceUsdc(token.address, overrides),
-              metadata: tokenMetadata
+              metadata: tokenMetadata,
             };
             const symbolOverride = this.yearn.services.asset.alias(token.address)?.symbol;
             if (symbolOverride) {
@@ -303,7 +303,7 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
           })
         );
       })
-    ).then(arr => arr.flat());
+    ).then((arr) => arr.flat());
   }
 
   /**
@@ -525,7 +525,7 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
         gasPrice: BigNumber.from(zapOutParams.gasPrice),
         gasLimit: BigNumber.from(zapOutParams.gas),
         data: zapOutParams.data,
-        value: BigNumber.from(zapOutParams.value)
+        value: BigNumber.from(zapOutParams.value),
       };
 
       return this.executeZapperTransaction(transactionRequest, overrides, BigNumber.from(zapOutParams.gasPrice));
@@ -562,7 +562,7 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
       from: zapInParams.from,
       data: zapInParams.data,
       value: BigNumber.from(zapInParams.value),
-      gasLimit: BigNumber.from(zapInParams.gas)
+      gasLimit: BigNumber.from(zapInParams.gas),
     };
 
     return this.executeZapperTransaction(transactionRequest, overrides, BigNumber.from(zapInParams.gasPrice));
@@ -673,7 +673,7 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
       net_apy: 0,
       fees: { performance: null, withdrawal: null, management: null, keep_crv: null, cvx_keep_crv: null },
       points: null,
-      composite: null
+      composite: null,
     };
     return apy;
   }

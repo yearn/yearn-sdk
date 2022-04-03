@@ -12,7 +12,7 @@ export const SUPPORTED_ZAP_OUT_ADDRESSES_MAINNET = {
   DAI: "0x6B175474E89094C44Da98b954EedeAC495271d0F",
   USDC: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
   USDT: "0xdAC17F958D2ee523a2206206994597C13D831ec7",
-  WBTC: "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599"
+  WBTC: "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
 };
 
 export const FANTOM_TOKEN: Token = {
@@ -22,9 +22,9 @@ export const FANTOM_TOKEN: Token = {
   decimals: "18",
   priceUsdc: "0",
   supported: {
-    ftmApeZap: true
+    ftmApeZap: true,
   },
-  symbol: "FTM"
+  symbol: "FTM",
 };
 
 // Returns truthy if address is defined as a native token address of a network

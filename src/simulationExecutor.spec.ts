@@ -10,14 +10,14 @@ global.fetch = jest.fn(() =>
   Promise.resolve({
     json: jest.fn().mockReturnValue({
       simulation: {
-        id: "simulation-id"
+        id: "simulation-id",
       },
       transaction: {
         transaction_info: {
-          call_trace: { calls: [] }
-        }
-      }
-    })
+          call_trace: { calls: [] },
+        },
+      },
+    }),
   })
 ) as jest.Mock;
 
@@ -43,18 +43,18 @@ const buildSignerMock = (balance = 1, transactionCount = 1): any => {
 
 jest.mock("./services/telegram", () => ({
   TelegramService: jest.fn().mockImplementation(() => ({
-    sendMessage: jest.fn()
-  }))
+    sendMessage: jest.fn(),
+  })),
 }));
 jest.mock("./context", () => ({
   Context: jest.fn().mockImplementation(() => ({
     provider: {
-      write: buildSignerMock()
+      write: buildSignerMock(),
     },
     simulation: {
-      dashboardUrl: "dashboard-url"
-    }
-  }))
+      dashboardUrl: "dashboard-url",
+    },
+  })),
 }));
 
 describe("Simulation executor", () => {
@@ -103,9 +103,9 @@ describe("Simulation executor", () => {
         Promise.resolve({
           json: jest.fn().mockReturnValue({
             transaction: {
-              error_message: "some error"
-            }
-          })
+              error_message: "some error",
+            },
+          }),
         })
       );
       try {
@@ -123,14 +123,14 @@ describe("Simulation executor", () => {
         Promise.resolve({
           json: jest.fn().mockReturnValue({
             simulation: {
-              id: "simulation-id"
+              id: "simulation-id",
             },
             transaction: {
               transaction_info: {
-                call_trace: { calls: [{ error: "some error happened " }] }
-              }
-            }
-          })
+                call_trace: { calls: [{ error: "some error happened " }] },
+              },
+            },
+          }),
         })
       );
       try {
@@ -148,14 +148,14 @@ describe("Simulation executor", () => {
       spy = jest.spyOn(simulationExecutor, "makeSimulationRequest").mockReturnValueOnce(
         Promise.resolve({
           simulation: {
-            id: ""
+            id: "",
           },
           transaction: {
             transaction_info: {
               call_trace: { output: "", calls: [] },
-              logs: []
-            }
-          }
+              logs: [],
+            },
+          },
         })
       );
     });

@@ -60,7 +60,7 @@ export class CachedFetcher<T> {
   private async fetchWithTimeout(url: string, timeout: number): Promise<Response> {
     return Promise.race([
       fetch(url),
-      new Promise<Response>((_, reject) => setTimeout(() => reject("timeout"), timeout))
+      new Promise<Response>((_, reject) => setTimeout(() => reject("timeout"), timeout)),
     ]);
   }
 

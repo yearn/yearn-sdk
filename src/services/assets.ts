@@ -60,8 +60,8 @@ export class AssetService extends Service {
     if (this.chainId === 1 || this.chainId === 1337) {
       const aliases: Alias[] = await fetch(YearnAliases)
         .then(handleHttpError)
-        .then(res => res.json())
-        .catch(error => {
+        .then((res) => res.json())
+        .catch((error) => {
           console.error(error);
           return [];
         });
@@ -72,9 +72,9 @@ export class AssetService extends Service {
 
       const trust = await fetch(TrustAssets)
         .then(handleHttpError)
-        .then(res => res.json())
-        .then(res => res.tokens)
-        .catch(error => {
+        .then((res) => res.json())
+        .then((res) => res.tokens)
+        .catch((error) => {
           console.error(error);
           return [];
         });
@@ -86,8 +86,8 @@ export class AssetService extends Service {
 
     const yearn = await fetch(YearnAssets(this.chainId))
       .then(handleHttpError)
-      .then(res => res.json())
-      .catch(error => {
+      .then((res) => res.json())
+      .catch((error) => {
         console.error(error);
         return [];
       });
@@ -119,7 +119,7 @@ export class AssetService extends Service {
     if (!Array.isArray(address)) {
       return this.supported.get(address);
     }
-    return Object.fromEntries(address.map(address => [address, this.supported.get(address)])) as IconMap<T>;
+    return Object.fromEntries(address.map((address) => [address, this.supported.get(address)])) as IconMap<T>;
   }
 
   /**
@@ -139,6 +139,6 @@ export class AssetService extends Service {
     if (!Array.isArray(address)) {
       return this.aliases.get(address);
     }
-    return Object.fromEntries(address.map(address => [address, this.aliases.get(address)])) as AliasMap<T>;
+    return Object.fromEntries(address.map((address) => [address, this.aliases.get(address)])) as AliasMap<T>;
   }
 }

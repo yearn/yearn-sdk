@@ -14,7 +14,7 @@ import { Address } from "../types";
  */
 export class AllowListService<T extends ChainId> extends ContractService<T> {
   static abi = [
-    "function validateCalldataByOrigin(string memory originName, address targetAddress, bytes calldata data) public view returns (bool)"
+    "function validateCalldataByOrigin(string memory originName, address targetAddress, bytes calldata data) public view returns (bool)",
   ];
   static contractId = ContractAddressId.allowlist;
 

@@ -10,7 +10,7 @@ export abstract class VaultContract {
       "function token() view returns (address)",
       "function decimals() view returns (uint256)",
       "function deposit(uint256 amount) public",
-      "function withdraw(uint256 amount) public"
+      "function withdraw(uint256 amount) public",
     ];
   }
 

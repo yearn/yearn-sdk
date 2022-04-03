@@ -7,10 +7,10 @@ const DEFAULT_TOKEN: Token = {
   name: "Dead Token",
   priceUsdc: "0",
   dataSource: "vaults",
-  supported: {}
+  supported: {},
 };
 
 export const createMockToken = (overwrites: Partial<Token> = {}): Token => ({
   ...DEFAULT_TOKEN,
-  ...overwrites
+  ...overwrites,
 });
