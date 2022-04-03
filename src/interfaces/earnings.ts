@@ -218,7 +218,7 @@ export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
     fromDaysAgo: number,
     latestBlockNumber?: number
   ): Promise<AssetHistoricEarnings> {
-    let blockNumber = latestBlockNumber ?? await this.ctx.provider.read.getBlockNumber();
+    let blockNumber = latestBlockNumber ?? (await this.ctx.provider.read.getBlockNumber());
 
     blockNumber -= this.blockOffset(); // subgraph might be slightly behind latest block
 
