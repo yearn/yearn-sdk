@@ -28,8 +28,6 @@ export interface VaultEarningsResponse {
   };
 }
 
-export type BlockLabel = `block_${number}`;
-
 export interface AccountEarningsResponse {
   data: {
     account?: {
