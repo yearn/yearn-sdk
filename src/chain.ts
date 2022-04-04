@@ -5,7 +5,7 @@ export const Chains = {
   1: "ethereum",
   250: "fantom",
   1337: "ethereum",
-  42161: "arbitrum"
+  42161: "arbitrum",
 };
 
 export type EthMain = 1;
@@ -27,4 +27,4 @@ export const isArbitrum = (chainId: ChainId): boolean => {
   return chainId === 42161;
 };
 
-export const allSupportedChains = Object.keys(Chains).map(key => Number(key));
+export const allSupportedChains = Object.keys(Chains).map((key) => Number(key));

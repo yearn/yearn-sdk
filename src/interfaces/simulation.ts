@@ -16,7 +16,7 @@ import {
   SdkError,
   ZapApprovalTransactionOutput,
   ZapperError,
-  ZapProtocol
+  ZapProtocol,
 } from "../types";
 import { SimulationOptions, TransactionOutcome } from "../types/custom/simulation";
 import { PickleJarContract, VaultContract, YearnVaultContract } from "../vault";
@@ -63,7 +63,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
       } else {
         needsApproving = await this.yearn.services.zapper
           .zapInApprovalState(from, sellToken, zapProtocol)
-          .then(state => !state.isApproved)
+          .then((state) => !state.isApproved)
           .catch(() => {
             throw new ZapperError("approval state", ZapperError.ZAP_IN_APPROVAL_STATE);
           });
@@ -78,10 +78,10 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
             .catch(() => {
               throw new ZapperError("approval", ZapperError.ZAP_IN_APPROVAL);
             })
-            .then(async approvalTransaction => {
+            .then(async (approvalTransaction) => {
               return await this.simulateZapApprovalTransaction(approvalTransaction, options);
             })
-            .then(res => res.simulation.id)
+            .then((res) => res.simulation.id)
         : undefined;
       options.root = approvalTransactionId;
 
@@ -143,7 +143,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
       } else {
         needsApproving = await this.yearn.services.zapper
           .zapOutApprovalState(from, fromVault)
-          .then(state => !state.isApproved)
+          .then((state) => !state.isApproved)
           .catch(() => {
             throw new ZapperError("zap out approval state", ZapperError.ZAP_OUT_APPROVAL_STATE);
           });
@@ -157,10 +157,10 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
             .catch(() => {
               throw new ZapperError("zap out approval transaction", ZapperError.ZAP_OUT_APPROVAL);
             })
-            .then(async approvalTransaction => {
+            .then(async (approvalTransaction) => {
               return await this.simulateZapApprovalTransaction(approvalTransaction, options);
             })
-            .then(res => res.simulation.id)
+            .then((res) => res.simulation.id)
         : undefined;
 
       options.root = approvalSimulationId;
@@ -260,7 +260,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
       }),
       vaultContract.pricePerShare().catch(() => {
         throw new EthersError("no price per share", EthersError.NO_PRICE_PER_SHARE);
-      })
+      }),
     ]);
 
     const targetUnderlyingTokensReceived = new BigNumber(tokensReceived)
@@ -277,7 +277,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
       targetUnderlyingTokenAddress: toVault,
       targetUnderlyingTokenAmount: targetUnderlyingTokensReceived,
       conversionRate: 1,
-      slippage: 0
+      slippage: 0,
     };
 
     return result;
@@ -328,7 +328,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
       }),
       vaultContract.pricePerShare().catch(() => {
         throw new EthersError("no price per share", EthersError.NO_PRICE_PER_SHARE);
-      })
+      }),
     ]);
     const targetUnderlyingTokensReceived = new BigNumber(tokensReceived)
       .div(new BigNumber(10).pow(decimals))
@@ -341,7 +341,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
       case ZapProtocol.YEARN:
         amountReceivedUsdc = await this.yearn.services.oracle
           .getNormalizedValueUsdc(toVault, tokensReceived)
-          .then(price => new BigNumber(price))
+          .then((price) => new BigNumber(price))
           .catch(() => {
             throw new PriceFetchingError("error fetching price", PriceFetchingError.FETCHING_PRICE_ORACLE);
           });
@@ -353,7 +353,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
             .catch(() => {
               throw new PriceFetchingError("error fetching price", PriceFetchingError.FETCHING_PRICE_PICKLE);
             })
-            .then(usdc => new BigNumber(usdc))
+            .then((usdc) => new BigNumber(usdc))
         )
           .dividedBy(new BigNumber(10).pow(decimals))
           .multipliedBy(new BigNumber(tokensReceived));
@@ -378,7 +378,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
       targetUnderlyingTokenAddress: underlyingTokenAddress,
       targetUnderlyingTokenAmount: targetUnderlyingTokensReceived,
       conversionRate: conversionRate,
-      slippage: 1 - conversionRate
+      slippage: 1 - conversionRate,
     };
 
     return result;
@@ -417,7 +417,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
       targetUnderlyingTokenAddress: toToken,
       targetUnderlyingTokenAmount: tokensReceived,
       conversionRate: 1,
-      slippage: 0
+      slippage: 0,
     };
 
     return result;
@@ -490,7 +490,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
       targetUnderlyingTokenAddress: underlyingTokenAddress,
       targetUnderlyingTokenAmount: tokensReceived,
       conversionRate: conversionRate,
-      slippage: 1 - conversionRate
+      slippage: 1 - conversionRate,
     };
 
     return result;

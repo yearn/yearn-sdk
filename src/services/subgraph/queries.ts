@@ -32,7 +32,7 @@ export const PROTOCOL_EARNINGS = `query ProtocolEarnings {
 
 export const buildAccountEarningsVariables = (id: string): { id: string; ignoredVaults: string[] } => ({
   id,
-  ignoredVaults: LAB_ADDRESSESS
+  ignoredVaults: LAB_ADDRESSESS,
 });
 
 export const ACCOUNT_EARNINGS = `
@@ -81,7 +81,7 @@ export const ASSET_HISTORIC_EARNINGS = (blocks: number[]): string => {
     `;
   };
 
-  const historicQueries = blocks.map(block => makeBlockQuery(block));
+  const historicQueries = blocks.map((block) => makeBlockQuery(block));
 
   const result = `query AssetHistoricEarnings($id: ID!) {
     vault(id: $id) {

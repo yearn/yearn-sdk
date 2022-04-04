@@ -22,7 +22,7 @@ interface VaultData {
 const VaultAbi = [
   "function strategies(address) view returns (uint256 performanceFee, uint256 activation, uint256 debtRatio, uint256 rateLimit, uint256 lastReport, uint256 totalDebt, uint256 totalGain, uint256 totalLoss)",
   "function token() view returns (address)",
-  "event StrategyAdded(address indexed strategy, uint256 debtRatio, uint256 minDebtPerHarvest, uint256 maxDebtPerHarvest, uint256 performanceFee)"
+  "event StrategyAdded(address indexed strategy, uint256 debtRatio, uint256 minDebtPerHarvest, uint256 maxDebtPerHarvest, uint256 performanceFee)",
 ];
 
 const TokenAbi = ["function symbol() view returns (string)"];
@@ -46,7 +46,7 @@ export class StrategyInterface<T extends ChainId> extends ServiceInterface<T> {
     } else {
       vaults = await this.yearn.services.lens.adapters.vaults.v2
         .assetsStatic()
-        .then(assets => assets.map(asset => asset.address));
+        .then((assets) => assets.map((asset) => asset.address));
     }
 
     let vaultStrategiesMetadata: VaultStrategiesMetadata[] | undefined;
@@ -70,8 +70,8 @@ export class StrategyInterface<T extends ChainId> extends ServiceInterface<T> {
     const strategiesMetadata = await this.yearn.services.meta.strategies();
 
     const vaultsStrategiesMetadataPromises: Promise<VaultStrategiesMetadata | undefined>[] = vaultAddresses.map(
-      async vaultAddress => {
-        const vaultDatum = vaultsData.find(datum => datum.address === vaultAddress);
+      async (vaultAddress) => {
+        const vaultDatum = vaultsData.find((datum) => datum.address === vaultAddress);
         if (!vaultDatum) {
           return undefined;
         }
@@ -85,8 +85,8 @@ export class StrategyInterface<T extends ChainId> extends ServiceInterface<T> {
       }
     );
 
-    return Promise.all(vaultsStrategiesMetadataPromises).then(vaultsStrategyData => {
-      return vaultsStrategyData.flatMap(data => (data ? [data] : []));
+    return Promise.all(vaultsStrategiesMetadataPromises).then((vaultsStrategyData) => {
+      return vaultsStrategyData.flatMap((data) => (data ? [data] : []));
     });
   }
 
@@ -95,13 +95,13 @@ export class StrategyInterface<T extends ChainId> extends ServiceInterface<T> {
     const provider = this.ctx.provider.read;
 
     const vaultsStrategiesMetadataPromises: Promise<VaultStrategiesMetadata | undefined>[] = vaultAddresses.map(
-      async vaultAddress => {
+      async (vaultAddress) => {
         const vaultContract = new Contract(vaultAddress, VaultAbi, provider);
 
-        const strategiesPromise = this.yearn.services.helper.assetStrategiesAddresses(vaultAddress).then(addresses =>
-          addresses.map(strat => {
+        const strategiesPromise = this.yearn.services.helper.assetStrategiesAddresses(vaultAddress).then((addresses) =>
+          addresses.map((strat) => {
             return {
-              address: strat
+              address: strat,
             };
           })
         );
@@ -114,8 +114,8 @@ export class StrategyInterface<T extends ChainId> extends ServiceInterface<T> {
       }
     );
 
-    return Promise.all(vaultsStrategiesMetadataPromises).then(vaultsStrategyData =>
-      vaultsStrategyData.flatMap(data => (data ? [data] : []))
+    return Promise.all(vaultsStrategiesMetadataPromises).then((vaultsStrategyData) =>
+      vaultsStrategyData.flatMap((data) => (data ? [data] : []))
     );
   }
 
@@ -130,7 +130,7 @@ export class StrategyInterface<T extends ChainId> extends ServiceInterface<T> {
     }
 
     const metadata: StrategyMetadata[] = await Promise.all(
-      strategies.map(async strategy => {
+      strategies.map(async (strategy) => {
         let debtRatio: BigNumber;
 
         try {
@@ -144,7 +144,7 @@ export class StrategyInterface<T extends ChainId> extends ServiceInterface<T> {
           return undefined;
         }
 
-        const metadatum = strategiesMetadata.find(strategiesMetadata =>
+        const metadatum = strategiesMetadata.find((strategiesMetadata) =>
           strategiesMetadata.addresses.includes(strategy.address)
         );
 
@@ -152,16 +152,16 @@ export class StrategyInterface<T extends ChainId> extends ServiceInterface<T> {
           address: strategy.address,
           name: metadatum?.name || strategy.name || "Strategy",
           description: metadatum?.description ?? "I don't have a description for this strategy yet",
-          protocols: metadatum?.protocols ?? []
+          protocols: metadatum?.protocols ?? [],
         };
 
         metadata.description = metadata?.description.replace(/{{token}}/g, underlyingTokenSymbol);
 
         return { data: metadata, debtRatio };
       })
-    ).then(metadataAndDebtRatio =>
+    ).then((metadataAndDebtRatio) =>
       metadataAndDebtRatio
-        .flatMap(data => (data ? [data] : []))
+        .flatMap((data) => (data ? [data] : []))
         .sort((lhs, rhs) => {
           if (lhs.debtRatio.lt(rhs.debtRatio)) {
             return 1;
@@ -171,7 +171,7 @@ export class StrategyInterface<T extends ChainId> extends ServiceInterface<T> {
             return -1;
           }
         })
-        .map(metadata => metadata.data)
+        .map((metadata) => metadata.data)
     );
 
     if (metadata.length === 0) {
@@ -180,7 +180,7 @@ export class StrategyInterface<T extends ChainId> extends ServiceInterface<T> {
 
     const result: VaultStrategiesMetadata = {
       vaultAddress: vaultContract.address,
-      strategiesMetadata: metadata
+      strategiesMetadata: metadata,
     };
 
     return result;

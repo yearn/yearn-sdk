@@ -32,7 +32,7 @@ describe("MetaService", () => {
       const tokenMetadata2 = createMockTokenMetadata({ address: "0x003" });
       (global.fetch as any).mockResolvedValueOnce({
         ok: true,
-        json: async () => [tokenMetadata1, tokenMetadataIgnored, tokenMetadata2]
+        json: async () => [tokenMetadata1, tokenMetadataIgnored, tokenMetadata2],
       });
 
       const actual = await meta.tokens(["0x001", "0x003"]);
@@ -43,8 +43,8 @@ describe("MetaService", () => {
       expect(actual).not.toEqual(
         expect.arrayContaining([
           expect.objectContaining({
-            address: "0x002"
-          })
+            address: "0x002",
+          }),
         ])
       );
     });
@@ -60,7 +60,7 @@ describe("MetaService", () => {
     it("should throw when it fails to fetch a single token metadata from the address given", async () => {
       (global.fetch as any).mockResolvedValueOnce({
         ok: false,
-        status: 404
+        status: 404,
       });
 
       const actual = await meta.token("0x00");
@@ -94,7 +94,7 @@ describe("MetaService", () => {
       const vaultMetadataIgnored = createMockVaultMetadata({ address: "0x003" });
       (global.fetch as any).mockResolvedValueOnce({
         ok: true,
-        json: async () => [vaultMetadata1, vaultMetadataIgnored, vaultMetadata2]
+        json: async () => [vaultMetadata1, vaultMetadataIgnored, vaultMetadata2],
       });
 
       const actual = await meta.vaults(["0x001", "0x002"]);
@@ -105,8 +105,8 @@ describe("MetaService", () => {
       expect(actual).not.toEqual(
         expect.arrayContaining([
           expect.objectContaining({
-            address: "0x003"
-          })
+            address: "0x003",
+          }),
         ])
       );
     });
@@ -122,7 +122,7 @@ describe("MetaService", () => {
     it("should throw when it fails to fetch a single vault metadata from the address given", async () => {
       (global.fetch as any).mockResolvedValueOnce({
         ok: false,
-        status: 404
+        status: 404,
       });
 
       const actual = await meta.vault("0x00");

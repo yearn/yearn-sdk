@@ -7,17 +7,17 @@ const validateCalldataByOriginMock = jest.fn();
 
 jest.mock("@ethersproject/contracts", () => ({
   Contract: jest.fn().mockImplementation(() => ({
-    validateCalldataByOrigin: validateCalldataByOriginMock
-  }))
+    validateCalldataByOrigin: validateCalldataByOriginMock,
+  })),
 }));
 
 jest.mock("../context", () => ({
   Context: jest.fn().mockImplementation(() => ({
     provider: jest.fn(),
     events: {
-      on: jest.fn()
-    }
-  }))
+      on: jest.fn(),
+    },
+  })),
 }));
 
 describe("validateCalldata", () => {
@@ -39,7 +39,7 @@ describe("validateCalldata", () => {
 
       expect(actual).toEqual({
         error: "can't validate a tx that isn't targeting an address",
-        success: false
+        success: false,
       });
     });
 
@@ -88,7 +88,7 @@ describe("validateCalldata", () => {
 
         expect(actual).toEqual({
           success: false,
-          error: "failed to read from the allow list whether the transaction is valid"
+          error: "failed to read from the allow list whether the transaction is valid",
         });
       });
     });

@@ -45,5 +45,5 @@ export interface ZapOutput {
 
 export enum ZapProtocol {
   PICKLE = "pickle",
-  YEARN = "yearn"
+  YEARN = "yearn",
 }

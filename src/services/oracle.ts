@@ -26,7 +26,7 @@ export const OracleAbi = [
   "function getPriceFromRouter(address, address) public view returns (uint256)",
   "function getPriceFromRouterUsdc(address) public view returns (uint256)",
   "function getLpTokenTotalLiquidityUsdc(address) public view returns (uint256)",
-  "function getLpTokenPriceUsdc(address) public view returns (uint256)"
+  "function getLpTokenPriceUsdc(address) public view returns (uint256)",
 ];
 
 /**

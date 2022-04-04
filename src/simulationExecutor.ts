@@ -101,7 +101,7 @@ export class SimulationExecutor {
     const log = response.transaction.transaction_info.logs
       .reverse()
       .find(
-        log =>
+        (log) =>
           log.raw.topics[0] === encodedTransferFunction && getAddressFromTopic(log.raw.topics[2]) === getAddress(from)
       );
 
@@ -145,17 +145,17 @@ export class SimulationExecutor {
       gas: parseInt(transactionRequest.gasLimit?.toString() || "0"),
       gas_price: transactionRequest.gasPrice?.toString() || 0,
       save: options.save || true,
-      nonce: transactionRequest.nonce
+      nonce: transactionRequest.nonce,
     };
 
     const simulationResponse = await fetch(constructedPath, {
       method: "POST",
       headers: {
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
       },
-      body: JSON.stringify(body)
+      body: JSON.stringify(body),
     })
-      .then(res => res.json())
+      .then((res) => res.json())
       .catch(() => {
         throw new TenderlyError("simulation call to Tenderly failed", TenderlyError.SIMULATION_CALL);
       });
@@ -170,7 +170,7 @@ export class SimulationExecutor {
     } else {
       // even though the transaction has been successful one of it's calls could have failed i.e. a partial revert might have happened
       const allCalls = this.getAllSimulationCalls(simulationResponse.transaction.transaction_info.call_trace);
-      const partialRevertError = allCalls.find(call => call.error)?.error;
+      const partialRevertError = allCalls.find((call) => call.error)?.error;
       if (partialRevertError) {
         const errorMessage = "Partial Revert - " + partialRevertError;
         this.sendErrorMessage(errorMessage, simulationResponse.simulation.id, options?.forkId);
@@ -193,7 +193,7 @@ export class SimulationExecutor {
     forkIdToDeleteOnSuccess: string | null = null
   ): Promise<T> {
     try {
-      const result = await simulate(false).then(res => {
+      const result = await simulate(false).then((res) => {
         // if the transaction used a fork and was successful then delete it
         if (forkIdToDeleteOnSuccess) {
           this.deleteFork(forkIdToDeleteOnSuccess);
@@ -267,7 +267,7 @@ export class SimulationExecutor {
       gasPrice: options.gasPrice,
       maxFeePerGas: options.maxFeePerGas,
       maxPriorityFeePerGas: options.maxPriorityFeePerGas,
-      type: options.gasPrice ? 0 : undefined
+      type: options.gasPrice ? 0 : undefined,
     };
 
     const result = await signer.populateTransaction(transactionRequest).catch(() => {
@@ -292,17 +292,17 @@ export class SimulationExecutor {
     const body = {
       alias: "",
       description: "",
-      network_id: "1"
+      network_id: "1",
     };
 
     const response: Response = await await fetch(`${baseUrl}/fork`, {
       method: "POST",
       headers: {
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
       },
-      body: JSON.stringify(body)
+      body: JSON.stringify(body),
     })
-      .then(res => res.json())
+      .then((res) => res.json())
       .catch(() => {
         throw new TenderlyError("failed to create fork", TenderlyError.CREATE_FORK);
       });
@@ -333,7 +333,7 @@ export class SimulationExecutor {
       }/${simulationId}`;
     }
 
-    const message = ["Simulation error", errorMessage, transactionUrl].map(item => item).join("\n\n");
+    const message = ["Simulation error", errorMessage, transactionUrl].map((item) => item).join("\n\n");
 
     this.telegram.sendMessage(message);
   }

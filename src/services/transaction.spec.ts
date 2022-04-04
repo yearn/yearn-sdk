@@ -12,24 +12,24 @@ jest.mock("../context", () => ({
     provider: {
       write: {
         getSigner: jest.fn().mockImplementation(() => ({
-          sendTransaction: sendTransactionMock
-        }))
-      }
+          sendTransaction: sendTransactionMock,
+        })),
+      },
     },
     events: {
-      on: jest.fn()
-    }
-  }))
+      on: jest.fn(),
+    },
+  })),
 }));
 
 jest.mock("@ethersproject/contracts", () => ({
-  Contract: jest.fn()
+  Contract: jest.fn(),
 }));
 
 jest.mock("./allowlist", () => ({
   AllowListService: jest.fn().mockImplementation(() => ({
-    validateCalldata: validateCalldataMock
-  }))
+    validateCalldata: validateCalldataMock,
+  })),
 }));
 
 describe("TranscationService", () => {
@@ -38,7 +38,7 @@ describe("TranscationService", () => {
 
   describe("with valid allow list", () => {
     beforeEach(() => {
-      mockedAllowList = new ((AllowListService as unknown) as jest.Mock<AllowListService<ChainId>>)();
+      mockedAllowList = new (AllowListService as unknown as jest.Mock<AllowListService<ChainId>>)();
       transactionService = new TransactionService(1, new Context({}), mockedAllowList);
     });
 
@@ -54,7 +54,7 @@ describe("TranscationService", () => {
       it("the transaction is sent", async () => {
         const tx: TransactionRequest = {
           to: "0x00",
-          data: "0x01"
+          data: "0x01",
         };
 
         await transactionService.sendTransaction(tx);
@@ -73,7 +73,7 @@ describe("TranscationService", () => {
       it("the transaction is not sent", async () => {
         const tx: TransactionRequest = {
           to: "0x00",
-          data: "0x01"
+          data: "0x01",
         };
 
         try {
@@ -94,7 +94,7 @@ describe("TranscationService", () => {
     it("the transaction is sent", async () => {
       const tx: TransactionRequest = {
         to: "0x00",
-        data: "0x01"
+        data: "0x01",
       };
 
       await transactionService.sendTransaction(tx);

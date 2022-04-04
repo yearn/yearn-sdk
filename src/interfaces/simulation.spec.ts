@@ -27,8 +27,8 @@ jest.mock("../services/partner", () => ({
   PartnerService: jest.fn().mockImplementation(() => ({
     encodeDeposit: partnerEncodeDepositMock,
     isAllowed: partnerIsAllowedMock,
-    address: "0x00001"
-  }))
+    address: "0x00001",
+  })),
 }));
 jest.mock("@ethersproject/providers");
 jest.mock("@ethersproject/contracts");
@@ -37,14 +37,14 @@ jest.mock("../vault", () => ({
     token: tokenMock,
     decimals: decimalsMock,
     pricePerShare: pricePerShareMock,
-    encodeDeposit: jest.fn().mockReturnValue(Promise.resolve("encodeDeposit"))
+    encodeDeposit: jest.fn().mockReturnValue(Promise.resolve("encodeDeposit")),
   })),
   YearnVaultContract: jest.fn().mockImplementation(() => ({
     token: tokenMock,
     decimals: decimalsMock,
     pricePerShare: pricePerShareMock,
-    encodeDeposit: jest.fn().mockReturnValue("encodeDeposit")
-  }))
+    encodeDeposit: jest.fn().mockReturnValue("encodeDeposit"),
+  })),
 }));
 
 const SignerMock = JsonRpcSigner as jest.Mocked<typeof JsonRpcSigner>;
@@ -66,10 +66,10 @@ jest.mock("../yearn", () => ({
     services: {
       telegram: jest.fn(),
       oracle: {
-        getNormalizedValueUsdc: getNormalizedValueUsdcMock
+        getNormalizedValueUsdc: getNormalizedValueUsdcMock,
       },
       pickle: {
-        getPriceUsdc: getNormalizedValueUsdcMock
+        getPriceUsdc: getNormalizedValueUsdcMock,
       },
       zapper: {
         zapInApprovalState: zapInApprovalStateMock,
@@ -77,17 +77,17 @@ jest.mock("../yearn", () => ({
         zapOutApprovalState: zapOutApprovalStateMock,
         zapOutApprovalTransaction: zapOutApprovalTransactionMock,
         zapIn: zapInMock,
-        zapOut: zapOutMock
-      }
-    }
-  }))
+        zapOut: zapOutMock,
+      },
+    },
+  })),
 }));
 jest.mock("../context", () => ({
   Context: jest.fn().mockImplementation(() => ({
     provider: {
-      write: buildSignerMock()
-    }
-  }))
+      write: buildSignerMock(),
+    },
+  })),
 }));
 
 describe("Simulation interface", () => {
@@ -104,12 +104,12 @@ describe("Simulation interface", () => {
         transaction: {
           transaction_info: {
             call_trace: { output: "1", calls: null },
-            logs: []
-          }
+            logs: [],
+          },
         },
         simulation: {
-          id: "id"
-        }
+          id: "id",
+        },
       })
     );
     jest.spyOn(SimulationExecutor.prototype, "createFork").mockReturnValue(Promise.resolve("1"));
@@ -230,7 +230,7 @@ describe("Simulation interface", () => {
       getNormalizedValueUsdcMock.mockReturnValueOnce(Promise.reject(new Error("something bad happened")));
       try {
         await simulationInterface.deposit("0x000", "0x000", "1", "0xCeD67a187b923F0E5ebcc77C7f2F7da20099e378", {
-          slippage: 1
+          slippage: 1,
         });
       } catch (error) {
         expect(error).toBeInstanceOf(PriceFetchingError);
@@ -253,7 +253,7 @@ describe("Simulation interface", () => {
     describe("when it does not have the partner service", () => {
       it("should call the partner service deposit", async () => {
         tokenMock.mockReturnValueOnce(Promise.resolve("0x001"));
-        executeSimulationWithReSimulationOnFailureSpy.mockImplementationOnce(fn => fn());
+        executeSimulationWithReSimulationOnFailureSpy.mockImplementationOnce((fn) => fn());
 
         await simulationInterface.deposit("0x000", "0x001", "1", "0x0000", { slippage: 1 });
         expect(executeSimulationWithReSimulationOnFailureSpy).toHaveBeenCalledTimes(1);
@@ -263,7 +263,7 @@ describe("Simulation interface", () => {
           forkId: undefined,
           root: undefined,
           save: undefined,
-          slippage: 1
+          slippage: 1,
         });
       });
     });
@@ -271,10 +271,10 @@ describe("Simulation interface", () => {
     describe("when it has the partner service", () => {
       it("should call the partner contract", async () => {
         const mockedYearn = new MockedYearnClass();
-        mockedYearn.services.partner = new ((PartnerService as unknown) as jest.Mock<PartnerService<ChainId>>)();
+        mockedYearn.services.partner = new (PartnerService as unknown as jest.Mock<PartnerService<ChainId>>)();
         simulationInterface = new SimulationInterface(mockedYearn, 1, new Context({}));
         tokenMock.mockReturnValueOnce(Promise.resolve("0x001"));
-        executeSimulationWithReSimulationOnFailureSpy.mockImplementationOnce(fn => fn());
+        executeSimulationWithReSimulationOnFailureSpy.mockImplementationOnce((fn) => fn());
 
         await simulationInterface.deposit("0x000", "0x001", "1", "0x0000", { slippage: 1 });
         expect(executeSimulationWithReSimulationOnFailureSpy).toHaveBeenCalledTimes(1);
@@ -284,7 +284,7 @@ describe("Simulation interface", () => {
           forkId: undefined,
           root: undefined,
           save: undefined,
-          slippage: 1
+          slippage: 1,
         });
       });
     });
@@ -308,7 +308,7 @@ describe("Simulation interface", () => {
       zapOutApprovalStateMock.mockReturnValueOnce(Promise.reject(new Error("something bad happened")));
       try {
         await simulationInterface.withdraw("0x000", "0x000", "1", "0x0000000000000000000000000000000000000001", {
-          slippage: 1
+          slippage: 1,
         });
       } catch (error) {
         expect(error).toBeInstanceOf(ZapperError);
@@ -323,7 +323,7 @@ describe("Simulation interface", () => {
       zapOutApprovalTransactionMock.mockReturnValueOnce(Promise.reject(new Error("something bad happened")));
       try {
         await simulationInterface.withdraw("0x000", "0x000", "1", "0x0000000000000000000000000000000000000001", {
-          slippage: 1
+          slippage: 1,
         });
       } catch (error) {
         expect(error).toBeInstanceOf(ZapperError);
@@ -337,7 +337,7 @@ describe("Simulation interface", () => {
       zapOutMock.mockReturnValueOnce(Promise.reject(new Error("something bad happened")));
       try {
         await simulationInterface.withdraw("0x000", "0x000", "1", "0x0000000000000000000000000000000000000001", {
-          slippage: 1
+          slippage: 1,
         });
       } catch (error) {
         expect(error).toBeInstanceOf(ZapperError);
@@ -351,7 +351,7 @@ describe("Simulation interface", () => {
       getNormalizedValueUsdcMock.mockReturnValueOnce(Promise.reject(new Error("something bad happened")));
       try {
         await simulationInterface.withdraw("0x000", "0x000", "1", "0x0000000000000000000000000000000000000001", {
-          slippage: 1
+          slippage: 1,
         });
       } catch (error) {
         expect(error).toBeInstanceOf(PriceFetchingError);
@@ -365,7 +365,7 @@ describe("Simulation interface", () => {
       getNormalizedValueUsdcMock.mockReturnValueOnce(Promise.reject(new Error("something bad happened")));
       try {
         await simulationInterface.withdraw("0x000", "0x000", "1", "0x0000000000000000000000000000000000000001", {
-          slippage: 1
+          slippage: 1,
         });
       } catch (error) {
         expect(error).toBeInstanceOf(PriceFetchingError);

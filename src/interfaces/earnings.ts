@@ -11,13 +11,13 @@ import {
   ASSET_HISTORIC_EARNINGS,
   buildAccountEarningsVariables,
   PROTOCOL_EARNINGS,
-  VAULT_EARNINGS
+  VAULT_EARNINGS,
 } from "../services/subgraph/queries";
 import {
   AccountEarningsResponse,
   AccountHistoricEarningsResponse,
   ProtocolEarningsResponse,
-  VaultEarningsResponse
+  VaultEarningsResponse,
 } from "../services/subgraph/responses";
 import { Address, SdkError } from "../types";
 import {
@@ -25,7 +25,7 @@ import {
   AssetEarnings,
   AssetHistoricEarnings,
   EarningsDayData,
-  EarningsUserData
+  EarningsUserData,
 } from "../types/custom/earnings";
 
 const BigZero = new BigNumber(0);
@@ -58,7 +58,7 @@ export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
 
   async assetEarnings(assetAddress: Address): Promise<AssetEarnings> {
     const response = await this.yearn.services.subgraph.fetchQuery<VaultEarningsResponse>(VAULT_EARNINGS, {
-      vault: assetAddress
+      vault: assetAddress,
     });
 
     if (!response?.data || !response.data?.vault) {
@@ -73,7 +73,7 @@ export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
       assetAddress: getAddress(assetAddress), // addresses from subgraph are not checksummed
       amount: returnsGenerated.toFixed(0),
       amountUsdc: earningsUsdc.toFixed(0),
-      tokenAddress: getAddress(vault.token.id)
+      tokenAddress: getAddress(vault.token.id),
     };
   }
 
@@ -90,7 +90,7 @@ export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
     }
 
     const assetsData = await Promise.all(
-      account.vaultPositions.map(async assetPosition => {
+      account.vaultPositions.map(async (assetPosition) => {
         const balanceTokens = new BigNumber(assetPosition.balanceShares)
           .multipliedBy(new BigNumber(assetPosition.vault.latestUpdate?.pricePerShare || 0))
           .div(10 ** assetPosition.token.decimals);
@@ -100,13 +100,13 @@ export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
             deposits: deposits.plus(new BigNumber(current.deposits)),
             withdrawals: withdrawals.plus(new BigNumber(current.withdrawals)),
             tokensReceived: tokensReceived.plus(new BigNumber(current.tokensReceived)),
-            tokensSent: tokensSent.plus(new BigNumber(current.tokensSent))
+            tokensSent: tokensSent.plus(new BigNumber(current.tokensSent)),
           }),
           {
             deposits: BigZero,
             withdrawals: BigZero,
             tokensReceived: BigZero,
-            tokensSent: BigZero
+            tokensSent: BigZero,
           }
         );
 
@@ -129,21 +129,25 @@ export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
         return {
           assetAddress: getAddress(assetPosition.vault.id),
           balanceUsdc,
-          earned: earningsUsdc.toFixed(0)
+          earned: earningsUsdc.toFixed(0),
         };
       })
     );
 
-    const assetAddresses = assetsData.map(assetData => assetData.assetAddress);
+    const assetAddresses = assetsData.map((assetData) => assetData.assetAddress);
     const apys = await this.yearn.services.vision.apy(assetAddresses);
 
-    const totalEarnings = assetsData.map(datum => new BigNumber(datum.earned)).reduce((sum, value) => sum.plus(value));
-    const holdings = assetsData.map(datum => new BigNumber(datum.balanceUsdc)).reduce((sum, value) => sum.plus(value));
+    const totalEarnings = assetsData
+      .map((datum) => new BigNumber(datum.earned))
+      .reduce((sum, value) => sum.plus(value));
+    const holdings = assetsData
+      .map((datum) => new BigNumber(datum.balanceUsdc))
+      .reduce((sum, value) => sum.plus(value));
 
     const grossApy = holdings.isEqualTo(BigZero)
       ? BigZero
       : assetsData
-          .map(datum => {
+          .map((datum) => {
             const apy = apys[datum.assetAddress]?.net_apy || 0;
             return new BigNumber(apy).times(datum.balanceUsdc).div(holdings);
           })
@@ -151,10 +155,10 @@ export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
 
     const estimatedYearlyYield = grossApy.multipliedBy(holdings);
 
-    const earningsAssetData = assetsData.map(datum => {
+    const earningsAssetData = assetsData.map((datum) => {
       return {
         assetAddress: datum.assetAddress,
-        earned: datum.earned
+        earned: datum.earned,
       };
     });
 
@@ -163,7 +167,7 @@ export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
       holdings: BigNumber.max(holdings, 0).toFixed(0),
       grossApy: grossApy.toNumber(),
       estimatedYearlyYield: BigNumber.max(estimatedYearlyYield, 0).toFixed(0),
-      earningsAssetData: earningsAssetData
+      earningsAssetData: earningsAssetData,
     };
   }
 
@@ -182,12 +186,12 @@ export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
     }
 
     const assetsStatic = await this.yearn.services.lens.adapters.vaults.v2.assetsStatic();
-    const assetAddresses = assetsStatic.map(asset => asset.address);
+    const assetAddresses = assetsStatic.map((asset) => asset.address);
 
     const latestBlockNumber = await this.ctx.provider.read.getBlockNumber();
 
     const resolvedPromises = await Promise.allSettled(
-      assetAddresses.map(async address => this.assetHistoricEarnings(address, fromDaysAgo, latestBlockNumber))
+      assetAddresses.map(async (address) => this.assetHistoricEarnings(address, fromDaysAgo, latestBlockNumber))
     );
 
     const result = [];
@@ -224,28 +228,28 @@ export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
 
     const blocks = Array.from(Array(fromDaysAgo).keys())
       .reverse()
-      .map(day => blockNumber - day * this.blocksPerDay());
+      .map((day) => blockNumber - day * this.blocksPerDay());
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const response = await this.yearn.services.subgraph.fetchQuery<any>(ASSET_HISTORIC_EARNINGS(blocks), {
-      id: vault
+      id: vault,
     });
 
     const data = response.data;
 
-    const labels = blocks.map(block => `block_${block}`);
+    const labels = blocks.map((block) => `block_${block}`);
 
     const token = data.vault.token.id as string;
-    const priceUsdc = await this.yearn.services.oracle.getPriceUsdc(token).then(price => new BigNumber(price));
+    const priceUsdc = await this.yearn.services.oracle.getPriceUsdc(token).then((price) => new BigNumber(price));
 
-    const earningsDayData = labels.map(label => {
+    const earningsDayData = labels.map((label) => {
       const strategies: StrategiesResponse[] = data[label].strategies;
       const totalGain = strategies
-        .map(strategy => (strategy.latestReport ? new BigNumber(strategy.latestReport.totalGain) : new BigNumber(0)))
+        .map((strategy) => (strategy.latestReport ? new BigNumber(strategy.latestReport.totalGain) : new BigNumber(0)))
         .reduce((sum, value) => sum.plus(value));
 
       const totalLoss = strategies
-        .map(strategy => (strategy.latestReport ? new BigNumber(strategy.latestReport.totalLoss) : new BigNumber(0)))
+        .map((strategy) => (strategy.latestReport ? new BigNumber(strategy.latestReport.totalLoss) : new BigNumber(0)))
         .reduce((sum, value) => sum.plus(value));
 
       const amountEarnt = totalGain.minus(totalLoss);
@@ -257,9 +261,9 @@ export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
       const dayData: EarningsDayData = {
         earnings: {
           amountUsdc: amountUsdc.toFixed(0),
-          amount: amountEarnt.toFixed(0)
+          amount: amountEarnt.toFixed(0),
         },
-        date: new Date(convertSecondsMillisOrMicrosToMillis(data[label].vaultDayData[0].timestamp)).toJSON()
+        date: new Date(convertSecondsMillisOrMicrosToMillis(data[label].vaultDayData[0].timestamp)).toJSON(),
       };
 
       return dayData;
@@ -268,7 +272,7 @@ export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
     const result: AssetHistoricEarnings = {
       assetAddress: vault,
       dayData: earningsDayData,
-      decimals: data.vault.token.decimals
+      decimals: data.vault.token.decimals,
     };
 
     return result;
@@ -289,12 +293,10 @@ export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
       {
         id: accountAddress,
         shareToken: shareTokenAddress,
-        fromDate: this.getDate(fromDaysAgo)
-          .getTime()
-          .toString(),
+        fromDate: this.getDate(fromDaysAgo).getTime().toString(),
         toDate: this.getDate(toDaysAgo || 0)
           .getTime()
-          .toString()
+          .toString(),
       }
     );
 
@@ -317,7 +319,7 @@ export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
     const snapshotTimeline: AccountSnapshot[] = [];
 
     const updates = vaultPositions
-      .flatMap(vaultPosition => vaultPosition.updates)
+      .flatMap((vaultPosition) => vaultPosition.updates)
       .sort((lhs, rhs) => {
         return convertSecondsMillisOrMicrosToMillis(+lhs.timestamp - +rhs.timestamp);
       });
@@ -331,7 +333,7 @@ export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
           withdrawals: new BigNumber(vaultPositionUpdate.withdrawals),
           tokensReceived: new BigNumber(vaultPositionUpdate.tokensReceived),
           tokensSent: new BigNumber(vaultPositionUpdate.tokensSent),
-          balanceShares: new BigNumber(vaultPositionUpdate.balanceShares)
+          balanceShares: new BigNumber(vaultPositionUpdate.balanceShares),
         };
         snapshotTimeline.push(snapshot);
       } else {
@@ -343,7 +345,7 @@ export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
           withdrawals: previousSnapshot.withdrawals.plus(new BigNumber(vaultPositionUpdate.withdrawals)),
           tokensReceived: previousSnapshot.tokensReceived.plus(new BigNumber(vaultPositionUpdate.tokensReceived)),
           tokensSent: previousSnapshot.tokensSent.plus(new BigNumber(vaultPositionUpdate.tokensSent)),
-          balanceShares: previousSnapshot.balanceShares.plus(new BigNumber(vaultPositionUpdate.balanceShares))
+          balanceShares: previousSnapshot.balanceShares.plus(new BigNumber(vaultPositionUpdate.balanceShares)),
         };
         snapshotTimeline.push(snapshot);
       }
@@ -359,19 +361,19 @@ export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
         withdrawals: lastSnapshot.withdrawals,
         tokensReceived: lastSnapshot.tokensReceived,
         tokensSent: lastSnapshot.tokensSent,
-        balanceShares: lastSnapshot.balanceShares
+        balanceShares: lastSnapshot.balanceShares,
       };
       snapshotTimeline.push(snapshot);
     }
 
     const vaultDayData = vaultPositions[0].vault.vaultDayData;
     const token = vaultPositions[0].token;
-    const usdcPrice = await this.yearn.services.oracle.getPriceUsdc(token.id).then(id => new BigNumber(id));
+    const usdcPrice = await this.yearn.services.oracle.getPriceUsdc(token.id).then((id) => new BigNumber(id));
 
     const earningsDayData = await Promise.all(
-      vaultDayData.map(async vaultDayDatum => {
+      vaultDayData.map(async (vaultDayDatum) => {
         const date = new Date(convertSecondsMillisOrMicrosToMillis(vaultDayDatum.timestamp));
-        const snapshot = snapshotTimeline.find(snapshot => date >= snapshot.startDate && date < snapshot.endDate);
+        const snapshot = snapshotTimeline.find((snapshot) => date >= snapshot.startDate && date < snapshot.endDate);
         if (snapshot) {
           const balanceTokens = snapshot.balanceShares
             .multipliedBy(new BigNumber(vaultDayDatum.pricePerShare))
@@ -385,17 +387,17 @@ export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
           return {
             earnings: {
               amount: earnings.toFixed(0),
-              amountUsdc: amountUsdc.toFixed(0)
+              amountUsdc: amountUsdc.toFixed(0),
             },
-            date: date.toJSON()
+            date: date.toJSON(),
           };
         } else {
           return {
             earnings: {
               amount: "0",
-              amountUsdc: "0"
+              amountUsdc: "0",
             },
-            date: date.toJSON()
+            date: date.toJSON(),
           };
         }
       })
@@ -405,7 +407,7 @@ export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
       accountAddress: accountAddress,
       shareTokenAddress: shareTokenAddress,
       decimals: token.decimals,
-      dayData: earningsDayData
+      dayData: earningsDayData,
     };
   }
 

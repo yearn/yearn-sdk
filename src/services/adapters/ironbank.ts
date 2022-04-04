@@ -13,7 +13,7 @@ import {
   IronBankMarketDynamic,
   IronBankMarketStatic,
   IronBankUserSummary,
-  Position
+  Position,
 } from "../../types";
 
 const CyTokenMetadataAbi = `tuple(
@@ -50,7 +50,7 @@ const IronBankUserSummaryAbi = `tuple(
 const CustomAbi = [
   `function adapterPositionOf(address) external view returns (${IronBankUserSummaryAbi} memory)`,
   `function assetsUserMetadata(address) public view returns (${CyTokenUserMetadataAbi}[] memory)`,
-  `function blocksPerYear() public view returns (uint256)`
+  `function blocksPerYear() public view returns (uint256)`,
 ];
 
 export class IronBankAdapter<T extends ChainId> extends ContractService<T> {

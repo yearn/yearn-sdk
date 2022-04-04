@@ -9,17 +9,17 @@ const fetchSpy = jest.spyOn(global, "fetch");
 const getAddressMock = jest.fn();
 
 jest.mock("../context", () => ({
-  Context: jest.fn().mockImplementation(() => ({}))
+  Context: jest.fn().mockImplementation(() => ({})),
 }));
 
 jest.mock("@ethersproject/address", () => ({
-  getAddress: jest.fn(() => getAddressMock())
+  getAddress: jest.fn(() => getAddressMock()),
 }));
 
 describe("ZapperService", () => {
   let zapperServiceService: ZapperService;
 
-  ([1, 1337, 250, 42161] as ChainId[]).forEach(chainId =>
+  ([1, 1337, 250, 42161] as ChainId[]).forEach((chainId) =>
     it(`should not throw when chainId is ${chainId}`, () => {
       expect(() => {
         zapperServiceService = new ZapperService(chainId, new Context({}));
@@ -28,7 +28,7 @@ describe("ZapperService", () => {
   );
 
   describe("supportedTokens", () => {
-    ([1, 1337] as ChainId[]).forEach(chainId =>
+    ([1, 1337] as ChainId[]).forEach((chainId) =>
       describe(`when chainId is ${chainId}`, () => {
         beforeEach(() => {
           zapperServiceService = new ZapperService(chainId, new Context({}));
@@ -38,14 +38,14 @@ describe("ZapperService", () => {
           const mockZapperToken = createMockZapperToken();
           const mockHiddenZapperToken = createMockZapperToken({
             symbol: "SHY",
-            hide: true
+            hide: true,
           });
 
           fetchSpy.mockImplementation(
             jest.fn(() =>
               Promise.resolve({
                 json: () => Promise.resolve([mockZapperToken, mockHiddenZapperToken]),
-                status: 200
+                status: 200,
               })
             ) as jest.Mock
           );
@@ -64,8 +64,8 @@ describe("ZapperService", () => {
                 priceUsdc: "10000",
                 dataSource: "zapper",
                 supported: { zapper: true },
-                symbol: "DEAD"
-              }
+                symbol: "DEAD",
+              },
             ])
           );
           expect(getAddress).toHaveBeenCalledWith("0x001");

@@ -33,18 +33,18 @@ const partnerIsAllowedMock = jest.fn().mockReturnValue(true);
 jest.mock("@ethersproject/contracts", () => ({
   Contract: jest.fn().mockImplementation(() => ({
     populateTransaction: {
-      approve: approveMock
+      approve: approveMock,
     },
-    allowance: allowanceMock
-  }))
+    allowance: allowanceMock,
+  })),
 }));
 
 jest.mock("../services/partner", () => ({
   PartnerService: jest.fn().mockImplementation(() => ({
     isAllowed: partnerIsAllowedMock,
     partnerId: "0x000partner",
-    address: "0x0001partner"
-  }))
+    address: "0x0001partner",
+  })),
 }));
 
 jest.mock("../yearn", () => ({
@@ -52,14 +52,14 @@ jest.mock("../yearn", () => ({
     services: {
       asset: {
         ready: { then: assetReadyThenMock },
-        icon: assetIconMock
+        icon: assetIconMock,
       },
       meta: {
-        tokens: metaTokensMock
+        tokens: metaTokensMock,
       },
       oracle: {
         getPriceFromRouter: getPriceFromRouterMock,
-        getPriceUsdc: getPriceUsdcMock
+        getPriceUsdc: getPriceUsdcMock,
       },
       zapper: {
         balances: zapperBalancesMock,
@@ -68,18 +68,18 @@ jest.mock("../yearn", () => ({
         zapInApprovalState: zapperZapInApprovalStateMock,
         zapInApprovalTransaction: zapperZapInApprovalTransactionMock,
         zapOutApprovalState: zapperZapOutApprovalStateMock,
-        zapOutApprovalTransaction: zapperZapOutApprovalTransactionMock
+        zapOutApprovalTransaction: zapperZapOutApprovalTransactionMock,
       },
       transaction: {
-        sendTransaction: sendTransactionMock
-      }
+        sendTransaction: sendTransactionMock,
+      },
     },
     ironBank: { balances: ironBankBalancesMock, tokens: ironBankTokensMock },
     vaults: {
       balances: vaultsBalancesMock,
-      tokens: vaultsTokensMock
-    }
-  }))
+      tokens: vaultsTokensMock,
+    },
+  })),
 }));
 
 jest.mock("../context", () => ({
@@ -87,14 +87,14 @@ jest.mock("../context", () => ({
     provider: {
       write: {
         getSigner: jest.fn().mockImplementation(() => ({
-          sendTransaction: jest.fn().mockResolvedValue("transaction")
-        }))
+          sendTransaction: jest.fn().mockResolvedValue("transaction"),
+        })),
       },
       read: {
-        getBalance: jest.fn().mockResolvedValue(BigNumber.from("42000000000000000000")) // 42
-      }
-    }
-  }))
+        getBalance: jest.fn().mockResolvedValue(BigNumber.from("42000000000000000000")), // 42
+      },
+    },
+  })),
 }));
 
 describe("TokenInterface", () => {
@@ -143,7 +143,7 @@ describe("TokenInterface", () => {
 
       expect(actualPriceUsdc).toEqual({
         "0x000": "1000000",
-        "0x001": "2000000"
+        "0x001": "2000000",
       });
       expect(getPriceUsdcMock).toHaveBeenCalledTimes(2);
       expect(getPriceUsdcMock).toHaveBeenNthCalledWith(1, "0x000", undefined);
@@ -169,50 +169,50 @@ describe("TokenInterface", () => {
     const vaultToken = createMockToken({
       address: "0x001",
       name: "vaultToken",
-      dataSource: "vaults"
+      dataSource: "vaults",
     });
     const vaultTokenNoBalance = createMockToken({
       address: "0x000",
       name: "vaultToken without balance",
-      dataSource: "vaults"
+      dataSource: "vaults",
     });
     const ironBankToken = createMockToken({
       address: "0x002",
       name: "ironBankToken",
-      dataSource: "ironBank"
+      dataSource: "ironBank",
     });
     const zapperToken = createMockToken({
       address: "0x003",
       name: "zapperToken",
-      dataSource: "zapper"
+      dataSource: "zapper",
     });
     const vaultTokenWithBalance = createMockBalance({
       address: "0x001",
       token: createMockToken({
-        name: "vaultTokenWithBalance"
-      })
+        name: "vaultTokenWithBalance",
+      }),
     });
     const vaultTokenWithoutBalance = createMockBalance({
       address: "0x000",
       balance: "0",
       token: createMockToken({
-        name: "vaultTokenWithoutBalance"
-      })
+        name: "vaultTokenWithoutBalance",
+      }),
     });
     const ironBankTokenWithBalance = createMockBalance({
       address: "0x002",
       token: createMockToken({
-        name: "ironBankTokenWithBalance"
-      })
+        name: "ironBankTokenWithBalance",
+      }),
     });
     const zapperTokenWithBalance = createMockBalance({
       address: "0x003",
       token: createMockToken({
-        name: "zapperTokenWithBalance"
-      })
+        name: "zapperTokenWithBalance",
+      }),
     });
 
-    ([1, 1337] as ChainId[]).forEach(chainId =>
+    ([1, 1337] as ChainId[]).forEach((chainId) =>
       describe(`when chainId is ${chainId}`, () => {
         beforeEach(() => {
           tokenInterface = new TokenInterface(mockedYearn, chainId, new Context({}));
@@ -297,9 +297,9 @@ describe("TokenInterface", () => {
                 name: "Fantom",
                 priceUsdc: "0",
                 supported: { ftmApeZap: true },
-                symbol: "FTM"
-              }
-            }
+                symbol: "FTM",
+              },
+            },
           ])
         );
         expect(zapperBalancesMock).not.toHaveBeenCalled();
@@ -329,9 +329,9 @@ describe("TokenInterface", () => {
                 name: "Fantom",
                 priceUsdc: "0",
                 supported: { ftmApeZap: true },
-                symbol: "FTM"
-              }
-            }
+                symbol: "FTM",
+              },
+            },
           ])
         );
         expect(zapperBalancesMock).not.toHaveBeenCalled();
@@ -413,7 +413,7 @@ describe("TokenInterface", () => {
         jest.spyOn(CachedFetcher.prototype, "fetch").mockResolvedValue(undefined);
       });
 
-      ([1, 1337] as ChainId[]).forEach(chainId =>
+      ([1, 1337] as ChainId[]).forEach((chainId) =>
         describe(`when chainId is ${chainId} (ethereum)`, () => {
           let ironBankToken: Token;
           let vaultsToken: Token;
@@ -424,7 +424,7 @@ describe("TokenInterface", () => {
             vaultsToken = createMockToken({
               address: "0x002",
               symbol: "VAULT",
-              name: "Vault Token"
+              name: "Vault Token",
             });
             vaultsTokensMock.mockResolvedValue([vaultsToken]);
             ironBankTokensMock.mockResolvedValue([ironBankToken]);
@@ -434,13 +434,13 @@ describe("TokenInterface", () => {
             const supportedZapperTokenWithIcon = createMockToken({ address: "0x003" });
             const supportedZapperTokenWithoutIcon = createMockToken({ address: "0x004" });
             const supportedZapperTokenWithZapOut = createMockToken({
-              address: SUPPORTED_ZAP_OUT_ADDRESSES_MAINNET.USDC
+              address: SUPPORTED_ZAP_OUT_ADDRESSES_MAINNET.USDC,
             });
 
             zapperSupportedTokensMock.mockResolvedValue([
               supportedZapperTokenWithIcon,
               supportedZapperTokenWithoutIcon,
-              supportedZapperTokenWithZapOut
+              supportedZapperTokenWithZapOut,
             ]);
             assetReadyThenMock.mockResolvedValue({ "0x003": "image.png" });
 
@@ -452,18 +452,18 @@ describe("TokenInterface", () => {
                 {
                   ...supportedZapperTokenWithIcon,
                   icon: "image.png",
-                  supported: { zapper: true, zapperZapIn: true, zapperZapOut: false }
+                  supported: { zapper: true, zapperZapIn: true, zapperZapOut: false },
                 },
                 {
                   ...supportedZapperTokenWithoutIcon,
-                  supported: { zapper: true, zapperZapIn: true, zapperZapOut: false }
+                  supported: { zapper: true, zapperZapIn: true, zapperZapOut: false },
                 },
                 {
                   ...supportedZapperTokenWithZapOut,
-                  supported: { zapper: true, zapperZapIn: true, zapperZapOut: true }
+                  supported: { zapper: true, zapperZapIn: true, zapperZapOut: true },
                 },
                 vaultsToken,
-                ironBankToken
+                ironBankToken,
               ])
             );
             expect(zapperSupportedTokensMock).toHaveBeenCalledTimes(1);
@@ -478,69 +478,69 @@ describe("TokenInterface", () => {
               symbol: "IRON",
               name: "Iron Token in Zapper",
               icon: "iron-bank.svg",
-              priceUsdc: "10"
+              priceUsdc: "10",
             });
             const vaultsTokenAlsoInZapper = createMockToken({
               address: "0x002",
               symbol: "VAULT",
               name: "Vault Token in Zapper",
               icon: "vaults.svg",
-              priceUsdc: "20"
+              priceUsdc: "20",
             });
             const ironBankTokenNotInZapper = createMockToken({
               address: "0x003",
               symbol: "IRON2",
               name: "Iron Token 2",
               icon: "iron-bank-2.svg",
-              priceUsdc: "12"
+              priceUsdc: "12",
             });
             const vaultsTokenNotInZapper = createMockToken({
               address: "0x004",
               symbol: "VAULT2",
               name: "Vault Token 2",
               icon: "vaults-2.svg",
-              priceUsdc: "22"
+              priceUsdc: "22",
             });
             const ironBankTokenInVaults = createMockToken({
               address: "0x005",
               symbol: "IRON3",
               name: "Iron Token in Vaults",
               icon: "iron-bank-3.svg",
-              priceUsdc: "13"
+              priceUsdc: "13",
             });
             const vaultsTokenInIronBank = createMockToken({
               address: "0x005",
               symbol: "VAULT3",
               name: "Vault Token in Iron Bank",
               icon: "vaults-3.svg",
-              priceUsdc: "23"
+              priceUsdc: "23",
             });
 
             ironBankTokensMock.mockResolvedValue([
               vaultsTokenAlsoInZapper,
               ironBankTokenNotInZapper,
-              ironBankTokenInVaults
+              ironBankTokenInVaults,
             ]);
             vaultsTokensMock.mockResolvedValue([
               ironBankTokenAlsoInZapper,
               vaultsTokenNotInZapper,
-              vaultsTokenInIronBank
+              vaultsTokenInIronBank,
             ]);
             zapperSupportedTokensMock.mockResolvedValue([
               {
                 ...ironBankTokenAlsoInZapper,
                 priceUsdc: "1",
                 supported: {
-                  zapper: true
-                }
+                  zapper: true,
+                },
               },
               {
                 ...vaultsTokenAlsoInZapper,
                 priceUsdc: "2",
                 supported: {
-                  zapper: true
-                }
-              }
+                  zapper: true,
+                },
+              },
             ]);
             assetReadyThenMock.mockResolvedValue({ "0x001": "zapper-iron-bank.svg", "0x002": "zapper-vaults.svg" });
 
@@ -554,8 +554,8 @@ describe("TokenInterface", () => {
                   supported: {
                     zapper: true,
                     zapperZapIn: true,
-                    zapperZapOut: false
-                  }
+                    zapperZapOut: false,
+                  },
                 },
                 vaultsTokenNotInZapper,
                 {
@@ -563,11 +563,11 @@ describe("TokenInterface", () => {
                   supported: {
                     zapper: true,
                     zapperZapIn: true,
-                    zapperZapOut: false
-                  }
+                    zapperZapOut: false,
+                  },
                 },
                 ironBankTokenNotInZapper,
-                vaultsTokenInIronBank
+                vaultsTokenInIronBank,
               ])
             );
             expect(zapperSupportedTokensMock).toHaveBeenCalledTimes(1);
@@ -605,7 +605,7 @@ describe("TokenInterface", () => {
           vaultsToken = createMockToken({
             address: "0x002",
             symbol: "VAULT",
-            name: "Vault Token"
+            name: "Vault Token",
           });
           fantomToken = {
             address: ZeroAddress,
@@ -614,9 +614,9 @@ describe("TokenInterface", () => {
             decimals: "18",
             priceUsdc: "1000000", // $1
             supported: {
-              ftmApeZap: true
+              ftmApeZap: true,
             },
-            symbol: "FTM"
+            symbol: "FTM",
           };
           vaultsTokensMock.mockResolvedValue([vaultsToken]);
           ironBankTokensMock.mockResolvedValue([ironBankToken]);
@@ -639,28 +639,28 @@ describe("TokenInterface", () => {
             symbol: "IRON",
             name: "Iron Token",
             icon: "iron-bank.svg",
-            priceUsdc: "10"
+            priceUsdc: "10",
           });
           const vaultsToken = createMockToken({
             address: "0x002",
             symbol: "VAULT",
             name: "Vault Token",
             icon: "vaults.svg",
-            priceUsdc: "20"
+            priceUsdc: "20",
           });
           const ironBankTokenInVaults = createMockToken({
             address: "0x003",
             symbol: "IRON3",
             name: "Iron Token in Vaults",
             icon: "iron-bank-3.svg",
-            priceUsdc: "13"
+            priceUsdc: "13",
           });
           const vaultsTokenInIronBank = createMockToken({
             address: "0x003",
             symbol: "VAULT3",
             name: "Vault Token in Iron Bank",
             icon: "vaults-3.svg",
-            priceUsdc: "23"
+            priceUsdc: "23",
           });
 
           ironBankTokensMock.mockResolvedValue([ironBankToken, ironBankTokenInVaults]);
@@ -689,7 +689,7 @@ describe("TokenInterface", () => {
           vaultsToken = createMockToken({
             address: "0x002",
             symbol: "VAULT",
-            name: "Vault Token"
+            name: "Vault Token",
           });
           vaultsTokensMock.mockResolvedValue([vaultsToken]);
           ironBankTokensMock.mockResolvedValue([ironBankToken]);
@@ -712,28 +712,28 @@ describe("TokenInterface", () => {
             symbol: "IRON",
             name: "Iron Token",
             icon: "iron-bank.svg",
-            priceUsdc: "10"
+            priceUsdc: "10",
           });
           const vaultsToken = createMockToken({
             address: "0x002",
             symbol: "VAULT",
             name: "Vault Token",
             icon: "vaults.svg",
-            priceUsdc: "20"
+            priceUsdc: "20",
           });
           const ironBankTokenInVaults = createMockToken({
             address: "0x003",
             symbol: "IRON3",
             name: "Iron Token in Vaults",
             icon: "iron-bank-3.svg",
-            priceUsdc: "13"
+            priceUsdc: "13",
           });
           const vaultsTokenInIronBank = createMockToken({
             address: "0x003",
             symbol: "VAULT3",
             name: "Vault Token in Iron Bank",
             icon: "vaults-3.svg",
-            priceUsdc: "23"
+            priceUsdc: "23",
           });
 
           ironBankTokensMock.mockResolvedValue([ironBankToken, ironBankTokenInVaults]);
@@ -752,7 +752,7 @@ describe("TokenInterface", () => {
         });
       });
 
-      (([42] as unknown) as ChainId[]).forEach(chainId =>
+      ([42] as unknown as ChainId[]).forEach((chainId) =>
         it(`should return an empty array when chainId is ${chainId}`, async () => {
           tokenInterface = new TokenInterface(mockedYearn, chainId, new Context({}));
 
@@ -781,10 +781,10 @@ describe("TokenInterface", () => {
         tokenAddress,
         [
           "function approve(address _spender, uint256 _value) public",
-          "function allowance(address _owner, address _spender) public view returns (uint256)"
+          "function allowance(address _owner, address _spender) public view returns (uint256)",
         ],
         {
-          sendTransaction: expect.any(Function)
+          sendTransaction: expect.any(Function),
         }
       );
       expect(approveMock).toHaveBeenCalledTimes(1);
@@ -828,7 +828,7 @@ describe("TokenInterface", () => {
         tokenAddress,
         [
           "function approve(address _spender, uint256 _value) public",
-          "function allowance(address _owner, address _spender) public view returns (uint256)"
+          "function allowance(address _owner, address _spender) public view returns (uint256)",
         ],
         expect.any(Object)
       );
@@ -841,7 +841,7 @@ describe("TokenInterface", () => {
         owner: ownerAddress,
         token: ZeroAddress,
         spender: spenderAddress,
-        amount: MaxUint256.toString()
+        amount: MaxUint256.toString(),
       };
       const allowanceResult = await tokenInterface.allowance(ownerAddress, ZeroAddress, spenderAddress);
 
@@ -871,12 +871,12 @@ describe("TokenInterface", () => {
     const tokenMetadataFromMetaService: TokenMetadata[] = [
       createMockTokenMetadata({
         address: "tokenMetadataAddressFromMetaService",
-        description: "foo"
+        description: "foo",
       }),
       createMockTokenMetadata({
         address: "0x001",
-        description: "bar"
-      })
+        description: "bar",
+      }),
     ];
 
     beforeEach(() => {
@@ -890,12 +890,12 @@ describe("TokenInterface", () => {
         tokenMetadata = [
           createMockTokenMetadata({
             address: "tokenMetadataAddress",
-            description: "foo"
+            description: "foo",
           }),
           createMockTokenMetadata({
             address: "0x002",
-            description: "bar"
-          })
+            description: "bar",
+          }),
         ];
         jest.spyOn(CachedFetcher.prototype, "fetch").mockResolvedValue(tokenMetadata);
       });
@@ -912,8 +912,8 @@ describe("TokenInterface", () => {
               localization: {},
               tokenNameOverride: "Token Name Override",
               tokenSymbolOverride: "tokenSymbolOverride",
-              website: "https://token.metadata/"
-            }
+              website: "https://token.metadata/",
+            },
           ]);
         });
       });
@@ -945,8 +945,8 @@ describe("TokenInterface", () => {
               localization: {},
               tokenNameOverride: "Token Name Override",
               tokenSymbolOverride: "tokenSymbolOverride",
-              website: "https://token.metadata/"
-            }
+              website: "https://token.metadata/",
+            },
           ]);
         });
       });

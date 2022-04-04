@@ -9,7 +9,7 @@ const META_URL = "https://meta.yearn.network";
  */
 export class MetaService extends Service {
   async tokens(addresses?: Address[]): Promise<TokenMetadata[]> {
-    const tokensMetadata = await fetch(`${META_URL}/tokens/${this.chainId}/all`).then(res => res.json());
+    const tokensMetadata = await fetch(`${META_URL}/tokens/${this.chainId}/all`).then((res) => res.json());
 
     if (!addresses) {
       return tokensMetadata;
@@ -35,11 +35,11 @@ export class MetaService extends Service {
   }
 
   async strategies(): Promise<StrategiesMetadata[]> {
-    return fetch(`${META_URL}/strategies/${this.chainId}/all`).then(res => res.json());
+    return fetch(`${META_URL}/strategies/${this.chainId}/all`).then((res) => res.json());
   }
 
   async vaults(addresses?: Address[]): Promise<VaultMetadataOverrides[]> {
-    const vaultsMetadata = await fetch(`${META_URL}/vaults/${this.chainId}/all`).then(res => res.json());
+    const vaultsMetadata = await fetch(`${META_URL}/vaults/${this.chainId}/all`).then((res) => res.json());
 
     if (!addresses) {
       return vaultsMetadata;

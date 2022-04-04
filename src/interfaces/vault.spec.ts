@@ -20,7 +20,7 @@ import {
   Usdc,
   VaultInterface,
   Yearn,
-  ZapProtocol
+  ZapProtocol,
 } from "..";
 import { EthAddress, WethAddress } from "../helpers";
 import { PartnerService } from "../services/partner";
@@ -29,7 +29,7 @@ import {
   createMockAssetStaticVaultV2,
   createMockEarningsUserData,
   createMockToken,
-  createMockTokenBalance
+  createMockTokenBalance,
 } from "../test-utils/factories";
 
 const earningsAccountAssetsDataMock = jest.fn();
@@ -43,7 +43,7 @@ const zapperZapInMock = jest.fn().mockResolvedValue({
   data: "data",
   value: "100",
   gas: "100",
-  gasPrice: "100"
+  gasPrice: "100",
 });
 const helperTokenBalancesMock = jest.fn();
 const helperTokensMock: jest.Mock<Promise<ERC20[]>> = jest.fn();
@@ -69,15 +69,15 @@ jest.mock("../services/partner", () => ({
   PartnerService: jest.fn().mockImplementation(() => ({
     populateDepositTransaction: partnerPopulateDepositTransactionMock,
     isAllowed: partnerIsAllowedMock,
-    partnerId: "0x000partner"
-  }))
+    partnerId: "0x000partner",
+  })),
 }));
 
 jest.mock("../yearn", () => ({
   Yearn: jest.fn().mockImplementation(() => ({
     services: {
       meta: {
-        vaults: metaVaultsMock
+        vaults: metaVaultsMock,
       },
       lens: {
         adapters: {
@@ -86,53 +86,53 @@ jest.mock("../yearn", () => ({
               positionsOf: lensAdaptersVaultsV2PositionsOfMock,
               assetsStatic: lensAdaptersVaultsV2AssetsStaticMock,
               assetsDynamic: lensAdaptersVaultsV2AssetsDynamicMock,
-              tokens: lensAdaptersVaultsV2TokensMock
-            }
-          }
-        }
+              tokens: lensAdaptersVaultsV2TokensMock,
+            },
+          },
+        },
       },
       vision: {
-        apy: visionApyMock
+        apy: visionApyMock,
       },
       asset: {
         ready: assetReadyMock,
         icon: assetIconMock,
-        alias: assetAliasMock
+        alias: assetAliasMock,
       },
       helper: {
         tokenBalances: helperTokenBalancesMock,
-        tokens: helperTokensMock
+        tokens: helperTokensMock,
       },
       oracle: {
-        getPriceUsdc: oracleGetPriceUsdcMock
+        getPriceUsdc: oracleGetPriceUsdcMock,
       },
       zapper: {
         zapOut: zapperZapOutMock,
-        zapIn: zapperZapInMock
+        zapIn: zapperZapInMock,
       },
       transaction: {
-        sendTransaction: sendTransactionUsingServiceMock
-      }
+        sendTransaction: sendTransactionUsingServiceMock,
+      },
     },
     strategies: {
-      vaultsStrategiesMetadata: vaultsStrategiesMetadataMock
+      vaultsStrategiesMetadata: vaultsStrategiesMetadataMock,
     },
     earnings: {
       accountAssetsData: earningsAccountAssetsDataMock,
-      assetsHistoricEarnings: assetsHistoricEarningsMock
+      assetsHistoricEarnings: assetsHistoricEarningsMock,
     },
     tokens: {
       metadata: tokensMetadataMock,
       allowance: tokenAllowanceMock,
-      approve: tokenApproveMock
-    }
-  }))
+      approve: tokenApproveMock,
+    },
+  })),
 }));
 
 jest.mock("../cache", () => ({
   CachedFetcher: jest.fn().mockImplementation(() => ({
-    fetch: cachedFetcherFetchMock
-  }))
+    fetch: cachedFetcherFetchMock,
+  })),
 }));
 
 jest.mock("../context", () => ({
@@ -140,20 +140,20 @@ jest.mock("../context", () => ({
     provider: {
       write: {
         getSigner: jest.fn().mockImplementation(() => ({
-          sendTransaction: sendTransactionMock
-        }))
-      }
-    }
-  }))
+          sendTransaction: sendTransactionMock,
+        })),
+      },
+    },
+  })),
 }));
 
 const PickleJarsMock = jest.requireMock("../services/partners/pickle");
 jest.mock("../services/partners/pickle", () => ({
-  PickleJars: []
+  PickleJars: [],
 }));
 
 jest.mock("@ethersproject/contracts", () => ({
-  Contract: jest.fn()
+  Contract: jest.fn(),
 }));
 
 describe("VaultInterface", () => {
@@ -221,9 +221,9 @@ describe("VaultInterface", () => {
               name: "strategiesMetadataName",
               description: "strategiesMetadataDescription",
               address: "strategiesMetadataAddress",
-              protocols: ["strategiesMetadata"]
-            }
-          }
+              protocols: ["strategiesMetadata"],
+            },
+          },
         ]);
         assetsHistoricEarningsMock.mockResolvedValue([
           {
@@ -232,10 +232,10 @@ describe("VaultInterface", () => {
             dayData: [
               {
                 earnings: { amount: "1", amountUsdc: "1" },
-                date: "12-02-2022"
-              }
-            ]
-          }
+                date: "12-02-2022",
+              },
+            ],
+          },
         ]);
       });
 
@@ -257,21 +257,21 @@ describe("VaultInterface", () => {
                   date: "12-02-2022",
                   earnings: {
                     amount: "1",
-                    amountUsdc: "1"
-                  }
-                }
+                    amountUsdc: "1",
+                  },
+                },
               ],
               strategies: {
                 strategiesMetadata: {
                   address: "strategiesMetadataAddress",
                   description: "strategiesMetadataDescription",
                   name: "strategiesMetadataName",
-                  protocols: ["strategiesMetadata"]
+                  protocols: ["strategiesMetadata"],
                 },
-                vaultAddress: "0x001"
-              }
-            }
-          }
+                vaultAddress: "0x001",
+              },
+            },
+          },
         ]);
         expect(metaVaultsMock).toHaveBeenCalledTimes(1);
         expect(getStaticMock).toHaveBeenCalledTimes(1);
@@ -307,22 +307,22 @@ describe("VaultInterface", () => {
         balance: "1",
         underlyingTokenBalance: {
           amount: "1",
-          amountUsdc: "1"
+          amountUsdc: "1",
         },
         assetAllowances: [
           {
             owner: "0xAssetAllowancesOwner",
             spender: "0xAssetAllowancesSpender",
-            amount: "2"
-          }
+            amount: "2",
+          },
         ],
         tokenAllowances: [
           {
             owner: "0xTokenAllowancesOwner",
             spender: "0xTokenAllowancesSpender",
-            amount: "3"
-          }
-        ]
+            amount: "3",
+          },
+        ],
       };
       lensAdaptersVaultsV2AssetsStaticMock.mockResolvedValue([position]);
 
@@ -398,7 +398,7 @@ describe("VaultInterface", () => {
 
         beforeEach(() => {
           assetsDynamic = createMockAssetDynamicVaultV2({
-            tokenId: WethAddress
+            tokenId: WethAddress,
           });
           lensAdaptersVaultsV2AssetsDynamicMock.mockResolvedValue([assetsDynamic]);
           visionApyMock.mockResolvedValue([]);
@@ -414,10 +414,10 @@ describe("VaultInterface", () => {
               metadata: {
                 ...assetsDynamic.metadata,
                 displayIcon: {
-                  "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE": "eth.png"
-                }
-              }
-            }
+                  "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE": "eth.png",
+                },
+              },
+            },
           ]);
           expect(lensAdaptersVaultsV2AssetsDynamicMock).toHaveBeenCalledTimes(1);
           expect(lensAdaptersVaultsV2AssetsDynamicMock).toHaveBeenCalledWith(undefined, undefined);
@@ -438,7 +438,7 @@ describe("VaultInterface", () => {
           assetAliasMock.mockReturnValueOnce({
             name: "aliasTokenName",
             symbol: "ALIAS_TOKEN_SYMBOL",
-            address: "0x001"
+            address: "0x001",
           });
         });
 
@@ -451,12 +451,12 @@ describe("VaultInterface", () => {
               metadata: {
                 ...assetsDynamic.metadata,
                 displayIcon: {
-                  "0x001": "0x001.png"
+                  "0x001": "0x001.png",
                 },
                 displayName: "ALIAS_TOKEN_SYMBOL",
-                defaultDisplayToken: assetsDynamic.tokenId
-              }
-            }
+                defaultDisplayToken: assetsDynamic.tokenId,
+              },
+            },
           ]);
           expect(lensAdaptersVaultsV2AssetsDynamicMock).toHaveBeenCalledTimes(1);
           expect(lensAdaptersVaultsV2AssetsDynamicMock).toHaveBeenCalledWith(undefined, undefined);
@@ -482,22 +482,22 @@ describe("VaultInterface", () => {
         balance: "1",
         underlyingTokenBalance: {
           amount: "1",
-          amountUsdc: "1"
+          amountUsdc: "1",
         },
         assetAllowances: [
           {
             owner: "0xAssetAllowancesOwner",
             spender: "0xAssetAllowancesSpender",
-            amount: "2"
-          }
+            amount: "2",
+          },
         ],
         tokenAllowances: [
           {
             owner: "0xTokenAllowancesOwner",
             spender: "0xTokenAllowancesSpender",
-            amount: "3"
-          }
-        ]
+            amount: "3",
+          },
+        ],
       };
       lensAdaptersVaultsV2PositionsOfMock.mockResolvedValue([position]);
     });
@@ -614,7 +614,7 @@ describe("VaultInterface", () => {
 
         expect(actualBalances).toEqual([
           { ...existingBalance, token: existingToken },
-          { ...existingBalance2, token: existingToken2 }
+          { ...existingBalance2, token: existingToken2 },
         ]);
         expect(helperTokenBalancesMock).toHaveBeenCalledTimes(1);
         expect(helperTokenBalancesMock).toHaveBeenCalledWith("0x001", ["0x001", "0xExisting", "0xRandom"], undefined);
@@ -656,14 +656,12 @@ describe("VaultInterface", () => {
         cachedFetcherFetchMock.mockResolvedValue(undefined);
         lensAdaptersVaultsV2TokensMock.mockResolvedValue([tokenMock.address]);
         assetIconMock.mockReturnValue({
-          [tokenMock.address]: "token-mock-icon.png"
+          [tokenMock.address]: "token-mock-icon.png",
         });
-        helperTokensMock.mockReturnValue(
-          Promise.resolve<Token[]>([tokenMock])
-        );
+        helperTokensMock.mockReturnValue(Promise.resolve<Token[]>([tokenMock]));
         tokensMetadataMock.mockReturnValue(
           Promise.resolve<TokenMetadata[]>([
-            { ...tokenMock, description: "Token mock metadata", website: "foo.bar", localization: {} }
+            { ...tokenMock, description: "Token mock metadata", website: "foo.bar", localization: {} },
           ])
         );
         oracleGetPriceUsdcMock.mockResolvedValue("1");
@@ -686,15 +684,15 @@ describe("VaultInterface", () => {
               priceUsdc: "0",
               dataSource: "vaults",
               website: "foo.bar",
-              supported: {}
+              supported: {},
             },
             name: "Dead Token",
             priceUsdc: "1",
             dataSource: "vaults",
             supported: {
-              vaults: true
-            }
-          }
+              vaults: true,
+            },
+          },
         ]);
         expect(lensAdaptersVaultsV2TokensMock).toHaveBeenCalledTimes(1);
         expect(lensAdaptersVaultsV2TokensMock).toHaveBeenCalledWith(undefined); // no overrides
@@ -834,7 +832,7 @@ describe("VaultInterface", () => {
 
       it("should call zapIn with correct arguments and pickle as the zapProtocol and the partner id", async () => {
         mockedYearn = new (Yearn as jest.Mock<Yearn<ChainId>>)();
-        mockedYearn.services.partner = new ((PartnerService as unknown) as jest.Mock<PartnerService<ChainId>>)();
+        mockedYearn.services.partner = new (PartnerService as unknown as jest.Mock<PartnerService<ChainId>>)();
         vaultInterface = new VaultInterface(mockedYearn, 1, new Context({}));
 
         const [vault, token, amount, account] = ["0xVault", "0xToken", "1", "0xAccount"];
@@ -893,7 +891,7 @@ describe("VaultInterface", () => {
                 "0xVault",
                 ["function deposit(uint256 amount) public", "function withdraw(uint256 amount) public"],
                 {
-                  sendTransaction: sendTransactionMock
+                  sendTransaction: sendTransactionMock,
                 }
               );
 
@@ -907,16 +905,16 @@ describe("VaultInterface", () => {
           describe("when there is partner service", () => {
             it("should deposit into a yearn vault through the partner service", async () => {
               mockedYearn = new (Yearn as jest.Mock<Yearn<ChainId>>)();
-              mockedYearn.services.partner = new ((PartnerService as unknown) as jest.Mock<PartnerService<ChainId>>)();
+              mockedYearn.services.partner = new (PartnerService as unknown as jest.Mock<PartnerService<ChainId>>)();
               mockedYearn.services.partner.populateDepositTransaction = jest.fn().mockResolvedValue({
                 vault: "0xVault",
-                amount: "1"
+                amount: "1",
               });
               vaultInterface = new VaultInterface(mockedYearn, 1, new Context({}));
               const assetStaticVaultV2 = createMockAssetStaticVaultV2({ token: "0xToken" });
               vaultInterface.getStatic = jest.fn().mockResolvedValue([assetStaticVaultV2]);
 
-              const executeVaultContractTransactionMock = jest.fn().mockImplementation(fn => fn());
+              const executeVaultContractTransactionMock = jest.fn().mockImplementation((fn) => fn());
               (vaultInterface as any).executeVaultContractTransaction = executeVaultContractTransactionMock;
 
               const [vault, token, amount, account] = ["0xVault", "0xToken", "1", "0xAccount"];
@@ -952,7 +950,7 @@ describe("VaultInterface", () => {
 
         it("should call zapIn with correct arguments and yearn as the zapProtocol and the partner id", async () => {
           mockedYearn = new (Yearn as jest.Mock<Yearn<ChainId>>)();
-          mockedYearn.services.partner = new ((PartnerService as unknown) as jest.Mock<PartnerService<ChainId>>)();
+          mockedYearn.services.partner = new (PartnerService as unknown as jest.Mock<PartnerService<ChainId>>)();
           vaultInterface = new VaultInterface(mockedYearn, 1, new Context({}));
           const assetStaticVaultV2 = createMockAssetStaticVaultV2({ token: "0xRandom" });
           vaultInterface.getStatic = jest.fn().mockResolvedValue([assetStaticVaultV2]);
@@ -998,7 +996,7 @@ describe("VaultInterface", () => {
           "0xVault",
           ["function deposit(uint256 amount) public", "function withdraw(uint256 amount) public"],
           {
-            sendTransaction: sendTransactionMock
+            sendTransaction: sendTransactionMock,
           }
         );
         expect(executeVaultContractTransactionMock).toHaveBeenCalledTimes(1);
@@ -1021,7 +1019,7 @@ describe("VaultInterface", () => {
             data: "zapOutData",
             value: "1",
             gasPrice: "1",
-            gas: "1"
+            gas: "1",
           };
           zapperZapOutMock.mockResolvedValue(zapOutput);
           const executeZapperTransactionMock = jest.fn().mockResolvedValue("executeZapperTransactionResponse");
@@ -1052,7 +1050,7 @@ describe("VaultInterface", () => {
               gasLimit: BigNumber.from(zapOutput.gas),
               gasPrice: BigNumber.from(zapOutput.gasPrice),
               to: "0xZapOutTo",
-              value: BigNumber.from(zapOutput.value)
+              value: BigNumber.from(zapOutput.value),
             },
             {},
             BigNumber.from(zapOutput.value)

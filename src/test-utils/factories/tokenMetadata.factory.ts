@@ -7,10 +7,10 @@ const DEFAULT_TOKEN_METADATA: TokenMetadata = {
   tokenSymbolOverride: "tokenSymbolOverride",
   tokenNameOverride: "Token Name Override",
   localization: {},
-  address: "0x002"
+  address: "0x002",
 };
 
 export const createMockTokenMetadata = (overwrites: Partial<TokenMetadata> = {}): TokenMetadata => ({
   ...DEFAULT_TOKEN_METADATA,
-  ...overwrites
+  ...overwrites,
 });

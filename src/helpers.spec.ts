@@ -4,7 +4,7 @@ import {
   EthAddress,
   isNativeToken,
   mergeByAddress,
-  ZeroAddress
+  ZeroAddress,
 } from "./helpers";
 
 describe("Helpers", () => {
@@ -31,7 +31,7 @@ describe("Helpers", () => {
           expect(chunkedArray).toEqual([
             [1, 2],
             [3, 4],
-            [5, 6]
+            [5, 6],
           ]);
           expect(chunkedArrayWithOneSize.length).toBe(6);
           expect(chunkedArrayWithOneSize).toEqual([[1], [2], [3], [4], [5], [6]]);
@@ -134,7 +134,7 @@ describe("Helpers", () => {
 
         expect(actual).toStrictEqual([
           { address: "0x00", foo: "foo" },
-          { address: "0x01", bar: "bar" }
+          { address: "0x01", bar: "bar" },
         ]);
       });
     });
