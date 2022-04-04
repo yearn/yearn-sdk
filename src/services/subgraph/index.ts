@@ -38,7 +38,7 @@ export class SubgraphService extends Service {
     }
 
     // the subgraph only works with lowercased addresses
-    Object.keys(variables).forEach(key => {
+    Object.keys(variables).forEach((key) => {
       const variable = variables[key];
       if (typeof variable === "string") {
         variables[key] = variable.toLowerCase();
@@ -53,16 +53,16 @@ export class SubgraphService extends Service {
 
     const body = {
       query: query,
-      variables: variables
+      variables: variables,
     };
 
     return await fetch(this.yearnSubgraphEndpoint, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body)
+      body: JSON.stringify(body),
     })
-      .then(res => res.json())
-      .then(json => {
+      .then((res) => res.json())
+      .then((json) => {
         if (json.errors) {
           throw new SdkError(`Subgraph Error - ${JSON.stringify(json.errors)}`);
         }

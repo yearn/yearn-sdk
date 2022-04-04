@@ -11,7 +11,7 @@ const DEFAULT_ASSET_STATIC_VAULT_V2: Asset<"VAULT_V2"> = {
   tokenId: "0x001",
   underlyingTokenBalance: {
     amount: "1",
-    amountUsdc: "1"
+    amountUsdc: "1",
   },
   metadata: {
     symbol: "str",
@@ -29,8 +29,8 @@ const DEFAULT_ASSET_STATIC_VAULT_V2: Asset<"VAULT_V2"> = {
     displayIcon: "str",
     defaultDisplayToken: "0x001",
 
-    hideIfNoDeposits: true
-  }
+    hideIfNoDeposits: true,
+  },
 };
 
 const DEFAULT_ASSET_DYNAMIC_VAULT_V2: AssetDynamic<"VAULT_V2"> = {
@@ -39,7 +39,7 @@ const DEFAULT_ASSET_DYNAMIC_VAULT_V2: AssetDynamic<"VAULT_V2"> = {
   tokenId: "0x001Dynamic",
   underlyingTokenBalance: {
     amount: "1",
-    amountUsdc: "1"
+    amountUsdc: "1",
   },
   metadata: {
     symbol: "str",
@@ -57,18 +57,18 @@ const DEFAULT_ASSET_DYNAMIC_VAULT_V2: AssetDynamic<"VAULT_V2"> = {
     displayIcon: "str",
     defaultDisplayToken: "0x001",
 
-    hideIfNoDeposits: true
-  }
+    hideIfNoDeposits: true,
+  },
 };
 
 export const createMockAssetStaticVaultV2 = (overwrites: Partial<Asset<"VAULT_V2">> = {}): Asset<"VAULT_V2"> => ({
   ...DEFAULT_ASSET_STATIC_VAULT_V2,
-  ...overwrites
+  ...overwrites,
 });
 
 export const createMockAssetDynamicVaultV2 = (
   overwrites: Partial<AssetDynamic<"VAULT_V2">> = {}
 ): AssetDynamic<"VAULT_V2"> => ({
   ...DEFAULT_ASSET_DYNAMIC_VAULT_V2,
-  ...overwrites
+  ...overwrites,
 });

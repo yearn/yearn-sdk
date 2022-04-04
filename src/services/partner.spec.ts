@@ -9,22 +9,22 @@ const addressByIdMock = jest.fn().mockResolvedValue("0xe11dC9f2Ab122dC5978EACA41
 jest.mock("../context", () => ({
   Context: jest.fn().mockImplementation(() => ({
     events: {
-      on: jest.fn()
+      on: jest.fn(),
     },
     provider: {},
     partnerId: "partnerid",
     write: {
       getSigner: jest.fn().mockImplementation(() => ({
-        sendTransaction: sendTransactionMock
-      }))
-    }
-  }))
+        sendTransaction: sendTransactionMock,
+      })),
+    },
+  })),
 }));
 
 jest.mock("./addressProvider", () => ({
   AddressProvider: jest.fn().mockImplementation(() => ({
-    addressById: addressByIdMock
-  }))
+    addressById: addressByIdMock,
+  })),
 }));
 
 describe("PartnerService", () => {
@@ -36,7 +36,7 @@ describe("PartnerService", () => {
   let depositMock: jest.Mock;
 
   beforeEach(() => {
-    mockedAddressProvider = new ((AddressProvider as unknown) as jest.Mock<AddressProvider<ChainId>>)();
+    mockedAddressProvider = new (AddressProvider as unknown as jest.Mock<AddressProvider<ChainId>>)();
     partnerId = "partnerid";
     context = new Context({ partnerId: partnerId });
     partner = new PartnerService(1, context, mockedAddressProvider, partnerId);
@@ -44,10 +44,10 @@ describe("PartnerService", () => {
     depositMock = jest.fn();
     Object.defineProperty(partner, "_getContract", {
       value: jest.fn().mockResolvedValue({
-        write: { deposit: depositMock, interface: { encodeFunctionData: encodeFunctionDataMock } }
+        write: { deposit: depositMock, interface: { encodeFunctionData: encodeFunctionDataMock } },
       }),
       configurable: true,
-      writable: true
+      writable: true,
     });
   });
 

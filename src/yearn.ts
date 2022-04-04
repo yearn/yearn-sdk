@@ -162,16 +162,16 @@ export class Yearn<T extends ChainId> {
       meta: new MetaService(chainId, ctx),
       allowList: allowlistService,
       transaction: new TransactionService(chainId, ctx, allowlistService),
-      partner: ctx.partnerId ? new PartnerService(chainId, ctx, addressProvider, ctx.partnerId) : undefined
+      partner: ctx.partnerId ? new PartnerService(chainId, ctx, addressProvider, ctx.partnerId) : undefined,
     };
   }
 
   _initAdapters<T extends ChainId>(chainId: ChainId): Adapters<T> {
     return {
       vaults: {
-        v2: new RegistryV2Adapter(chainId, this.context, this.addressProvider)
+        v2: new RegistryV2Adapter(chainId, this.context, this.addressProvider),
       },
-      ironBank: new IronBankAdapter(chainId, this.context, this.addressProvider)
+      ironBank: new IronBankAdapter(chainId, this.context, this.addressProvider),
     } as Adapters<T>;
   }
 }

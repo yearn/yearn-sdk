@@ -10,7 +10,7 @@ const PickleApiUrl = "https://api.pickle.finance/prod/protocol/pools";
 const PickleApiBackupUrl = "https://f8wgg18t1h.execute-api.us-west-1.amazonaws.com/prod/protocol/pools";
 
 export const PickleJars = [
-  "0xCeD67a187b923F0E5ebcc77C7f2F7da20099e378" // yvboost-eth
+  "0xCeD67a187b923F0E5ebcc77C7f2F7da20099e378", // yvboost-eth
 ];
 
 export class PickleService extends Service {
@@ -41,12 +41,12 @@ export class PickleService extends Service {
       .catch(() => {
         return fetch(PickleApiBackupUrl);
       })
-      .then(res => res.json());
+      .then((res) => res.json());
 
     this.pickleJarUSDPrices.clear();
     this.lastFetchedDate = new Date();
 
-    const relevantJars = jarData.filter(jar => PickleJars.includes(getAddress(jar.jarAddress)));
+    const relevantJars = jarData.filter((jar) => PickleJars.includes(getAddress(jar.jarAddress)));
 
     for (const jarDatum of relevantJars) {
       const usdPrice = new BigNumber(jarDatum.liquidity_locked / jarDatum.tokens);

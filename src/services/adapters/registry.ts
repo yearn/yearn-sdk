@@ -63,8 +63,8 @@ export class RegistryV2Adapter<T extends ChainId> extends ContractService<T> imp
               controller: ZeroAddress,
               totalAssets: "0",
               totalSupply: "0",
-              ...asset.metadata
-            }
+              ...asset.metadata,
+            },
           }))
         );
     }
@@ -78,8 +78,8 @@ export class RegistryV2Adapter<T extends ChainId> extends ContractService<T> imp
               controller: ZeroAddress,
               totalAssets: "0",
               totalSupply: "0",
-              ...asset.metadata
-            }
+              ...asset.metadata,
+            },
           };
         })
       );

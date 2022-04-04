@@ -17,13 +17,13 @@ import {
   TokenAllowance,
   TokenMetadata,
   TypedMap,
-  Usdc
+  Usdc,
 } from "../types";
 import { Balance, Icon, IconMap, Token } from "../types";
 
 const TokenAbi = [
   "function approve(address _spender, uint256 _value) public",
-  "function allowance(address _owner, address _spender) public view returns (uint256)"
+  "function allowance(address _owner, address _spender) public view returns (uint256)",
 ];
 
 export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
@@ -62,7 +62,7 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
 
     if (Array.isArray(tokens)) {
       const entries = await Promise.all(
-        tokens.map(async token => {
+        tokens.map(async (token) => {
           const price = await this.yearn.services.oracle.getPriceUsdc(token, overrides);
           return [token, price];
         })
@@ -97,7 +97,7 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
         vaults: new Set<Address>(),
         ironBank: new Set<Address>(),
         labs: new Set<Address>(),
-        sdk: new Set<Address>()
+        sdk: new Set<Address>(),
       }
     );
 
@@ -106,7 +106,7 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
       vaults: [],
       ironBank: [],
       labs: [],
-      sdk: []
+      sdk: [],
     };
 
     if (isEthereum(this.chainId)) {
@@ -130,8 +130,8 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
             .div(10 ** 18)
             .times(new BigNumber(priceUsdc))
             .toString(),
-          priceUsdc
-        }
+          priceUsdc,
+        },
       ];
     }
 
@@ -196,7 +196,7 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
 
     const zapperTokensUniqueAddresses = new Set(zapperTokens.map(({ address }) => address));
 
-    return allSupportedTokens.map(token => {
+    return allSupportedTokens.map((token) => {
       const isZapperToken = zapperTokensUniqueAddresses.has(token.address);
 
       return {
@@ -206,9 +206,9 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
             ...token.supported,
             zapper: true,
             zapperZapIn: true,
-            zapperZapOut: Object.values(SUPPORTED_ZAP_OUT_ADDRESSES_MAINNET).includes(token.address)
-          }
-        })
+            zapperZapOut: Object.values(SUPPORTED_ZAP_OUT_ADDRESSES_MAINNET).includes(token.address),
+          },
+        }),
       };
     });
   }
@@ -225,7 +225,7 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
       owner: ownerAddress,
       token: tokenAddress,
       spender: spenderAddress,
-      amount: MaxUint256.toString()
+      amount: MaxUint256.toString(),
     };
 
     if (isNativeToken(tokenAddress) || tokenAddress === spenderAddress) return allowance;
@@ -235,7 +235,7 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
 
     return {
       ...allowance,
-      amount: allowanceAmount.toString()
+      amount: allowanceAmount.toString(),
     };
   }
 
@@ -316,7 +316,7 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
     }
 
     if (addresses) {
-      return result.filter(metadata => addresses.includes(metadata.address));
+      return result.filter((metadata) => addresses.includes(metadata.address));
     } else {
       return result;
     }

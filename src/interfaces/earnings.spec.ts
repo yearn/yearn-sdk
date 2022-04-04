@@ -20,33 +20,33 @@ jest.mock("../yearn", () => ({
   Yearn: jest.fn().mockImplementation(() => ({
     services: {
       subgraph: {
-        fetchQuery: subgraphFetchQueryMock
+        fetchQuery: subgraphFetchQueryMock,
       },
       vision: {
-        apy: visionApyMock
+        apy: visionApyMock,
       },
       lens: {
-        adapters: { vaults: { v2: { assetsStatic: lensAdaptersVaultsV2AssetsStaticMock } } }
+        adapters: { vaults: { v2: { assetsStatic: lensAdaptersVaultsV2AssetsStaticMock } } },
       },
       oracle: {
-        getPriceUsdc: oracleGetPriceUsdcMock
-      }
-    }
-  }))
+        getPriceUsdc: oracleGetPriceUsdcMock,
+      },
+    },
+  })),
 }));
 
 jest.mock("@ethersproject/address", () => ({
-  getAddress: jest.fn(() => getAddressMock())
+  getAddress: jest.fn(() => getAddressMock()),
 }));
 
 jest.mock("../context", () => ({
   Context: jest.fn().mockImplementation(() => ({
     provider: {
       read: {
-        getBlockNumber: getBlockNumberMock
-      }
-    }
-  }))
+        getBlockNumber: getBlockNumberMock,
+      },
+    },
+  })),
 }));
 
 describe("EarningsInterface", () => {
@@ -84,21 +84,21 @@ describe("EarningsInterface", () => {
             vaults: [
               {
                 latestUpdate: {
-                  returnsGenerated: new BigNumber(2).multipliedBy(10 ** 18)
+                  returnsGenerated: new BigNumber(2).multipliedBy(10 ** 18),
                 },
                 token: {
                   decimals: 18,
-                  id: "tokenId"
-                }
+                  id: "tokenId",
+                },
               },
               {
                 token: {
                   decimals: 18,
-                  id: "tokenIdWithoutLatestUpdate"
-                }
-              }
-            ]
-          }
+                  id: "tokenIdWithoutLatestUpdate",
+                },
+              },
+            ],
+          },
         });
       });
 
@@ -136,13 +136,13 @@ describe("EarningsInterface", () => {
             vault: {
               token: {
                 id: "vaultTokenId",
-                decimals: 18
+                decimals: 18,
               },
               latestUpdate: {
-                returnsGenerated: new BigNumber(2).multipliedBy(10 ** 18)
-              }
-            }
-          }
+                returnsGenerated: new BigNumber(2).multipliedBy(10 ** 18),
+              },
+            },
+          },
         });
       });
 
@@ -153,7 +153,7 @@ describe("EarningsInterface", () => {
           amount: "2000000000000000000",
           amountUsdc: "7",
           assetAddress: "0x001",
-          tokenAddress: "0x001"
+          tokenAddress: "0x001",
         });
         expect(oracleGetPriceUsdcMock).toHaveBeenCalledTimes(1);
         expect(oracleGetPriceUsdcMock).toHaveBeenCalledWith("vaultTokenId");
@@ -179,7 +179,7 @@ describe("EarningsInterface", () => {
           holdings: "0",
           earningsAssetData: [],
           grossApy: 0,
-          estimatedYearlyYield: "0"
+          estimatedYearlyYield: "0",
         });
       });
     });
@@ -187,7 +187,7 @@ describe("EarningsInterface", () => {
     describe("when there is an account", () => {
       const accountAddress: Address = "0x001";
       const apyMock = createMockApy({
-        net_apy: 42
+        net_apy: 42,
       });
       const accountEarningsResponse = createMockAccountEarningsResponse();
       const tokensValueInUsdcMock: jest.Mock<Promise<BigNumber>> = jest.fn();
@@ -195,7 +195,7 @@ describe("EarningsInterface", () => {
       beforeEach(() => {
         subgraphFetchQueryMock.mockResolvedValue(accountEarningsResponse);
         visionApyMock.mockResolvedValue({
-          [accountAddress]: apyMock
+          [accountAddress]: apyMock,
         });
         getAddressMock.mockReturnValue(accountAddress);
         (earningsInterface as any).tokensValueInUsdc = tokensValueInUsdcMock;
@@ -213,12 +213,12 @@ describe("EarningsInterface", () => {
           earningsAssetData: [
             {
               assetAddress: accountAddress,
-              earned: "10"
-            }
+              earned: "10",
+            },
           ],
           estimatedYearlyYield: "420",
           grossApy: 42,
-          holdings: "10"
+          holdings: "10",
         });
       });
     });

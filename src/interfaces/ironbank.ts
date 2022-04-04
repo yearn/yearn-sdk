@@ -15,7 +15,7 @@ import {
   Position,
   SdkError,
   Token,
-  TokenDataSource
+  TokenDataSource,
 } from "../types";
 
 export class IronBankInterface<T extends ChainId> extends ServiceInterface<T> {
@@ -37,7 +37,7 @@ export class IronBankInterface<T extends ChainId> extends ServiceInterface<T> {
     const cached = await this.cachedFetcherGet.fetch();
     if (cached) {
       if (addresses) {
-        return cached.filter(market => addresses.includes(market.address));
+        return cached.filter((market) => addresses.includes(market.address));
       } else {
         return cached;
       }
@@ -76,7 +76,7 @@ export class IronBankInterface<T extends ChainId> extends ServiceInterface<T> {
     const cached = await this.cachedFetcherGetDynamic.fetch();
     if (cached) {
       if (addresses) {
-        return cached.filter(market => addresses.includes(market.address));
+        return cached.filter((market) => addresses.includes(market.address));
       } else {
         return cached;
       }
@@ -128,17 +128,17 @@ export class IronBankInterface<T extends ChainId> extends ServiceInterface<T> {
     const tokens = await this.tokens();
     const balances = await this.yearn.services.helper.tokenBalances(
       address,
-      tokens.map(token => token.address),
+      tokens.map((token) => token.address),
       overrides
     );
-    return balances.map(balance => {
-      const token = tokens.find(token => token.address === balance.address);
+    return balances.map((balance) => {
+      const token = tokens.find((token) => token.address === balance.address);
       if (!token) {
         throw new SdkError(`Token does not exist for Balance(${balance.address})`);
       }
       return {
         ...balance,
-        token
+        token,
       };
     });
   }
@@ -164,9 +164,9 @@ export class IronBankInterface<T extends ChainId> extends ServiceInterface<T> {
       icon: icons[erc20Token.address],
       dataSource: "ironBank" as TokenDataSource,
       supported: {
-        ironBank: true
+        ironBank: true,
       },
-      priceUsdc: await this.yearn.services.oracle.getPriceUsdc(erc20Token.address, overrides)
+      priceUsdc: await this.yearn.services.oracle.getPriceUsdc(erc20Token.address, overrides),
     });
 
     return Promise.all(erc20Tokens.map(erc20ToToken));

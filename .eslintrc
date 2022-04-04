@@ -1,13 +1,12 @@
 {
   "extends": [
-    "prettier",
     "eslint:recommended",
-    "plugin:prettier/recommended",
     "plugin:import/typescript",
     "plugin:@typescript-eslint/eslint-recommended",
-    "plugin:@typescript-eslint/recommended"
+    "plugin:@typescript-eslint/recommended",
+    "plugin:prettier/recommended"
   ],
-  "plugins": ["simple-import-sort", "@typescript-eslint", "prettier", "import"],
+  "plugins": ["simple-import-sort", "@typescript-eslint", "import"],
   "rules": {
     "simple-import-sort/imports": "error",
     "simple-import-sort/exports": "error"

@@ -20,9 +20,9 @@ export class LensService<T extends ChainId> extends Service {
   get adapters(): Adapters<T> {
     return {
       vaults: {
-        v2: new RegistryV2Adapter(this.chainId, this.ctx, this.addressProvider)
+        v2: new RegistryV2Adapter(this.chainId, this.ctx, this.addressProvider),
       },
-      ironBank: new IronBankAdapter(this.chainId, this.ctx, this.addressProvider)
+      ironBank: new IronBankAdapter(this.chainId, this.ctx, this.addressProvider),
     } as Adapters<T>;
   }
 }

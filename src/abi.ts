@@ -44,7 +44,7 @@ export const AdapterAbi = (Metadata: string): string[] => [
   `function assetsDynamic(address[] memory) public view returns (${AssetDynamicAbi(Metadata)}[] memory)`,
   `function assetsPositionsOf(address) public view returns (${PositionAbi}[] memory)`,
   `function assetsPositionsOf(address, address[] memory) public view returns (${PositionAbi}[] memory)`,
-  `function assetsTokensAddresses() public view returns (address[] memory)`
+  `function assetsTokensAddresses() public view returns (address[] memory)`,
 ];
 
 export const AddressMetadataAbi = `tuple(string addrId, address addr)`;
