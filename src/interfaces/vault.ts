@@ -393,7 +393,11 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
   private async getDepositContractAddress(vaultAddress: Address, tokenAddress: Address): Promise<Address> {
     if (isNativeToken(tokenAddress)) return vaultAddress;
 
-    const willDepositUnderlyingToken = await this.isUnderlyingToken(vaultAddress, tokenAddress);
+    const willZapToPickleJar = PickleJars.includes(vaultAddress);
+    let willDepositUnderlyingToken = false;
+    if (!willZapToPickleJar) {
+      willDepositUnderlyingToken = await this.isUnderlyingToken(vaultAddress, tokenAddress);
+    }
     const shouldUsePartnerService = this.shouldUsePartnerService(vaultAddress);
 
     if (willDepositUnderlyingToken && shouldUsePartnerService) {
@@ -406,7 +410,6 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
       return vaultAddress;
     }
 
-    const willZapToPickleJar = PickleJars.includes(vaultAddress);
     const zapContractId = willZapToPickleJar ? ContractAddressId.pickleZapIn : ContractAddressId.zapperZapIn;
     const zapContractAddress = await this.yearn.addressProvider.addressById(zapContractId);
     return zapContractAddress;
