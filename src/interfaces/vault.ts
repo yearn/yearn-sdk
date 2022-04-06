@@ -1,3 +1,4 @@
+import { getAddress } from "@ethersproject/address";
 import { BigNumber } from "@ethersproject/bignumber";
 import { MaxUint256 } from "@ethersproject/constants";
 import { CallOverrides, Contract } from "@ethersproject/contracts";
@@ -699,10 +700,10 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
     metadataOverrides: VaultMetadataOverrides[],
     vaultTokenMarketData: VaultTokenMarketData[]
   ): VaultMetadataOverrides[] {
-    const vaultTokenMarketDataAddresses = new Set(vaultTokenMarketData.map(({ address }) => address.toUpperCase()));
+    const vaultTokenMarketDataAddresses = new Set(vaultTokenMarketData.map(({ address }) => getAddress(address)));
 
     return metadataOverrides.map((metadataOverride) => {
-      const isZappable = vaultTokenMarketDataAddresses.has(metadataOverride.address.toUpperCase());
+      const isZappable = vaultTokenMarketDataAddresses.has(getAddress(metadataOverride.address));
 
       return {
         ...metadataOverride,
