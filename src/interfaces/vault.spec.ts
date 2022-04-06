@@ -389,7 +389,7 @@ describe("VaultInterface", () => {
           });
         });
 
-        fdescribe("when is not provided", () => {
+        describe("when is not provided", () => {
           it("should get the vault's metadata", async () => {
             await vaultInterface.getDynamic([]);
 
@@ -680,7 +680,7 @@ describe("VaultInterface", () => {
           {
             ...tokenMock,
             icon: "token-mock-icon.png",
-            symbol: "ALIAS_TOKEN_SYMBOL",
+            symbol: "DEAD",
             metadata: {
               address: "0x001",
               decimals: "18",
