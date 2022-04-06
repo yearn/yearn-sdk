@@ -4,7 +4,7 @@ import { CallOverrides, Contract } from "@ethersproject/contracts";
 import { TransactionRequest, TransactionResponse } from "@ethersproject/providers";
 
 import { CachedFetcher } from "../cache";
-import { ChainId } from "../chain";
+import { ChainId, isEthereum } from "../chain";
 import { ContractAddressId, ServiceInterface } from "../common";
 import { chunkArray, EthAddress, isNativeToken, WethAddress } from "../helpers";
 import { PickleJars } from "../services/partners/pickle";
@@ -22,6 +22,7 @@ import {
   VaultMetadataOverrides,
   VaultStatic,
   VaultsUserSummary,
+  VaultTokenMarketData,
   VaultUserMetadata,
   WithdrawOptions,
   ZapProtocol,
@@ -144,12 +145,17 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
       return addresses ? cached.filter((vault) => addresses.includes(vault.address)) : cached;
     }
 
-    const metadataOverrides = vaultMetadataOverrides
+    let metadataOverrides = vaultMetadataOverrides
       ? vaultMetadataOverrides
       : await this.yearn.services.meta.vaults().catch((error) => {
           console.error(error);
           return Promise.resolve([]);
         });
+
+    if (isEthereum(this.chainId)) {
+      const vaultTokenMarketData = await this.yearn.services.zapper.tokenMarketData();
+      metadataOverrides = this.mergeZapperProps(metadataOverrides, vaultTokenMarketData);
+    }
 
     const adapters = Object.values(this.yearn.services.lens.adapters.vaults);
     return await Promise.all(
@@ -655,6 +661,8 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
     dynamic.metadata.withdrawalsDisabled = overrides.withdrawalsDisabled;
     dynamic.metadata.allowZapIn = overrides.allowZapIn;
     dynamic.metadata.allowZapOut = overrides.allowZapOut;
+    dynamic.metadata.zapInWith = overrides.zapInWith;
+    dynamic.metadata.zapOutWith = overrides.zapOutWith;
     dynamic.metadata.migrationContract = overrides.migrationContract;
     dynamic.metadata.migrationTargetVault = overrides.migrationTargetVault;
     dynamic.metadata.vaultNameOverride = overrides.vaultNameOverride;
@@ -679,5 +687,30 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
       composite: null,
     };
     return apy;
+  }
+
+  /**
+   * Helper function to set the zapper properties on a vault's metadata
+   * @param metadataOverrides the vault metadata overrides
+   * @param vaultTokenMarketData the vault token market data
+   * @returns the updated metadata
+   */
+  mergeZapperProps(
+    metadataOverrides: VaultMetadataOverrides[],
+    vaultTokenMarketData: VaultTokenMarketData[]
+  ): VaultMetadataOverrides[] {
+    const vaultTokenMarketDataAddresses = new Set(vaultTokenMarketData.map(({ address }) => address.toUpperCase()));
+
+    return metadataOverrides.map((metadataOverride) => {
+      const isZappable = vaultTokenMarketDataAddresses.has(metadataOverride.address.toUpperCase());
+
+      return {
+        ...metadataOverride,
+        allowZapIn: isZappable,
+        allowZapOut: isZappable,
+        zapInWith: isZappable ? "zapperZapIn" : undefined,
+        zapOutWith: isZappable ? "zapperZapOut" : undefined,
+      };
+    });
   }
 }

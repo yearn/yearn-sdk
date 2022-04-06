@@ -121,4 +121,6 @@ export interface VaultMetadataOverrides {
   vaultNameOverride?: string;
   vaultSymbolOverride?: string;
   withdrawalsDisabled?: boolean;
+  zapInWith?: string;
+  zapOutWith?: string;
 }
