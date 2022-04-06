@@ -107,9 +107,9 @@ export class ZapperService extends Service {
 
   /**
    * Fetches vault token market data for the Yearn application
-   * @returns list of vault token market data
+   * @returns list of zapper supported vault addresses
    */
-  async tokenMarketData(): Promise<VaultTokenMarketData[]> {
+  async supportedVaultAddresses(): Promise<Address[]> {
     if (!isEthereum(this.chainId)) {
       throw new SdkError(`Only Ethereum is supported for token market data, got ${this.chainId}`);
     }
@@ -125,7 +125,9 @@ export class ZapperService extends Service {
       .then(handleHttpError)
       .then((res) => res.json());
 
-    return vaultTokenMarketData;
+    return vaultTokenMarketData
+      .map((vaultTokenMarketData: VaultTokenMarketData) => getAddress(vaultTokenMarketData.address))
+      .filter((address: string) => !!address);
   }
 
   /**

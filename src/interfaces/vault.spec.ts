@@ -47,7 +47,7 @@ const zapperZapInMock = jest.fn().mockResolvedValue({
   gas: "100",
   gasPrice: "100",
 });
-const tokenMarketDataMock = jest.fn();
+const supportedVaultAddressesMock = jest.fn();
 const helperTokenBalancesMock = jest.fn();
 const helperTokensMock: jest.Mock<Promise<ERC20[]>> = jest.fn();
 const lensAdaptersVaultsV2PositionsOfMock = jest.fn();
@@ -112,7 +112,7 @@ jest.mock("../yearn", () => ({
       zapper: {
         zapOut: zapperZapOutMock,
         zapIn: zapperZapInMock,
-        tokenMarketData: tokenMarketDataMock,
+        supportedVaultAddresses: supportedVaultAddressesMock,
       },
       transaction: {
         sendTransaction: sendTransactionUsingServiceMock,
@@ -370,7 +370,7 @@ describe("VaultInterface", () => {
       beforeEach(() => {
         cachedFetcherFetchMock.mockResolvedValue(undefined);
         metaVaultsMock.mockResolvedValue([createMockVaultMetadata({ address: "0x001" })]);
-        tokenMarketDataMock.mockResolvedValue([]);
+        supportedVaultAddressesMock.mockResolvedValue([]);
       });
 
       describe("vaultMetadataOverrides", () => {
@@ -394,7 +394,7 @@ describe("VaultInterface", () => {
             await vaultInterface.getDynamic([]);
 
             expect(metaVaultsMock).toHaveBeenCalledTimes(1);
-            expect(tokenMarketDataMock).toHaveBeenCalledTimes(1);
+            expect(supportedVaultAddressesMock).toHaveBeenCalledTimes(1);
           });
         });
       });
@@ -1080,19 +1080,35 @@ describe("VaultInterface", () => {
   describe("mergeZapperProps", () => {
     it("should set the zapper properties on a vault's metadata", async () => {
       const vaultMetadataMock = {
-        zappable: createMockVaultMetadata({ address: "0xZaPpAbLe" }), // random case `0xZappable`
-        notZappable: createMockVaultMetadata({ address: "0xNotZappable" }),
+        zappable: createMockVaultMetadata({
+          displayName: "Zappable",
+          address: "0x16de59092dae5ccf4a1e6439d611fd0653f0bd01", // not checksummed
+        }),
+        notZappable: createMockVaultMetadata({
+          displayName: "Not Zappable",
+          address: "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+        }),
       };
 
       const vaultTokenMarketDataMock = {
-        zappable: createMockTokenMarketData({ address: "0xZappable" }),
-        notInVaults: createMockTokenMarketData({ address: "0xNotInVaults" }),
-        random: createMockTokenMarketData({ address: "0xRandom" }),
+        zappable: createMockTokenMarketData({
+          label: "Zappable",
+          address: "0x16de59092dAE5CcF4A1E6439D611fd0653f0Bd01", // checksummed
+        }),
+        notInVaults: createMockTokenMarketData({
+          label: "Not in Vaults",
+          address: "0xd6aD7a6750A7593E092a9B218d66C0A814a3436e",
+        }),
+        random: createMockTokenMarketData({ label: "Random", address: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48" }),
       };
 
       const actual = vaultInterface.mergeZapperProps(
         [vaultMetadataMock.zappable, vaultMetadataMock.notZappable],
-        [vaultTokenMarketDataMock.zappable, vaultTokenMarketDataMock.notInVaults, vaultTokenMarketDataMock.random]
+        [
+          vaultTokenMarketDataMock.zappable.address,
+          vaultTokenMarketDataMock.notInVaults.address,
+          vaultTokenMarketDataMock.random.address,
+        ]
       );
 
       expect(actual.length).toEqual(2);

@@ -23,7 +23,6 @@ import {
   VaultMetadataOverrides,
   VaultStatic,
   VaultsUserSummary,
-  VaultTokenMarketData,
   VaultUserMetadata,
   WithdrawOptions,
   ZapProtocol,
@@ -154,7 +153,7 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
         });
 
     if (isEthereum(this.chainId)) {
-      const vaultTokenMarketData = await this.yearn.services.zapper.tokenMarketData();
+      const vaultTokenMarketData = await this.yearn.services.zapper.supportedVaultAddresses();
       metadataOverrides = this.mergeZapperProps(metadataOverrides, vaultTokenMarketData);
     }
 
@@ -698,20 +697,25 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
    */
   mergeZapperProps(
     metadataOverrides: VaultMetadataOverrides[],
-    vaultTokenMarketData: VaultTokenMarketData[]
+    supportedVaultAddresses: Address[]
   ): VaultMetadataOverrides[] {
-    const vaultTokenMarketDataAddresses = new Set(vaultTokenMarketData.map(({ address }) => getAddress(address)));
+    const supportedVaultAddressesSet = new Set(supportedVaultAddresses);
 
     return metadataOverrides.map((metadataOverride) => {
-      const isZappable = vaultTokenMarketDataAddresses.has(getAddress(metadataOverride.address));
+      try {
+        const address = getAddress(metadataOverride.address);
+        const isZappable = supportedVaultAddressesSet.has(address);
 
-      return {
-        ...metadataOverride,
-        allowZapIn: isZappable,
-        allowZapOut: isZappable,
-        zapInWith: isZappable ? "zapperZapIn" : undefined,
-        zapOutWith: isZappable ? "zapperZapOut" : undefined,
-      };
+        return {
+          ...metadataOverride,
+          allowZapIn: isZappable,
+          allowZapOut: isZappable,
+          zapInWith: isZappable ? "zapperZapIn" : undefined,
+          zapOutWith: isZappable ? "zapperZapOut" : undefined,
+        };
+      } catch (error) {
+        return metadataOverride;
+      }
     });
   }
 }

@@ -55,7 +55,7 @@ describe("ZapperService", () => {
               })
             ) as jest.Mock
           );
-          getAddressMock.mockReturnValue("0x001");
+          getAddressMock.mockReturnValueOnce("0x001");
 
           const actualSupportedTokens = await zapperServiceService.supportedTokens();
 
@@ -80,32 +80,32 @@ describe("ZapperService", () => {
     );
   });
 
-  describe("tokenMarketData", () => {
+  describe("supportedVaultAddresses", () => {
     ([1, 1337] as ChainId[]).forEach((chainId) =>
       describe(`when chainId is ${chainId}`, () => {
         beforeEach(() => {
           zapperServiceService = new ZapperService(chainId, new Context({}));
         });
 
-        it("should return the vault token market data", async () => {
+        it("should return the zapper supported vault addresses without `null`s", async () => {
           const mockTokenMarketData = createMockTokenMarketData();
-
+          getAddressMock.mockReturnValueOnce(mockTokenMarketData.address);
           fetchSpy.mockImplementation(
             jest.fn(() =>
               Promise.resolve({
-                json: () => Promise.resolve([mockTokenMarketData]),
+                json: () => Promise.resolve([mockTokenMarketData, { address: null }]),
                 status: 200,
               })
             ) as jest.Mock
           );
 
-          const actual = await zapperServiceService.tokenMarketData();
+          const actual = await zapperServiceService.supportedVaultAddresses();
 
           expect(fetchSpy).toHaveBeenCalledTimes(1);
           expect(fetchSpy).toHaveBeenCalledWith(
             "https://api.zapper.fi/v1/protocols/yearn/token-market-data?network=ethereum&type=vault&api_key=ZAPPER_API_KEY"
           );
-          expect(actual).toEqual([mockTokenMarketData]);
+          expect(actual).toEqual([mockTokenMarketData.address]);
         });
       })
     );
@@ -115,7 +115,7 @@ describe("ZapperService", () => {
         zapperServiceService = new ZapperService(chainId, new Context({}));
 
         expect(async () => {
-          await zapperServiceService.tokenMarketData();
+          await zapperServiceService.supportedVaultAddresses();
         }).rejects.toThrow(`Only Ethereum is supported for token market data, got ${chainId}`);
       });
     });
