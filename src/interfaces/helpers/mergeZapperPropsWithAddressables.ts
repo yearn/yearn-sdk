@@ -3,7 +3,7 @@ import { getAddress } from "@ethersproject/address";
 import { Address, Addressable } from "../../types";
 
 /**
- * Helper function to set the zapper properties on a vault's metadata
+ * Helper function to set the zapper properties on a Addressable
  * @param addressables an array of objects with an address prop
  * @param supportedVaultAddresses the supported vault addresses
  * @returns the updated metadata
