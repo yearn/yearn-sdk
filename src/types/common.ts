@@ -29,6 +29,11 @@ export class SdkError extends CustomError {
 export type Address = string;
 
 /**
+ * Type for anything that has an address property.
+ */
+export type Addressable = { address: Address };
+
+/**
  * Type alias for a stringified big number. SDK tries to be bignumber-lib
  * agnostic so integer values are returned as strings.
  */

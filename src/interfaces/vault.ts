@@ -4,7 +4,7 @@ import { CallOverrides, Contract } from "@ethersproject/contracts";
 import { TransactionRequest, TransactionResponse } from "@ethersproject/providers";
 
 import { CachedFetcher } from "../cache";
-import { ChainId } from "../chain";
+import { ChainId, isEthereum } from "../chain";
 import { ContractAddressId, ServiceInterface } from "../common";
 import { chunkArray, EthAddress, isNativeToken, WethAddress } from "../helpers";
 import { PickleJars } from "../services/partners/pickle";
@@ -27,6 +27,7 @@ import {
   ZapProtocol,
 } from "../types";
 import { Position, Vault } from "../types";
+import { mergeZapperPropsWithAddressables } from "./helpers";
 
 const VaultAbi = ["function deposit(uint256 amount) public", "function withdraw(uint256 amount) public"];
 
@@ -144,12 +145,17 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
       return addresses ? cached.filter((vault) => addresses.includes(vault.address)) : cached;
     }
 
-    const metadataOverrides = vaultMetadataOverrides
+    let metadataOverrides = vaultMetadataOverrides
       ? vaultMetadataOverrides
       : await this.yearn.services.meta.vaults().catch((error) => {
           console.error(error);
           return Promise.resolve([]);
         });
+
+    if (isEthereum(this.chainId)) {
+      const vaultTokenMarketData = await this.yearn.services.zapper.supportedVaultAddresses();
+      metadataOverrides = mergeZapperPropsWithAddressables(metadataOverrides, vaultTokenMarketData);
+    }
 
     const adapters = Object.values(this.yearn.services.lens.adapters.vaults);
     return await Promise.all(
@@ -655,6 +661,8 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
     dynamic.metadata.withdrawalsDisabled = overrides.withdrawalsDisabled;
     dynamic.metadata.allowZapIn = overrides.allowZapIn;
     dynamic.metadata.allowZapOut = overrides.allowZapOut;
+    dynamic.metadata.zapInWith = overrides.zapInWith;
+    dynamic.metadata.zapOutWith = overrides.zapOutWith;
     dynamic.metadata.migrationContract = overrides.migrationContract;
     dynamic.metadata.migrationTargetVault = overrides.migrationTargetVault;
     dynamic.metadata.vaultNameOverride = overrides.vaultNameOverride;

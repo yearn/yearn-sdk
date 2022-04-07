@@ -1,11 +1,12 @@
 import { getAddress } from "@ethersproject/address";
 
-import { Chains } from "../chain";
+import { Chains, isEthereum } from "../chain";
 import { Service } from "../common";
 import { EthAddress, handleHttpError, usdc, ZeroAddress } from "../helpers";
-import { Address, Balance, BalancesMap, Integer, Token, ZapperToken } from "../types";
+import { Address, Balance, BalancesMap, Integer, SdkError, Token, ZapperToken } from "../types";
 import {
   GasPrice,
+  VaultTokenMarketData,
   ZapApprovalStateOutput,
   ZapApprovalTransactionOutput,
   ZapOutput,
@@ -102,6 +103,31 @@ export class ZapperService extends Service {
     });
     if (!Array.isArray(addresses)) return balances[addresses];
     return balances;
+  }
+
+  /**
+   * Fetches vault token market data for the Yearn application
+   * @returns list of zapper supported vault addresses
+   */
+  async supportedVaultAddresses(): Promise<Address[]> {
+    if (!isEthereum(this.chainId)) {
+      throw new SdkError(`Only Ethereum is supported for token market data, got ${this.chainId}`);
+    }
+
+    const url = "https://api.zapper.fi/v1/protocols/yearn/token-market-data";
+    const params = new URLSearchParams({
+      network: "ethereum",
+      type: "vault",
+      api_key: this.ctx.zapper,
+    });
+
+    const vaultTokenMarketData = await fetch(`${url}?${params}`)
+      .then(handleHttpError)
+      .then((res) => res.json());
+
+    return vaultTokenMarketData
+      .map((vaultTokenMarketData: VaultTokenMarketData) => getAddress(vaultTokenMarketData.address))
+      .filter((address: string) => !!address);
   }
 
   /**

@@ -30,6 +30,7 @@ import {
   createMockEarningsUserData,
   createMockToken,
   createMockTokenBalance,
+  createMockVaultMetadata,
 } from "../test-utils/factories";
 
 const earningsAccountAssetsDataMock = jest.fn();
@@ -45,6 +46,7 @@ const zapperZapInMock = jest.fn().mockResolvedValue({
   gas: "100",
   gasPrice: "100",
 });
+const supportedVaultAddressesMock = jest.fn();
 const helperTokenBalancesMock = jest.fn();
 const helperTokensMock: jest.Mock<Promise<ERC20[]>> = jest.fn();
 const lensAdaptersVaultsV2PositionsOfMock = jest.fn();
@@ -109,6 +111,7 @@ jest.mock("../yearn", () => ({
       zapper: {
         zapOut: zapperZapOutMock,
         zapIn: zapperZapInMock,
+        supportedVaultAddresses: supportedVaultAddressesMock,
       },
       transaction: {
         sendTransaction: sendTransactionUsingServiceMock,
@@ -365,7 +368,8 @@ describe("VaultInterface", () => {
     describe("when the fetcher tokens are not cached", () => {
       beforeEach(() => {
         cachedFetcherFetchMock.mockResolvedValue(undefined);
-        metaVaultsMock.mockResolvedValue([]);
+        metaVaultsMock.mockResolvedValue([createMockVaultMetadata({ address: "0x001" })]);
+        supportedVaultAddressesMock.mockResolvedValue([]);
       });
 
       describe("vaultMetadataOverrides", () => {
@@ -385,10 +389,11 @@ describe("VaultInterface", () => {
         });
 
         describe("when is not provided", () => {
-          it("should call meta vaults", async () => {
+          it("should get the vault's metadata", async () => {
             await vaultInterface.getDynamic([]);
 
             expect(metaVaultsMock).toHaveBeenCalledTimes(1);
+            expect(supportedVaultAddressesMock).toHaveBeenCalledTimes(1);
           });
         });
       });
@@ -453,7 +458,7 @@ describe("VaultInterface", () => {
                 displayIcon: {
                   "0x001": "0x001.png",
                 },
-                displayName: "ALIAS_TOKEN_SYMBOL",
+                displayName: "Vault Metadata",
                 defaultDisplayToken: assetsDynamic.tokenId,
               },
             },
@@ -674,6 +679,7 @@ describe("VaultInterface", () => {
           {
             ...tokenMock,
             icon: "token-mock-icon.png",
+            symbol: "DEAD",
             metadata: {
               address: "0x001",
               decimals: "18",
