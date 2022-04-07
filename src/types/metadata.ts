@@ -28,6 +28,8 @@ export interface VaultMetadata {
   withdrawalsDisabled?: boolean;
   allowZapIn?: boolean;
   allowZapOut?: boolean;
+  zapInWith?: string;
+  zapOutWith?: string;
   migrationContract?: Address;
   migrationTargetVault?: Address;
   vaultNameOverride?: string;
@@ -119,4 +121,6 @@ export interface VaultMetadataOverrides {
   vaultNameOverride?: string;
   vaultSymbolOverride?: string;
   withdrawalsDisabled?: boolean;
+  zapInWith?: string;
+  zapOutWith?: string;
 }

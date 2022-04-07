@@ -47,3 +47,56 @@ export enum ZapProtocol {
   PICKLE = "pickle",
   YEARN = "yearn",
 }
+
+type VaultTokenMarketDataCategory = "deposit" | "pool" | "wallet";
+
+export interface VaultTokenMarketData {
+  address: Address;
+  appId: "yearn";
+  appImageUrl: string;
+  appName: "Yearn";
+  apy?: number;
+  category: VaultTokenMarketDataCategory;
+  decimals: number;
+  img: string;
+  isBlocked: boolean;
+  label: string;
+  liquidity: number;
+  network: "ethereum";
+  price: number;
+  pricePerShare: number;
+  protcolDisplay: "Yearn";
+  supply: number;
+  symbol: string;
+  tokens: VaultTokenMarketDataToken[];
+  type: "vault";
+}
+
+type VaultTokenMarketDataType = "base" | "interest-bearing" | "pool" | "vault";
+
+interface VaultTokenMarketDataToken {
+  address: Address;
+  appId?: "yearn";
+  appImageUrl?: string;
+  appName?: "Yearn";
+  canExchange?: boolean;
+  category?: VaultTokenMarketDataType;
+  decimals: number;
+  exchangeAddress?: Address;
+  fee?: number;
+  hide?: boolean;
+  img?: string;
+  implementation?: "factoryV2";
+  label?: string;
+  liquidity?: number;
+  network: "ethereum";
+  price: number;
+  protcolDisplay?: "Yearn";
+  reserve: number;
+  supply?: number;
+  symbol: string;
+  tokenImageUrl?: string;
+  tokens?: unknown[]; // it goes a few levels deep
+  type: VaultTokenMarketDataType;
+  volume?: number | null;
+}
