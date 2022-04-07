@@ -1,4 +1,3 @@
-import { getAddress } from "@ethersproject/address";
 import { BigNumber } from "@ethersproject/bignumber";
 import { MaxUint256 } from "@ethersproject/constants";
 import { CallOverrides, Contract } from "@ethersproject/contracts";
@@ -28,6 +27,7 @@ import {
   ZapProtocol,
 } from "../types";
 import { Position, Vault } from "../types";
+import { mergeZapperPropsWithAddressables } from "./helpers";
 
 const VaultAbi = ["function deposit(uint256 amount) public", "function withdraw(uint256 amount) public"];
 
@@ -154,7 +154,7 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
 
     if (isEthereum(this.chainId)) {
       const vaultTokenMarketData = await this.yearn.services.zapper.supportedVaultAddresses();
-      metadataOverrides = this.mergeZapperProps(metadataOverrides, vaultTokenMarketData);
+      metadataOverrides = mergeZapperPropsWithAddressables(metadataOverrides, vaultTokenMarketData);
     }
 
     const adapters = Object.values(this.yearn.services.lens.adapters.vaults);
@@ -687,35 +687,5 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
       composite: null,
     };
     return apy;
-  }
-
-  /**
-   * Helper function to set the zapper properties on a vault's metadata
-   * @param metadataOverrides the vault metadata overrides
-   * @param vaultTokenMarketData the vault token market data
-   * @returns the updated metadata
-   */
-  mergeZapperProps(
-    metadataOverrides: VaultMetadataOverrides[],
-    supportedVaultAddresses: Address[]
-  ): VaultMetadataOverrides[] {
-    const supportedVaultAddressesSet = new Set(supportedVaultAddresses);
-
-    return metadataOverrides.map((metadataOverride) => {
-      try {
-        const address = getAddress(metadataOverride.address);
-        const isZappable = supportedVaultAddressesSet.has(address);
-
-        return {
-          ...metadataOverride,
-          allowZapIn: isZappable,
-          allowZapOut: isZappable,
-          zapInWith: isZappable ? "zapperZapIn" : undefined,
-          zapOutWith: isZappable ? "zapperZapOut" : undefined,
-        };
-      } catch (error) {
-        return metadataOverride;
-      }
-    });
   }
 }
