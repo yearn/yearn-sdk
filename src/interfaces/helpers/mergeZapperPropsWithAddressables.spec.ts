@@ -1,8 +1,8 @@
 import { createMockTokenMarketData, createMockVaultMetadata } from "../../test-utils/factories";
 import { mergeZapperPropsWithAddressables } from "./mergeZapperPropsWithAddressables";
 
-describe("mergeZapperProps", () => {
-  it("should set the zapper properties on a vault's metadata", async () => {
+describe("mergeZapperPropsWithAddressables", () => {
+  it("should set the zapper properties on an addressable", async () => {
     const vaultMetadataMock = {
       zappable: createMockVaultMetadata({
         displayName: "Zappable",
