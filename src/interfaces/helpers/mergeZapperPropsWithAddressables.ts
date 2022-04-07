@@ -1,6 +1,6 @@
 import { getAddress } from "@ethersproject/address";
 
-import { Address } from "../../types";
+import { Address, Addressable } from "../../types";
 
 /**
  * Helper function to set the zapper properties on a vault's metadata
@@ -8,7 +8,7 @@ import { Address } from "../../types";
  * @param supportedVaultAddresses the supported vault addresses
  * @returns the updated metadata
  */
-export function mergeZapperPropsWithAddressables<T extends { address: Address }>(
+export function mergeZapperPropsWithAddressables<T extends Addressable>(
   addressables: T[],
   supportedVaultAddresses: Address[]
 ): T[] {
