@@ -142,7 +142,7 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
   ): Promise<VaultDynamic[]> {
     const cached = await this.cachedFetcherGetDynamic.fetch();
     if (cached) {
-      return addresses ? cached.filter((vault) => addresses.includes(vault.address)) : cached;
+      return addresses ? cached.flat().filter((vault) => addresses.includes(vault.address)) : cached;
     }
 
     let metadataOverrides = vaultMetadataOverrides
