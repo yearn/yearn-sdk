@@ -6,7 +6,7 @@ import BigNumber from "bignumber.js";
 import { CachedFetcher } from "../cache";
 import { allSupportedChains, ChainId, Chains, isEthereum, isFantom } from "../chain";
 import { ServiceInterface } from "../common";
-import { EthAddress, ETH_TOKEN, isNativeToken, WethAddress, WETH_TOKEN } from "../helpers";
+import { ETH_TOKEN, EthAddress, isNativeToken, WETH_TOKEN, WethAddress } from "../helpers";
 import { FANTOM_TOKEN, mergeByAddress, SUPPORTED_ZAP_OUT_ADDRESSES_MAINNET, WrappedFantomAddress } from "../helpers";
 import {
   Address,
@@ -136,8 +136,8 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
             {
               address: WethAddress,
               token: WETH_TOKEN,
-              balance: '0',
-              balanceUsdc: '0',
+              balance: "0",
+              balanceUsdc: "0",
               priceUsdc,
             },
           ];
