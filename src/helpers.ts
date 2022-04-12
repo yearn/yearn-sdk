@@ -27,6 +27,31 @@ export const FANTOM_TOKEN: Token = {
   symbol: "FTM",
 };
 
+export const ETH_TOKEN: Token = {
+  address: EthAddress,
+  name: "ETH",
+  dataSource: "sdk",
+  decimals: "18",
+  priceUsdc: "0",
+  supported: {
+    zapper: true,
+  },
+  symbol: "ETH",
+};
+
+export const WETH_TOKEN: Token = {
+  address: WethAddress,
+  name: "WETH",
+  dataSource: "sdk",
+  decimals: "18",
+  priceUsdc: "0",
+  supported: {
+    zapper: true,
+    vaults: true,
+  },
+  symbol: "WETH",
+};
+
 // Returns truthy if address is defined as a native token address of a network
 export function isNativeToken(address: Address): boolean {
   return [EthAddress, ZeroAddress].includes(address);
