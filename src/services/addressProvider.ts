@@ -61,18 +61,19 @@ export class AddressProvider<T extends ChainId> extends Service {
 
     try {
       const address = await this.contract.read.addressById(id);
-      return this.setCachedAddressById({ id, address });
+      this.setCachedAddressById({ id, address });
+      return address;
     } catch (error) {
       throw new SdkError(`Failed to read contract address for ${id}: ${error}`);
     }
   }
 
-  private setCachedAddressById({ id, address }: { id: ContractAddressId; address: Address }): Address {
+  private setCachedAddressById({ id, address }: { id: ContractAddressId; address: Address }): void {
     const NOW = new Date(Date.now()).getTime();
 
     if (!this.cachedAddressesById.has(id)) {
       this.cachedAddressesById.set(id, { address, timestamp: NOW });
-      return address;
+      return;
     }
 
     const { timestamp } = this.cachedAddressesById.get(id) || {};
@@ -80,8 +81,6 @@ export class AddressProvider<T extends ChainId> extends Service {
     if (!this.isCacheFresh({ timestamp })) {
       this.cachedAddressesById.set(id, { address, timestamp: NOW });
     }
-
-    return address;
   }
 
   async addressesMetadataByIdStartsWith(prefix: string): Promise<AddressMetadata[]> {
