@@ -56,11 +56,9 @@ export class AddressProvider<T extends ChainId> extends Service {
     const { address, timestamp } = this.cachedAddressesById.get(id) || {};
 
     if (address && this.isCacheFresh({ timestamp })) {
-      console.log("addressById", `isCacheFresh: ${id}`);
       return address;
     }
 
-    console.log("addressById", `contract.read.addressById: ${id}`);
     return this.contract.read.addressById(id);
   }
 
