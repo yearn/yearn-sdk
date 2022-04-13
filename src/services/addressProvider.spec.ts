@@ -26,10 +26,6 @@ jest.mock("../common", () => {
 });
 
 describe("AddressProvider", () => {
-  beforeEach(() => {
-    jest.spyOn(console, "error");
-  });
-
   afterEach(() => {
     jest.clearAllMocks();
     Date.now = jest.fn(() => NOW);
