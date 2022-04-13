@@ -27,8 +27,16 @@ import {
   EarningsDayData,
   EarningsUserData,
 } from "../types/custom/earnings";
+import { toBN } from "../utils";
 
 const BigZero = new BigNumber(0);
+
+interface StrategiesResponse {
+  latestReport?: {
+    totalGain: string;
+    totalLoss: string;
+  };
+}
 
 export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
   /**
@@ -210,19 +218,7 @@ export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
     fromDaysAgo: number,
     latestBlockNumber?: number
   ): Promise<AssetHistoricEarnings> {
-    interface StrategiesResponse {
-      latestReport?: {
-        totalGain: string;
-        totalLoss: string;
-      };
-    }
-
-    let blockNumber: number;
-    if (latestBlockNumber) {
-      blockNumber = latestBlockNumber;
-    } else {
-      blockNumber = await this.ctx.provider.read.getBlockNumber();
-    }
+    let blockNumber = latestBlockNumber ?? (await this.ctx.provider.read.getBlockNumber());
 
     blockNumber -= this.blockOffset(); // subgraph might be slightly behind latest block
 
@@ -231,32 +227,32 @@ export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
       .map((day) => blockNumber - day * this.blocksPerDay());
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const response = await this.yearn.services.subgraph.fetchQuery<any>(ASSET_HISTORIC_EARNINGS(blocks), {
+    const { data } = await this.yearn.services.subgraph.fetchQuery<any>(ASSET_HISTORIC_EARNINGS(blocks), {
       id: vault,
     });
 
-    const data = response.data;
-
     const labels = blocks.map((block) => `block_${block}`);
 
-    const token = data.vault.token.id as string;
+    const token = data.vault.token.id as Address;
     const priceUsdc = await this.yearn.services.oracle.getPriceUsdc(token).then((price) => new BigNumber(price));
 
     const earningsDayData = labels.map((label) => {
       const strategies: StrategiesResponse[] = data[label].strategies;
-      const totalGain = strategies
-        .map((strategy) => (strategy.latestReport ? new BigNumber(strategy.latestReport.totalGain) : new BigNumber(0)))
-        .reduce((sum, value) => sum.plus(value));
 
-      const totalLoss = strategies
-        .map((strategy) => (strategy.latestReport ? new BigNumber(strategy.latestReport.totalLoss) : new BigNumber(0)))
-        .reduce((sum, value) => sum.plus(value));
+      const { totalGain, totalLoss } = strategies.reduce(
+        ({ totalGain, totalLoss }, { latestReport }) => {
+          if (latestReport) {
+            totalGain = totalGain.plus(toBN(latestReport.totalGain));
+            totalLoss = totalLoss.plus(toBN(latestReport.totalLoss));
+          }
+          return { totalGain, totalLoss };
+        },
+        { totalGain: toBN(0), totalLoss: toBN(0) }
+      );
 
       const amountEarnt = totalGain.minus(totalLoss);
 
-      const amountUsdc = priceUsdc
-        .multipliedBy(amountEarnt)
-        .dividedBy(new BigNumber(10).pow(new BigNumber(data.vault.token.decimals)));
+      const amountUsdc = priceUsdc.multipliedBy(amountEarnt).dividedBy(toBN(10).pow(toBN(data.vault.token.decimals)));
 
       const dayData: EarningsDayData = {
         earnings: {
@@ -269,13 +265,11 @@ export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
       return dayData;
     });
 
-    const result: AssetHistoricEarnings = {
+    return {
       assetAddress: vault,
       dayData: earningsDayData,
       decimals: data.vault.token.decimals,
     };
-
-    return result;
   }
 
   async accountHistoricEarnings(
