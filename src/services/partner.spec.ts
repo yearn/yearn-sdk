@@ -5,6 +5,7 @@ import { PartnerService } from "./partner";
 
 const sendTransactionMock = jest.fn();
 const addressByIdMock = jest.fn().mockResolvedValue("0xe11dC9f2Ab122dC5978EACA41483Da0D7D7e6128");
+const setCachedAddressByIdMock = jest.fn();
 
 jest.mock("../context", () => ({
   Context: jest.fn().mockImplementation(() => ({
@@ -24,6 +25,7 @@ jest.mock("../context", () => ({
 jest.mock("./addressProvider", () => ({
   AddressProvider: jest.fn().mockImplementation(() => ({
     addressById: addressByIdMock,
+    setCachedAddressById: setCachedAddressByIdMock,
   })),
 }));
 
