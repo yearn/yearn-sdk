@@ -27,6 +27,7 @@ export class PartnerService<T extends ChainId> extends ContractService<T> {
   get address(): Promise<string | undefined> {
     return (async (): Promise<string | undefined> => {
       const partnerAddress = await this.addressProvider.addressById(PartnerService.contractId);
+      this.addressProvider.setCachedAddressById(PartnerService.contractId, partnerAddress);
       return partnerAddress !== ZeroAddress ? partnerAddress : undefined;
     })();
   }

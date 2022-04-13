@@ -88,6 +88,7 @@ export class ContractService<T extends ChainId, E = Record<string, unknown>> ext
 
     try {
       const address = await this.addressProvider.addressById(contractId);
+      this.addressProvider.setCachedAddressById(contractId, address);
       // TODO - check whether `address` is zero, if it is then throw an error.
       // Needs to be handled appropriately wherever this function is used
       return new WrappedContract(address, abi, ctx);
