@@ -270,8 +270,69 @@ describe("EarningsInterface", () => {
     });
   });
 
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
-  describe.skip("assetHistoricEarnings", () => {});
+  describe("assetHistoricEarnings", () => {
+    beforeEach(() => {
+      subgraphFetchQueryMock.mockResolvedValue({
+        data: {
+          block_30380: {
+            strategies: [
+              {
+                latestReport: {
+                  totalGain: "303000000000000000000",
+                  totalLoss: "80000000000000000000",
+                },
+              },
+            ],
+            vaultDayData: [{ timestamp: "1648887421" }],
+          },
+          block_36140: {
+            strategies: [
+              {
+                latestReport: {
+                  totalGain: "361000000000000000000",
+                  totalLoss: "40000000000000000000",
+                },
+              },
+            ],
+            vaultDayData: [{ timestamp: "1648801021" }],
+          },
+          block_41900: {
+            strategies: [
+              {
+                latestReport: {
+                  totalGain: "419000000000000000000",
+                  totalLoss: "0",
+                },
+              },
+            ],
+            vaultDayData: [{ timestamp: "1648714621" }],
+          },
+          vault: {
+            token: {
+              id: "0xVaultTokenId",
+              decimals: "18",
+            },
+          },
+        },
+      });
+      oracleGetPriceUsdcMock.mockResolvedValue("6000000");
+    });
+
+    it("should return the asset historic earnings", async () => {
+      const actual = await earningsInterface.assetHistoricEarnings("0x00", 3, 42000);
+
+      expect(actual).toEqual({
+        assetAddress: "0x00",
+        dayData: [
+          { date: "2022-04-02T08:17:01.000Z", earnings: { amount: "223000000000000000000", amountUsdc: "1338000000" } },
+          { date: "2022-04-01T08:17:01.000Z", earnings: { amount: "321000000000000000000", amountUsdc: "1926000000" } },
+          { date: "2022-03-31T08:17:01.000Z", earnings: { amount: "419000000000000000000", amountUsdc: "2514000000" } },
+        ],
+        decimals: "18",
+      });
+      expect(actual.dayData.length).toEqual(3);
+    });
+  });
 
   // eslint-disable-next-line @typescript-eslint/no-empty-function
   describe.skip("accountHistoricEarnings", () => {});
