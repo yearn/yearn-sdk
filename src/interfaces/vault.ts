@@ -418,7 +418,6 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
 
     const zapContractId = willZapToPickleJar ? ContractAddressId.pickleZapIn : ContractAddressId.zapperZapIn;
     const zapContractAddress = await this.yearn.addressProvider.addressById(zapContractId);
-    this.yearn.addressProvider.setCachedAddressById(zapContractId, zapContractAddress);
     return zapContractAddress;
   }
 
@@ -427,7 +426,6 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
     if (willWithdrawToUnderlyingToken) return vaultAddress;
 
     const zapContractAddress = await this.yearn.addressProvider.addressById(ContractAddressId.zapperZapOut);
-    this.yearn.addressProvider.setCachedAddressById(ContractAddressId.zapperZapOut, zapContractAddress);
     return zapContractAddress;
   }
 

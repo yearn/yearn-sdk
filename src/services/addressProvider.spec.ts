@@ -26,6 +26,10 @@ jest.mock("../common", () => {
 });
 
 describe("AddressProvider", () => {
+  beforeEach(() => {
+    jest.spyOn(console, "error");
+  });
+
   afterEach(() => {
     jest.clearAllMocks();
     Date.now = jest.fn(() => NOW);
@@ -50,6 +54,10 @@ describe("AddressProvider", () => {
   ([1, 1337, 250, 42161] as ChainId[]).forEach((chainId) => {
     describe(`when chainId is ${chainId}`, () => {
       describe("addressById", () => {
+        afterEach(() => {
+          contractReadAddressByIdMock.mockReset();
+        });
+
         it("should return the address from the contract if id is not cached", async () => {
           contractReadAddressByIdMock.mockResolvedValueOnce("0xContract");
           const addressProvider = new AddressProvider(chainId, new Context({}));
@@ -62,61 +70,42 @@ describe("AddressProvider", () => {
         });
 
         it("should return the address from cache if id was freshly cached", async () => {
-          contractReadAddressByIdMock.mockResolvedValueOnce("0xContract");
+          contractReadAddressByIdMock.mockResolvedValueOnce("0xCached");
           const addressProvider = new AddressProvider(chainId, new Context({}));
-          addressProvider.setCachedAddressById(ContractAddressId.oracle, "0xCached");
+          await addressProvider.addressById(ContractAddressId.oracle);
+          contractReadAddressByIdMock.mockResolvedValueOnce("0xContract");
           Date.now = jest.fn(() => NOW + 1_000); // 1 second later
 
           const actual = await addressProvider.addressById(ContractAddressId.oracle);
 
           expect(actual).toEqual("0xCached");
-          expect(contractReadAddressByIdMock).not.toHaveBeenCalled();
+          expect(contractReadAddressByIdMock).toHaveBeenCalledTimes(1);
+          expect(contractReadAddressByIdMock).toHaveBeenCalledWith(ContractAddressId.oracle);
         });
 
         it("should return the address from the contract if the cache has expired", async () => {
-          contractReadAddressByIdMock.mockResolvedValueOnce("0xContract");
+          contractReadAddressByIdMock.mockResolvedValueOnce("0xCached");
           const addressProvider = new AddressProvider(chainId, new Context({}));
-          addressProvider.setCachedAddressById(ContractAddressId.oracle, "0xOldCachedAddress");
+          await addressProvider.addressById(ContractAddressId.oracle);
+          contractReadAddressByIdMock.mockResolvedValueOnce("0xContract");
           Date.now = jest.fn(() => NOW + 60_000); // 1 minute later
 
           const actual = await addressProvider.addressById(ContractAddressId.oracle);
 
           expect(actual).toEqual("0xContract");
-          expect(contractReadAddressByIdMock).toHaveBeenCalledTimes(1);
+          expect(contractReadAddressByIdMock).toHaveBeenCalledTimes(2);
           expect(contractReadAddressByIdMock).toHaveBeenCalledWith(ContractAddressId.oracle);
         });
-      });
 
-      describe("setCachedAddressById", () => {
-        it("should set the address in the cache if it does not exist", async () => {
+        it("should throw an error when reading from the contract fails", () => {
+          contractReadAddressByIdMock.mockRejectedValueOnce(new Error("Contract read error"));
           const addressProvider = new AddressProvider(chainId, new Context({}));
-          addressProvider.setCachedAddressById(ContractAddressId.oracle, "0xNewCachedAddress");
 
-          const actual = await addressProvider.addressById(ContractAddressId.oracle);
-
-          expect(actual).toEqual("0xNewCachedAddress");
-        });
-
-        it("should set the address if cache is older than 30 seconds", async () => {
-          const addressProvider = new AddressProvider(chainId, new Context({}));
-          addressProvider.setCachedAddressById(ContractAddressId.oracle, "0xOldCachedAddress");
-          Date.now = jest.fn(() => NOW + 60_000); // 1 minute later
-          addressProvider.setCachedAddressById(ContractAddressId.oracle, "0xNewCachedAddress");
-
-          const actual = await addressProvider.addressById(ContractAddressId.oracle);
-
-          expect(actual).toEqual("0xNewCachedAddress");
-        });
-
-        it("should *not* set the address if cache is newer than 30 seconds", async () => {
-          const addressProvider = new AddressProvider(chainId, new Context({}));
-          addressProvider.setCachedAddressById(ContractAddressId.oracle, "0xOldCachedAddress");
-          Date.now = jest.fn(() => NOW + 29_000); // 29 seconds later
-          addressProvider.setCachedAddressById(ContractAddressId.oracle, "0xNewCachedAddress");
-
-          const actual = await addressProvider.addressById(ContractAddressId.oracle);
-
-          expect(actual).toEqual("0xOldCachedAddress");
+          expect(() => addressProvider.addressById(ContractAddressId.oracle)).rejects.toThrow(
+            new Error("Failed to read contract address for ORACLE: Error: Contract read error")
+          );
+          expect(contractReadAddressByIdMock).toHaveBeenCalledTimes(1);
+          expect(contractReadAddressByIdMock).toHaveBeenCalledWith(ContractAddressId.oracle);
         });
       });
 

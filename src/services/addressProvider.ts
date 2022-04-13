@@ -3,7 +3,7 @@ import { ChainId } from "../chain";
 import { ContractAddressId, Service, WrappedContract } from "../common";
 import { Context } from "../context";
 import { structArray } from "../struct";
-import { Address } from "../types";
+import { Address, SdkError } from "../types";
 
 interface AddressMetadata {
   addr: Address;
@@ -53,21 +53,26 @@ export class AddressProvider<T extends ChainId> extends Service {
   }
 
   async addressById(id: ContractAddressId): Promise<Address> {
-    const { address, timestamp } = this.cachedAddressesById.get(id) || {};
+    const { address: cachedAddress, timestamp } = this.cachedAddressesById.get(id) || {};
 
-    if (address && this.isCacheFresh({ timestamp })) {
-      return address;
+    if (cachedAddress && this.isCacheFresh({ timestamp })) {
+      return cachedAddress;
     }
 
-    return this.contract.read.addressById(id);
+    try {
+      const address = await this.contract.read.addressById(id);
+      return this.setCachedAddressById(id, address);
+    } catch (error) {
+      throw new SdkError(`Failed to read contract address for ${id}: ${error}`);
+    }
   }
 
-  setCachedAddressById(id: ContractAddressId, address: Address) {
+  private setCachedAddressById(id: ContractAddressId, address: Address): Address {
     const NOW = new Date(Date.now()).getTime();
 
     if (!this.cachedAddressesById.has(id)) {
       this.cachedAddressesById.set(id, { address, timestamp: NOW });
-      return;
+      return address;
     }
 
     const { timestamp } = this.cachedAddressesById.get(id) || {};
@@ -75,6 +80,8 @@ export class AddressProvider<T extends ChainId> extends Service {
     if (!this.isCacheFresh({ timestamp })) {
       this.cachedAddressesById.set(id, { address, timestamp: NOW });
     }
+
+    return address;
   }
 
   async addressesMetadataByIdStartsWith(prefix: string): Promise<AddressMetadata[]> {
