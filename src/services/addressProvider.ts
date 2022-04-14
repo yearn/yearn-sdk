@@ -3,7 +3,7 @@ import { ChainId } from "../chain";
 import { ContractAddressId, Service, WrappedContract } from "../common";
 import { Context } from "../context";
 import { structArray } from "../struct";
-import { Address } from "../types";
+import { Address, SdkError } from "../types";
 
 interface AddressMetadata {
   addr: Address;
@@ -24,10 +24,18 @@ export class AddressProvider<T extends ChainId> extends Service {
     `function addressesMetadataByIdStartsWith(string) public view returns (${AddressMetadataAbi}[] memory)`,
   ];
   private contract: WrappedContract;
+  private cachedAddressesById: Map<
+    ContractAddressId,
+    {
+      address: Address;
+      timestamp: number;
+    }
+  >;
 
   constructor(chainId: T, ctx: Context) {
     super(chainId, ctx);
     this.contract = new WrappedContract(AddressProvider.addressByChain(chainId), AddressProvider.abi, ctx);
+    this.cachedAddressesById = new Map();
   }
 
   static addressByChain(chainId: ChainId): string {
@@ -40,15 +48,51 @@ export class AddressProvider<T extends ChainId> extends Service {
       case 42161:
         return "0xcAd10033C86B0C1ED6bfcCAa2FF6779938558E9f";
       default:
-        throw new Error("Unsupported chain id");
+        throw new Error(`Unsupported chain id: ${chainId}`);
     }
   }
 
-  async addressById(id: ContractAddressId): Promise<string> {
-    return this.contract.read.addressById(id);
+  async addressById(id: ContractAddressId): Promise<Address> {
+    const { address: cachedAddress, timestamp } = this.cachedAddressesById.get(id) || {};
+
+    if (cachedAddress && this.isCacheFresh({ timestamp })) {
+      return cachedAddress;
+    }
+
+    try {
+      const address = await this.contract.read.addressById(id);
+      return this.setCachedAddressById({ id, address });
+    } catch (error) {
+      throw new SdkError(`Failed to read contract address for ${id}: ${error}`);
+    }
+  }
+
+  private setCachedAddressById({ id, address }: { id: ContractAddressId; address: Address }): Address {
+    const NOW = new Date(Date.now()).getTime();
+
+    if (!this.cachedAddressesById.has(id)) {
+      this.cachedAddressesById.set(id, { address, timestamp: NOW });
+      return address;
+    }
+
+    const { timestamp } = this.cachedAddressesById.get(id) || {};
+
+    if (!this.isCacheFresh({ timestamp })) {
+      this.cachedAddressesById.set(id, { address, timestamp: NOW });
+    }
+
+    return address;
   }
 
   async addressesMetadataByIdStartsWith(prefix: string): Promise<AddressMetadata[]> {
     return this.contract.read.addressById(prefix).then(structArray);
+  }
+
+  private isCacheFresh({ timestamp }: { timestamp?: number }): boolean {
+    if (!timestamp) {
+      return false;
+    }
+
+    return new Date(Date.now()).getTime() - timestamp <= 30_000;
   }
 }
