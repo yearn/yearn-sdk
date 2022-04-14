@@ -1,7 +1,7 @@
 import { BigNumber } from "@ethersproject/bignumber";
 import { MaxUint256 } from "@ethersproject/constants";
-import { CallOverrides, Contract } from "@ethersproject/contracts";
-import { TransactionRequest, TransactionResponse } from "@ethersproject/providers";
+import { CallOverrides, Contract, PopulatedTransaction } from "@ethersproject/contracts";
+import { JsonRpcSigner, TransactionRequest, TransactionResponse } from "@ethersproject/providers";
 
 import { CachedFetcher } from "../cache";
 import { ChainId, isEthereum } from "../chain";
@@ -451,38 +451,30 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
     options: DepositOptions = {},
     overrides: CallOverrides = {}
   ): Promise<TransactionResponse> {
-    const signer = this.ctx.provider.write.getSigner(account);
-    const isZappingIntoPickleJar = PickleJars.includes(vault);
+    if (token === EthAddress) {
+      throw new SdkError("deposit:v2:eth not implemented");
+    }
 
-    if (isZappingIntoPickleJar) {
+    const signer = this.ctx.provider.write.getSigner(account);
+
+    if (this.isZappingIntoPickleJar({ vault })) {
       return this.zapIn(vault, token, amount, account, options, ZapProtocol.PICKLE, overrides);
     }
 
     const [vaultRef] = await this.getStatic([vault], overrides);
-    if (vaultRef.token === token) {
-      if (token === EthAddress) {
-        throw new SdkError("deposit:v2:eth not implemented");
-      } else {
-        const shouldUsePartner = this.shouldUsePartnerService(vault);
-        const vaultContract = new Contract(vault, VaultAbi, signer);
-
-        const makeTransaction = async (overrides: CallOverrides): Promise<TransactionResponse> => {
-          const tx = shouldUsePartner
-            ? await this.yearn.services.partner?.populateDepositTransaction(vault, amount, overrides)
-            : await vaultContract.populateTransaction.deposit(amount, overrides);
-
-          if (!tx) {
-            throw new SdkError("deposit transaction failed");
-          }
-
-          return this.yearn.services.transaction.sendTransaction(tx);
-        };
-
-        return this.executeVaultContractTransaction(makeTransaction, overrides);
-      }
-    } else {
+    if (vaultRef.token !== token) {
       return this.zapIn(vault, token, amount, account, options, ZapProtocol.YEARN, overrides);
     }
+
+    return this.executeVaultContractTransaction(async (overrides: CallOverrides): Promise<TransactionResponse> => {
+      const populatedTransaction = await this.populateTransaction({ vault, amount, overrides, signer });
+
+      if (!populatedTransaction) {
+        throw new SdkError("deposit transaction failed");
+      }
+
+      return this.yearn.services.transaction.sendTransaction(populatedTransaction);
+    }, overrides);
   }
 
   /**
@@ -687,5 +679,28 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
       composite: null,
     };
     return apy;
+  }
+
+  async populateTransaction({
+    vault,
+    amount,
+    overrides,
+    signer,
+  }: {
+    vault: Address;
+    amount: Integer;
+    overrides: CallOverrides;
+    signer: JsonRpcSigner;
+  }): Promise<PopulatedTransaction | undefined> {
+    if (this.shouldUsePartnerService(vault)) {
+      return this.yearn.services.partner?.populateDepositTransaction(vault, amount, overrides);
+    }
+
+    const vaultContract = new Contract(vault, VaultAbi, signer);
+    return vaultContract.populateTransaction.deposit(amount, overrides);
+  }
+
+  private isZappingIntoPickleJar({ vault }: { vault: string }) {
+    return PickleJars.includes(vault);
   }
 }

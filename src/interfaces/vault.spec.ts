@@ -892,14 +892,7 @@ describe("VaultInterface", () => {
 
               const actualDeposit = await vaultInterface.deposit(vault, token, amount, account);
 
-              expect(Contract).toHaveBeenCalledTimes(1);
-              expect(Contract).toHaveBeenCalledWith(
-                "0xVault",
-                ["function deposit(uint256 amount) public", "function withdraw(uint256 amount) public"],
-                {
-                  sendTransaction: sendTransactionMock,
-                }
-              );
+              expect(Contract).not.toHaveBeenCalledTimes(1);
 
               expect(partnerPopulateDepositTransactionMock).not.toHaveBeenCalled();
               expect(executeVaultContractTransactionMock).toHaveBeenCalledTimes(1);
