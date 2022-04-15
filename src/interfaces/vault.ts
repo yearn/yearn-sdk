@@ -451,10 +451,6 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
     options: DepositOptions = {},
     overrides: CallOverrides = {}
   ): Promise<TransactionResponse> {
-    if (token === EthAddress) {
-      throw new SdkError("deposit:v2:eth not implemented");
-    }
-
     const signer = this.ctx.provider.write.getSigner(account);
 
     if (this.isZappingIntoPickleJar({ vault })) {
@@ -464,6 +460,10 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
     const [vaultRef] = await this.getStatic([vault], overrides);
     if (vaultRef.token !== token) {
       return this.zapIn(vault, token, amount, account, options, ZapProtocol.YEARN, overrides);
+    }
+
+    if (token === EthAddress) {
+      throw new SdkError("deposit:v2:eth not implemented");
     }
 
     return this.executeVaultContractTransaction(async (overrides: CallOverrides): Promise<TransactionResponse> => {
