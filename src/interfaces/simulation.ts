@@ -3,7 +3,7 @@ import { Contract } from "@ethersproject/contracts";
 import { JsonRpcSigner } from "@ethersproject/providers";
 import BigNumber from "bignumber.js";
 
-import { ChainId } from "../chain";
+import { ChainId, isEthereum, isFantom } from "../chain";
 import { ServiceInterface } from "../common";
 import { EthAddress, WethAddress, ZeroAddress } from "../helpers";
 import { PickleJars } from "../services/partners/pickle";
@@ -20,6 +20,26 @@ import {
 } from "../types";
 import { SimulationOptions, TransactionOutcome } from "../types/custom/simulation";
 import { PickleJarContract, VaultContract, YearnVaultContract } from "../vault";
+
+type ApprovalDataOptions = {
+  sellToken: Address;
+  from: Address;
+  options: SimulationOptions;
+  toVault: Address;
+  amount: Integer;
+  signer: JsonRpcSigner;
+};
+
+type ApprovalData = { approvalTransactionId?: string; forkId?: string };
+
+type ZappingApprovalDataOptions = {
+  sellToken: Address;
+  from: Address;
+  zapProtocol: ZapProtocol;
+  options: SimulationOptions;
+};
+
+type ZappingApprovalData = { needsApproving: boolean } & ApprovalData;
 
 /**
  * [[SimulationInterface]] allows the simulation of ethereum transactions using Tenderly's api.
@@ -47,75 +67,68 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     const underlyingToken = await vaultContract.token().catch(() => {
       throw new EthersError("failed to fetch token", EthersError.FAIL_TOKEN_FETCH);
     });
-    const isZapping = underlyingToken !== sellToken;
-    let forkId: string | undefined;
-    let simulateDeposit: (save: boolean) => Promise<TransactionOutcome>;
 
-    if (isZapping) {
+    if (this.isZapping({ underlyingToken, sellToken })) {
       if (!options.slippage) {
         throw new SdkError("slippage needs to be specified for a zap", SdkError.NO_SLIPPAGE);
       }
 
-      let needsApproving: boolean;
+      const { needsApproving, approvalTransactionId, forkId } = await this.getZappingApprovalData({
+        sellToken,
+        from,
+        zapProtocol,
+        options,
+      });
 
-      if (sellToken === EthAddress) {
-        needsApproving = false;
-      } else {
-        needsApproving = await this.yearn.services.zapper
-          .zapInApprovalState(from, sellToken, zapProtocol)
-          .then((state) => !state.isApproved)
-          .catch(() => {
-            throw new ZapperError("approval state", ZapperError.ZAP_IN_APPROVAL_STATE);
-          });
+      if (isEthereum(this.chainId)) {
+        return this.simulationExecutor.executeSimulationWithReSimulationOnFailure(
+          (save: boolean): Promise<TransactionOutcome> => {
+            return this.zapIn(
+              from,
+              sellToken,
+              underlyingToken,
+              amount,
+              toVault,
+              vaultContract,
+              zapProtocol,
+              needsApproving,
+              {
+                ...options,
+                save,
+                forkId,
+                root: approvalTransactionId,
+              }
+            );
+          },
+          forkId
+        );
       }
 
-      forkId = needsApproving ? await this.simulationExecutor.createFork() : undefined;
-      options.forkId = forkId;
-
-      const approvalTransactionId = needsApproving
-        ? await this.yearn.services.zapper
-            .zapInApprovalTransaction(from, sellToken, "0", zapProtocol)
-            .catch(() => {
-              throw new ZapperError("approval", ZapperError.ZAP_IN_APPROVAL);
-            })
-            .then(async (approvalTransaction) => {
-              return await this.simulateZapApprovalTransaction(approvalTransaction, options);
-            })
-            .then((res) => res.simulation.id)
-        : undefined;
-      options.root = approvalTransactionId;
-
-      simulateDeposit = (save: boolean): Promise<TransactionOutcome> => {
-        options.save = save;
-        return this.zapIn(
-          from,
-          sellToken,
-          underlyingToken,
-          amount,
-          toVault,
-          vaultContract,
-          zapProtocol,
-          needsApproving,
-          options
-        );
-      };
-    } else {
-      const needsApproving = await this.depositNeedsApproving(from, sellToken, toVault, amount, signer);
-
-      forkId = needsApproving ? await this.simulationExecutor.createFork() : undefined;
-      options.forkId = forkId;
-
-      const approvalTransactionId = needsApproving
-        ? await this.approve(from, sellToken, amount, toVault, options)
-        : undefined;
-      options.root = approvalTransactionId;
-
-      simulateDeposit = (save: boolean): Promise<TransactionOutcome> => {
-        options.save = save;
-        return this.directDeposit(from, sellToken, amount, toVault, vaultContract, options);
-      };
+      throw new SdkError(
+        `Unsupported zapping for chainId: ${this.chainId}. Token supported options: ${options.token?.supported}`
+      );
     }
-    return this.simulationExecutor.executeSimulationWithReSimulationOnFailure(simulateDeposit, forkId);
+
+    const { approvalTransactionId, forkId } = await this.getApprovalData({
+      sellToken,
+      from,
+      options,
+      toVault,
+      amount,
+      signer,
+    });
+
+    return this.simulationExecutor.executeSimulationWithReSimulationOnFailure(
+      (save: boolean): Promise<TransactionOutcome> => {
+        return this.directDeposit(from, sellToken, amount, toVault, vaultContract, {
+          ...options,
+          forkId,
+          save,
+          root: approvalTransactionId,
+        });
+      },
+      forkId
+    );
   }
 
   async withdraw(
@@ -511,5 +524,82 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
       zapApprovalTransaction.data,
       options
     );
+  }
+
+  private isZapping({ underlyingToken, sellToken }: { underlyingToken: string; sellToken: string }) {
+    return underlyingToken !== sellToken;
+  }
+
+  private async getZappingApprovalData({
+    sellToken,
+    from,
+    zapProtocol,
+    options,
+  }: ZappingApprovalDataOptions): Promise<ZappingApprovalData> {
+    if (isEthereum(this.chainId) && sellToken === EthAddress) {
+      return { needsApproving: false };
+    }
+
+    const { token } = options;
+
+    if (isEthereum(this.chainId) && token?.supported.zapperZapIn) {
+      const isApprovalNeeded = await this.yearn.services.zapper
+        .zapInApprovalState(from, sellToken, zapProtocol)
+        .then((state) => !state.isApproved)
+        .catch(() => {
+          throw new ZapperError("approval state", ZapperError.ZAP_IN_APPROVAL_STATE);
+        });
+
+      if (!isApprovalNeeded) {
+        return { needsApproving: false };
+      }
+
+      const forkId = await this.simulationExecutor.createFork();
+
+      const approvalTransactionId = await this.yearn.services.zapper
+        .zapInApprovalTransaction(from, sellToken, "0", zapProtocol)
+        .catch(() => {
+          throw new ZapperError("approval", ZapperError.ZAP_IN_APPROVAL);
+        })
+        .then(async (approvalTransaction) => {
+          return await this.simulateZapApprovalTransaction(approvalTransaction, options);
+        })
+        .then((res) => res.simulation.id);
+
+      return {
+        needsApproving: true,
+        approvalTransactionId,
+        forkId,
+      };
+    }
+
+    if (isFantom(this.chainId) && token?.supported.ftmApeZap) {
+      // TODO
+      throw new Error("Fantom zap in not implemented!");
+    }
+
+    throw new SdkError(`Unsupported zapping: ${token?.supported}`);
+  }
+
+  private async getApprovalData({
+    sellToken,
+    from,
+    options,
+    toVault,
+    amount,
+    signer,
+  }: ApprovalDataOptions): Promise<ApprovalData> {
+    const needsApproving = await this.depositNeedsApproving(from, sellToken, toVault, amount, signer);
+
+    const forkId = needsApproving ? await this.simulationExecutor.createFork() : undefined;
+
+    const approvalTransactionId = needsApproving
+      ? await this.approve(from, sellToken, amount, toVault, options)
+      : undefined;
+
+    return {
+      approvalTransactionId,
+      forkId,
+    };
   }
 }
