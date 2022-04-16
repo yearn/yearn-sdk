@@ -242,6 +242,7 @@ describe("EarningsInterface", () => {
         });
       });
     });
+  });
 
   describe("assetsHistoricEarnings", () => {
     const assetHistoricEarnings = createMockAssetHistoricEarnings();
