@@ -185,24 +185,25 @@ describe("EarningsInterface", () => {
     });
 
     describe("when there is an account", () => {
-      const accountAddress: Address = "0x001";
-      const apyMock = createMockApy({
-        net_apy: 42,
-      });
       const accountEarningsResponse = createMockAccountEarningsResponse();
       const tokensValueInUsdcMock: jest.Mock<Promise<BigNumber>> = jest.fn();
 
       beforeEach(() => {
         subgraphFetchQueryMock.mockResolvedValue(accountEarningsResponse);
-        visionApyMock.mockResolvedValue({
-          [accountAddress]: apyMock,
-        });
-        getAddressMock.mockReturnValue(accountAddress);
         (earningsInterface as any).tokensValueInUsdc = tokensValueInUsdcMock;
         tokensValueInUsdcMock.mockResolvedValue(new BigNumber(10));
+        getAddressMock.mockReturnValue("0x001");
       });
 
       it("should return an empty EarningsUserData", async () => {
+        const accountAddress: Address = "0x001";
+        visionApyMock.mockResolvedValue({
+          [accountAddress]: createMockApy({
+            net_apy: 42,
+          }),
+        });
+        getAddressMock.mockReturnValue(accountAddress);
+
         const actual = await earningsInterface.accountAssetsData(accountAddress);
 
         expect(visionApyMock).toHaveBeenCalledTimes(1);
@@ -219,6 +220,25 @@ describe("EarningsInterface", () => {
           estimatedYearlyYield: "420",
           grossApy: 42,
           holdings: "10",
+        });
+      });
+
+      it("should filter out new vaults for the estimated yield calculation", async () => {
+        const accountAddress: Address = "0x001";
+        visionApyMock.mockResolvedValue({
+          [accountAddress]: createMockApy({
+            net_apy: 42,
+            type: "new",
+          }),
+        });
+
+        const actual = await earningsInterface.accountAssetsData(accountAddress);
+
+        expect(visionApyMock).toHaveBeenCalledTimes(1);
+        expect(visionApyMock).toHaveBeenCalledWith([accountAddress]);
+        expect(getAddressMock).toHaveBeenCalledTimes(1);
+        expect(actual).toMatchObject({
+          estimatedYearlyYield: "0",
         });
       });
     });
