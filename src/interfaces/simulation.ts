@@ -51,7 +51,8 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     const depositProps = { from, sellToken, amount, toVault, options };
 
     if (underlyingToken !== sellToken) {
-      return this.handleZapDeposit({ depositProps, underlyingToken, vaultContract });
+      const { simulateFn, forkId } = await this.getZapSimulationArgs({ depositProps, underlyingToken, vaultContract });
+      return this.simulationExecutor.executeSimulationWithReSimulationOnFailure(simulateFn, forkId);
     }
 
     // TODO: Handle when it's not zapping
@@ -66,7 +67,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     return this.simulationExecutor.executeSimulationWithReSimulationOnFailure(simulateFn, forkId);
   }
 
-  private async handleZapDeposit({
+  private async getZapSimulationArgs({
     depositProps,
     underlyingToken,
     vaultContract,
@@ -74,7 +75,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     depositProps: DepositProps;
     underlyingToken: string;
     vaultContract: PickleJarContract | YearnVaultContract;
-  }): Promise<TransactionOutcome> {
+  }): Promise<{ simulateFn: (save: boolean) => Promise<TransactionOutcome>; forkId?: string }> {
     const { toVault, options } = depositProps;
 
     if (!options.slippage) {
@@ -99,8 +100,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
           skipGasEstimate: needsApproving,
         });
       };
-
-      return this.simulationExecutor.executeSimulationWithReSimulationOnFailure(simulateFn, forkId);
+      return { simulateFn, forkId };
     }
 
     throw new SdkError(
