@@ -8,16 +8,7 @@ import { ServiceInterface } from "../common";
 import { EthAddress, WethAddress, ZeroAddress } from "../helpers";
 import { PickleJars } from "../services/partners/pickle";
 import { SimulationExecutor, SimulationResponse } from "../simulationExecutor";
-import {
-  Address,
-  EthersError,
-  Integer,
-  PriceFetchingError,
-  SdkError,
-  ZapApprovalTransactionOutput,
-  ZapperError,
-  ZapProtocol,
-} from "../types";
+import { Address, EthersError, Integer, PriceFetchingError, SdkError, ZapperError, ZapProtocol } from "../types";
 import { SimulationOptions, TransactionOutcome } from "../types/custom/simulation";
 import { PickleJarContract, VaultContract, YearnVaultContract } from "../vault";
 
@@ -59,7 +50,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
 
     const depositProps = { from, sellToken, amount, toVault, options };
 
-    if (this.isZapping({ underlyingToken, sellToken })) {
+    if (underlyingToken !== sellToken) {
       return this.handleZapDeposit({ depositProps, underlyingToken, vaultContract });
     }
 
@@ -156,8 +147,8 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
             .catch(() => {
               throw new ZapperError("zap out approval transaction", ZapperError.ZAP_OUT_APPROVAL);
             })
-            .then(async (approvalTransaction) => {
-              return await this.simulateZapApprovalTransaction(approvalTransaction, options);
+            .then(async ({ from, to, data }) => {
+              return this.simulationExecutor.makeSimulationRequest(from, to, data, { ...options, save: true });
             })
             .then((res) => res.simulation.id)
         : undefined;
@@ -506,23 +497,6 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     return !!this.yearn.services.partner?.isAllowed(vault);
   }
 
-  private async simulateZapApprovalTransaction(
-    zapApprovalTransaction: ZapApprovalTransactionOutput,
-    options: SimulationOptions
-  ): Promise<SimulationResponse> {
-    options.save = true;
-    return await this.simulationExecutor.makeSimulationRequest(
-      zapApprovalTransaction.from,
-      zapApprovalTransaction.to,
-      zapApprovalTransaction.data,
-      options
-    );
-  }
-
-  private isZapping({ underlyingToken, sellToken }: { underlyingToken: string; sellToken: string }) {
-    return underlyingToken !== sellToken;
-  }
-
   private async getZappingApprovalData({ depositProps }: { depositProps: DepositProps }): Promise<ZappingApprovalData> {
     const { sellToken, from, toVault, options } = depositProps;
 
@@ -551,8 +525,8 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
         .catch(() => {
           throw new ZapperError("approval", ZapperError.ZAP_IN_APPROVAL);
         })
-        .then(async (approvalTransaction) => {
-          return await this.simulateZapApprovalTransaction(approvalTransaction, options);
+        .then(async ({ from, to, data }) => {
+          return this.simulationExecutor.makeSimulationRequest(from, to, data, { ...options, save: true });
         })
         .then((res) => res.simulation.id);
 
