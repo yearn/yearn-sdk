@@ -156,7 +156,13 @@ describe("Simulation interface", () => {
       tokenMock.mockReturnValueOnce(Promise.resolve("0x001"));
       zapInApprovalStateMock.mockReturnValueOnce(Promise.reject(new Error("something bad happened")));
       try {
-        await simulationInterface.deposit("0x000", "0x000", "1", "0x000", { slippage: 1 });
+        await simulationInterface.deposit("0x000", "0x000", "1", "0x000", {
+          slippage: 1,
+          token: {
+            dataSource: "zapper",
+            supported: { zapperZapIn: true },
+          },
+        });
       } catch (error) {
         expect(error).toBeInstanceOf(ZapperError);
         expect(error).toHaveProperty("error_code", ZapperError.ZAP_IN_APPROVAL_STATE);
@@ -169,7 +175,13 @@ describe("Simulation interface", () => {
       zapInApprovalStateMock.mockReturnValueOnce(Promise.resolve({ isApproved: false }));
       zapInApprovalTransactionMock.mockReturnValueOnce(Promise.reject(new Error("something bad happened")));
       try {
-        await simulationInterface.deposit("0x000", "0x000", "1", "0x000", { slippage: 1 });
+        await simulationInterface.deposit("0x000", "0x000", "1", "0x000", {
+          slippage: 1,
+          token: {
+            dataSource: "zapper",
+            supported: { zapperZapIn: true },
+          },
+        });
       } catch (error) {
         expect(error).toBeInstanceOf(ZapperError);
         expect(error).toHaveProperty("error_code", ZapperError.ZAP_IN_APPROVAL);
@@ -181,7 +193,13 @@ describe("Simulation interface", () => {
       tokenMock.mockReturnValueOnce(Promise.resolve("0x001"));
       zapInMock.mockReturnValueOnce(Promise.reject(new Error("something bad happened")));
       try {
-        await simulationInterface.deposit("0x000", "0x000", "1", "0x000", { slippage: 1 });
+        await simulationInterface.deposit("0x000", "0x000", "1", "0x000", {
+          slippage: 1,
+          token: {
+            dataSource: "zapper",
+            supported: { zapperZapIn: true },
+          },
+        });
       } catch (error) {
         expect(error).toBeInstanceOf(ZapperError);
         expect(error).toHaveProperty("error_code", ZapperError.ZAP_IN);
@@ -193,7 +211,13 @@ describe("Simulation interface", () => {
       tokenMock.mockReturnValueOnce(Promise.resolve("0x001"));
       decimalsMock.mockReturnValueOnce(Promise.reject(new Error("something bad happened")));
       try {
-        await simulationInterface.deposit("0x000", "0x000", "1", "0x000", { slippage: 1 });
+        await simulationInterface.deposit("0x000", "0x000", "1", "0x000", {
+          slippage: 1,
+          token: {
+            dataSource: "zapper",
+            supported: { zapperZapIn: true },
+          },
+        });
       } catch (error) {
         expect(error).toBeInstanceOf(EthersError);
         expect(error).toHaveProperty("error_code", EthersError.NO_DECIMALS);
@@ -205,7 +229,13 @@ describe("Simulation interface", () => {
       tokenMock.mockReturnValueOnce(Promise.resolve("0x001"));
       pricePerShareMock.mockReturnValueOnce(Promise.reject(new Error("something bad happened")));
       try {
-        await simulationInterface.deposit("0x000", "0x000", "1", "0x000", { slippage: 1 });
+        await simulationInterface.deposit("0x000", "0x000", "1", "0x000", {
+          slippage: 1,
+          token: {
+            dataSource: "zapper",
+            supported: { zapperZapIn: true },
+          },
+        });
       } catch (error) {
         expect(error).toBeInstanceOf(EthersError);
         expect(error).toHaveProperty("error_code", EthersError.NO_PRICE_PER_SHARE);
@@ -217,7 +247,13 @@ describe("Simulation interface", () => {
       tokenMock.mockReturnValueOnce(Promise.resolve("0x001"));
       getNormalizedValueUsdcMock.mockReturnValueOnce(Promise.reject(new Error("something bad happened")));
       try {
-        await simulationInterface.deposit("0x000", "0x000", "1", "0x000", { slippage: 1 });
+        await simulationInterface.deposit("0x000", "0x000", "1", "0x000", {
+          slippage: 1,
+          token: {
+            dataSource: "zapper",
+            supported: { zapperZapIn: true },
+          },
+        });
       } catch (error) {
         expect(error).toBeInstanceOf(PriceFetchingError);
         expect(error).toHaveProperty("error_code", PriceFetchingError.FETCHING_PRICE_ORACLE);
@@ -231,6 +267,10 @@ describe("Simulation interface", () => {
       try {
         await simulationInterface.deposit("0x000", "0x000", "1", "0xCeD67a187b923F0E5ebcc77C7f2F7da20099e378", {
           slippage: 1,
+          token: {
+            dataSource: "zapper",
+            supported: { zapperZapIn: true },
+          },
         });
       } catch (error) {
         expect(error).toBeInstanceOf(PriceFetchingError);
@@ -243,7 +283,13 @@ describe("Simulation interface", () => {
       tokenMock.mockReturnValueOnce(Promise.resolve("0x001"));
       getNormalizedValueUsdcMock.mockReturnValueOnce(Promise.reject(new Error("something bad happened")));
       try {
-        await simulationInterface.deposit("0x000", "0x001", "1", "0x0000", { slippage: 1 });
+        await simulationInterface.deposit("0x000", "0x001", "1", "0x0000", {
+          slippage: 1,
+          token: {
+            dataSource: "zapper",
+            supported: { zapperZapIn: true },
+          },
+        });
       } catch (error) {
         expect(error).toBeInstanceOf(PriceFetchingError);
         expect(error).toHaveProperty("error_code", PriceFetchingError.FETCHING_PRICE_ORACLE);
@@ -255,7 +301,13 @@ describe("Simulation interface", () => {
         tokenMock.mockReturnValueOnce(Promise.resolve("0x001"));
         executeSimulationWithReSimulationOnFailureSpy.mockImplementationOnce((fn) => fn());
 
-        await simulationInterface.deposit("0x000", "0x001", "1", "0x0000", { slippage: 1 });
+        await simulationInterface.deposit("0x000", "0x001", "1", "0x0000", {
+          slippage: 1,
+          token: {
+            dataSource: "zapper",
+            supported: { zapperZapIn: true },
+          },
+        });
         expect(executeSimulationWithReSimulationOnFailureSpy).toHaveBeenCalledTimes(1);
         expect(partnerEncodeDepositMock).toHaveBeenCalledTimes(0);
         expect(simulateVaultInteractionSpy).toHaveBeenCalledTimes(1);
@@ -264,6 +316,10 @@ describe("Simulation interface", () => {
           root: undefined,
           save: undefined,
           slippage: 1,
+          token: {
+            dataSource: "zapper",
+            supported: { zapperZapIn: true },
+          },
         });
       });
     });
@@ -276,7 +332,13 @@ describe("Simulation interface", () => {
         tokenMock.mockReturnValueOnce(Promise.resolve("0x001"));
         executeSimulationWithReSimulationOnFailureSpy.mockImplementationOnce((fn) => fn());
 
-        await simulationInterface.deposit("0x000", "0x001", "1", "0x0000", { slippage: 1 });
+        await simulationInterface.deposit("0x000", "0x001", "1", "0x0000", {
+          slippage: 1,
+          token: {
+            dataSource: "zapper",
+            supported: { zapperZapIn: true },
+          },
+        });
         expect(executeSimulationWithReSimulationOnFailureSpy).toHaveBeenCalledTimes(1);
         expect(partnerEncodeDepositMock).toHaveBeenCalledTimes(1);
         expect(simulateVaultInteractionSpy).toHaveBeenCalledTimes(1);
@@ -285,6 +347,10 @@ describe("Simulation interface", () => {
           root: undefined,
           save: undefined,
           slippage: 1,
+          token: {
+            dataSource: "zapper",
+            supported: { zapperZapIn: true },
+          },
         });
       });
     });

@@ -21,23 +21,15 @@ import {
 import { SimulationOptions, TransactionOutcome } from "../types/custom/simulation";
 import { PickleJarContract, VaultContract, YearnVaultContract } from "../vault";
 
-type ApprovalDataOptions = {
-  sellToken: Address;
+type DepositProps = {
   from: Address;
-  options: SimulationOptions;
-  toVault: Address;
+  sellToken: Address;
   amount: Integer;
-  signer: JsonRpcSigner;
+  toVault: Address;
+  options: SimulationOptions;
 };
 
 type ApprovalData = { approvalTransactionId?: string; forkId?: string };
-
-type ZappingApprovalDataOptions = {
-  sellToken: Address;
-  from: Address;
-  zapProtocol: ZapProtocol;
-  options: SimulationOptions;
-};
 
 type ZappingApprovalData = { needsApproving: boolean } & ApprovalData;
 
@@ -57,10 +49,12 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     toVault: Address,
     options: SimulationOptions = {}
   ): Promise<TransactionOutcome> {
+    const depositProps = { from, sellToken, amount, toVault, options };
+
     const signer = this.ctx.provider.write.getSigner(from);
-    const zapProtocol = PickleJars.includes(toVault) ? ZapProtocol.PICKLE : ZapProtocol.YEARN;
+
     const vaultContract =
-      zapProtocol === ZapProtocol.PICKLE
+      this.getZapProtocol({ toVault }) === ZapProtocol.PICKLE
         ? new PickleJarContract(toVault, signer)
         : new YearnVaultContract(toVault, signer);
 
@@ -69,65 +63,77 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     });
 
     if (this.isZapping({ underlyingToken, sellToken })) {
-      if (!options.slippage) {
-        throw new SdkError("slippage needs to be specified for a zap", SdkError.NO_SLIPPAGE);
-      }
-
-      const { needsApproving, approvalTransactionId, forkId } = await this.getZappingApprovalData({
-        sellToken,
-        from,
-        zapProtocol,
-        options,
-      });
-
-      if (isEthereum(this.chainId)) {
-        return this.simulationExecutor.executeSimulationWithReSimulationOnFailure(
-          (save: boolean): Promise<TransactionOutcome> => {
-            return this.zapIn(
-              from,
-              sellToken,
-              underlyingToken,
-              amount,
-              toVault,
-              vaultContract,
-              zapProtocol,
-              needsApproving,
-              {
-                ...options,
-                save,
-                forkId,
-                root: approvalTransactionId,
-              }
-            );
-          },
-          forkId
-        );
-      }
-
-      throw new SdkError(
-        `Unsupported zapping for chainId: ${this.chainId}. Token supported options: ${options.token?.supported}`
-      );
+      return this.handleZapDeposit({ depositProps, underlyingToken, vaultContract });
     }
 
+    // TODO: Handle when it's not zapping
+
     const { approvalTransactionId, forkId } = await this.getApprovalData({
-      sellToken,
-      from,
-      options,
-      toVault,
-      amount,
+      depositProps,
       signer,
     });
 
     return this.simulationExecutor.executeSimulationWithReSimulationOnFailure(
       (save: boolean): Promise<TransactionOutcome> => {
-        return this.directDeposit(from, sellToken, amount, toVault, vaultContract, {
-          ...options,
-          forkId,
-          save,
-          root: approvalTransactionId,
+        return this.directDeposit({
+          depositProps,
+          vaultContract,
+          options: {
+            ...options,
+            forkId,
+            save,
+            root: approvalTransactionId,
+          },
         });
       },
       forkId
+    );
+  }
+
+  private async handleZapDeposit({
+    depositProps,
+    underlyingToken,
+    vaultContract,
+  }: {
+    depositProps: DepositProps;
+    underlyingToken: string;
+    vaultContract: PickleJarContract | YearnVaultContract;
+  }): Promise<TransactionOutcome> {
+    const { toVault, options } = depositProps;
+
+    if (!options.slippage) {
+      throw new SdkError("slippage needs to be specified for a zap", SdkError.NO_SLIPPAGE);
+    }
+
+    const { needsApproving, approvalTransactionId, forkId } = await this.getZappingApprovalData({
+      depositProps,
+    });
+
+    if (isEthereum(this.chainId)) {
+      return this.simulationExecutor.executeSimulationWithReSimulationOnFailure(
+        (save: boolean): Promise<TransactionOutcome> => {
+          return this.zapIn({
+            depositProps: {
+              ...depositProps,
+              options: {
+                ...depositProps.options,
+                save,
+                forkId,
+                root: approvalTransactionId,
+              },
+            },
+            underlyingToken,
+            vaultContract,
+            zapProtocol: this.getZapProtocol({ toVault }),
+            skipGasEstimate: needsApproving,
+          });
+        },
+        forkId
+      );
+    }
+
+    throw new SdkError(
+      `Unsupported zapping for chainId: ${this.chainId}. Token supported options: ${options.token?.supported}`
     );
   }
 
@@ -234,14 +240,17 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     return new BigNumber(result.toString()).lt(new BigNumber(amount));
   }
 
-  private async directDeposit(
-    from: Address,
-    sellToken: Address,
-    amount: Integer,
-    toVault: Address,
-    vaultContract: VaultContract,
-    options: SimulationOptions
-  ): Promise<TransactionOutcome> {
+  private async directDeposit({
+    depositProps,
+    vaultContract,
+    options,
+  }: {
+    depositProps: DepositProps;
+    vaultContract: VaultContract;
+    options: SimulationOptions;
+  }): Promise<TransactionOutcome> {
+    const { toVault, amount, from, sellToken } = depositProps;
+
     const encodedInputData = await (this.shouldUsePartnerService(toVault)
       ? this.yearn.services.partner?.encodeDeposit(toVault, amount)
       : vaultContract.encodeDeposit(amount));
@@ -296,17 +305,21 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     return result;
   }
 
-  private async zapIn(
-    from: Address,
-    sellToken: Address,
-    underlyingTokenAddress: Address,
-    amount: Integer,
-    toVault: Address,
-    vaultContract: VaultContract,
-    zapProtocol: ZapProtocol,
-    skipGasEstimate: boolean,
-    options: SimulationOptions
-  ): Promise<TransactionOutcome> {
+  private async zapIn({
+    depositProps,
+    underlyingToken,
+    vaultContract,
+    zapProtocol,
+    skipGasEstimate,
+  }: {
+    depositProps: DepositProps;
+    underlyingToken: Address;
+    vaultContract: VaultContract;
+    zapProtocol: ZapProtocol;
+    skipGasEstimate: boolean;
+  }): Promise<TransactionOutcome> {
+    const { sellToken, from, amount, toVault, options } = depositProps;
+
     const zapToken = sellToken === EthAddress ? ZeroAddress : sellToken;
 
     if (!options.slippage) {
@@ -388,7 +401,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
       targetTokenAddress: zapInParams.buyTokenAddress,
       targetTokenAmount: tokensReceived,
       targetTokenAmountUsdc: amountReceivedUsdc.toFixed(0),
-      targetUnderlyingTokenAddress: underlyingTokenAddress,
+      targetUnderlyingTokenAddress: underlyingToken,
       targetUnderlyingTokenAmount: targetUnderlyingTokensReceived,
       conversionRate: conversionRate,
       slippage: 1 - conversionRate,
@@ -530,12 +543,9 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     return underlyingToken !== sellToken;
   }
 
-  private async getZappingApprovalData({
-    sellToken,
-    from,
-    zapProtocol,
-    options,
-  }: ZappingApprovalDataOptions): Promise<ZappingApprovalData> {
+  private async getZappingApprovalData({ depositProps }: { depositProps: DepositProps }): Promise<ZappingApprovalData> {
+    const { sellToken, from, toVault, options } = depositProps;
+
     if (isEthereum(this.chainId) && sellToken === EthAddress) {
       return { needsApproving: false };
     }
@@ -544,7 +554,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
 
     if (isEthereum(this.chainId) && token?.supported.zapperZapIn) {
       const isApprovalNeeded = await this.yearn.services.zapper
-        .zapInApprovalState(from, sellToken, zapProtocol)
+        .zapInApprovalState(from, sellToken, this.getZapProtocol({ toVault }))
         .then((state) => !state.isApproved)
         .catch(() => {
           throw new ZapperError("approval state", ZapperError.ZAP_IN_APPROVAL_STATE);
@@ -557,7 +567,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
       const forkId = await this.simulationExecutor.createFork();
 
       const approvalTransactionId = await this.yearn.services.zapper
-        .zapInApprovalTransaction(from, sellToken, "0", zapProtocol)
+        .zapInApprovalTransaction(from, sellToken, "0", this.getZapProtocol({ toVault }))
         .catch(() => {
           throw new ZapperError("approval", ZapperError.ZAP_IN_APPROVAL);
         })
@@ -582,13 +592,14 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
   }
 
   private async getApprovalData({
-    sellToken,
-    from,
-    options,
-    toVault,
-    amount,
+    depositProps,
     signer,
-  }: ApprovalDataOptions): Promise<ApprovalData> {
+  }: {
+    depositProps: DepositProps;
+    signer: JsonRpcSigner;
+  }): Promise<ApprovalData> {
+    const { from, sellToken, toVault, amount, options } = depositProps;
+
     const needsApproving = await this.depositNeedsApproving(from, sellToken, toVault, amount, signer);
 
     const forkId = needsApproving ? await this.simulationExecutor.createFork() : undefined;
@@ -601,5 +612,9 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
       approvalTransactionId,
       forkId,
     };
+  }
+
+  private getZapProtocol({ toVault }: { toVault: string }): ZapProtocol {
+    return PickleJars.includes(toVault) ? ZapProtocol.PICKLE : ZapProtocol.YEARN;
   }
 }
