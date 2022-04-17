@@ -49,18 +49,15 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     toVault: Address,
     options: SimulationOptions = {}
   ): Promise<TransactionOutcome> {
-    const depositProps = { from, sellToken, amount, toVault, options };
-
     const signer = this.ctx.provider.write.getSigner(from);
 
-    const vaultContract =
-      this.getZapProtocol({ toVault }) === ZapProtocol.PICKLE
-        ? new PickleJarContract(toVault, signer)
-        : new YearnVaultContract(toVault, signer);
+    const vaultContract = this.getVaultContract({ toVault, signer });
 
     const underlyingToken = await vaultContract.token().catch(() => {
       throw new EthersError("failed to fetch token", EthersError.FAIL_TOKEN_FETCH);
     });
+
+    const depositProps = { from, sellToken, amount, toVault, options };
 
     if (this.isZapping({ underlyingToken, sellToken })) {
       return this.handleZapDeposit({ depositProps, underlyingToken, vaultContract });
@@ -68,26 +65,14 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
 
     // TODO: Handle when it's not zapping
 
-    const { approvalTransactionId, forkId } = await this.getApprovalData({
-      depositProps,
-      signer,
-    });
+    const { approvalTransactionId, forkId } = await this.getApprovalData({ depositProps, signer });
 
-    return this.simulationExecutor.executeSimulationWithReSimulationOnFailure(
-      (save: boolean): Promise<TransactionOutcome> => {
-        return this.directDeposit({
-          depositProps,
-          vaultContract,
-          options: {
-            ...options,
-            forkId,
-            save,
-            root: approvalTransactionId,
-          },
-        });
-      },
-      forkId
-    );
+    const simulateFn = (save: boolean): Promise<TransactionOutcome> => {
+      const txOptions: SimulationOptions = { ...options, forkId, save, root: approvalTransactionId };
+      return this.directDeposit({ depositProps, vaultContract, options: txOptions });
+    };
+
+    return this.simulationExecutor.executeSimulationWithReSimulationOnFailure(simulateFn, forkId);
   }
 
   private async handleZapDeposit({
@@ -110,26 +95,21 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     });
 
     if (isEthereum(this.chainId)) {
-      return this.simulationExecutor.executeSimulationWithReSimulationOnFailure(
-        (save: boolean): Promise<TransactionOutcome> => {
-          return this.zapIn({
-            depositProps: {
-              ...depositProps,
-              options: {
-                ...depositProps.options,
-                save,
-                forkId,
-                root: approvalTransactionId,
-              },
-            },
-            underlyingToken,
-            vaultContract,
-            zapProtocol: this.getZapProtocol({ toVault }),
-            skipGasEstimate: needsApproving,
-          });
-        },
-        forkId
-      );
+      const simulateFn = (save: boolean): Promise<TransactionOutcome> => {
+        const txOptions: SimulationOptions = { ...options, forkId, save, root: approvalTransactionId };
+        return this.zapIn({
+          depositProps: {
+            ...depositProps,
+            options: txOptions,
+          },
+          underlyingToken,
+          vaultContract,
+          zapProtocol: this.getZapProtocol({ toVault }),
+          skipGasEstimate: needsApproving,
+        });
+      };
+
+      return this.simulationExecutor.executeSimulationWithReSimulationOnFailure(simulateFn, forkId);
     }
 
     throw new SdkError(
@@ -616,5 +596,19 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
 
   private getZapProtocol({ toVault }: { toVault: string }): ZapProtocol {
     return PickleJars.includes(toVault) ? ZapProtocol.PICKLE : ZapProtocol.YEARN;
+  }
+
+  private getVaultContract({
+    toVault,
+    signer,
+  }: {
+    toVault: string;
+    signer: JsonRpcSigner;
+  }): PickleJarContract | YearnVaultContract {
+    if (this.getZapProtocol({ toVault }) === ZapProtocol.PICKLE) {
+      return new PickleJarContract(toVault, signer);
+    }
+
+    return new YearnVaultContract(toVault, signer);
   }
 }
