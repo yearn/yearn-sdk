@@ -7,7 +7,6 @@ import { CachedFetcher } from "../cache";
 import { ChainId, isEthereum } from "../chain";
 import { ContractAddressId, ServiceInterface } from "../common";
 import { chunkArray, EthAddress, isNativeToken, WethAddress } from "../helpers";
-import { PickleJars } from "../services/partners/pickle";
 import {
   Address,
   Apy,
@@ -399,7 +398,7 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
   private async getDepositContractAddress(vaultAddress: Address, tokenAddress: Address): Promise<Address> {
     if (isNativeToken(tokenAddress)) return vaultAddress;
 
-    const willZapToPickleJar = PickleJars.includes(vaultAddress);
+    const willZapToPickleJar = this.isZappingIntoPickleJar({ vault: vaultAddress });
     let willDepositUnderlyingToken = false;
     if (!willZapToPickleJar) {
       willDepositUnderlyingToken = await this.isUnderlyingToken(vaultAddress, tokenAddress);
@@ -701,6 +700,6 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
   }
 
   private isZappingIntoPickleJar({ vault }: { vault: string }) {
-    return PickleJars.includes(vault);
+    return this.yearn.services.zapper.getZapProtocol({ vault }) === ZapProtocol.PICKLE;
   }
 }

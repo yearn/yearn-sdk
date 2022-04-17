@@ -12,6 +12,7 @@ import {
   ZapOutput,
   ZapProtocol,
 } from "../types/custom/zapper";
+import { PickleJars } from "./partners/pickle";
 
 const ZAPPER_AFFILIATE_ADDRESS = "0xFEB4acf3df3cDEA7399794D0869ef76A6EfAff52";
 
@@ -344,5 +345,9 @@ export class ZapperService extends Service {
       .then((res) => res.json());
 
     return response;
+  }
+
+  getZapProtocol({ vault }: { vault: Address }): ZapProtocol {
+    return PickleJars.includes(vault) ? ZapProtocol.PICKLE : ZapProtocol.YEARN;
   }
 }

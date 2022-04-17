@@ -47,6 +47,7 @@ const zapperZapInMock = jest.fn().mockResolvedValue({
   gasPrice: "100",
 });
 const supportedVaultAddressesMock = jest.fn();
+const getZapProtocolMock = jest.fn();
 const helperTokenBalancesMock = jest.fn();
 const helperTokensMock: jest.Mock<Promise<ERC20[]>> = jest.fn();
 const lensAdaptersVaultsV2PositionsOfMock = jest.fn();
@@ -112,6 +113,7 @@ jest.mock("../yearn", () => ({
         zapOut: zapperZapOutMock,
         zapIn: zapperZapInMock,
         supportedVaultAddresses: supportedVaultAddressesMock,
+        getZapProtocol: getZapProtocolMock,
       },
       transaction: {
         sendTransaction: sendTransactionUsingServiceMock,
@@ -821,7 +823,7 @@ describe("VaultInterface", () => {
   describe("deposit", () => {
     describe("when is zapping into pickle jar", () => {
       beforeEach(() => {
-        PickleJarsMock.PickleJars = ["0xVault"];
+        getZapProtocolMock.mockReturnValueOnce(ZapProtocol.PICKLE);
       });
 
       it("should call zapIn with correct arguments and pickle as the zapProtocol", async () => {

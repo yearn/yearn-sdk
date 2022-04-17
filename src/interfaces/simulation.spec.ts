@@ -6,6 +6,7 @@ import { ChainId, SdkError } from "..";
 import { Context } from "../context";
 import { PartnerService } from "../services/partner";
 import { SimulationExecutor } from "../simulationExecutor";
+import { ZapProtocol } from "../types";
 import { EthersError, PriceFetchingError, ZapperError } from "../types/custom/simulation";
 import { Yearn } from "../yearn";
 import { SimulationInterface } from "./simulation";
@@ -20,6 +21,7 @@ const zapOutApprovalTransactionMock = jest.fn(() => Promise.resolve({ from: "0x0
 const getNormalizedValueUsdcMock = jest.fn(() => Promise.resolve("10"));
 const zapInMock = jest.fn(() => Promise.resolve(true));
 const zapOutMock = jest.fn(() => Promise.resolve(true));
+const getZapProtocolMock = jest.fn();
 const partnerEncodeDepositMock = jest.fn().mockReturnValue("encodedInputData");
 const partnerIsAllowedMock = jest.fn().mockReturnValue(true);
 
@@ -78,6 +80,7 @@ jest.mock("../yearn", () => ({
         zapOutApprovalTransaction: zapOutApprovalTransactionMock,
         zapIn: zapInMock,
         zapOut: zapOutMock,
+        getZapProtocol: getZapProtocolMock,
       },
     },
   })),
@@ -122,6 +125,7 @@ describe("Simulation interface", () => {
     );
 
     (Contract as any).prototype.allowance = jest.fn().mockReturnValue(Promise.resolve("100000000000"));
+    getZapProtocolMock.mockReturnValue(ZapProtocol.YEARN);
   });
 
   afterEach(() => {
@@ -144,7 +148,12 @@ describe("Simulation interface", () => {
       expect.assertions(2);
       tokenMock.mockReturnValueOnce(Promise.resolve("0x001"));
       try {
-        await simulationInterface.deposit("0x000", "0x000", "1", "0x000");
+        await simulationInterface.deposit("0x000", "0x000", "1", "0x000", {
+          token: {
+            dataSource: "zapper",
+            supported: { zapper: true, zapperZapIn: true },
+          },
+        });
       } catch (error) {
         expect(error).toBeInstanceOf(SdkError);
         expect(error).toHaveProperty("error_code", SdkError.NO_SLIPPAGE);
@@ -160,7 +169,7 @@ describe("Simulation interface", () => {
           slippage: 1,
           token: {
             dataSource: "zapper",
-            supported: { zapperZapIn: true },
+            supported: { zapper: true, zapperZapIn: true },
           },
         });
       } catch (error) {
@@ -179,7 +188,7 @@ describe("Simulation interface", () => {
           slippage: 1,
           token: {
             dataSource: "zapper",
-            supported: { zapperZapIn: true },
+            supported: { zapper: true, zapperZapIn: true },
           },
         });
       } catch (error) {
@@ -197,7 +206,7 @@ describe("Simulation interface", () => {
           slippage: 1,
           token: {
             dataSource: "zapper",
-            supported: { zapperZapIn: true },
+            supported: { zapper: true, zapperZapIn: true },
           },
         });
       } catch (error) {
@@ -215,7 +224,7 @@ describe("Simulation interface", () => {
           slippage: 1,
           token: {
             dataSource: "zapper",
-            supported: { zapperZapIn: true },
+            supported: { zapper: true, zapperZapIn: true },
           },
         });
       } catch (error) {
@@ -233,7 +242,7 @@ describe("Simulation interface", () => {
           slippage: 1,
           token: {
             dataSource: "zapper",
-            supported: { zapperZapIn: true },
+            supported: { zapper: true, zapperZapIn: true },
           },
         });
       } catch (error) {
@@ -251,7 +260,7 @@ describe("Simulation interface", () => {
           slippage: 1,
           token: {
             dataSource: "zapper",
-            supported: { zapperZapIn: true },
+            supported: { zapper: true, zapperZapIn: true },
           },
         });
       } catch (error) {
@@ -262,6 +271,7 @@ describe("Simulation interface", () => {
 
     it("should fail with PriceFetchingError while fetching the pickle price", async () => {
       expect.assertions(2);
+      getZapProtocolMock.mockReturnValue(ZapProtocol.PICKLE);
       tokenMock.mockReturnValueOnce(Promise.resolve("0x001"));
       getNormalizedValueUsdcMock.mockReturnValueOnce(Promise.reject(new Error("something bad happened")));
       try {
@@ -269,7 +279,7 @@ describe("Simulation interface", () => {
           slippage: 1,
           token: {
             dataSource: "zapper",
-            supported: { zapperZapIn: true },
+            supported: { zapper: true, zapperZapIn: true },
           },
         });
       } catch (error) {
@@ -287,7 +297,7 @@ describe("Simulation interface", () => {
           slippage: 1,
           token: {
             dataSource: "zapper",
-            supported: { zapperZapIn: true },
+            supported: { zapper: true, zapperZapIn: true },
           },
         });
       } catch (error) {
@@ -305,7 +315,7 @@ describe("Simulation interface", () => {
           slippage: 1,
           token: {
             dataSource: "zapper",
-            supported: { zapperZapIn: true },
+            supported: { zapper: true, zapperZapIn: true },
           },
         });
         expect(executeSimulationWithReSimulationOnFailureSpy).toHaveBeenCalledTimes(1);
@@ -318,7 +328,7 @@ describe("Simulation interface", () => {
           slippage: 1,
           token: {
             dataSource: "zapper",
-            supported: { zapperZapIn: true },
+            supported: { zapper: true, zapperZapIn: true },
           },
         });
       });
@@ -336,7 +346,7 @@ describe("Simulation interface", () => {
           slippage: 1,
           token: {
             dataSource: "zapper",
-            supported: { zapperZapIn: true },
+            supported: { zapper: true, zapperZapIn: true },
           },
         });
         expect(executeSimulationWithReSimulationOnFailureSpy).toHaveBeenCalledTimes(1);
@@ -349,7 +359,7 @@ describe("Simulation interface", () => {
           slippage: 1,
           token: {
             dataSource: "zapper",
-            supported: { zapperZapIn: true },
+            supported: { zapper: true, zapperZapIn: true },
           },
         });
       });
