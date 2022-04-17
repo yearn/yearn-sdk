@@ -9,6 +9,7 @@ import { EthAddress, WethAddress, ZeroAddress } from "../helpers";
 import { SimulationExecutor, SimulationResponse } from "../simulationExecutor";
 import { Address, EthersError, Integer, PriceFetchingError, SdkError, ZapperError, ZapProtocol } from "../types";
 import { SimulationOptions, TransactionOutcome } from "../types/custom/simulation";
+import { toBN } from "../utils";
 import { PickleJarContract, VaultContract, YearnVaultContract } from "../vault";
 import { checkZappability } from "../zappable";
 
@@ -19,6 +20,8 @@ export type DepositProps = {
   toVault: Address;
   options: SimulationOptions;
 };
+
+type UnderlyingToken = { address: Address; decimals: BigNumber; pricePerShare: BigNumber };
 
 type ApprovalData = { approvalTransactionId?: string; forkId?: string };
 
@@ -44,21 +47,14 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
 
     const vaultContract = this.getVaultContract({ toVault, signer });
 
-    const underlyingToken = await vaultContract.token().catch(() => {
-      throw new EthersError("failed to fetch token", EthersError.FAIL_TOKEN_FETCH);
-    });
-
-    const depositProps = { from, sellToken, amount, toVault, options };
-
     const { isZappable, zappableType } = checkZappability({ chainId: this.chainId, token: options.token });
 
-    if (isZappable && underlyingToken !== sellToken) {
+    if (isZappable) {
       switch (zappableType) {
         case "zapper": {
           const { simulateFn, forkId } = await this.getZapperZapInSimulationArgs({
-            depositProps,
-            underlyingToken,
-            vaultContract,
+            depositProps: { from, sellToken, amount, toVault, options },
+            underlyingToken: await this.getUnderlyingToken(vaultContract),
           });
           return this.simulationExecutor.executeSimulationWithReSimulationOnFailure(simulateFn, forkId);
         }
@@ -72,14 +68,38 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
 
     // TODO: Handle when it's not zapping
 
-    const { approvalTransactionId, forkId } = await this.getApprovalData({ depositProps, signer });
+    const { approvalTransactionId, forkId } = await this.getApprovalData({
+      depositProps: { from, sellToken, amount, toVault, options },
+      signer,
+    });
 
     const simulateFn = (save: boolean): Promise<TransactionOutcome> => {
-      const txOptions: SimulationOptions = { ...options, forkId, save, root: approvalTransactionId };
-      return this.directDeposit({ depositProps, vaultContract, options: txOptions });
+      return this.directDeposit({
+        depositProps: { from, sellToken, amount, toVault, options },
+        vaultContract,
+        options: { ...options, forkId, save, root: approvalTransactionId },
+      });
     };
 
     return this.simulationExecutor.executeSimulationWithReSimulationOnFailure(simulateFn, forkId);
+  }
+
+  private async getUnderlyingToken(
+    vaultContract: PickleJarContract | YearnVaultContract
+  ): Promise<{ address: Address; decimals: BigNumber; pricePerShare: BigNumber }> {
+    const [address, decimals, pricePerShare] = await Promise.all([
+      vaultContract.token().catch(() => {
+        throw new EthersError("failed to fetch token", EthersError.FAIL_TOKEN_FETCH);
+      }),
+      vaultContract.decimals().catch(() => {
+        throw new EthersError("no decimals", EthersError.NO_DECIMALS);
+      }),
+      vaultContract.pricePerShare().catch(() => {
+        throw new EthersError("no price per share", EthersError.NO_PRICE_PER_SHARE);
+      }),
+    ]);
+
+    return { address, decimals, pricePerShare };
   }
 
   private async directDeposit({
@@ -125,8 +145,8 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
       }),
     ]);
 
-    const targetUnderlyingTokensReceived = new BigNumber(tokensReceived)
-      .div(new BigNumber(10).pow(decimals))
+    const targetUnderlyingTokensReceived = toBN(tokensReceived)
+      .div(toBN(10).pow(decimals))
       .multipliedBy(pricePerShare)
       .toFixed(0);
 
@@ -157,7 +177,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     const result = await contract.allowance(from, addressToCheck).catch(() => {
       "deposit needs approving";
     });
-    return new BigNumber(result.toString()).lt(new BigNumber(amount));
+    return toBN(result.toString()).lt(toBN(amount));
   }
 
   async withdraw(
@@ -260,18 +280,14 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
   }
 
   private async zapIn({
-    depositProps,
-    underlyingToken,
-    vaultContract,
+    depositProps: { sellToken, from, amount, toVault, options },
+    underlyingToken: { address, decimals, pricePerShare },
     skipGasEstimate,
   }: {
     depositProps: DepositProps;
-    underlyingToken: Address;
-    vaultContract: VaultContract;
+    underlyingToken: UnderlyingToken;
     skipGasEstimate: boolean;
   }): Promise<TransactionOutcome> {
-    const { sellToken, from, amount, toVault, options } = depositProps;
-
     const zapToken = sellToken === EthAddress ? ZeroAddress : sellToken;
 
     if (!options.slippage) {
@@ -286,21 +302,12 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
         throw new ZapperError("zap in", ZapperError.ZAP_IN);
       });
 
-    const value = new BigNumber(zapInParams.value).toFixed(0);
+    const value = toBN(zapInParams.value).toFixed(0);
 
     options.gasPrice = options.gasPrice || zapInParams.gasPrice;
     if (!skipGasEstimate) {
       options.gasLimit = zapInParams.gas;
     }
-
-    const [decimals, pricePerShare] = await Promise.all([
-      vaultContract.decimals().catch(() => {
-        throw new EthersError("no decimals", EthersError.NO_DECIMALS);
-      }),
-      vaultContract.pricePerShare().catch(() => {
-        throw new EthersError("no price per share", EthersError.NO_PRICE_PER_SHARE);
-      }),
-    ]);
 
     const tokensReceived = await this.simulationExecutor.simulateVaultInteraction(
       from,
@@ -311,8 +318,8 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
       value
     );
 
-    const targetUnderlyingTokensReceived = new BigNumber(tokensReceived)
-      .div(new BigNumber(10).pow(decimals))
+    const targetUnderlyingTokensReceived = toBN(tokensReceived)
+      .div(toBN(10).pow(decimals))
       .multipliedBy(pricePerShare)
       .toFixed(0);
 
@@ -322,7 +329,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
       case ZapProtocol.YEARN:
         amountReceivedUsdc = await this.yearn.services.oracle
           .getNormalizedValueUsdc(toVault, tokensReceived)
-          .then((price) => new BigNumber(price))
+          .then((price) => toBN(price))
           .catch(() => {
             throw new PriceFetchingError("error fetching price", PriceFetchingError.FETCHING_PRICE_ORACLE);
           });
@@ -334,21 +341,21 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
             .catch(() => {
               throw new PriceFetchingError("error fetching price", PriceFetchingError.FETCHING_PRICE_PICKLE);
             })
-            .then((usdc) => new BigNumber(usdc))
+            .then((usdc) => toBN(usdc))
         )
-          .dividedBy(new BigNumber(10).pow(decimals))
-          .multipliedBy(new BigNumber(tokensReceived));
+          .dividedBy(toBN(10).pow(decimals))
+          .multipliedBy(toBN(tokensReceived));
         break;
     }
 
     const oracleToken = sellToken === EthAddress ? WethAddress : sellToken;
-    const zapInAmountUsdc = new BigNumber(
+    const zapInAmountUsdc = toBN(
       await this.yearn.services.oracle.getNormalizedValueUsdc(oracleToken, amount).catch(() => {
         throw new PriceFetchingError("error fetching price", PriceFetchingError.FETCHING_PRICE_ORACLE);
       })
     );
 
-    const conversionRate = amountReceivedUsdc.div(new BigNumber(zapInAmountUsdc)).toNumber();
+    const conversionRate = amountReceivedUsdc.div(zapInAmountUsdc).toNumber();
 
     return {
       sourceTokenAddress: sellToken,
@@ -356,7 +363,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
       targetTokenAddress: zapInParams.buyTokenAddress,
       targetTokenAmount: tokensReceived,
       targetTokenAmountUsdc: amountReceivedUsdc.toFixed(0),
-      targetUnderlyingTokenAddress: underlyingToken,
+      targetUnderlyingTokenAddress: address,
       targetUnderlyingTokenAmount: targetUnderlyingTokensReceived,
       conversionRate: conversionRate,
       slippage: 1 - conversionRate,
@@ -396,7 +403,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
           options,
           zapOutParams.value
         );
-        return new BigNumber(response.transaction.transaction_info.call_trace.output).toFixed(0);
+        return toBN(response.transaction.transaction_info.call_trace.output).toFixed(0);
       } else {
         return await this.simulationExecutor.simulateVaultInteraction(
           from,
@@ -419,7 +426,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
       throw new PriceFetchingError("error fetching price", PriceFetchingError.FETCHING_PRICE_ORACLE);
     });
 
-    const conversionRate = new BigNumber(zapOutAmountUsdc).div(new BigNumber(soldAssetAmountUsdc)).toNumber();
+    const conversionRate = toBN(zapOutAmountUsdc).div(toBN(soldAssetAmountUsdc)).toNumber();
 
     const result: TransactionOutcome = {
       sourceTokenAddress: fromVault,
@@ -495,11 +502,9 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
   private async getZapperZapInSimulationArgs({
     depositProps,
     underlyingToken,
-    vaultContract,
   }: {
     depositProps: DepositProps;
-    underlyingToken: string;
-    vaultContract: PickleJarContract | YearnVaultContract;
+    underlyingToken: UnderlyingToken;
   }): Promise<{ simulateFn: (save: boolean) => Promise<TransactionOutcome>; forkId?: string }> {
     if (!isEthereum(this.chainId)) {
       throw new SdkError(`Zapper unsupported for chainId: ${this.chainId}`);
@@ -518,7 +523,6 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
           options: { ...depositProps.options, forkId, save, root: approvalTransactionId },
         },
         underlyingToken,
-        vaultContract,
         skipGasEstimate: needsApproving,
       });
     };
@@ -552,7 +556,9 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     depositProps: DepositProps;
     signer: JsonRpcSigner;
   }): Promise<ApprovalData> {
-    if (!(await this.depositNeedsApproving({ depositProps, signer }))) {
+    const isApprovalNeeded = await this.depositNeedsApproving({ depositProps, signer });
+
+    if (!isApprovalNeeded) {
       return {};
     }
 
@@ -569,7 +575,9 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     toVault: string;
     signer: JsonRpcSigner;
   }): PickleJarContract | YearnVaultContract {
-    if (this.yearn.services.zapper.getZapProtocol({ vault: toVault }) === ZapProtocol.PICKLE) {
+    const zapProtocol = this.yearn.services.zapper.getZapProtocol({ vault: toVault });
+
+    if (zapProtocol === ZapProtocol.PICKLE) {
       return new PickleJarContract(toVault, signer);
     }
 
