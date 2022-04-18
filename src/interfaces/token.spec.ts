@@ -5,12 +5,7 @@ import { Contract } from "@ethersproject/contracts";
 import { Address, ChainId, Integer, SdkError, Token, TokenInterface, TokenMetadata } from "..";
 import { CachedFetcher } from "../cache";
 import { Context } from "../context";
-import {
-  ETH_TOKEN,
-  EthAddress,
-  SUPPORTED_ZAP_OUT_ADDRESSES_MAINNET,
-  ZeroAddress,
-} from "../helpers";
+import { ETH_TOKEN, EthAddress, SUPPORTED_ZAP_OUT_ADDRESSES_MAINNET, ZeroAddress } from "../helpers";
 import { createMockBalance, createMockToken, createMockTokenMetadata } from "../test-utils/factories";
 import { Yearn } from "../yearn";
 
