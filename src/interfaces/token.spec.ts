@@ -9,8 +9,6 @@ import {
   ETH_TOKEN,
   EthAddress,
   SUPPORTED_ZAP_OUT_ADDRESSES_MAINNET,
-  WETH_TOKEN,
-  WethAddress,
   ZeroAddress,
 } from "../helpers";
 import { createMockBalance, createMockToken, createMockTokenMetadata } from "../test-utils/factories";
@@ -235,7 +233,7 @@ describe("TokenInterface", () => {
 
           const actualBalances = await tokenInterface.balances("0xAccount");
 
-          expect(actualBalances.length).toEqual(5);
+          expect(actualBalances.length).toEqual(4);
           expect(actualBalances).toEqual(
             expect.arrayContaining([
               vaultTokenWithBalance,
@@ -246,13 +244,6 @@ describe("TokenInterface", () => {
                 token: ETH_TOKEN,
                 balance: "42000000000000000000",
                 balanceUsdc: "42000000",
-                priceUsdc: "1000000",
-              },
-              {
-                address: WethAddress,
-                token: WETH_TOKEN,
-                balance: "0",
-                balanceUsdc: "0",
                 priceUsdc: "1000000",
               },
             ])
@@ -269,7 +260,7 @@ describe("TokenInterface", () => {
 
           const actualBalances = await tokenInterface.balances("0xAccount", [ironBankToken.address]);
 
-          expect(actualBalances.length).toEqual(3);
+          expect(actualBalances.length).toEqual(2);
           expect(actualBalances).toEqual(
             expect.arrayContaining([
               ironBankTokenWithBalance,
@@ -278,13 +269,6 @@ describe("TokenInterface", () => {
                 token: ETH_TOKEN,
                 balance: "42000000000000000000",
                 balanceUsdc: "42000000",
-                priceUsdc: "1000000",
-              },
-              {
-                address: WethAddress,
-                token: WETH_TOKEN,
-                balance: "0",
-                balanceUsdc: "0",
                 priceUsdc: "1000000",
               },
             ])
@@ -303,7 +287,7 @@ describe("TokenInterface", () => {
 
           const actualBalances = await tokenInterface.balances("0xAccount", [vaultToken.address]);
 
-          expect(actualBalances.length).toEqual(1);
+          expect(actualBalances.length).toEqual(2);
           expect(actualBalances).toEqual(expect.arrayContaining([vaultTokenWithBalance]));
           expect(vaultsBalancesMock).toHaveBeenCalledWith("0xAccount");
           expect(ironBankBalancesMock).toHaveBeenCalledWith("0xAccount");
