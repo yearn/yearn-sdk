@@ -1,4 +1,3 @@
-import { Token } from "..";
 import { Address, CustomError, Integer, Usdc } from "../common";
 
 export class SimulationError extends CustomError {
@@ -81,8 +80,4 @@ export interface SimulationOptions {
   maxPriorityFeePerGas?: Integer;
   gasLimit?: Integer;
   save?: boolean;
-  token?: {
-    dataSource: Token["dataSource"];
-    supported: Token["supported"];
-  };
 }
