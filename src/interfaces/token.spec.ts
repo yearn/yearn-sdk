@@ -6,7 +6,12 @@ import { Address, ChainId, Integer, SdkError, Token, TokenInterface, TokenMetada
 import { CachedFetcher } from "../cache";
 import { Context } from "../context";
 import { SUPPORTED_ZAP_OUT_ADDRESSES_MAINNET, ZeroAddress } from "../helpers";
-import { createMockBalance, createMockToken, createMockTokenMetadata } from "../test-utils/factories";
+import {
+  createMockBalance,
+  createMockPopulatedTransaction,
+  createMockToken,
+  createMockTokenMetadata,
+} from "../test-utils/factories";
 import { Yearn } from "../yearn";
 
 const getPriceUsdcMock = jest.fn();
@@ -26,15 +31,16 @@ const vaultsTokensMock = jest.fn();
 const ironBankBalancesMock = jest.fn();
 const ironBankTokensMock = jest.fn();
 const sendTransactionMock = jest.fn();
-const populateApproveMock = jest.fn().mockResolvedValue(true);
-const approveMock = jest.fn().mockResolvedValue(true);
+const populateApproveMock = jest
+  .fn()
+  .mockResolvedValue(createMockPopulatedTransaction({ data: "PopulatedTransactionData" }));
 const allowanceMock = jest.fn().mockResolvedValue("0");
 const partnerIsAllowedMock = jest.fn().mockReturnValue(true);
 
 jest.mock("@ethersproject/contracts", () => ({
   Contract: jest.fn().mockImplementation(() => ({
     populateTransaction: {
-      approve: approveMock,
+      approve: populateApproveMock,
     },
     allowance: allowanceMock,
   })),
@@ -776,7 +782,7 @@ describe("TokenInterface", () => {
         amount
       );
 
-      expect(populateApproveResult).toEqual(true);
+      expect(populateApproveResult).toEqual({ data: "PopulatedTransactionData" });
       expect(Contract).toHaveBeenCalledTimes(1);
       expect(Contract).toHaveBeenCalledWith(
         tokenAddress,
@@ -788,8 +794,8 @@ describe("TokenInterface", () => {
           sendTransaction: expect.any(Function),
         }
       );
-      expect(approveMock).toHaveBeenCalledTimes(1);
-      expect(approveMock).toHaveBeenCalledWith(spenderAddress, amount, {});
+      expect(populateApproveMock).toHaveBeenCalledTimes(1);
+      expect(populateApproveMock).toHaveBeenCalledWith(spenderAddress, amount, {});
     });
 
     it("should throw when approving native token", async () => {
@@ -798,7 +804,7 @@ describe("TokenInterface", () => {
       } catch (error) {
         expect(error).toStrictEqual(new SdkError(`Native tokens cant be approved: ${ZeroAddress}`));
         expect(Contract).not.toHaveBeenCalled();
-        expect(approveMock).not.toHaveBeenCalled();
+        expect(populateApproveMock).not.toHaveBeenCalled();
       }
     });
 
@@ -808,7 +814,7 @@ describe("TokenInterface", () => {
       } catch (error) {
         expect(error).toStrictEqual(new SdkError(`Cant approve token as its spender: ${spenderAddress}`));
         expect(Contract).not.toHaveBeenCalled();
-        expect(approveMock).not.toHaveBeenCalled();
+        expect(populateApproveMock).not.toHaveBeenCalled();
       }
     });
   });
@@ -826,7 +832,7 @@ describe("TokenInterface", () => {
       expect(populateApproveMock).toHaveBeenCalledTimes(1);
       expect(populateApproveMock).toHaveBeenCalledWith(ownerAddress, tokenAddress, spenderAddress, amount, {});
       expect(sendTransactionMock).toHaveBeenCalledTimes(1);
-      expect(sendTransactionMock).toHaveBeenCalledWith(true);
+      expect(sendTransactionMock).toHaveBeenCalledWith({ data: "PopulatedTransactionData" });
     });
 
     it("should throw when approving native token", async () => {
