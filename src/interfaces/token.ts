@@ -1,5 +1,5 @@
 import { MaxUint256 } from "@ethersproject/constants";
-import { CallOverrides, Contract } from "@ethersproject/contracts";
+import { CallOverrides, Contract, PopulatedTransaction } from "@ethersproject/contracts";
 import { TransactionResponse } from "@ethersproject/providers";
 import BigNumber from "bignumber.js";
 
@@ -240,13 +240,37 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
   }
 
   /**
+   * Returns the populated transaction to approve the token amount that spender is allowed to spend on behalf of owner
+   * @param ownerAddress
+   * @param tokenAddress
+   * @param spenderAddress
+   * @param amount
+   * @param overrides
+   * @returns PopulatedTransaction
+   */
+  async populateApprove(
+    ownerAddress: Address,
+    tokenAddress: Address,
+    spenderAddress: Address,
+    amount: Integer,
+    overrides: CallOverrides = {}
+  ): Promise<PopulatedTransaction> {
+    if (isNativeToken(tokenAddress)) throw new SdkError(`Native tokens cant be approved: ${tokenAddress}`);
+    if (tokenAddress === spenderAddress) throw new SdkError(`Cant approve token as its spender: ${tokenAddress}`);
+
+    const signer = this.ctx.provider.write.getSigner(ownerAddress);
+    const tokenContract = new Contract(tokenAddress, TokenAbi, signer);
+    return await tokenContract.populateTransaction.approve(spenderAddress, amount, overrides);
+  }
+
+  /**
    * Approve the token amount that spender is allowed to spend on behalf of owner
    * @param ownerAddress
    * @param tokenAddress
    * @param spenderAddress
    * @param amount
    * @param overrides
-   * @returns TokenAllowance
+   * @returns TransactionResponse
    */
   async approve(
     ownerAddress: Address,
@@ -255,13 +279,7 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
     amount: Integer,
     overrides: CallOverrides = {}
   ): Promise<TransactionResponse> {
-    if (isNativeToken(tokenAddress)) throw new SdkError(`Native tokens cant be approved: ${tokenAddress}`);
-    if (tokenAddress === spenderAddress) throw new SdkError(`Cant approve token as its spender: ${tokenAddress}`);
-
-    const signer = this.ctx.provider.write.getSigner(ownerAddress);
-    const tokenContract = new Contract(tokenAddress, TokenAbi, signer);
-    const tx = await tokenContract.populateTransaction.approve(spenderAddress, amount, overrides);
-
+    const tx = await this.populateApprove(ownerAddress, tokenAddress, spenderAddress, amount, overrides);
     return this.yearn.services.transaction.sendTransaction(tx);
   }
 

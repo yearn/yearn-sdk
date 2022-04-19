@@ -26,6 +26,7 @@ const vaultsTokensMock = jest.fn();
 const ironBankBalancesMock = jest.fn();
 const ironBankTokensMock = jest.fn();
 const sendTransactionMock = jest.fn();
+const populateApproveMock = jest.fn().mockResolvedValue(true);
 const approveMock = jest.fn().mockResolvedValue(true);
 const allowanceMock = jest.fn().mockResolvedValue("0");
 const partnerIsAllowedMock = jest.fn().mockReturnValue(true);
@@ -766,16 +767,16 @@ describe("TokenInterface", () => {
     });
   });
 
-  describe("approve", () => {
-    beforeEach(() => {
-      sendTransactionMock.mockResolvedValue(true);
-    });
+  describe("populateApprove", () => {
+    it("should return a populated transaction when approving non native token", async () => {
+      const populateApproveResult = await tokenInterface.populateApprove(
+        ownerAddress,
+        tokenAddress,
+        spenderAddress,
+        amount
+      );
 
-    it("should return a transaction response when approving non native token", async () => {
-      approveMock.mockReturnValue("approved");
-      const approveResult = await tokenInterface.approve(ownerAddress, tokenAddress, spenderAddress, amount);
-
-      expect(approveResult).toEqual(true);
+      expect(populateApproveResult).toEqual(true);
       expect(Contract).toHaveBeenCalledTimes(1);
       expect(Contract).toHaveBeenCalledWith(
         tokenAddress,
@@ -789,8 +790,43 @@ describe("TokenInterface", () => {
       );
       expect(approveMock).toHaveBeenCalledTimes(1);
       expect(approveMock).toHaveBeenCalledWith(spenderAddress, amount, {});
+    });
+
+    it("should throw when approving native token", async () => {
+      try {
+        await tokenInterface.populateApprove(ownerAddress, ZeroAddress, spenderAddress, amount);
+      } catch (error) {
+        expect(error).toStrictEqual(new SdkError(`Native tokens cant be approved: ${ZeroAddress}`));
+        expect(Contract).not.toHaveBeenCalled();
+        expect(approveMock).not.toHaveBeenCalled();
+      }
+    });
+
+    it("should throw if approving token as its spender", async () => {
+      try {
+        await tokenInterface.populateApprove(ownerAddress, spenderAddress, spenderAddress, amount);
+      } catch (error) {
+        expect(error).toStrictEqual(new SdkError(`Cant approve token as its spender: ${spenderAddress}`));
+        expect(Contract).not.toHaveBeenCalled();
+        expect(approveMock).not.toHaveBeenCalled();
+      }
+    });
+  });
+
+  describe("approve", () => {
+    beforeEach(() => {
+      sendTransactionMock.mockResolvedValue(true);
+      tokenInterface.populateApprove = populateApproveMock;
+    });
+
+    it("should return a transaction response when approving non native token", async () => {
+      const approveResult = await tokenInterface.approve(ownerAddress, tokenAddress, spenderAddress, amount);
+
+      expect(approveResult).toEqual(true);
+      expect(populateApproveMock).toHaveBeenCalledTimes(1);
+      expect(populateApproveMock).toHaveBeenCalledWith(ownerAddress, tokenAddress, spenderAddress, amount, {});
       expect(sendTransactionMock).toHaveBeenCalledTimes(1);
-      expect(sendTransactionMock).toHaveBeenCalledWith("approved");
+      expect(sendTransactionMock).toHaveBeenCalledWith(true);
     });
 
     it("should throw when approving native token", async () => {
@@ -798,8 +834,7 @@ describe("TokenInterface", () => {
         await tokenInterface.approve(ownerAddress, ZeroAddress, spenderAddress, amount);
       } catch (error) {
         expect(error).toStrictEqual(new SdkError(`Native tokens cant be approved: ${ZeroAddress}`));
-        expect(Contract).not.toHaveBeenCalled();
-        expect(approveMock).not.toHaveBeenCalled();
+        expect(populateApproveMock).not.toHaveBeenCalled();
         expect(sendTransactionMock).not.toHaveBeenCalled();
       }
     });
@@ -809,8 +844,7 @@ describe("TokenInterface", () => {
         await tokenInterface.approve(ownerAddress, spenderAddress, spenderAddress, amount);
       } catch (error) {
         expect(error).toStrictEqual(new SdkError(`Cant approve token as its spender: ${spenderAddress}`));
-        expect(Contract).not.toHaveBeenCalled();
-        expect(approveMock).not.toHaveBeenCalled();
+        expect(populateApproveMock).not.toHaveBeenCalled();
         expect(sendTransactionMock).not.toHaveBeenCalled();
       }
     });
