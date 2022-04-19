@@ -11,7 +11,7 @@ import { Address, EthersError, Integer, PriceFetchingError, SdkError, ZapperErro
 import { SimulationOptions, TransactionOutcome } from "../types/custom/simulation";
 import { toBN } from "../utils";
 import { PickleJarContract, VaultContract, YearnVaultContract } from "../vault";
-import { checkZappability } from "../zappable";
+import { getZapInOptions } from "../zap";
 
 export type DepositProps = {
   from: Address;
@@ -47,11 +47,16 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
 
     const vaultContract = this.getVaultContract({ toVault, signer });
 
-    const { isZappable, zappableType } = checkZappability({ chainId: this.chainId, token: options.token });
+    const vaultMetadata = await this.yearn.services.meta.vault(toVault);
 
-    if (isZappable) {
-      switch (zappableType) {
-        case "zapper": {
+    // TODO Fetch the token
+    const token = {};
+
+    const { isZapIn, zapInWith } = getZapInOptions({ chainId: this.chainId, token, vaultMetadata });
+
+    if (isZapIn) {
+      switch (zapInWith) {
+        case "zapperZapIn": {
           const { simulateFn, forkId } = await this.getZapperZapInSimulationArgs({
             depositProps: { from, sellToken, amount, toVault, options },
             underlyingToken: await this.getUnderlyingToken(vaultContract),
@@ -62,7 +67,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
           throw new SdkError("ftmApeZap not implemented yet!");
         }
         default:
-          throw new SdkError(`zappableType "${zappableType}" not supported yet!`);
+          throw new SdkError(`zapInWith "${zapInWith}" not supported yet!`);
       }
     }
 
@@ -459,12 +464,6 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
 
     if (sellToken === EthAddress) {
       return { needsApproving: false };
-    }
-
-    const { token } = options;
-
-    if (!token?.supported.zapperZapIn) {
-      throw new SdkError(`Zap in unsupported: ${token?.supported}`);
     }
 
     const zapProtocol = this.yearn.services.zapper.getZapProtocol({ vault: toVault });
