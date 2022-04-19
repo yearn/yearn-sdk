@@ -1,7 +1,7 @@
 import { ChainId, isEthereum, isFantom } from "./chain";
 import { Token, VaultMetadataOverrides } from "./types";
 
-type ZapInOptions = { isZapIn: boolean; zapInWith?: keyof Token["supported"] };
+type ZapInOptions = { isZapInSupported: boolean; zapInWith?: keyof Token["supported"] };
 
 type ZapInProps = {
   chainId: ChainId;
@@ -10,23 +10,27 @@ type ZapInProps = {
 };
 
 export function getZapInOptions({ chainId, token, vaultMetadata }: ZapInProps): ZapInOptions {
-  if (!token || !vaultMetadata) {
-    return { isZapIn: false };
+  if (!token?.supported || !vaultMetadata) {
+    return { isZapInSupported: false };
   }
 
-  if (isEthereum(chainId) && token.supported?.zapperZapIn) {
+  if (isEthereum(chainId)) {
     const { zapInWith } = vaultMetadata;
 
     if (zapInWith && isValidZap(zapInWith, token.supported)) {
-      return { isZapIn: true, zapInWith };
+      const isZapInSupported = !!token.supported[zapInWith];
+      return { isZapInSupported, zapInWith };
     }
   }
 
-  if (isFantom(chainId) && token.supported?.ftmApeZap) {
-    return { isZapIn: true, zapInWith: "ftmApeZap" };
+  if (isFantom(chainId)) {
+    const zapInWith = "ftmApeZap"; // Hardcoded for now
+
+    const isZapInSupported = !!token.supported[zapInWith];
+    return { isZapInSupported, zapInWith };
   }
 
-  return { isZapIn: false };
+  return { isZapInSupported: false };
 }
 
 /**

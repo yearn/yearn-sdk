@@ -52,9 +52,9 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     // TODO Fetch the token
     const token = {};
 
-    const { isZapIn, zapInWith } = getZapInOptions({ chainId: this.chainId, token, vaultMetadata });
+    const { isZapInSupported, zapInWith } = getZapInOptions({ chainId: this.chainId, token, vaultMetadata });
 
-    if (isZapIn) {
+    if (isZapInSupported) {
       switch (zapInWith) {
         case "zapperZapIn": {
           const { simulateFn, forkId } = await this.getZapperZapInSimulationArgs({
