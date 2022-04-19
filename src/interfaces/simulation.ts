@@ -179,10 +179,12 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     const contract = new Contract(sellToken, TokenAbi, signer);
     const isUsingPartnerService = this.shouldUsePartnerService(toVault);
     const addressToCheck = (isUsingPartnerService && this.yearn.services.partner?.address) || toVault;
-    const result = await contract.allowance(from, addressToCheck).catch(() => {
-      "deposit needs approving";
-    });
-    return toBN(result.toString()).lt(toBN(amount));
+    try {
+      const allowance = await contract.allowance(from, addressToCheck);
+      return toBN(allowance.toString()).lt(toBN(amount));
+    } catch (error) {
+      throw new SdkError(`Failed to get allowance from the contract: ${error}`);
+    }
   }
 
   async withdraw(
