@@ -466,7 +466,7 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
     }
 
     return this.executeVaultContractTransaction(async (overrides: CallOverrides): Promise<TransactionResponse> => {
-      const populatedTransaction = await this.populateTransaction({ vault, amount, overrides, signer });
+      const populatedTransaction = await this.populateDepositTransaction({ vault, amount, overrides, signer });
 
       if (!populatedTransaction) {
         throw new SdkError("deposit transaction failed");
@@ -680,7 +680,7 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
     return apy;
   }
 
-  async populateTransaction({
+  async populateDepositTransaction({
     vault,
     amount,
     overrides,
