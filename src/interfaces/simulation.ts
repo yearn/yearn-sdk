@@ -7,7 +7,7 @@ import { ChainId, isEthereum } from "../chain";
 import { ServiceInterface } from "../common";
 import { EthAddress, WethAddress, ZeroAddress } from "../helpers";
 import { SimulationExecutor, SimulationResponse } from "../simulationExecutor";
-import { Address, EthersError, Integer, PriceFetchingError, SdkError, ZapperError, ZapProtocol } from "../types";
+import { Address, EthersError, Integer, PriceFetchingError, SdkError, Token, ZapperError, ZapProtocol } from "../types";
 import { SimulationOptions, TransactionOutcome } from "../types/custom/simulation";
 import { toBN } from "../utils";
 import { PickleJarContract, VaultContract, YearnVaultContract } from "../vault";
@@ -27,6 +27,12 @@ type ApprovalData = { approvalTransactionId?: string; forkId?: string };
 
 type ZappingApprovalData = { needsApproving: boolean } & ApprovalData;
 
+type HandleZapInProps = {
+  zapInWith: keyof Token["supported"];
+  depositProps: DepositProps;
+  vaultContract: PickleJarContract | YearnVaultContract;
+};
+
 /**
  * [[SimulationInterface]] allows the simulation of ethereum transactions using Tenderly's api.
  * This allows us to know information before executing a transaction on mainnet.
@@ -43,44 +49,29 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     toVault: Address,
     options: SimulationOptions = {}
   ): Promise<TransactionOutcome> {
+    const depositProps = { from, sellToken, amount, toVault, options };
+
     const signer = this.ctx.provider.write.getSigner(from);
 
     const vaultContract = this.getVaultContract({ toVault, signer });
 
     const vaultMetadata = await this.yearn.services.meta.vault(toVault);
 
-    // TODO Fetch the token
-    const token = {};
+    const token = await this.yearn.tokens.findByAddress(sellToken);
 
     const { isZapInSupported, zapInWith } = getZapInOptions({ chainId: this.chainId, token, vaultMetadata });
 
-    if (isZapInSupported) {
-      switch (zapInWith) {
-        case "zapperZapIn": {
-          const { simulateFn, forkId } = await this.getZapperZapInSimulationArgs({
-            depositProps: { from, sellToken, amount, toVault, options },
-            underlyingToken: await this.getUnderlyingToken(vaultContract),
-          });
-          return this.simulationExecutor.executeSimulationWithReSimulationOnFailure(simulateFn, forkId);
-        }
-        case "ftmApeZap": {
-          throw new SdkError("ftmApeZap not implemented yet!");
-        }
-        default:
-          throw new SdkError(`zapInWith "${zapInWith}" not supported yet!`);
-      }
+    if (isZapInSupported && zapInWith) {
+      return this.handleZapInSimulationDeposit({ depositProps, zapInWith, vaultContract });
     }
 
     // TODO: Handle when it's not zapping
 
-    const { approvalTransactionId, forkId } = await this.getApprovalData({
-      depositProps: { from, sellToken, amount, toVault, options },
-      signer,
-    });
+    const { approvalTransactionId, forkId } = await this.getApprovalData({ depositProps, signer });
 
     const simulateFn = (save: boolean): Promise<TransactionOutcome> => {
       return this.directDeposit({
-        depositProps: { from, sellToken, amount, toVault, options },
+        depositProps,
         vaultContract,
         options: { ...options, forkId, save, root: approvalTransactionId },
       });
@@ -583,5 +574,22 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     }
 
     return new YearnVaultContract(toVault, signer);
+  }
+
+  private async handleZapInSimulationDeposit({ zapInWith, depositProps, vaultContract }: HandleZapInProps) {
+    switch (zapInWith) {
+      case "zapperZapIn": {
+        const { simulateFn, forkId } = await this.getZapperZapInSimulationArgs({
+          depositProps,
+          underlyingToken: await this.getUnderlyingToken(vaultContract),
+        });
+        return this.simulationExecutor.executeSimulationWithReSimulationOnFailure(simulateFn, forkId);
+      }
+      case "ftmApeZap": {
+        throw new SdkError("ftmApeZap not implemented yet!");
+      }
+      default:
+        throw new SdkError(`zapInWith "${zapInWith}" not supported yet!`);
+    }
   }
 }
