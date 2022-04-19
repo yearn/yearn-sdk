@@ -31,9 +31,7 @@ const vaultsTokensMock = jest.fn();
 const ironBankBalancesMock = jest.fn();
 const ironBankTokensMock = jest.fn();
 const sendTransactionMock = jest.fn();
-const populateApproveMock = jest
-  .fn()
-  .mockResolvedValue(createMockPopulatedTransaction({ data: "PopulatedTransactionData" }));
+const populateApproveMock = jest.fn();
 const allowanceMock = jest.fn().mockResolvedValue("0");
 const partnerIsAllowedMock = jest.fn().mockReturnValue(true);
 
@@ -774,6 +772,10 @@ describe("TokenInterface", () => {
   });
 
   describe("populateApprove", () => {
+    beforeEach(() => {
+      populateApproveMock.mockResolvedValue(createMockPopulatedTransaction({ data: "PopulatedTransactionData" }));
+    });
+
     it("should return a populated transaction when approving non native token", async () => {
       const populateApproveResult = await tokenInterface.populateApprove(
         ownerAddress,
@@ -822,6 +824,7 @@ describe("TokenInterface", () => {
   describe("approve", () => {
     beforeEach(() => {
       sendTransactionMock.mockResolvedValue(true);
+      populateApproveMock.mockResolvedValue(createMockPopulatedTransaction({ data: "PopulatedTransactionData" }));
       tokenInterface.populateApprove = populateApproveMock;
     });
 
