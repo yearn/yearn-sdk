@@ -36,9 +36,9 @@ export function getZapInOptions({ chainId, token, vaultMetadata }: ZapInProps): 
 /**
  * Returns true if the given zap is valid for the given token.
  * @param zap the zap type to check
- * @param zappings the zapping types supported by the token
+ * @param zaps the zap types supported by the token
  * @returns true if the zap type is supported by the token
  */
-function isValidZap<T>(zap: string | number | symbol, zappings: T): zap is keyof T {
-  return zap in zappings;
+function isValidZap<T>(zap: string | number | symbol, zaps: T): zap is keyof T {
+  return zap in zaps;
 }
