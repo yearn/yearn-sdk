@@ -260,7 +260,7 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
 
     const signer = this.ctx.provider.write.getSigner(ownerAddress);
     const tokenContract = new Contract(tokenAddress, TokenAbi, signer);
-    return await tokenContract.populateTransaction.approve(spenderAddress, amount, overrides);
+    return tokenContract.populateTransaction.approve(spenderAddress, amount, overrides);
   }
 
   /**
