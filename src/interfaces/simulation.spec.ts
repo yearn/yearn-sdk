@@ -6,6 +6,7 @@ import { ChainId, SdkError } from "..";
 import { Context } from "../context";
 import { PartnerService } from "../services/partner";
 import { SimulationExecutor } from "../simulationExecutor";
+import { createMockToken, createMockVaultMetadata } from "../test-utils/factories";
 import { ZapProtocol } from "../types";
 import { EthersError, PriceFetchingError, ZapperError } from "../types/custom/simulation";
 import { toBN } from "../utils";
@@ -25,6 +26,8 @@ const zapOutMock = jest.fn(() => Promise.resolve(true));
 const getZapProtocolMock = jest.fn();
 const partnerEncodeDepositMock = jest.fn().mockReturnValue("encodedInputData");
 const partnerIsAllowedMock = jest.fn().mockReturnValue(true);
+const metaVaultMock = jest.fn();
+const tokensFindByAddressMock = jest.fn();
 
 jest.mock("../services/partner", () => ({
   PartnerService: jest.fn().mockImplementation(() => ({
@@ -83,6 +86,12 @@ jest.mock("../yearn", () => ({
         zapOut: zapOutMock,
         getZapProtocol: getZapProtocolMock,
       },
+      meta: {
+        vault: metaVaultMock,
+      },
+    },
+    tokens: {
+      findByAddress: tokensFindByAddressMock,
     },
   })),
 }));
@@ -134,16 +143,19 @@ describe("Simulation interface", () => {
   });
 
   describe("deposit", () => {
+    beforeEach(() => {
+      const zapperZapInSupportedToken = createMockToken({ supported: { zapperZapIn: true } });
+      tokensFindByAddressMock.mockResolvedValue(zapperZapInSupportedToken);
+
+      const zapperZapInVaultMetadata = createMockVaultMetadata({ allowZapIn: true, zapInWith: "zapperZapIn" });
+      metaVaultMock.mockResolvedValue(zapperZapInVaultMetadata);
+    });
+
     it("should fail with Ethers Error failed to fetch token", async () => {
       expect.assertions(2);
       tokenMock.mockReturnValueOnce(Promise.reject(new Error("something bad happened")));
       try {
-        await simulationInterface.deposit("0x000", "0x000", "1", "0x000", {
-          token: {
-            dataSource: "zapper",
-            supported: { zapper: true, zapperZapIn: true },
-          },
-        });
+        await simulationInterface.deposit("0x000", "0x000", "1", "0x000");
       } catch (error) {
         expect(error).toBeInstanceOf(EthersError);
         expect(error).toHaveProperty("error_code", EthersError.FAIL_TOKEN_FETCH);
@@ -154,12 +166,7 @@ describe("Simulation interface", () => {
       expect.assertions(2);
       tokenMock.mockReturnValueOnce(Promise.resolve("0x001"));
       try {
-        await simulationInterface.deposit("0x000", "0x000", "1", "0x000", {
-          token: {
-            dataSource: "zapper",
-            supported: { zapper: true, zapperZapIn: true },
-          },
-        });
+        await simulationInterface.deposit("0x000", "0x000", "1", "0x000");
       } catch (error) {
         expect(error).toBeInstanceOf(SdkError);
         expect(error).toHaveProperty("error_code", SdkError.NO_SLIPPAGE);
@@ -173,10 +180,6 @@ describe("Simulation interface", () => {
       try {
         await simulationInterface.deposit("0x000", "0x000", "1", "0x000", {
           slippage: 1,
-          token: {
-            dataSource: "zapper",
-            supported: { zapper: true, zapperZapIn: true },
-          },
         });
       } catch (error) {
         expect(error).toBeInstanceOf(ZapperError);
@@ -192,10 +195,6 @@ describe("Simulation interface", () => {
       try {
         await simulationInterface.deposit("0x000", "0x000", "1", "0x000", {
           slippage: 1,
-          token: {
-            dataSource: "zapper",
-            supported: { zapper: true, zapperZapIn: true },
-          },
         });
       } catch (error) {
         expect(error).toBeInstanceOf(ZapperError);
@@ -210,10 +209,6 @@ describe("Simulation interface", () => {
       try {
         await simulationInterface.deposit("0x000", "0x000", "1", "0x000", {
           slippage: 1,
-          token: {
-            dataSource: "zapper",
-            supported: { zapper: true, zapperZapIn: true },
-          },
         });
       } catch (error) {
         expect(error).toBeInstanceOf(ZapperError);
@@ -228,10 +223,6 @@ describe("Simulation interface", () => {
       try {
         await simulationInterface.deposit("0x000", "0x000", "1", "0x000", {
           slippage: 1,
-          token: {
-            dataSource: "zapper",
-            supported: { zapper: true, zapperZapIn: true },
-          },
         });
       } catch (error) {
         expect(error).toBeInstanceOf(EthersError);
@@ -246,10 +237,6 @@ describe("Simulation interface", () => {
       try {
         await simulationInterface.deposit("0x000", "0x000", "1", "0x000", {
           slippage: 1,
-          token: {
-            dataSource: "zapper",
-            supported: { zapper: true, zapperZapIn: true },
-          },
         });
       } catch (error) {
         expect(error).toBeInstanceOf(EthersError);
@@ -264,10 +251,6 @@ describe("Simulation interface", () => {
       try {
         await simulationInterface.deposit("0x000", "0x000", "1", "0x000", {
           slippage: 1,
-          token: {
-            dataSource: "zapper",
-            supported: { zapper: true, zapperZapIn: true },
-          },
         });
       } catch (error) {
         expect(error).toBeInstanceOf(PriceFetchingError);
@@ -283,10 +266,6 @@ describe("Simulation interface", () => {
       try {
         await simulationInterface.deposit("0x000", "0x000", "1", "0xCeD67a187b923F0E5ebcc77C7f2F7da20099e378", {
           slippage: 1,
-          token: {
-            dataSource: "zapper",
-            supported: { zapper: true, zapperZapIn: true },
-          },
         });
       } catch (error) {
         expect(error).toBeInstanceOf(PriceFetchingError);
@@ -301,10 +280,6 @@ describe("Simulation interface", () => {
       try {
         await simulationInterface.deposit("0x000", "0x001", "1", "0x0000", {
           slippage: 1,
-          token: {
-            dataSource: "zapper",
-            supported: { zapper: true, zapperZapIn: true },
-          },
         });
       } catch (error) {
         expect(error).toBeInstanceOf(PriceFetchingError);
@@ -319,10 +294,6 @@ describe("Simulation interface", () => {
 
         await simulationInterface.deposit("0x000", "0x001", "1", "0x0000", {
           slippage: 1,
-          token: {
-            dataSource: "zapper",
-            supported: { zapper: true, zapperZapIn: true },
-          },
         });
         expect(executeSimulationWithReSimulationOnFailureSpy).toHaveBeenCalledTimes(1);
         expect(partnerEncodeDepositMock).toHaveBeenCalledTimes(0);
@@ -336,10 +307,6 @@ describe("Simulation interface", () => {
             forkId: "1",
             root: "id",
             slippage: 1,
-            token: {
-              dataSource: "zapper",
-              supported: { zapper: true, zapperZapIn: true },
-            },
           },
           "0"
         );
@@ -347,6 +314,14 @@ describe("Simulation interface", () => {
     });
 
     describe("when it has the partner service", () => {
+      beforeEach(() => {
+        const nativeToken = createMockToken();
+        tokensFindByAddressMock.mockResolvedValue(nativeToken);
+
+        const vaultMetadata = createMockVaultMetadata();
+        metaVaultMock.mockResolvedValue(vaultMetadata);
+      });
+
       it("should call the partner contract", async () => {
         const mockedYearn = new MockedYearnClass();
         mockedYearn.services.partner = new (PartnerService as unknown as jest.Mock<PartnerService<ChainId>>)();
