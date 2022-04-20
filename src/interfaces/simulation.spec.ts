@@ -144,7 +144,7 @@ describe("Simulation interface", () => {
 
   describe("deposit", () => {
     beforeEach(() => {
-      const zapperZapInSupportedToken = createMockToken({ supported: { zapperZapIn: true } });
+      const zapperZapInSupportedToken = createMockToken({ supported: { zapper: true, zapperZapIn: true } });
       tokensFindByAddressMock.mockResolvedValue(zapperZapInSupportedToken);
 
       const zapperZapInVaultMetadata = createMockVaultMetadata({ allowZapIn: true, zapInWith: "zapperZapIn" });
