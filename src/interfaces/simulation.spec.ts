@@ -203,9 +203,7 @@ describe("Simulation interface", () => {
       tokenMock.mockReturnValueOnce(Promise.resolve("0x001"));
       zapInMock.mockReturnValueOnce(Promise.reject(new Error("something bad happened")));
       try {
-        await simulationInterface.deposit("0x000", "0x000", "1", "0x000", {
-          slippage: 1,
-        });
+        await simulationInterface.deposit("0x000", "0x000", "1", "0x000", { slippage: 1 });
       } catch (error) {
         expect(error).toBeInstanceOf(ZapperError);
         expect(error).toHaveProperty("error_code", ZapperError.ZAP_IN);
@@ -217,9 +215,7 @@ describe("Simulation interface", () => {
       tokenMock.mockReturnValueOnce(Promise.resolve("0x001"));
       decimalsMock.mockReturnValueOnce(Promise.reject(new Error("something bad happened")));
       try {
-        await simulationInterface.deposit("0x000", "0x000", "1", "0x000", {
-          slippage: 1,
-        });
+        await simulationInterface.deposit("0x000", "0x000", "1", "0x000", { slippage: 1 });
       } catch (error) {
         expect(error).toBeInstanceOf(EthersError);
         expect(error).toHaveProperty("error_code", EthersError.NO_DECIMALS);
