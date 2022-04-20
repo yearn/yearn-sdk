@@ -21,17 +21,14 @@ export type DepositProps = {
   options: SimulationOptions;
 };
 
+type DirectDepositProps = {
+  depositProps: DepositProps;
+  vaultContract: VaultContract;
+};
+
 type UnderlyingToken = { address: Address; decimals: BigNumber; pricePerShare: BigNumber };
 
 type ApprovalData = { approvalTransactionId?: string; forkId?: string };
-
-type ZappingApprovalData = { needsApproving: boolean } & ApprovalData;
-
-type HandleZapInProps = {
-  zapInWith: keyof Token["supported"];
-  depositProps: DepositProps;
-  vaultContract: PickleJarContract | YearnVaultContract;
-};
 
 /**
  * [[SimulationInterface]] allows the simulation of ethereum transactions using Tenderly's api.
@@ -71,9 +68,8 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
 
     const simulateFn = (save: boolean): Promise<TransactionOutcome> => {
       return this.directDeposit({
-        depositProps,
+        depositProps: { ...depositProps, options: { ...options, forkId, save, root: approvalTransactionId } },
         vaultContract,
-        options: { ...options, forkId, save, root: approvalTransactionId },
       });
     };
 
@@ -158,21 +154,13 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     return { address, decimals, pricePerShare };
   }
 
-  private async directDeposit({
-    depositProps: { toVault, amount, from, sellToken },
-    vaultContract,
-    options,
-  }: {
-    depositProps: DepositProps;
-    vaultContract: VaultContract;
-    options: SimulationOptions;
-  }): Promise<TransactionOutcome> {
-    const encodedInputData = await (this.shouldUsePartnerService(toVault)
-      ? this.yearn.services.partner?.encodeDeposit(toVault, amount)
-      : vaultContract.encodeDeposit(amount));
+  private async directDeposit({ depositProps, vaultContract }: DirectDepositProps): Promise<TransactionOutcome> {
+    const { toVault, amount, from, sellToken, options } = depositProps;
+
+    const encodedInputData = await this.getEncodedInputData({ vaultContract, amount, toVault });
 
     if (!encodedInputData) {
-      throw new Error("directDeposit#encodeDeposit failed");
+      throw new SdkError("directDeposit#encodeDeposit failed");
     }
 
     const addressToDeposit = await this.getAddressToDeposit({ toVault });
@@ -216,6 +204,22 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
       conversionRate: 1,
       slippage: 0,
     };
+  }
+
+  private async getEncodedInputData({
+    vaultContract,
+    amount,
+    toVault,
+  }: {
+    vaultContract: VaultContract;
+    amount: Integer;
+    toVault: Address;
+  }): Promise<Address | undefined> {
+    if (!this.shouldUsePartnerService(toVault)) {
+      return vaultContract.encodeDeposit(amount);
+    }
+
+    return this.yearn.services.partner?.encodeDeposit(toVault, amount);
   }
 
   private async getAddressToDeposit({ toVault }: { toVault: Address }): Promise<Address> {
@@ -459,7 +463,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     from,
     toVault,
     options,
-  }: DepositProps): Promise<ZappingApprovalData> {
+  }: DepositProps): Promise<{ needsApproving: boolean } & ApprovalData> {
     if (!isEthereum(this.chainId)) {
       throw new SdkError(`Zapper unsupported for chainId: ${this.chainId}`);
     }
@@ -585,7 +589,15 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     return new YearnVaultContract(toVault, signer);
   }
 
-  private async handleZapInSimulationDeposit({ zapInWith, depositProps, vaultContract }: HandleZapInProps) {
+  private async handleZapInSimulationDeposit({
+    zapInWith,
+    depositProps,
+    vaultContract,
+  }: {
+    zapInWith: keyof Token["supported"];
+    depositProps: DepositProps;
+    vaultContract: PickleJarContract | YearnVaultContract;
+  }) {
     switch (zapInWith) {
       case "zapperZapIn": {
         const { simulateFn, forkId } = await this.getZapperZapInSimulationArgs({
