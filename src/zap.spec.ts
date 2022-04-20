@@ -1,13 +1,13 @@
-import { ChainId, getZapInOptions } from ".";
+import { ChainId, getZapInDetails } from ".";
 import { createMockToken, createMockVaultMetadata } from "./test-utils/factories";
 
 describe("Zap", () => {
-  describe("getZapInOptions", () => {
+  describe("getZapInDetails", () => {
     it("should return `false` if token does not support zaps", () => {
       const token = createMockToken({ supported: undefined });
       const vaultMetadata = createMockVaultMetadata();
 
-      const actual = getZapInOptions({ chainId: 1, token, vaultMetadata });
+      const actual = getZapInDetails({ chainId: 1, token, vaultMetadata });
 
       expect(actual).toEqual({ isZapInSupported: false });
     });
@@ -15,7 +15,7 @@ describe("Zap", () => {
     it("should return `false` if vaultMetadata is not given", () => {
       const token = createMockToken({ supported: { zapperZapIn: true } });
 
-      const actual = getZapInOptions({ chainId: 1, token, vaultMetadata: null });
+      const actual = getZapInDetails({ chainId: 1, token, vaultMetadata: null });
 
       expect(actual).toEqual({ isZapInSupported: false });
     });
@@ -24,7 +24,7 @@ describe("Zap", () => {
       const token = createMockToken({ supported: { zapperZapIn: true } });
       const vaultMetadata = createMockVaultMetadata({ zapInWith: "zapperZapIn" });
 
-      const actual = getZapInOptions({ chainId: 42 as ChainId, token, vaultMetadata });
+      const actual = getZapInDetails({ chainId: 42 as ChainId, token, vaultMetadata });
 
       expect(actual).toEqual({ isZapInSupported: false });
     });
@@ -41,7 +41,7 @@ describe("Zap", () => {
           const token = createMockToken({ supported });
           const vaultMetadata = createMockVaultMetadata({ zapInWith });
 
-          const actual = getZapInOptions({ chainId: 1, token, vaultMetadata });
+          const actual = getZapInDetails({ chainId: 1, token, vaultMetadata });
 
           expect(actual).toEqual(expectation);
         }
@@ -59,7 +59,7 @@ describe("Zap", () => {
           const token = createMockToken({ supported });
           const vaultMetadata = createMockVaultMetadata({ zapInWith });
 
-          const actual = getZapInOptions({ chainId: 250, token, vaultMetadata });
+          const actual = getZapInDetails({ chainId: 250, token, vaultMetadata });
 
           expect(actual).toEqual(expectation);
         }
