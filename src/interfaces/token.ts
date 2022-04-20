@@ -6,7 +6,7 @@ import BigNumber from "bignumber.js";
 import { CachedFetcher } from "../cache";
 import { allSupportedChains, ChainId, Chains, isEthereum, isFantom } from "../chain";
 import { ServiceInterface } from "../common";
-import { isNativeToken } from "../helpers";
+import { ETH_TOKEN, EthAddress, isNativeToken } from "../helpers";
 import { FANTOM_TOKEN, mergeByAddress, SUPPORTED_ZAP_OUT_ADDRESSES_MAINNET, WrappedFantomAddress } from "../helpers";
 import {
   Address,
@@ -113,6 +113,25 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
       try {
         const zapperBalances = await this.yearn.services.zapper.balances(account);
         balances.zapper = zapperBalances.filter(({ address }) => addresses.zapper.has(address));
+      } catch (error) {
+        console.error(error);
+      }
+
+      try {
+        const balance = await this.ctx.provider.read.getBalance(account);
+        const priceUsdc = await this.yearn.services.oracle.getPriceUsdc(EthAddress);
+        balances.sdk = [
+          {
+            address: EthAddress,
+            token: ETH_TOKEN,
+            balance: balance.toString(),
+            balanceUsdc: new BigNumber(balance.toString())
+              .div(10 ** 18)
+              .times(new BigNumber(priceUsdc))
+              .toString(),
+            priceUsdc,
+          },
+        ];
       } catch (error) {
         console.error(error);
       }

@@ -5,7 +5,7 @@ import { Contract } from "@ethersproject/contracts";
 import { Address, ChainId, Integer, SdkError, Token, TokenInterface, TokenMetadata } from "..";
 import { CachedFetcher } from "../cache";
 import { Context } from "../context";
-import { SUPPORTED_ZAP_OUT_ADDRESSES_MAINNET, ZeroAddress } from "../helpers";
+import { ETH_TOKEN, EthAddress, SUPPORTED_ZAP_OUT_ADDRESSES_MAINNET, ZeroAddress } from "../helpers";
 import {
   createMockBalance,
   createMockPopulatedTransaction,
@@ -233,9 +233,20 @@ describe("TokenInterface", () => {
 
           const actualBalances = await tokenInterface.balances("0xAccount");
 
-          expect(actualBalances.length).toEqual(3);
+          expect(actualBalances.length).toEqual(4);
           expect(actualBalances).toEqual(
-            expect.arrayContaining([vaultTokenWithBalance, ironBankTokenWithBalance, zapperTokenWithBalance])
+            expect.arrayContaining([
+              vaultTokenWithBalance,
+              ironBankTokenWithBalance,
+              zapperTokenWithBalance,
+              {
+                address: EthAddress,
+                token: ETH_TOKEN,
+                balance: "42000000000000000000",
+                balanceUsdc: "42000000",
+                priceUsdc: "1000000",
+              },
+            ])
           );
           expect(zapperBalancesMock).toHaveBeenCalledWith("0xAccount");
           expect(vaultsBalancesMock).toHaveBeenCalledWith("0xAccount");
@@ -249,8 +260,19 @@ describe("TokenInterface", () => {
 
           const actualBalances = await tokenInterface.balances("0xAccount", [ironBankToken.address]);
 
-          expect(actualBalances.length).toEqual(1);
-          expect(actualBalances).toEqual(expect.arrayContaining([ironBankTokenWithBalance]));
+          expect(actualBalances.length).toEqual(2);
+          expect(actualBalances).toEqual(
+            expect.arrayContaining([
+              ironBankTokenWithBalance,
+              {
+                address: EthAddress,
+                token: ETH_TOKEN,
+                balance: "42000000000000000000",
+                balanceUsdc: "42000000",
+                priceUsdc: "1000000",
+              },
+            ])
+          );
           expect(zapperBalancesMock).toHaveBeenCalledWith("0xAccount");
           expect(vaultsBalancesMock).toHaveBeenCalledWith("0xAccount");
           expect(ironBankBalancesMock).toHaveBeenCalledWith("0xAccount");
@@ -265,7 +287,7 @@ describe("TokenInterface", () => {
 
           const actualBalances = await tokenInterface.balances("0xAccount", [vaultToken.address]);
 
-          expect(actualBalances.length).toEqual(1);
+          expect(actualBalances.length).toEqual(2);
           expect(actualBalances).toEqual(expect.arrayContaining([vaultTokenWithBalance]));
           expect(vaultsBalancesMock).toHaveBeenCalledWith("0xAccount");
           expect(ironBankBalancesMock).toHaveBeenCalledWith("0xAccount");
