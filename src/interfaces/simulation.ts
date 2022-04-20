@@ -259,8 +259,8 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
   }): Promise<boolean> {
     const TokenAbi = ["function allowance(address owner, address spender) view returns (uint256)"];
     const contract = new Contract(sellToken, TokenAbi, signer);
-    const isUsingPartnerService = this.shouldUsePartnerService(toVault);
-    const addressToCheck = (isUsingPartnerService && this.yearn.services.partner?.address) || toVault;
+    const addressToCheck = await this.getAddressToDeposit({ toVault });
+
     try {
       const allowance = await contract.allowance(from, addressToCheck);
       return toBN(allowance.toString()).lt(toBN(amount));
