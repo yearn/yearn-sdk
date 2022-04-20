@@ -1,15 +1,17 @@
 import { ChainId, isEthereum, isFantom } from "./chain";
 import { Token, VaultMetadataOverrides } from "./types";
 
-type ZapInOptions = { isZapInSupported: boolean; zapInWith?: keyof Token["supported"] };
+export type ZapInWith = keyof Token["supported"];
 
-type ZapInProps = {
+type ZapInOptions = { isZapInSupported: boolean; zapInWith?: ZapInWith };
+
+type ZapInArgs = {
   chainId: ChainId;
   token?: Partial<Token>;
   vaultMetadata: VaultMetadataOverrides | null;
 };
 
-export function getZapInOptions({ chainId, token, vaultMetadata }: ZapInProps): ZapInOptions {
+export function getZapInOptions({ chainId, token, vaultMetadata }: ZapInArgs): ZapInOptions {
   if (!token?.supported || !vaultMetadata) {
     return { isZapInSupported: false };
   }

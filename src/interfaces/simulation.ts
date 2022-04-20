@@ -7,13 +7,13 @@ import { ChainId, isEthereum } from "../chain";
 import { ServiceInterface } from "../common";
 import { EthAddress, WethAddress, ZeroAddress } from "../helpers";
 import { SimulationExecutor, SimulationResponse } from "../simulationExecutor";
-import { Address, EthersError, Integer, PriceFetchingError, SdkError, Token, ZapperError, ZapProtocol } from "../types";
+import { Address, EthersError, Integer, PriceFetchingError, SdkError, ZapperError, ZapProtocol } from "../types";
 import { SimulationOptions, TransactionOutcome } from "../types/custom/simulation";
 import { toBN } from "../utils";
 import { PickleJarContract, VaultContract, YearnVaultContract } from "../vault";
-import { getZapInOptions } from "../zap";
+import { getZapInOptions, ZapInWith } from "../zap";
 
-export type DepositProps = {
+export type DepositArgs = {
   from: Address;
   sellToken: Address;
   amount: Integer;
@@ -21,14 +21,28 @@ export type DepositProps = {
   options: SimulationOptions;
 };
 
-type DirectDepositProps = {
-  depositProps: DepositProps;
+type DirectDepositArgs = {
+  depositArgs: DepositArgs;
   vaultContract: VaultContract;
+};
+
+type ZapInSimulationDepositArgs = {
+  zapInWith: ZapInWith;
+  vaultContract: VaultContractType;
+  depositArgs: DepositArgs;
+};
+
+type DirectDepositSimulationArgs = {
+  vaultContract: VaultContractType;
+  depositArgs: DepositArgs;
+  signer: JsonRpcSigner;
 };
 
 type UnderlyingToken = { address: Address; decimals: BigNumber; pricePerShare: BigNumber };
 
 type ApprovalData = { approvalTransactionId?: string; forkId?: string };
+
+type VaultContractType = PickleJarContract | YearnVaultContract;
 
 /**
  * [[SimulationInterface]] allows the simulation of ethereum transactions using Tenderly's api.
@@ -46,7 +60,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     toVault: Address,
     options: SimulationOptions = {}
   ): Promise<TransactionOutcome> {
-    const depositProps = { from, sellToken, amount, toVault, options };
+    const depositArgs = { from, sellToken, amount, toVault, options };
 
     const signer = this.ctx.provider.write.getSigner(from);
 
@@ -59,16 +73,22 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     const { isZapInSupported, zapInWith } = getZapInOptions({ chainId: this.chainId, token, vaultMetadata });
 
     if (isZapInSupported && zapInWith) {
-      return this.handleZapInSimulationDeposit({ depositProps, zapInWith, vaultContract });
+      return this.handleZapInSimulationDeposit({ depositArgs, zapInWith, vaultContract });
     }
 
-    // TODO: Handle when it's not zapping
+    return this.handleDirectSimulationDeposit({ depositArgs, vaultContract, signer });
+  }
 
-    const { approvalTransactionId, forkId } = await this.getApprovalData({ depositProps, signer });
+  private async handleDirectSimulationDeposit({
+    depositArgs,
+    vaultContract,
+    signer,
+  }: DirectDepositSimulationArgs): Promise<TransactionOutcome> {
+    const { approvalTransactionId: root, forkId } = await this.getApprovalData({ depositArgs, signer });
 
     const simulateFn = (save: boolean): Promise<TransactionOutcome> => {
       return this.directDeposit({
-        depositProps: { ...depositProps, options: { ...options, forkId, save, root: approvalTransactionId } },
+        depositArgs: { ...depositArgs, options: { ...depositArgs.options, forkId, save, root } },
         vaultContract,
       });
     };
@@ -136,9 +156,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     return this.simulationExecutor.executeSimulationWithReSimulationOnFailure(simulateWithdrawal, forkId);
   }
 
-  private async getUnderlyingToken(
-    vaultContract: PickleJarContract | YearnVaultContract
-  ): Promise<{ address: Address; decimals: BigNumber; pricePerShare: BigNumber }> {
+  private async getUnderlyingToken(vaultContract: VaultContractType): Promise<UnderlyingToken> {
     const [address, decimals, pricePerShare] = await Promise.all([
       vaultContract.token().catch(() => {
         throw new EthersError("failed to fetch token", EthersError.FAIL_TOKEN_FETCH);
@@ -154,8 +172,8 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     return { address, decimals, pricePerShare };
   }
 
-  private async directDeposit({ depositProps, vaultContract }: DirectDepositProps): Promise<TransactionOutcome> {
-    const { toVault, amount, from, sellToken, options } = depositProps;
+  private async directDeposit({ depositArgs, vaultContract }: DirectDepositArgs): Promise<TransactionOutcome> {
+    const { toVault, amount, from, sellToken, options } = depositArgs;
 
     const encodedInputData = await this.getEncodedInputData({ vaultContract, amount, toVault });
 
@@ -233,10 +251,10 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
   }
 
   private async depositNeedsApproving({
-    depositProps: { from, sellToken, amount, toVault },
+    depositArgs: { from, sellToken, amount, toVault },
     signer,
   }: {
-    depositProps: DepositProps;
+    depositArgs: DepositArgs;
     signer: JsonRpcSigner;
   }): Promise<boolean> {
     const TokenAbi = ["function allowance(address owner, address spender) view returns (uint256)"];
@@ -291,11 +309,11 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
   }
 
   private async zapIn({
-    depositProps: { sellToken, from, amount, toVault, options },
+    depositArgs: { sellToken, from, amount, toVault, options },
     underlyingToken: { address, decimals, pricePerShare },
     skipGasEstimate,
   }: {
-    depositProps: DepositProps;
+    depositArgs: DepositArgs;
     underlyingToken: UnderlyingToken;
     skipGasEstimate: boolean;
   }): Promise<TransactionOutcome> {
@@ -454,7 +472,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     return result;
   }
 
-  private shouldUsePartnerService(vault: string): boolean {
+  private shouldUsePartnerService(vault: Address): boolean {
     return !!this.yearn.services.partner?.isAllowed(vault);
   }
 
@@ -463,7 +481,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     from,
     toVault,
     options,
-  }: DepositProps): Promise<{ needsApproving: boolean } & ApprovalData> {
+  }: DepositArgs): Promise<{ needsApproving: boolean } & ApprovalData> {
     if (!isEthereum(this.chainId)) {
       throw new SdkError(`Zapper unsupported for chainId: ${this.chainId}`);
     }
@@ -505,27 +523,27 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
   }
 
   private async getZapperZapInSimulationArgs({
-    depositProps,
+    depositArgs,
     underlyingToken,
   }: {
-    depositProps: DepositProps;
+    depositArgs: DepositArgs;
     underlyingToken: UnderlyingToken;
   }): Promise<{ simulateFn: (save: boolean) => Promise<TransactionOutcome>; forkId?: string }> {
     if (!isEthereum(this.chainId)) {
       throw new SdkError(`Zapper unsupported for chainId: ${this.chainId}`);
     }
 
-    if (!depositProps.options.slippage) {
+    if (!depositArgs.options.slippage) {
       throw new SdkError("slippage needs to be specified for a zap", SdkError.NO_SLIPPAGE);
     }
 
-    const { needsApproving, approvalTransactionId, forkId } = await this.getZapperZapInApprovalData(depositProps);
+    const { needsApproving, approvalTransactionId, forkId } = await this.getZapperZapInApprovalData(depositArgs);
 
     const simulateFn = (save: boolean): Promise<TransactionOutcome> => {
       return this.zapIn({
-        depositProps: {
-          ...depositProps,
-          options: { ...depositProps.options, forkId, save, root: approvalTransactionId },
+        depositArgs: {
+          ...depositArgs,
+          options: { ...depositArgs.options, forkId, save, root: approvalTransactionId },
         },
         underlyingToken,
         skipGasEstimate: needsApproving,
@@ -535,7 +553,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     return { simulateFn, forkId };
   }
 
-  private async approve({ from, sellToken, amount, toVault, options }: DepositProps): Promise<string> {
+  private async approve({ from, sellToken, amount, toVault, options }: DepositArgs): Promise<string> {
     const TokenAbi = ["function approve(address spender, uint256 amount) returns (bool)"];
     const signer = this.ctx.provider.write.getSigner(from);
     const tokenContract = new Contract(sellToken, TokenAbi, signer);
@@ -555,31 +573,26 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
   }
 
   private async getApprovalData({
-    depositProps,
+    depositArgs,
     signer,
   }: {
-    depositProps: DepositProps;
+    depositArgs: DepositArgs;
     signer: JsonRpcSigner;
   }): Promise<ApprovalData> {
-    const isApprovalNeeded = await this.depositNeedsApproving({ depositProps, signer });
+    const depositNeedsApproving = await this.depositNeedsApproving({ depositArgs, signer });
 
-    if (!isApprovalNeeded) {
+    if (!depositNeedsApproving) {
       return {};
     }
 
-    return {
-      approvalTransactionId: await this.approve(depositProps),
-      forkId: await this.simulationExecutor.createFork(),
-    };
+    const approvalTransactionId = await this.approve(depositArgs);
+
+    const forkId = await this.simulationExecutor.createFork();
+
+    return { approvalTransactionId, forkId };
   }
 
-  private getVaultContract({
-    toVault,
-    signer,
-  }: {
-    toVault: string;
-    signer: JsonRpcSigner;
-  }): PickleJarContract | YearnVaultContract {
+  private getVaultContract({ toVault, signer }: { toVault: Address; signer: JsonRpcSigner }): VaultContractType {
     const zapProtocol = this.yearn.services.zapper.getZapProtocol({ vault: toVault });
 
     if (zapProtocol === ZapProtocol.PICKLE) {
@@ -589,28 +602,19 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     return new YearnVaultContract(toVault, signer);
   }
 
-  private async handleZapInSimulationDeposit({
-    zapInWith,
-    depositProps,
-    vaultContract,
-  }: {
-    zapInWith: keyof Token["supported"];
-    depositProps: DepositProps;
-    vaultContract: PickleJarContract | YearnVaultContract;
-  }) {
-    switch (zapInWith) {
-      case "zapperZapIn": {
-        const { simulateFn, forkId } = await this.getZapperZapInSimulationArgs({
-          depositProps,
-          underlyingToken: await this.getUnderlyingToken(vaultContract),
-        });
-        return this.simulationExecutor.executeSimulationWithReSimulationOnFailure(simulateFn, forkId);
-      }
-      case "ftmApeZap": {
-        throw new SdkError("ftmApeZap not implemented yet!");
-      }
-      default:
-        throw new SdkError(`zapInWith "${zapInWith}" not supported yet!`);
+  private async handleZapInSimulationDeposit({ zapInWith, vaultContract, depositArgs }: ZapInSimulationDepositArgs) {
+    if (zapInWith === "zapperZapIn") {
+      const underlyingToken = await this.getUnderlyingToken(vaultContract);
+
+      const { simulateFn, forkId } = await this.getZapperZapInSimulationArgs({ depositArgs, underlyingToken });
+
+      return this.simulationExecutor.executeSimulationWithReSimulationOnFailure(simulateFn, forkId);
     }
+
+    if (zapInWith === "ftmApeZap") {
+      throw new SdkError("ftmApeZap not implemented yet!");
+    }
+
+    throw new SdkError(`zapInWith "${zapInWith}" not supported yet!`);
   }
 }
