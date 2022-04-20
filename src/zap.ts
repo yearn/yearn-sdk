@@ -3,7 +3,7 @@ import { Token, VaultMetadataOverrides } from "./types";
 
 export type ZapInWith = keyof Token["supported"];
 
-type ZapInOptions = { isZapInSupported: boolean; zapInWith?: ZapInWith };
+type ZapInDetails = { isZapInSupported: boolean; zapInWith?: ZapInWith };
 
 type ZapInArgs = {
   chainId: ChainId;
@@ -11,7 +11,7 @@ type ZapInArgs = {
   vaultMetadata: VaultMetadataOverrides | null;
 };
 
-export function getZapInOptions({ chainId, token, vaultMetadata }: ZapInArgs): ZapInOptions {
+export function getZapInDetails({ chainId, token, vaultMetadata }: ZapInArgs): ZapInDetails {
   if (!token?.supported || !vaultMetadata) {
     return { isZapInSupported: false };
   }

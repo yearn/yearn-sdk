@@ -11,7 +11,7 @@ import { Address, EthersError, Integer, PriceFetchingError, SdkError, ZapperErro
 import { SimulationOptions, TransactionOutcome } from "../types/custom/simulation";
 import { toBN } from "../utils";
 import { PickleJarContract, VaultContract, YearnVaultContract } from "../vault";
-import { getZapInOptions, ZapInWith } from "../zap";
+import { getZapInDetails, ZapInWith } from "../zap";
 
 export type DepositArgs = {
   from: Address;
@@ -70,7 +70,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
 
     const token = await this.yearn.tokens.findByAddress(sellToken);
 
-    const { isZapInSupported, zapInWith } = getZapInOptions({ chainId: this.chainId, token, vaultMetadata });
+    const { isZapInSupported, zapInWith } = getZapInDetails({ chainId: this.chainId, token, vaultMetadata });
 
     if (isZapInSupported && zapInWith) {
       return this.handleZapInSimulationDeposit({ depositArgs, zapInWith, vaultContract });
