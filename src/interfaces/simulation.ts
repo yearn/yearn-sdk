@@ -181,7 +181,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
       throw new SdkError("directDeposit#encodeDeposit failed");
     }
 
-    const addressToDeposit = await this.getAddressToDeposit({ toVault });
+    const addressToDeposit = await this.getActionableAddress({ toVault });
 
     const tokensReceived = await this.simulationExecutor.simulateVaultInteraction(
       from,
@@ -240,7 +240,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     return this.yearn.services.partner?.encodeDeposit(toVault, amount);
   }
 
-  private async getAddressToDeposit({ toVault }: { toVault: Address }): Promise<Address> {
+  private async getActionableAddress({ toVault }: { toVault: Address }): Promise<Address> {
     if (!this.shouldUsePartnerService(toVault)) {
       return toVault;
     }
@@ -259,7 +259,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
   }): Promise<boolean> {
     const TokenAbi = ["function allowance(address owner, address spender) view returns (uint256)"];
     const contract = new Contract(sellToken, TokenAbi, signer);
-    const addressToCheck = await this.getAddressToDeposit({ toVault });
+    const addressToCheck = await this.getActionableAddress({ toVault });
 
     try {
       const allowance = await contract.allowance(from, addressToCheck);
@@ -554,12 +554,12 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
   }
 
   private async approve({ from, sellToken, amount, toVault, options }: DepositArgs): Promise<string> {
-    const TokenAbi = ["function approve(address spender, uint256 amount) returns (bool)"];
+    const tokenAbi = ["function approve(address spender, uint256 amount) returns (bool)"];
     const signer = this.ctx.provider.write.getSigner(from);
-    const tokenContract = new Contract(sellToken, TokenAbi, signer);
-    const isUsingPartnerService = this.shouldUsePartnerService(toVault);
-    const partnerServiceId = await this.yearn.services.partner?.address;
-    const addressToApprove = (isUsingPartnerService && partnerServiceId) || toVault;
+    const tokenContract = new Contract(sellToken, tokenAbi, signer);
+
+    const addressToApprove = this.getActionableAddress({ toVault });
+
     const encodedInputData = tokenContract.interface.encodeFunctionData("approve", [addressToApprove, amount]);
 
     const simulationResponse: SimulationResponse = await this.simulationExecutor.makeSimulationRequest(
