@@ -31,11 +31,11 @@ export function getZapInDetails({ chainId, token, vaultMetadata }: ZapInArgs): Z
   }
 
   if (isFantom(chainId)) {
-    if (token.address === ZeroAddress) {
-      return { isZapInSupported: Boolean(token.supported.ftmApeZap), zapInWith: "ftmApeZap" };
-    }
-
     const zapInWith = "ftmApeZap"; // Hardcoded for now
+
+    if (token.address === ZeroAddress) {
+      return { isZapInSupported: Boolean(token.supported[zapInWith]), zapInWith };
+    }
 
     const isZapInSupported = Boolean(token.supported[zapInWith]);
     return { isZapInSupported, zapInWith };
