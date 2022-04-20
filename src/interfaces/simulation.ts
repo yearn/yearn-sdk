@@ -175,8 +175,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
       throw new Error("directDeposit#encodeDeposit failed");
     }
 
-    const partnerAddress = await this.yearn.services.partner?.address;
-    const addressToDeposit = (this.shouldUsePartnerService(toVault) && partnerAddress) || toVault;
+    const addressToDeposit = await this.getAddressToDeposit({ toVault });
 
     const tokensReceived = await this.simulationExecutor.simulateVaultInteraction(
       from,
@@ -217,6 +216,16 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
       conversionRate: 1,
       slippage: 0,
     };
+  }
+
+  private async getAddressToDeposit({ toVault }: { toVault: Address }): Promise<Address> {
+    if (!this.shouldUsePartnerService(toVault)) {
+      return toVault;
+    }
+
+    const partnerAddress = await this.yearn.services.partner?.address;
+
+    return partnerAddress || toVault;
   }
 
   private async depositNeedsApproving({
