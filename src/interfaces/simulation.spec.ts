@@ -178,9 +178,7 @@ describe("Simulation interface", () => {
       tokenMock.mockReturnValueOnce(Promise.resolve("0x001"));
       zapInApprovalStateMock.mockReturnValueOnce(Promise.reject(new Error("something bad happened")));
       try {
-        await simulationInterface.deposit("0x000", "0x000", "1", "0x000", {
-          slippage: 1,
-        });
+        await simulationInterface.deposit("0x000", "0x000", "1", "0x000", { slippage: 1 });
       } catch (error) {
         expect(error).toBeInstanceOf(ZapperError);
         expect(error).toHaveProperty("error_code", ZapperError.ZAP_IN_APPROVAL_STATE);
@@ -193,9 +191,7 @@ describe("Simulation interface", () => {
       zapInApprovalStateMock.mockReturnValueOnce(Promise.resolve({ isApproved: false }));
       zapInApprovalTransactionMock.mockReturnValueOnce(Promise.reject(new Error("something bad happened")));
       try {
-        await simulationInterface.deposit("0x000", "0x000", "1", "0x000", {
-          slippage: 1,
-        });
+        await simulationInterface.deposit("0x000", "0x000", "1", "0x000", { slippage: 1 });
       } catch (error) {
         expect(error).toBeInstanceOf(ZapperError);
         expect(error).toHaveProperty("error_code", ZapperError.ZAP_IN_APPROVAL);
@@ -235,9 +231,7 @@ describe("Simulation interface", () => {
       tokenMock.mockReturnValueOnce(Promise.resolve("0x001"));
       pricePerShareMock.mockReturnValueOnce(Promise.reject(new Error("something bad happened")));
       try {
-        await simulationInterface.deposit("0x000", "0x000", "1", "0x000", {
-          slippage: 1,
-        });
+        await simulationInterface.deposit("0x000", "0x000", "1", "0x000", { slippage: 1 });
       } catch (error) {
         expect(error).toBeInstanceOf(EthersError);
         expect(error).toHaveProperty("error_code", EthersError.NO_PRICE_PER_SHARE);
@@ -249,9 +243,7 @@ describe("Simulation interface", () => {
       tokenMock.mockReturnValueOnce(Promise.resolve("0x001"));
       getNormalizedValueUsdcMock.mockReturnValueOnce(Promise.reject(new Error("something bad happened")));
       try {
-        await simulationInterface.deposit("0x000", "0x000", "1", "0x000", {
-          slippage: 1,
-        });
+        await simulationInterface.deposit("0x000", "0x000", "1", "0x000", { slippage: 1 });
       } catch (error) {
         expect(error).toBeInstanceOf(PriceFetchingError);
         expect(error).toHaveProperty("error_code", PriceFetchingError.FETCHING_PRICE_ORACLE);
@@ -278,9 +270,7 @@ describe("Simulation interface", () => {
       tokenMock.mockReturnValueOnce(Promise.resolve("0x001"));
       getNormalizedValueUsdcMock.mockReturnValueOnce(Promise.reject(new Error("something bad happened")));
       try {
-        await simulationInterface.deposit("0x000", "0x001", "1", "0x0000", {
-          slippage: 1,
-        });
+        await simulationInterface.deposit("0x000", "0x001", "1", "0x0000", { slippage: 1 });
       } catch (error) {
         expect(error).toBeInstanceOf(PriceFetchingError);
         expect(error).toHaveProperty("error_code", PriceFetchingError.FETCHING_PRICE_ORACLE);
@@ -292,9 +282,7 @@ describe("Simulation interface", () => {
         tokenMock.mockReturnValueOnce(Promise.resolve("0x001"));
         executeSimulationWithReSimulationOnFailureSpy.mockImplementationOnce((fn) => fn());
 
-        await simulationInterface.deposit("0x000", "0x001", "1", "0x0000", {
-          slippage: 1,
-        });
+        await simulationInterface.deposit("0x000", "0x001", "1", "0x0000", { slippage: 1 });
         expect(executeSimulationWithReSimulationOnFailureSpy).toHaveBeenCalledTimes(1);
         expect(partnerEncodeDepositMock).toHaveBeenCalledTimes(0);
         expect(simulateVaultInteractionSpy).toHaveBeenCalledTimes(1);
@@ -329,9 +317,7 @@ describe("Simulation interface", () => {
         tokenMock.mockReturnValueOnce(Promise.resolve("0x001"));
         executeSimulationWithReSimulationOnFailureSpy.mockImplementationOnce((fn) => fn());
 
-        await simulationInterface.deposit("0x000", "0x001", "1", "0x0000", {
-          slippage: 1,
-        });
+        await simulationInterface.deposit("0x000", "0x001", "1", "0x0000", { slippage: 1 });
         expect(executeSimulationWithReSimulationOnFailureSpy).toHaveBeenCalledTimes(1);
         expect(partnerEncodeDepositMock).toHaveBeenCalledTimes(1);
         expect(simulateVaultInteractionSpy).toHaveBeenCalledTimes(1);
