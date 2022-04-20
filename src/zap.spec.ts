@@ -1,4 +1,5 @@
 import { ChainId, getZapInDetails } from ".";
+import { EthAddress, ZeroAddress } from "./helpers";
 import { createMockToken, createMockVaultMetadata } from "./test-utils/factories";
 
 describe("Zap", () => {
@@ -30,6 +31,15 @@ describe("Zap", () => {
     });
 
     describe("when is Ethereum", () => {
+      it('should return `true` and `zapInWith: "zapperZapIn"` when token is ETH', () => {
+        const token = createMockToken({ address: EthAddress, supported: { zapper: true } });
+        const vaultMetadata = createMockVaultMetadata();
+
+        const actual = getZapInDetails({ chainId: 1, token, vaultMetadata });
+
+        expect(actual).toEqual({ isZapInSupported: true, zapInWith: "zapperZapIn" });
+      });
+
       it.each`
         supported                 | zapInWith         | expectation
         ${{ zapperZapIn: true }}  | ${"zapperZapIn"}  | ${{ isZapInSupported: true, zapInWith: "zapperZapIn" }}
@@ -49,6 +59,15 @@ describe("Zap", () => {
     });
 
     describe("when is Fantom", () => {
+      it('should return `true` and `zapInWith: "zapperZapIn"` when token is FTM', () => {
+        const token = createMockToken({ address: ZeroAddress, supported: { ftmApeZap: true } });
+        const vaultMetadata = createMockVaultMetadata();
+
+        const actual = getZapInDetails({ chainId: 250, token, vaultMetadata });
+
+        expect(actual).toEqual({ isZapInSupported: true, zapInWith: "ftmApeZap" });
+      });
+
       it.each`
         supported               | zapInWith      | expectation
         ${{ ftmApeZap: true }}  | ${"ftmApeZap"} | ${{ isZapInSupported: true, zapInWith: "ftmApeZap" }}
