@@ -25,7 +25,7 @@ export function getZapInDetails({ chainId, token, vaultMetadata }: ZapInArgs): Z
     const { zapInWith } = vaultMetadata;
 
     if (zapInWith && isValidZap(zapInWith, token.supported)) {
-      const isZapInSupported = Boolean(token.supported[zapInWith]);
+      const isZapInSupported = Boolean(token.supported.zapper) && Boolean(token.supported[zapInWith]);
       return { isZapInSupported, zapInWith };
     }
   }
