@@ -4,9 +4,9 @@ import { CallOverrides, Contract, PopulatedTransaction } from "@ethersproject/co
 import { JsonRpcSigner, TransactionRequest, TransactionResponse } from "@ethersproject/providers";
 
 import { CachedFetcher } from "../cache";
-import { ChainId, isEthereum } from "../chain";
+import { ChainId, isEthereum, isFantom } from "../chain";
 import { ContractAddressId, ServiceInterface } from "../common";
-import { chunkArray, EthAddress, isNativeToken, WethAddress } from "../helpers";
+import { chunkArray, EthAddress, FANTOM_TOKEN, isNativeToken, WethAddress } from "../helpers";
 import {
   Address,
   Apy,
@@ -26,7 +26,7 @@ import {
   ZapProtocol,
 } from "../types";
 import { Position, Vault } from "../types";
-import { mergeZapperPropsWithAddressables } from "./helpers";
+import { mergeZapPropsWithAddressables } from "./helpers";
 
 const VaultAbi = ["function deposit(uint256 amount) public", "function withdraw(uint256 amount) public"];
 
@@ -153,7 +153,22 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
 
     if (isEthereum(this.chainId)) {
       const vaultTokenMarketData = await this.yearn.services.zapper.supportedVaultAddresses();
-      metadataOverrides = mergeZapperPropsWithAddressables(metadataOverrides, vaultTokenMarketData);
+      metadataOverrides = mergeZapPropsWithAddressables({
+        addressables: metadataOverrides,
+        supportedVaultAddresses: vaultTokenMarketData,
+        zapInType: "zapperZapIn",
+        zapOutType: "zapperZapOut",
+      });
+    }
+
+    if (isFantom(this.chainId)) {
+      const ftmApeZappableVault = [FANTOM_TOKEN.address]; // hardcoded for now
+      metadataOverrides = mergeZapPropsWithAddressables({
+        addressables: metadataOverrides,
+        supportedVaultAddresses: ftmApeZappableVault,
+        zapInType: "ftmApeZap",
+        zapOutType: "ftmApeZap",
+      });
     }
 
     const adapters = Object.values(this.yearn.services.lens.adapters.vaults);
