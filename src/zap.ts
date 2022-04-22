@@ -1,5 +1,4 @@
 import { ChainId, isEthereum, isFantom } from "./chain";
-import { ZeroAddress } from "./helpers";
 import { Token, VaultDynamic } from "./types";
 
 export type ZapInWith = keyof Token["supported"];
@@ -28,10 +27,6 @@ export function getZapInDetails({ chainId, token, vault }: ZapInArgs): ZapInDeta
 
   if (isFantom(chainId)) {
     const zapInWith = "ftmApeZap"; // Hardcoded for now
-
-    if (token.address === ZeroAddress) {
-      return { isZapInSupported: Boolean(token.supported[zapInWith]), zapInWith };
-    }
 
     const isZapInSupported = Boolean(token.supported[zapInWith]);
     return { isZapInSupported, zapInWith };
