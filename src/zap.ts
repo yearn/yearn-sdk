@@ -13,7 +13,7 @@ type ZapInArgs = {
 };
 
 export function getZapInDetails({ chainId, token, vaultMetadata }: ZapInArgs): ZapInDetails {
-  if (!token?.supported || !vaultMetadata) {
+  if (!token?.supported || !vaultMetadata?.zapInWith) {
     return { isZapInSupported: false };
   }
 
