@@ -6,7 +6,7 @@ import { ChainId, SdkError } from "..";
 import { Context } from "../context";
 import { PartnerService } from "../services/partner";
 import { SimulationExecutor } from "../simulationExecutor";
-import { createMockToken, createMockVaultMetadata } from "../test-utils/factories";
+import { createMockAssetDynamicVaultV2, createMockToken } from "../test-utils/factories";
 import { ZapProtocol } from "../types";
 import { EthersError, PriceFetchingError, ZapperError } from "../types/custom/simulation";
 import { toBN } from "../utils";
@@ -26,7 +26,7 @@ const zapOutMock = jest.fn(() => Promise.resolve(true));
 const getZapProtocolMock = jest.fn();
 const partnerEncodeDepositMock = jest.fn().mockReturnValue("encodedInputData");
 const partnerIsAllowedMock = jest.fn().mockReturnValue(true);
-const metaVaultMock = jest.fn();
+const vaultsGetDynamicMock = jest.fn();
 const tokensFindByAddressMock = jest.fn();
 
 jest.mock("../services/partner", () => ({
@@ -86,12 +86,12 @@ jest.mock("../yearn", () => ({
         zapOut: zapOutMock,
         getZapProtocol: getZapProtocolMock,
       },
-      meta: {
-        vault: metaVaultMock,
-      },
     },
     tokens: {
       findByAddress: tokensFindByAddressMock,
+    },
+    vaults: {
+      getDynamic: vaultsGetDynamicMock,
     },
   })),
 }));
@@ -147,8 +147,12 @@ describe("Simulation interface", () => {
       const zapperZapInSupportedToken = createMockToken({ supported: { zapper: true, zapperZapIn: true } });
       tokensFindByAddressMock.mockResolvedValue(zapperZapInSupportedToken);
 
-      const zapperZapInVaultMetadata = createMockVaultMetadata({ allowZapIn: true, zapInWith: "zapperZapIn" });
-      metaVaultMock.mockResolvedValue(zapperZapInVaultMetadata);
+      const vaultMock = createMockAssetDynamicVaultV2();
+      const zapperZapInVaultMetadata = {
+        ...vaultMock,
+        metadata: { ...vaultMock.metadata, allowZapIn: true, zapInWith: "zapperZapIn" },
+      };
+      vaultsGetDynamicMock.mockResolvedValue([zapperZapInVaultMetadata]);
     });
 
     it("should fail with Ethers Error failed to fetch token", async () => {
@@ -302,8 +306,8 @@ describe("Simulation interface", () => {
         const nativeToken = createMockToken();
         tokensFindByAddressMock.mockResolvedValue(nativeToken);
 
-        const vaultMetadata = createMockVaultMetadata();
-        metaVaultMock.mockResolvedValue(vaultMetadata);
+        const vaultMock = createMockAssetDynamicVaultV2();
+        vaultsGetDynamicMock.mockResolvedValue([vaultMock]);
       });
 
       it("should call the partner contract", async () => {

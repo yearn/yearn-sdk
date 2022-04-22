@@ -66,11 +66,11 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
 
     const vaultContract = this.getVaultContract({ toVault, signer });
 
-    const vaultMetadata = await this.yearn.services.meta.vault(toVault);
+    const [vault] = await this.yearn.vaults.getDynamic([toVault]);
 
     const token = await this.yearn.tokens.findByAddress(sellToken);
 
-    const { isZapInSupported, zapInWith } = getZapInDetails({ chainId: this.chainId, token, vaultMetadata });
+    const { isZapInSupported, zapInWith } = getZapInDetails({ chainId: this.chainId, token, vault });
 
     if (isZapInSupported && zapInWith) {
       return this.handleZapInSimulationDeposit({ depositArgs, zapInWith, vaultContract });

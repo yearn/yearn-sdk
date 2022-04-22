@@ -1,6 +1,6 @@
 import { ChainId, isEthereum, isFantom } from "./chain";
 import { EthAddress, ZeroAddress } from "./helpers";
-import { Token, VaultMetadataOverrides } from "./types";
+import { Token, VaultDynamic } from "./types";
 
 export type ZapInWith = keyof Token["supported"];
 
@@ -9,11 +9,11 @@ type ZapInDetails = { isZapInSupported: boolean; zapInWith?: ZapInWith };
 type ZapInArgs = {
   chainId: ChainId;
   token?: Partial<Token>;
-  vaultMetadata: VaultMetadataOverrides | null;
+  vault: VaultDynamic;
 };
 
-export function getZapInDetails({ chainId, token, vaultMetadata }: ZapInArgs): ZapInDetails {
-  if (!token?.supported || !vaultMetadata?.zapInWith) {
+export function getZapInDetails({ chainId, token, vault }: ZapInArgs): ZapInDetails {
+  if (!token?.supported || !vault.metadata.zapInWith) {
     return { isZapInSupported: false };
   }
 
@@ -22,7 +22,7 @@ export function getZapInDetails({ chainId, token, vaultMetadata }: ZapInArgs): Z
       return { isZapInSupported: Boolean(token.supported.zapper), zapInWith: "zapperZapIn" };
     }
 
-    const { zapInWith } = vaultMetadata;
+    const { zapInWith } = vault.metadata;
 
     if (zapInWith && isValidZap(zapInWith, token.supported)) {
       const isZapInSupported = Boolean(token.supported.zapper) && Boolean(token.supported[zapInWith]);
