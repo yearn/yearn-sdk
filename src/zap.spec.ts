@@ -14,7 +14,7 @@ describe("Zap", () => {
 
       const actual = getZapInDetails({ chainId: 1, token, vault: assetDynamicVaultV2Mock });
 
-      expect(actual).toEqual({ isZapInSupported: false });
+      expect(actual).toEqual({ isZapInSupported: false, zapInWith: null });
     });
 
     it("should return `false` if vault metadata doesn't have `zapInWith` is not given", () => {
@@ -26,7 +26,7 @@ describe("Zap", () => {
 
       const actual = getZapInDetails({ chainId: 1, token, vault: vaultWithoutZapInWith });
 
-      expect(actual).toEqual({ isZapInSupported: false });
+      expect(actual).toEqual({ isZapInSupported: false, zapInWith: null });
     });
 
     it("should return `false` when the chain is unsupported", () => {
@@ -34,20 +34,20 @@ describe("Zap", () => {
 
       const actual = getZapInDetails({ chainId: 42 as ChainId, token, vault: assetDynamicVaultV2Mock });
 
-      expect(actual).toEqual({ isZapInSupported: false });
+      expect(actual).toEqual({ isZapInSupported: false, zapInWith: null });
     });
 
     describe("when is Ethereum", () => {
       it.each`
         supported                                | zapInWith         | expectation
         ${{ zapper: true, zapperZapIn: true }}   | ${"zapperZapIn"}  | ${{ isZapInSupported: true, zapInWith: "zapperZapIn" }}
-        ${{ zapper: false, zapperZapIn: false }} | ${"zapperZapIn"}  | ${{ isZapInSupported: false, zapInWith: "zapperZapIn" }}
-        ${{ zapper: true, zapperZapIn: false }}  | ${"zapperZapIn"}  | ${{ isZapInSupported: false, zapInWith: "zapperZapIn" }}
-        ${{ zapper: false, zapperZapIn: true }}  | ${"zapperZapIn"}  | ${{ isZapInSupported: false, zapInWith: "zapperZapIn" }}
-        ${{ zapper: true, zapperZapIn: true }}   | ${"invalidZapIn"} | ${{ isZapInSupported: false }}
-        ${{ zapper: false, zapperZapIn: false }} | ${"invalidZapIn"} | ${{ isZapInSupported: false }}
-        ${{ zapper: true, zapperZapIn: false }}  | ${"invalidZapIn"} | ${{ isZapInSupported: false }}
-        ${{ zapper: false, zapperZapIn: true }}  | ${"invalidZapIn"} | ${{ isZapInSupported: false }}
+        ${{ zapper: false, zapperZapIn: false }} | ${"zapperZapIn"}  | ${{ isZapInSupported: false, zapInWith: null }}
+        ${{ zapper: true, zapperZapIn: false }}  | ${"zapperZapIn"}  | ${{ isZapInSupported: false, zapInWith: null }}
+        ${{ zapper: false, zapperZapIn: true }}  | ${"zapperZapIn"}  | ${{ isZapInSupported: false, zapInWith: null }}
+        ${{ zapper: true, zapperZapIn: true }}   | ${"invalidZapIn"} | ${{ isZapInSupported: false, zapInWith: null }}
+        ${{ zapper: false, zapperZapIn: false }} | ${"invalidZapIn"} | ${{ isZapInSupported: false, zapInWith: null }}
+        ${{ zapper: true, zapperZapIn: false }}  | ${"invalidZapIn"} | ${{ isZapInSupported: false, zapInWith: null }}
+        ${{ zapper: false, zapperZapIn: true }}  | ${"invalidZapIn"} | ${{ isZapInSupported: false, zapInWith: null }}
       `(
         `should return \`$expectation\` when token supports \`$supported\`, and vaultMetadata has \`$zapInWith\``,
         ({ supported, zapInWith, expectation }) => {
@@ -68,7 +68,7 @@ describe("Zap", () => {
       it.each`
         supported               | zapInWith      | expectation
         ${{ ftmApeZap: true }}  | ${"ftmApeZap"} | ${{ isZapInSupported: true, zapInWith: "ftmApeZap" }}
-        ${{ ftmApeZap: false }} | ${"ftmApeZap"} | ${{ isZapInSupported: false, zapInWith: "ftmApeZap" }}
+        ${{ ftmApeZap: false }} | ${"ftmApeZap"} | ${{ isZapInSupported: false, zapInWith: null }}
       `(
         `should return \`$expectation\` when token supports \`$supported\`, and vaultMetadata has \`$zapInWith\``,
         ({ supported, zapInWith, expectation }) => {
