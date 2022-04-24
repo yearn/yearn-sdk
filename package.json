@@ -13,7 +13,7 @@
   "scripts": {
     "start": "tsdx watch",
     "build": "tsdx build",
-    "build:watch": "tsdx watch --onSuccess \"yalc push\"",
+    "build:watch": "tsdx watch --onSuccess \"yalc push --replace\"",
     "test": "tsdx test",
     "test:coverage": "tsdx test --coverage",
     "lint": "run-p lint:*",
