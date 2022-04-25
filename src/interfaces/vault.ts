@@ -476,10 +476,6 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
       return this.zapIn(vault, token, amount, account, options, ZapProtocol.YEARN, overrides);
     }
 
-    if (token === EthAddress) {
-      throw new SdkError("deposit:v2:eth not implemented");
-    }
-
     return this.executeVaultContractTransaction(async (overrides: CallOverrides): Promise<TransactionResponse> => {
       const populatedTransaction = await this.populateDepositTransaction({ vault, amount, overrides, signer });
 
