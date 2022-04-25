@@ -868,19 +868,6 @@ describe("VaultInterface", () => {
       });
 
       describe("when vault ref token is the same as the token", () => {
-        describe("when token is eth address", () => {
-          it("should throw", async () => {
-            const assetStaticVaultV2 = createMockAssetStaticVaultV2({ token: EthAddress });
-            vaultInterface.getStatic = jest.fn().mockResolvedValue([assetStaticVaultV2]);
-
-            try {
-              await vaultInterface.deposit("0xVault", EthAddress, "1", "0xAccount");
-            } catch (error) {
-              expect(error).toStrictEqual(new SdkError("deposit:v2:eth not implemented"));
-            }
-          });
-        });
-
         describe("when token is not eth address", () => {
           describe("when there is no partner service", () => {
             it("should deposit directly into a yearn vault", async () => {
