@@ -7,7 +7,7 @@ import { ChainId, isEthereum } from "../chain";
 import { ServiceInterface } from "../common";
 import { EthAddress, WethAddress, ZeroAddress } from "../helpers";
 import { SimulationExecutor, SimulationResponse } from "../simulationExecutor";
-import { Address, EthersError, Integer, PriceFetchingError, SdkError, ZapperError, ZapProtocol } from "../types";
+import { Address, Integer, PriceFetchingError, SdkError, Vault, ZapperError, ZapProtocol } from "../types";
 import { SimulationOptions, TransactionOutcome } from "../types/custom/simulation";
 import { toBN } from "../utils";
 import { PickleJarContract, VaultContract, YearnVaultContract } from "../vault";
@@ -23,22 +23,22 @@ export type DepositArgs = {
 
 type DirectDepositArgs = {
   depositArgs: DepositArgs;
+  vault: Vault;
   vaultContract: VaultContract;
 };
 
 type ZapInSimulationDepositArgs = {
   zapInWith: ZapInWith;
-  vaultContract: VaultContractType;
+  vault: Vault;
   depositArgs: DepositArgs;
 };
 
 type DirectDepositSimulationArgs = {
   vaultContract: VaultContractType;
+  vault: Vault;
   depositArgs: DepositArgs;
   signer: JsonRpcSigner;
 };
-
-type UnderlyingToken = { address: Address; decimals: BigNumber; pricePerShare: BigNumber };
 
 type ApprovalData = { approvalTransactionId?: string; forkId?: string };
 
@@ -66,7 +66,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
 
     const vaultContract = this.getVaultContract({ toVault, signer });
 
-    const [vault] = await this.yearn.vaults.getDynamic([toVault]);
+    const [vault] = await this.yearn.vaults.get([toVault]);
 
     const token = await this.yearn.tokens.findByAddress(sellToken);
 
@@ -81,19 +81,20 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     const { isZapInSupported, zapInWith } = getZapInDetails({ chainId: this.chainId, token, vault });
 
     if (isZapInSupported && zapInWith) {
-      return this.handleZapInSimulationDeposit({ depositArgs, zapInWith, vaultContract });
+      return this.handleZapInSimulationDeposit({ depositArgs, zapInWith, vault });
     }
 
     if (!isZapInSupported && !this.yearn.vaults.isUnderlyingToken(toVault, token.address)) {
       throw new SdkError(`Deposit of ${token.address} to ${toVault} is not supported`);
     }
 
-    return this.handleDirectSimulationDeposit({ depositArgs, vaultContract, signer });
+    return this.handleDirectSimulationDeposit({ depositArgs, vaultContract, vault, signer });
   }
 
   private async handleDirectSimulationDeposit({
     depositArgs,
     vaultContract,
+    vault,
     signer,
   }: DirectDepositSimulationArgs): Promise<TransactionOutcome> {
     const { approvalTransactionId: root, forkId } = await this.getApprovalData({ depositArgs, signer });
@@ -102,6 +103,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
       return this.directDeposit({
         depositArgs: { ...depositArgs, options: { ...depositArgs.options, forkId, save, root } },
         vaultContract,
+        vault,
       });
     };
 
@@ -168,23 +170,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     return this.simulationExecutor.executeSimulationWithReSimulationOnFailure(simulateWithdrawal, forkId);
   }
 
-  private async getUnderlyingToken(vaultContract: VaultContractType): Promise<UnderlyingToken> {
-    const [address, decimals, pricePerShare] = await Promise.all([
-      vaultContract.token().catch(() => {
-        throw new EthersError("failed to fetch token", EthersError.FAIL_TOKEN_FETCH);
-      }),
-      vaultContract.decimals().catch(() => {
-        throw new EthersError("no decimals", EthersError.NO_DECIMALS);
-      }),
-      vaultContract.pricePerShare().catch(() => {
-        throw new EthersError("no price per share", EthersError.NO_PRICE_PER_SHARE);
-      }),
-    ]);
-
-    return { address, decimals, pricePerShare };
-  }
-
-  private async directDeposit({ depositArgs, vaultContract }: DirectDepositArgs): Promise<TransactionOutcome> {
+  private async directDeposit({ depositArgs, vaultContract, vault }: DirectDepositArgs): Promise<TransactionOutcome> {
     const { toVault, amount, from, sellToken, options } = depositArgs;
 
     const encodedInputData = await this.getEncodedInputData({ vaultContract, amount, toVault });
@@ -209,14 +195,18 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
         throw new PriceFetchingError("Error fetching price", PriceFetchingError.FETCHING_PRICE_ORACLE);
       });
 
-    const [decimals, pricePerShare] = await Promise.all([
-      vaultContract.decimals().catch(() => {
-        throw new EthersError("no decimals", EthersError.NO_DECIMALS);
-      }),
-      vaultContract.pricePerShare().catch(() => {
-        throw new EthersError("no price per share", EthersError.NO_PRICE_PER_SHARE);
-      }),
-    ]);
+    const {
+      decimals,
+      metadata: { pricePerShare },
+    } = vault;
+
+    if (!decimals) {
+      throw new SdkError(`Decimals missing for vault ${vault.address}`);
+    }
+
+    if (!pricePerShare) {
+      throw new SdkError(`Price per share missing in vault ${vault.address} metadata`);
+    }
 
     const targetUnderlyingTokensReceived = toBN(tokensReceived)
       .div(toBN(10).pow(decimals))
@@ -322,11 +312,11 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
 
   private async zapIn({
     depositArgs: { sellToken, from, amount, toVault, options },
-    underlyingToken: { address, decimals, pricePerShare },
+    vault,
     skipGasEstimate,
   }: {
     depositArgs: DepositArgs;
-    underlyingToken: UnderlyingToken;
+    vault: Vault;
     skipGasEstimate: boolean;
   }): Promise<TransactionOutcome> {
     const zapToken = sellToken === EthAddress ? ZeroAddress : sellToken;
@@ -358,6 +348,20 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
       options,
       value
     );
+
+    const {
+      decimals,
+      metadata: { pricePerShare },
+      token: underlyingTokenAddress,
+    } = vault;
+
+    if (!decimals) {
+      throw new SdkError(`Decimals missing for vault ${vault.address}`);
+    }
+
+    if (!pricePerShare) {
+      throw new SdkError(`Price per share missing in vault ${vault.address} metadata`);
+    }
 
     const targetUnderlyingTokensReceived = toBN(tokensReceived)
       .div(toBN(10).pow(decimals))
@@ -404,7 +408,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
       targetTokenAddress: zapInParams.buyTokenAddress,
       targetTokenAmount: tokensReceived,
       targetTokenAmountUsdc: amountReceivedUsdc.toFixed(0),
-      targetUnderlyingTokenAddress: address,
+      targetUnderlyingTokenAddress: underlyingTokenAddress,
       targetUnderlyingTokenAmount: targetUnderlyingTokensReceived,
       conversionRate: conversionRate,
       slippage: 1 - conversionRate,
@@ -536,10 +540,10 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
 
   private async getZapperZapInSimulationArgs({
     depositArgs,
-    underlyingToken,
+    vault,
   }: {
     depositArgs: DepositArgs;
-    underlyingToken: UnderlyingToken;
+    vault: Vault;
   }): Promise<{ simulateFn: (save: boolean) => Promise<TransactionOutcome>; forkId?: string }> {
     if (!isEthereum(this.chainId)) {
       throw new SdkError(`Zapper unsupported for chainId: ${this.chainId}`);
@@ -557,7 +561,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
           ...depositArgs,
           options: { ...depositArgs.options, forkId, save, root: approvalTransactionId },
         },
-        underlyingToken,
+        vault,
         skipGasEstimate: needsApproving,
       });
     };
@@ -614,11 +618,9 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     return new YearnVaultContract(toVault, signer);
   }
 
-  private async handleZapInSimulationDeposit({ zapInWith, vaultContract, depositArgs }: ZapInSimulationDepositArgs) {
+  private async handleZapInSimulationDeposit({ zapInWith, vault, depositArgs }: ZapInSimulationDepositArgs) {
     if (zapInWith === "zapperZapIn") {
-      const underlyingToken = await this.getUnderlyingToken(vaultContract);
-
-      const { simulateFn, forkId } = await this.getZapperZapInSimulationArgs({ depositArgs, underlyingToken });
+      const { simulateFn, forkId } = await this.getZapperZapInSimulationArgs({ depositArgs, vault });
 
       return this.simulationExecutor.executeSimulationWithReSimulationOnFailure(simulateFn, forkId);
     }
