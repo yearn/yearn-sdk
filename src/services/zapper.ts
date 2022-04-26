@@ -26,7 +26,7 @@ export class ZapperService extends Service {
    * @returns list of tokens supported by the zapper protocol.
    */
   async supportedTokens(): Promise<Token[]> {
-    const url = "https://api.zapper.fi/v1/prices";
+    const url = "https://api.zapper.fi/v2/prices";
     const params = new URLSearchParams({ api_key: this.ctx.zapper });
     const zapperTokens: ZapperToken[] = await fetch(`${url}?${params}`)
       .then(handleHttpError)
@@ -69,7 +69,7 @@ export class ZapperService extends Service {
   async balances<T extends Address>(addresses: T[] | T): Promise<BalancesMap<T> | Balance[]>;
 
   async balances<T extends Address>(addresses: T[] | T): Promise<BalancesMap<T> | Balance[]> {
-    const url = "https://api.zapper.fi/v1/protocols/tokens/balances";
+    const url = "https://api.zapper.fi/v2/apps/tokens/balances";
     const params = new URLSearchParams({
       "addresses[]": Array.isArray(addresses) ? addresses.join() : addresses,
       api_key: this.ctx.zapper,
@@ -114,7 +114,7 @@ export class ZapperService extends Service {
       throw new SdkError(`Only Ethereum is supported for token market data, got ${this.chainId}`);
     }
 
-    const url = "https://api.zapper.fi/v1/protocols/yearn/token-market-data";
+    const url = "https://api.zapper.fi/v2/apps/yearn/tokens";
     const params = new URLSearchParams({
       network: "ethereum",
       type: "vault",
@@ -135,7 +135,7 @@ export class ZapperService extends Service {
    * @returns gas prices
    */
   async gas(): Promise<GasPrice> {
-    const url = "https://api.zapper.fi/v1/gas-price";
+    const url = "https://api.zapper.fi/v2/gas-prices";
     const params = new URLSearchParams({
       api_key: this.ctx.zapper,
     });
@@ -156,7 +156,7 @@ export class ZapperService extends Service {
     token: Address,
     zapProtocol: ZapProtocol = ZapProtocol.YEARN
   ): Promise<ZapApprovalStateOutput> {
-    const url = `https://api.zapper.fi/v1/zap-in/vault/${zapProtocol}/approval-state`;
+    const url = `https://api.zapper.fi/v2/zap-in/vault/${zapProtocol}/approval-state`;
     const params = new URLSearchParams({
       ownerAddress: from,
       sellTokenAddress: token,
@@ -182,7 +182,7 @@ export class ZapperService extends Service {
     gasPrice: Integer,
     zapProtocol: ZapProtocol = ZapProtocol.YEARN
   ): Promise<ZapApprovalTransactionOutput> {
-    const url = `https://api.zapper.fi/v1/zap-in/vault/${zapProtocol}/approval-transaction`;
+    const url = `https://api.zapper.fi/v2/zap-in/vault/${zapProtocol}/approval-transaction`;
     const params = new URLSearchParams({
       gasPrice,
       ownerAddress: from,
@@ -207,7 +207,7 @@ export class ZapperService extends Service {
     token: Address,
     zapProtocol: ZapProtocol = ZapProtocol.YEARN
   ): Promise<ZapApprovalStateOutput> {
-    const url = `https://api.zapper.fi/v1/zap-out/vault/${zapProtocol}/approval-state`;
+    const url = `https://api.zapper.fi/v2/zap-out/vault/${zapProtocol}/approval-state`;
     const params = new URLSearchParams({
       ownerAddress: from,
       sellTokenAddress: token,
@@ -233,7 +233,7 @@ export class ZapperService extends Service {
     gasPrice: Integer,
     zapProtocol: ZapProtocol = ZapProtocol.YEARN
   ): Promise<ZapApprovalTransactionOutput> {
-    const url = `https://api.zapper.fi/v1/zap-out/vault/${zapProtocol}/approval-transaction`;
+    const url = `https://api.zapper.fi/v2/zap-out/vault/${zapProtocol}/approval-transaction`;
     const params = new URLSearchParams({
       gasPrice,
       ownerAddress: from,
@@ -275,7 +275,7 @@ export class ZapperService extends Service {
       sellToken = ZeroAddress;
     }
 
-    const url = `https://api.zapper.fi/v1/zap-in/vault/${zapProtocol}/transaction`;
+    const url = `https://api.zapper.fi/v2/zap-in/vault/${zapProtocol}/transaction`;
     const params = new URLSearchParams({
       affiliateAddress: ZAPPER_AFFILIATE_ADDRESS,
       ownerAddress: from,
@@ -325,7 +325,7 @@ export class ZapperService extends Service {
       toToken = ZeroAddress;
     }
 
-    const url = `https://api.zapper.fi/v1/zap-out/vault/${zapProtocol}/transaction`;
+    const url = `https://api.zapper.fi/v2/zap-out/vault/${zapProtocol}/transaction`;
     const params = new URLSearchParams({
       affiliateAddress: ZAPPER_AFFILIATE_ADDRESS,
       ownerAddress: from,
