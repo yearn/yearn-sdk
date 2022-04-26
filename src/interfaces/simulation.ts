@@ -70,10 +70,22 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
 
     const token = await this.yearn.tokens.findByAddress(sellToken);
 
+    if (!token) {
+      throw new SdkError(`Could not find a the token by address: ${sellToken}`);
+    }
+
+    if (!vault) {
+      throw new SdkError(`Could not get dynamic vault: ${toVault}`);
+    }
+
     const { isZapInSupported, zapInWith } = getZapInDetails({ chainId: this.chainId, token, vault });
 
     if (isZapInSupported && zapInWith) {
       return this.handleZapInSimulationDeposit({ depositArgs, zapInWith, vaultContract });
+    }
+
+    if (!isZapInSupported && !this.yearn.vaults.isUnderlyingToken(toVault, token.address)) {
+      throw new SdkError(`Deposit of ${token.address} to ${toVault} is not supported`);
     }
 
     return this.handleDirectSimulationDeposit({ depositArgs, vaultContract, signer });

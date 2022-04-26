@@ -443,7 +443,7 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
     return zapContractAddress;
   }
 
-  private async isUnderlyingToken(vaultAddress: Address, tokenAddress: Address): Promise<boolean> {
+  async isUnderlyingToken(vaultAddress: Address, tokenAddress: Address): Promise<boolean> {
     const [vault] = await this.getStatic([vaultAddress]);
     return vault.token === tokenAddress;
   }

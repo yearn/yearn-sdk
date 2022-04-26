@@ -27,6 +27,7 @@ const getZapProtocolMock = jest.fn();
 const partnerEncodeDepositMock = jest.fn().mockReturnValue("encodedInputData");
 const partnerIsAllowedMock = jest.fn().mockReturnValue(true);
 const vaultsGetDynamicMock = jest.fn();
+const isUnderlyingTokenMock = jest.fn();
 const tokensFindByAddressMock = jest.fn();
 
 jest.mock("../services/partner", () => ({
@@ -92,6 +93,7 @@ jest.mock("../yearn", () => ({
     },
     vaults: {
       getDynamic: vaultsGetDynamicMock,
+      isUnderlyingToken: isUnderlyingTokenMock,
     },
   })),
 }));
@@ -307,7 +309,12 @@ describe("Simulation interface", () => {
         tokensFindByAddressMock.mockResolvedValue(nativeToken);
 
         const vaultMock = createMockAssetDynamicVaultV2();
-        vaultsGetDynamicMock.mockResolvedValue([vaultMock]);
+        const zapperZapInVaultMetadata = {
+          ...vaultMock,
+          metadata: { ...vaultMock.metadata, allowZapIn: true, zapInWith: "zapperZapIn" },
+        };
+        vaultsGetDynamicMock.mockResolvedValue([zapperZapInVaultMetadata]);
+        isUnderlyingTokenMock.mockResolvedValueOnce(false);
       });
 
       it("should call the partner contract", async () => {
