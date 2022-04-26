@@ -74,10 +74,10 @@ describe("FeesInterface", () => {
           data: {
             transfers: [
               {
-                tokenAmountUsdc: new BigNumber(3),
+                tokenAmountUsdc: new BigNumber(3).toString(),
               },
               {
-                tokenAmountUsdc: new BigNumber(4),
+                tokenAmountUsdc: new BigNumber(4).toString(),
               },
             ],
           },
