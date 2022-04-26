@@ -4,6 +4,7 @@ import { Address, Integer } from "../common";
  * Simple gas prices in gwei
  */
 export interface GasPrice {
+  eip1559: boolean;
   standard: number;
   instant: number;
   fast: number;
