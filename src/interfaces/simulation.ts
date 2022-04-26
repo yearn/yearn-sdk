@@ -71,7 +71,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     const token = await this.yearn.tokens.findByAddress(sellToken);
 
     if (!token) {
-      throw new SdkError(`Could not find a the token by address: ${sellToken}`);
+      throw new SdkError(`Could not find the token by address: ${sellToken}`);
     }
 
     if (!vault) {
