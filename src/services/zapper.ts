@@ -74,7 +74,7 @@ export class ZapperService extends Service {
       "addresses[]": Array.isArray(addresses) ? addresses.join() : addresses,
       api_key: this.ctx.zapper,
     });
-    const balances = await fetch(`${url}?${params}`)
+    const { balances } = await fetch(`${url}?${params}`)
       .then(handleHttpError)
       .then((res) => res.json());
     Object.keys(balances).forEach((address) => {
