@@ -3,7 +3,7 @@ import { Contract } from "@ethersproject/contracts";
 import { JsonRpcSigner } from "@ethersproject/providers";
 import BigNumber from "bignumber.js";
 
-import { ChainId, isEthereum } from "../chain";
+import { ChainId } from "../chain";
 import { ServiceInterface } from "../common";
 import { EthAddress, WethAddress, ZeroAddress } from "../helpers";
 import { SimulationExecutor, SimulationResponse } from "../simulationExecutor";
@@ -498,10 +498,6 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     toVault,
     options,
   }: DepositArgs): Promise<{ needsApproving: boolean } & ApprovalData> {
-    if (!isEthereum(this.chainId)) {
-      throw new SdkError(`Zapper unsupported for chainId: ${this.chainId}`);
-    }
-
     if (sellToken === EthAddress) {
       return { needsApproving: false };
     }
@@ -545,10 +541,6 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     depositArgs: DepositArgs;
     vault: Vault;
   }): Promise<{ simulateFn: (save: boolean) => Promise<TransactionOutcome>; forkId?: string }> {
-    if (!isEthereum(this.chainId)) {
-      throw new SdkError(`Zapper unsupported for chainId: ${this.chainId}`);
-    }
-
     if (!depositArgs.options.slippage) {
       throw new SdkError("slippage needs to be specified for a zap", SdkError.NO_SLIPPAGE);
     }
