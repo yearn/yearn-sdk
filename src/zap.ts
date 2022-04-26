@@ -7,12 +7,12 @@ type ZapInDetails = { isZapInSupported: boolean; zapInWith: ZapInWith | null };
 
 type ZapInArgs = {
   chainId: ChainId;
-  token?: Partial<Token>;
-  vault?: VaultDynamic;
+  token: Partial<Token>;
+  vault: VaultDynamic;
 };
 
 export function getZapInDetails({ chainId, token, vault }: ZapInArgs): ZapInDetails {
-  if (!token?.supported || !vault?.metadata?.zapInWith) {
+  if (!token.supported || !vault.metadata?.zapInWith) {
     return { isZapInSupported: false, zapInWith: null };
   }
 
