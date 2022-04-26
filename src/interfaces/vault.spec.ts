@@ -251,10 +251,10 @@ describe("VaultInterface", () => {
           {
             ...vaultDynamic,
             decimals: "18",
-            name: "ASSET",
-            symbol: "ASS",
-            token: "0x001",
-            version: "1",
+            name: "WETH yVault",
+            symbol: "yvWETH",
+            token: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+            version: "0.4.2",
             metadata: {
               ...vaultDynamic.metadata,
               historicEarnings: [

@@ -172,9 +172,11 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     return this.simulationExecutor.executeSimulationWithReSimulationOnFailure(simulateWithdrawal, forkId);
   }
 
-  private async directDeposit({ depositArgs, vaultContract, vault }: DirectDepositArgs): Promise<TransactionOutcome> {
-    const { toVault, amount, from, sellToken, options } = depositArgs;
-
+  private async directDeposit({
+    depositArgs: { toVault, amount, from, sellToken, options },
+    vaultContract,
+    vault,
+  }: DirectDepositArgs): Promise<TransactionOutcome> {
     const encodedInputData = await this.getEncodedInputData({ vaultContract, amount, toVault });
 
     if (!encodedInputData) {
@@ -605,11 +607,9 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
   private getVaultContract({ toVault, signer }: { toVault: Address; signer: JsonRpcSigner }): VaultContractType {
     const zapProtocol = this.yearn.services.zapper.getZapProtocol({ vault: toVault });
 
-    if (zapProtocol === ZapProtocol.PICKLE) {
-      return new PickleJarContract(toVault, signer);
-    }
-
-    return new YearnVaultContract(toVault, signer);
+    return zapProtocol === ZapProtocol.PICKLE
+      ? new PickleJarContract(toVault, signer)
+      : new YearnVaultContract(toVault, signer);
   }
 
   private async handleZapInSimulationDeposit({ zapInWith, vault, depositArgs }: ZapInSimulationDepositArgs) {

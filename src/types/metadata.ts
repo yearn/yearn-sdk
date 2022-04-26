@@ -7,34 +7,32 @@ import { VaultStrategiesMetadata } from "./strategy";
  * Lens-defined metadata for Yearn Vaults (v1 & v2)
  */
 export interface VaultMetadata {
-  symbol: string;
-  pricePerShare: Integer;
-  migrationAvailable: boolean; // TODO: should be optional
-  latestVaultAddress: Address;
-  depositLimit: Integer;
-  emergencyShutdown: boolean;
-
-  controller: Address;
-  totalAssets: Integer;
-  totalSupply: Integer;
-
-  apy?: Apy;
-  displayName: string; // TODO: should be optional
-  displayIcon: string;
-  defaultDisplayToken: Address;
-  strategies?: VaultStrategiesMetadata;
-  historicEarnings?: EarningsDayData[];
-  depositsDisabled?: boolean;
-  withdrawalsDisabled?: boolean;
   allowZapIn?: boolean;
   allowZapOut?: boolean;
-  zapInWith?: string;
-  zapOutWith?: string;
+  apy?: Apy;
+  controller: Address;
+  defaultDisplayToken: Address;
+  depositLimit: Integer;
+  depositsDisabled?: boolean;
+  displayIcon: string;
+  displayName: string; // TODO: should be optional
+  emergencyShutdown: boolean;
+  hideIfNoDeposits: boolean;
+  historicEarnings?: EarningsDayData[];
+  latestVaultAddress: Address;
+  migrationAvailable: boolean; // TODO: should be optional
   migrationContract?: Address;
   migrationTargetVault?: Address;
-  vaultNameOverride?: string;
+  pricePerShare: Integer;
+  strategies?: VaultStrategiesMetadata;
+  symbol?: string;
+  totalAssets: Integer;
+  totalSupply: Integer;
   vaultDetailPageAssets?: string[];
-  hideIfNoDeposits: boolean;
+  vaultNameOverride?: string;
+  withdrawalsDisabled?: boolean;
+  zapInWith?: string;
+  zapOutWith?: string;
 }
 
 /**
