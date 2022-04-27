@@ -1,4 +1,3 @@
-import { getAddress } from "@ethersproject/address";
 import { Contract } from "@ethersproject/contracts";
 import { JsonRpcSigner } from "@ethersproject/providers";
 import BigNumber from "bignumber.js";
@@ -60,23 +59,32 @@ type GetVaultArgs = {
   toVault: Address;
   vaultContract: VaultContractType;
 };
+import { getZapOutDetails, ZapOutWith } from "../zap";
 
-interface GetWithdrawApprovalData {
+type GetWithdrawApprovalData = {
   from: Address;
   fromVault: Address;
   options: SimulationOptions;
-}
+};
 
-interface DirectWithdrawArgs {
+type WithdrawArgs = {
+  from: Address;
+  fromVault: Address;
+  amount: Integer;
+  toToken: Address;
+  options: SimulationOptions;
+};
+
+type DirectWithdrawArgs = {
   from: Address;
   toToken: Address;
   amount: Integer;
   fromVault: Address;
   vaultContract: VaultContract;
   options: SimulationOptions;
-}
+};
 
-interface ZapOutArgs {
+type ZapOutArgs = {
   from: Address;
   toToken: Address;
   underlyingTokenAddress: Address;
@@ -84,7 +92,13 @@ interface ZapOutArgs {
   fromVault: Address;
   skipGasEstimate: boolean;
   options: SimulationOptions;
-}
+};
+
+type ZapOutSimulationArgs = {
+  zapOutWith: ZapOutWith;
+  token: Token;
+  withdrawArgs: WithdrawArgs;
+};
 
 /**
  * [[SimulationInterface]] allows the simulation of ethereum transactions using Tenderly's api.
@@ -165,27 +179,29 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
 
     const signer = this.ctx.provider.write.getSigner(from);
     const vaultContract = new YearnVaultContract(fromVault, signer);
-    const underlyingTokenAddress = await vaultContract.token();
-    const isZapping = underlyingTokenAddress !== getAddress(toToken);
 
-    if (isZapping) {
-      if (!options.slippage) {
-        throw new SdkError("slippage needs to be specified for a zap", SdkError.NO_SLIPPAGE);
-      }
+    const [vault] = await this.yearn.vaults.get([fromVault]);
 
-      const { needsApproving, root, forkId } = await this.getWithdrawApprovalData(withdrawArgs);
+    if (!vault) {
+      throw new SdkError(`Could not get vault: ${fromVault}`);
+    }
 
-      return this.simulationExecutor.executeSimulationWithReSimulationOnFailure(
-        (save: boolean): Promise<TransactionOutcome> => {
-          return this.zapOut({
-            ...withdrawArgs,
-            underlyingTokenAddress,
-            skipGasEstimate: needsApproving,
-            options: { ...options, root, forkId, save },
-          });
-        },
-        forkId
-      );
+    const token = await this.yearn.tokens.findByAddress(from);
+
+    if (!token) {
+      throw new SdkError(`Could not find the token by address: ${from}`);
+    }
+
+    const { isZapOutSupported, zapOutWith } = getZapOutDetails({ chainId: this.chainId, token, vault });
+
+    if (isZapOutSupported && zapOutWith) {
+      return this.handleZapOutSimulation({ withdrawArgs, zapOutWith, token });
+    }
+
+    const underlyingToken = this.yearn.vaults.isUnderlyingToken(fromVault, toToken);
+
+    if (!isZapOutSupported && !underlyingToken) {
+      throw new SdkError(`Withdraw of ${from} from ${fromVault} is not supported`);
     }
 
     return this.simulationExecutor.executeSimulationWithReSimulationOnFailure(
@@ -717,5 +733,44 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
 
   private getZapProtocol({ vault }: { vault: Address }): ZapProtocol {
     return PickleJars.includes(vault) ? ZapProtocol.PICKLE : ZapProtocol.YEARN;
+  }
+
+  private async getZapperZapOutSimulationArgs({
+    withdrawArgs,
+    token: { address: underlyingTokenAddress },
+  }: {
+    withdrawArgs: WithdrawArgs;
+    token: Token;
+  }): Promise<{ simulateFn: (save: boolean) => Promise<TransactionOutcome>; forkId?: string }> {
+    if (!withdrawArgs.options.slippage) {
+      throw new SdkError("slippage needs to be specified for a zap", SdkError.NO_SLIPPAGE);
+    }
+
+    const { needsApproving, root, forkId } = await this.getWithdrawApprovalData(withdrawArgs);
+
+    const simulateFn = (save: boolean): Promise<TransactionOutcome> => {
+      return this.zapOut({
+        ...withdrawArgs,
+        underlyingTokenAddress,
+        skipGasEstimate: needsApproving,
+        options: { ...withdrawArgs.options, root, forkId, save },
+      });
+    };
+
+    return { simulateFn, forkId };
+  }
+
+  private async handleZapOutSimulation({ zapOutWith, token, withdrawArgs }: ZapOutSimulationArgs) {
+    if (zapOutWith === "zapperZapOut") {
+      const { simulateFn, forkId } = await this.getZapperZapOutSimulationArgs({ withdrawArgs, token });
+
+      return this.simulationExecutor.executeSimulationWithReSimulationOnFailure(simulateFn, forkId);
+    }
+
+    if (zapOutWith === "ftmApeZap") {
+      throw new SdkError("ftmApeZap not implemented yet!");
+    }
+
+    throw new SdkError(`zapOutWith "${zapOutWith}" not supported yet!`);
   }
 }

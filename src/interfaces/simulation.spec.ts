@@ -366,15 +366,24 @@ describe("Simulation interface", () => {
   });
 
   describe("withdraw", () => {
+    beforeEach(() => {
+      const zapperZapOutSupportedToken = createMockToken({ supported: { zapper: true, zapperZapOut: true } });
+      tokensFindByAddressMock.mockResolvedValue(zapperZapOutSupportedToken);
+
+      const vaultMock = createMockAssetStaticVaultV2();
+      const zapperZapOutVaultMetadata = {
+        ...vaultMock,
+        metadata: { ...vaultMock.metadata, allowZapOut: true, zapOutWith: "zapperZapOut" },
+      };
+      vaultsGetMock.mockResolvedValue([zapperZapOutVaultMetadata]);
+    });
+
     it("should fail with SDK no slippage error if none was passed", async () => {
-      expect.assertions(2);
-      tokenMock.mockImplementationOnce(() => Promise.resolve("0x001"));
-      try {
-        await simulationInterface.withdraw("0x000", "0x000", "1", "0x0000000000000000000000000000000000000001");
-      } catch (error) {
-        expect(error).toBeInstanceOf(SdkError);
-        expect(error).toHaveProperty("error_code", SdkError.NO_SLIPPAGE);
-      }
+      vaultsGetMock.mockReturnValueOnce(Promise.reject(new Error("something bad happened")));
+
+      return expect(
+        simulationInterface.withdraw("0x000", "0x000", "1", "0x0000000000000000000000000000000000000001")
+      ).rejects.toThrowError("something bad happened");
     });
 
     it("should fail with ZapperError zap out approval state error", async () => {
