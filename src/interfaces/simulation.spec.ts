@@ -316,7 +316,7 @@ describe("Simulation interface", () => {
           metadata: { ...vaultMock.metadata, allowZapIn: true, zapInWith: "zapperZapIn" },
         };
         vaultsGetMock.mockResolvedValue([zapperZapInVaultMetadata]);
-        isUnderlyingTokenMock.mockResolvedValueOnce(false);
+        isUnderlyingTokenMock.mockResolvedValueOnce(true);
       });
 
       it("should call the partner contract", async () => {
