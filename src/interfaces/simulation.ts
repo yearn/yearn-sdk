@@ -61,6 +61,12 @@ type GetVaultArgs = {
   vaultContract: VaultContractType;
 };
 
+interface GetWithdrawApprovalData {
+  from: Address;
+  fromVault: Address;
+  options: SimulationOptions;
+}
+
 /**
  * [[SimulationInterface]] allows the simulation of ethereum transactions using Tenderly's api.
  * This allows us to know information before executing a transaction on mainnet.
@@ -145,50 +151,56 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
       if (!options.slippage) {
         throw new SdkError("slippage needs to be specified for a zap", SdkError.NO_SLIPPAGE);
       }
-      let needsApproving: boolean;
 
-      if (fromVault === EthAddress) {
-        needsApproving = false;
-      } else {
-        needsApproving = await this.yearn.services.zapper
-          .zapOutApprovalState(from, fromVault)
-          .then((state) => !state.isApproved)
-          .catch(() => {
-            throw new ZapperError("zap out approval state", ZapperError.ZAP_OUT_APPROVAL_STATE);
+      const { needsApproving, root, forkId } = await this.getWithdrawApprovalData({ from, fromVault, options });
+
+      return this.simulationExecutor.executeSimulationWithReSimulationOnFailure(
+        (save: boolean): Promise<TransactionOutcome> => {
+          return this.zapOut(from, toToken, underlyingToken, amount, fromVault, needsApproving, {
+            ...options,
+            root,
+            forkId,
+            save,
           });
-      }
-
-      const forkId = needsApproving ? await this.simulationExecutor.createFork() : undefined;
-
-      const approvalSimulationId = needsApproving
-        ? await this.yearn.services.zapper
-            .zapOutApprovalTransaction(from, fromVault, "0")
-            .catch(() => {
-              throw new ZapperError("zap out approval transaction", ZapperError.ZAP_OUT_APPROVAL);
-            })
-            .then(async (approvalTransaction) => {
-              return await this.simulateZapApprovalTransaction(approvalTransaction, { ...options, forkId });
-            })
-            .then((res) => res.simulation.id)
-        : undefined;
-
-      const simulateWithdrawal = (save: boolean): Promise<TransactionOutcome> => {
-        return this.zapOut(from, toToken, underlyingToken, amount, fromVault, needsApproving, {
-          ...options,
-          root: approvalSimulationId,
-          forkId,
-          save,
-        });
-      };
-
-      return this.simulationExecutor.executeSimulationWithReSimulationOnFailure(simulateWithdrawal, forkId);
+        },
+        forkId
+      );
     }
 
-    const simulateWithdrawal = (save: boolean): Promise<TransactionOutcome> => {
-      return this.directWithdraw(from, toToken, amount, fromVault, vaultContract, { ...options, save });
-    };
+    return this.simulationExecutor.executeSimulationWithReSimulationOnFailure(
+      (save: boolean): Promise<TransactionOutcome> => {
+        return this.directWithdraw(from, toToken, amount, fromVault, vaultContract, { ...options, save });
+      }
+    );
+  }
 
-    return this.simulationExecutor.executeSimulationWithReSimulationOnFailure(simulateWithdrawal);
+  private async getWithdrawApprovalData({ from, fromVault, options }: GetWithdrawApprovalData) {
+    if (fromVault === EthAddress) {
+      return { needsApproving: false };
+    }
+
+    try {
+      const { isApproved } = await this.yearn.services.zapper.zapOutApprovalState(from, fromVault);
+
+      if (isApproved) {
+        return { needsApproving: false };
+      }
+    } catch (error) {
+      throw new ZapperError("zap out approval state", ZapperError.ZAP_OUT_APPROVAL_STATE);
+    }
+
+    const forkId = await this.simulationExecutor.createFork();
+
+    try {
+      const zapApprovalTransaction = await this.yearn.services.zapper.zapOutApprovalTransaction(from, fromVault, "0");
+      const { simulation } = await this.simulateZapApprovalTransaction(zapApprovalTransaction, {
+        ...options,
+        forkId,
+      });
+      return { needsApproving: true, root: simulation.id, forkId };
+    } catch (error) {
+      throw new ZapperError("zap out approval transaction", ZapperError.ZAP_OUT_APPROVAL);
+    }
   }
 
   private async directDeposit({
