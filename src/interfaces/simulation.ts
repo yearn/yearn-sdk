@@ -141,7 +141,6 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     const underlyingToken = await vaultContract.token();
     const isZapping = underlyingToken !== getAddress(toToken);
     let forkId: string | undefined;
-    let simulateWithdrawal: (save: boolean) => Promise<TransactionOutcome>;
 
     if (isZapping) {
       if (!options.slippage) {
@@ -176,16 +175,17 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
 
       options.root = approvalSimulationId;
 
-      simulateWithdrawal = (save: boolean): Promise<TransactionOutcome> => {
-        options.save = save;
-        return this.zapOut(from, toToken, underlyingToken, amount, fromVault, needsApproving, options);
+      const simulateWithdrawal = (save: boolean): Promise<TransactionOutcome> => {
+        return this.zapOut(from, toToken, underlyingToken, amount, fromVault, needsApproving, { ...options, save });
       };
-    } else {
-      simulateWithdrawal = (save: boolean): Promise<TransactionOutcome> => {
-        options.save = save;
-        return this.directWithdraw(from, toToken, amount, fromVault, vaultContract, options);
-      };
+
+      return this.simulationExecutor.executeSimulationWithReSimulationOnFailure(simulateWithdrawal, forkId);
     }
+
+    const simulateWithdrawal = (save: boolean): Promise<TransactionOutcome> => {
+      return this.directWithdraw(from, toToken, amount, fromVault, vaultContract, { ...options, save });
+    };
+
     return this.simulationExecutor.executeSimulationWithReSimulationOnFailure(simulateWithdrawal, forkId);
   }
 
