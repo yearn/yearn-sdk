@@ -140,7 +140,6 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     const vaultContract = new YearnVaultContract(fromVault, signer);
     const underlyingToken = await vaultContract.token();
     const isZapping = underlyingToken !== getAddress(toToken);
-    let forkId: string | undefined;
 
     if (isZapping) {
       if (!options.slippage) {
@@ -159,24 +158,27 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
           });
       }
 
-      forkId = needsApproving ? await this.simulationExecutor.createFork() : undefined;
-      options.forkId = forkId;
+      const forkId = needsApproving ? await this.simulationExecutor.createFork() : undefined;
+
       const approvalSimulationId = needsApproving
         ? await this.yearn.services.zapper
             .zapOutApprovalTransaction(from, fromVault, "0")
             .catch(() => {
               throw new ZapperError("zap out approval transaction", ZapperError.ZAP_OUT_APPROVAL);
             })
-            .then(async ({ from, to, data }) => {
-              return this.simulationExecutor.makeSimulationRequest(from, to, data, { ...options, save: true });
+            .then(async (approvalTransaction) => {
+              return await this.simulateZapApprovalTransaction(approvalTransaction, { ...options, forkId });
             })
             .then((res) => res.simulation.id)
         : undefined;
 
-      options.root = approvalSimulationId;
-
       const simulateWithdrawal = (save: boolean): Promise<TransactionOutcome> => {
-        return this.zapOut(from, toToken, underlyingToken, amount, fromVault, needsApproving, { ...options, save });
+        return this.zapOut(from, toToken, underlyingToken, amount, fromVault, needsApproving, {
+          ...options,
+          root: approvalSimulationId,
+          forkId,
+          save,
+        });
       };
 
       return this.simulationExecutor.executeSimulationWithReSimulationOnFailure(simulateWithdrawal, forkId);
@@ -186,7 +188,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
       return this.directWithdraw(from, toToken, amount, fromVault, vaultContract, { ...options, save });
     };
 
-    return this.simulationExecutor.executeSimulationWithReSimulationOnFailure(simulateWithdrawal, forkId);
+    return this.simulationExecutor.executeSimulationWithReSimulationOnFailure(simulateWithdrawal);
   }
 
   private async directDeposit({
