@@ -67,6 +67,25 @@ interface GetWithdrawApprovalData {
   options: SimulationOptions;
 }
 
+interface DirectWithdrawArgs {
+  from: Address;
+  toToken: Address;
+  amount: Integer;
+  fromVault: Address;
+  vaultContract: VaultContract;
+  options: SimulationOptions;
+}
+
+interface ZapOutArgs {
+  from: Address;
+  toToken: Address;
+  underlyingTokenAddress: Address;
+  amount: Integer;
+  fromVault: Address;
+  skipGasEstimate: boolean;
+  options: SimulationOptions;
+}
+
 /**
  * [[SimulationInterface]] allows the simulation of ethereum transactions using Tenderly's api.
  * This allows us to know information before executing a transaction on mainnet.
@@ -142,25 +161,27 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     toToken: Address,
     options: SimulationOptions = {}
   ): Promise<TransactionOutcome> {
+    const withdrawArgs = { from, fromVault, amount, toToken, options };
+
     const signer = this.ctx.provider.write.getSigner(from);
     const vaultContract = new YearnVaultContract(fromVault, signer);
-    const underlyingToken = await vaultContract.token();
-    const isZapping = underlyingToken !== getAddress(toToken);
+    const underlyingTokenAddress = await vaultContract.token();
+    const isZapping = underlyingTokenAddress !== getAddress(toToken);
 
     if (isZapping) {
       if (!options.slippage) {
         throw new SdkError("slippage needs to be specified for a zap", SdkError.NO_SLIPPAGE);
       }
 
-      const { needsApproving, root, forkId } = await this.getWithdrawApprovalData({ from, fromVault, options });
+      const { needsApproving, root, forkId } = await this.getWithdrawApprovalData(withdrawArgs);
 
       return this.simulationExecutor.executeSimulationWithReSimulationOnFailure(
         (save: boolean): Promise<TransactionOutcome> => {
-          return this.zapOut(from, toToken, underlyingToken, amount, fromVault, needsApproving, {
-            ...options,
-            root,
-            forkId,
-            save,
+          return this.zapOut({
+            ...withdrawArgs,
+            underlyingTokenAddress,
+            skipGasEstimate: needsApproving,
+            options: { ...options, root, forkId, save },
           });
         },
         forkId
@@ -169,7 +190,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
 
     return this.simulationExecutor.executeSimulationWithReSimulationOnFailure(
       (save: boolean): Promise<TransactionOutcome> => {
-        return this.directWithdraw(from, toToken, amount, fromVault, vaultContract, { ...options, save });
+        return this.directWithdraw({ ...withdrawArgs, vaultContract, options: { ...options, save } });
       }
     );
   }
@@ -306,45 +327,6 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     }
   }
 
-  private async directWithdraw(
-    from: Address,
-    toToken: Address,
-    amount: Integer,
-    fromVault: Address,
-    vaultContract: VaultContract,
-    options: SimulationOptions
-  ): Promise<TransactionOutcome> {
-    const encodedInputData = vaultContract.encodeWithdraw(amount);
-
-    const tokensReceived = await this.simulationExecutor.simulateVaultInteraction(
-      from,
-      fromVault,
-      encodedInputData,
-      toToken,
-      options
-    );
-
-    const targetTokenAmountUsdc = await this.yearn.services.oracle
-      .getNormalizedValueUsdc(toToken, tokensReceived)
-      .catch(() => {
-        throw new PriceFetchingError("error fetching price", PriceFetchingError.FETCHING_PRICE_ORACLE);
-      });
-
-    const result: TransactionOutcome = {
-      sourceTokenAddress: fromVault,
-      sourceTokenAmount: amount,
-      targetTokenAddress: toToken,
-      targetTokenAmount: tokensReceived,
-      targetTokenAmountUsdc: targetTokenAmountUsdc,
-      targetUnderlyingTokenAddress: toToken,
-      targetUnderlyingTokenAmount: tokensReceived,
-      conversionRate: 1,
-      slippage: 0,
-    };
-
-    return result;
-  }
-
   private async zapIn({
     depositArgs: { sellToken, from, amount, toVault, options },
     vault,
@@ -450,15 +432,54 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     };
   }
 
-  private async zapOut(
-    from: Address,
-    toToken: Address,
-    underlyingTokenAddress: Address,
-    amount: Integer,
-    fromVault: Address,
-    skipGasEstimate: boolean,
-    options: SimulationOptions
-  ): Promise<TransactionOutcome> {
+  private async directWithdraw({
+    from,
+    toToken,
+    amount,
+    fromVault,
+    vaultContract,
+    options,
+  }: DirectWithdrawArgs): Promise<TransactionOutcome> {
+    const encodedInputData = vaultContract.encodeWithdraw(amount);
+
+    const tokensReceived = await this.simulationExecutor.simulateVaultInteraction(
+      from,
+      fromVault,
+      encodedInputData,
+      toToken,
+      options
+    );
+
+    const targetTokenAmountUsdc = await this.yearn.services.oracle
+      .getNormalizedValueUsdc(toToken, tokensReceived)
+      .catch(() => {
+        throw new PriceFetchingError("error fetching price", PriceFetchingError.FETCHING_PRICE_ORACLE);
+      });
+
+    const result: TransactionOutcome = {
+      sourceTokenAddress: fromVault,
+      sourceTokenAmount: amount,
+      targetTokenAddress: toToken,
+      targetTokenAmount: tokensReceived,
+      targetTokenAmountUsdc: targetTokenAmountUsdc,
+      targetUnderlyingTokenAddress: toToken,
+      targetUnderlyingTokenAmount: tokensReceived,
+      conversionRate: 1,
+      slippage: 0,
+    };
+
+    return result;
+  }
+
+  private async zapOut({
+    from,
+    toToken,
+    underlyingTokenAddress,
+    amount,
+    fromVault,
+    skipGasEstimate,
+    options,
+  }: ZapOutArgs): Promise<TransactionOutcome> {
     if (!options.slippage) {
       throw new SdkError("slippage needs to be set", SdkError.NO_SLIPPAGE);
     }
