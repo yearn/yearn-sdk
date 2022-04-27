@@ -5,8 +5,6 @@ import { FeesResponse } from "../services/subgraph/responses";
 import { Usdc } from "../types";
 import { toBN } from "../utils";
 
-const BigZero = toBN(0);
-
 export class FeesInterface<C extends ChainId> extends ServiceInterface<C> {
   async protocolFees(since: Date): Promise<Usdc> {
     const response = await this.yearn.services.subgraph.fetchQuery<FeesResponse>(PROTOCOL_FEES, {
@@ -14,11 +12,11 @@ export class FeesInterface<C extends ChainId> extends ServiceInterface<C> {
     });
 
     if (!response?.data || !response.data?.transfers) {
-      return BigZero.toFixed(0);
+      return toBN(0).toFixed(0);
     }
 
     const transfers = response.data.transfers;
 
-    return transfers.reduce((prev, { tokenAmountUsdc }) => prev.plus(toBN(tokenAmountUsdc || 0)), BigZero).toFixed(0);
+    return transfers.reduce((prev, { tokenAmountUsdc }) => prev.plus(toBN(tokenAmountUsdc || 0)), toBN(0)).toFixed(0);
   }
 }

@@ -1,7 +1,6 @@
-import BigNumber from "bignumber.js";
-
 import { ApyMap, ChainId, FeesInterface, Usdc, VaultStatic } from "..";
 import { Context } from "../context";
+import { toBN } from "../utils";
 import { Yearn } from "../yearn";
 
 const subgraphFetchQueryMock = jest.fn();
@@ -74,10 +73,10 @@ describe("FeesInterface", () => {
           data: {
             transfers: [
               {
-                tokenAmountUsdc: new BigNumber(3).toString(),
+                tokenAmountUsdc: toBN(3).toString(),
               },
               {
-                tokenAmountUsdc: new BigNumber(4).toString(),
+                tokenAmountUsdc: toBN(4).toString(),
               },
             ],
           },
@@ -87,7 +86,7 @@ describe("FeesInterface", () => {
       it("should return the protocol fees", async () => {
         const actualProtocolFees = await feesInterface.protocolFees(new Date());
 
-        expect(actualProtocolFees).toEqual(new BigNumber(7).toFixed(0));
+        expect(actualProtocolFees).toEqual(toBN(7).toFixed(0));
       });
     });
   });
