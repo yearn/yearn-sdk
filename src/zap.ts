@@ -1,14 +1,24 @@
 import { ChainId, isEthereum, isFantom } from "./chain";
-import { DepositableVault, Token } from "./types";
+import { DepositableVault, Token, VaultDynamic } from "./types";
 
 export type ZapInWith = keyof Token["supported"];
 
+export type ZapOutWith = keyof Token["supported"];
+
 type ZapInDetails = { isZapInSupported: boolean; zapInWith: ZapInWith | null };
+
+type ZapOutDetails = { isZapOutSupported: boolean; zapOutWith: ZapOutWith | null };
 
 type ZapInArgs = {
   chainId: ChainId;
   token: Partial<Token>;
   vault: DepositableVault;
+};
+
+type ZapOutArgs = {
+  chainId: ChainId;
+  token: Partial<Token>;
+  vault: VaultDynamic;
 };
 
 export function getZapInDetails({ chainId, token, vault }: ZapInArgs): ZapInDetails {
@@ -33,6 +43,30 @@ export function getZapInDetails({ chainId, token, vault }: ZapInArgs): ZapInDeta
   }
 
   return { isZapInSupported: false, zapInWith: null };
+}
+
+export function getZapOutDetails({ chainId, token, vault }: ZapOutArgs): ZapOutDetails {
+  if (!token.supported || !vault.metadata?.zapOutWith) {
+    return { isZapOutSupported: false, zapOutWith: null };
+  }
+
+  if (isEthereum(chainId)) {
+    const { zapOutWith } = vault.metadata;
+
+    if (zapOutWith && isValidZap(zapOutWith, token.supported)) {
+      const isZapOutSupported = Boolean(token.supported.zapper) && Boolean(token.supported[zapOutWith]);
+      return { isZapOutSupported, zapOutWith: isZapOutSupported ? zapOutWith : null };
+    }
+  }
+
+  if (isFantom(chainId)) {
+    const zapOutWith = "ftmApeZap"; // Hardcoded for now
+
+    const isZapOutSupported = Boolean(token.supported[zapOutWith]);
+    return { isZapOutSupported, zapOutWith: isZapOutSupported ? zapOutWith : null };
+  }
+
+  return { isZapOutSupported: false, zapOutWith: null };
 }
 
 /**
