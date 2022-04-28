@@ -6,7 +6,7 @@ import { ChainId, SdkError } from "..";
 import { Context } from "../context";
 import { PartnerService } from "../services/partner";
 import { SimulationExecutor } from "../simulationExecutor";
-import { createMockAssetStaticVaultV2, createMockToken } from "../test-utils/factories";
+import { createMockAssetStaticVaultV2, createMockDepositableVault, createMockToken } from "../test-utils/factories";
 import { ZapProtocol } from "../types";
 import { PriceFetchingError, ZapperError } from "../types/custom/simulation";
 import { Yearn } from "../yearn";
@@ -161,6 +161,14 @@ describe("Simulation interface", () => {
 
       return expect(simulationInterface.deposit("0x000", "0x000", "1", "0x000")).rejects.toThrowError(
         "something bad happened"
+      );
+    });
+
+    it("should fail with SdkError when there is no token", async () => {
+      tokensFindByAddressMock.mockReturnValueOnce(Promise.reject(new Error("Token not found!")));
+
+      return expect(simulationInterface.deposit("0x000", "0x000", "1", "0x000")).rejects.toThrowError(
+        "Token not found!"
       );
     });
 
@@ -341,6 +349,19 @@ describe("Simulation interface", () => {
           slippage: 1,
         });
       });
+    });
+
+    it("should fail if deposit of token to vault is not supported", async () => {
+      expect.assertions(1);
+      tokenMock.mockReturnValueOnce(Promise.resolve("0x001"));
+      const depositableVaultMock = createMockDepositableVault();
+      vaultsGetMock.mockResolvedValue([
+        { ...depositableVaultMock, metadata: { ...depositableVaultMock.metadata, zapInWith: undefined } },
+      ]);
+
+      await expect(simulationInterface.deposit("0x000", "0x000", "1", "0x000", { slippage: 1 })).rejects.toThrowError(
+        "Deposit of 0x001 to 0x000 is not supported"
+      );
     });
   });
 
