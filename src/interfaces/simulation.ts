@@ -570,7 +570,6 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     const signer = this.ctx.provider.write.getSigner(from);
     const tokenContract = new Contract(sellToken, tokenAbi, signer);
 
-    const addressToApprove = this.getActionableAddress({ toVault });
     const addressToApprove = await this.getActionableAddress({ toVault });
 
     const encodedInputData = tokenContract.interface.encodeFunctionData("approve", [addressToApprove, amount]);
