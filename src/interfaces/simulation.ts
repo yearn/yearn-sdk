@@ -527,7 +527,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
         throw new ZapperError("approval", ZapperError.ZAP_IN_APPROVAL);
       })
       .then(async ({ from, to, data }) => {
-        return this.simulationExecutor.makeSimulationRequest(from, to, data, { ...options, save: true });
+        return this.simulationExecutor.makeSimulationRequest(from, to, data, { ...options, forkId, save: true });
       })
       .then((res) => res.simulation.id);
 
