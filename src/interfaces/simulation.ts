@@ -6,6 +6,7 @@ import BigNumber from "bignumber.js";
 import { ChainId } from "../chain";
 import { ServiceInterface } from "../common";
 import { EthAddress, WethAddress, ZeroAddress } from "../helpers";
+import { PickleJars } from "../services/partners/pickle";
 import { SimulationExecutor, SimulationResponse } from "../simulationExecutor";
 import { Address, Integer, PriceFetchingError, SdkError, Vault, ZapperError, ZapProtocol } from "../types";
 import { SimulationOptions, TransactionOutcome } from "../types/custom/simulation";
@@ -65,6 +66,10 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     const signer = this.ctx.provider.write.getSigner(from);
 
     const vaultContract = this.getVaultContract({ toVault, signer });
+
+    if (PickleJars.includes(toVault)) {
+      throw new SdkError(`Depositing with PickleJars ${toVault} not implemented!`);
+    }
 
     const [vault] = await this.yearn.vaults.get([toVault]);
 
