@@ -597,9 +597,9 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
       return {};
     }
 
-    const approvalTransactionId = await this.approve(depositArgs);
-
     const forkId = await this.simulationExecutor.createFork();
+
+    const approvalTransactionId = await this.approve({ ...depositArgs, options: { ...depositArgs.options, forkId } });
 
     return { approvalTransactionId, forkId };
   }
