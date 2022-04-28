@@ -7,6 +7,7 @@ import { CachedFetcher } from "../cache";
 import { ChainId, isEthereum, isFantom } from "../chain";
 import { ContractAddressId, ServiceInterface } from "../common";
 import { chunkArray, EthAddress, FANTOM_TOKEN, isNativeToken, WethAddress } from "../helpers";
+import { PickleJars } from "../services/partners/pickle";
 import {
   Address,
   Apy,
@@ -711,6 +712,6 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
   }
 
   private isZappingIntoPickleJar({ vault }: { vault: string }) {
-    return this.yearn.services.zapper.getZapProtocol({ vault }) === ZapProtocol.PICKLE;
+    return PickleJars.includes(vault);
   }
 }

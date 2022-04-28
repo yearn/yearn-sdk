@@ -346,7 +346,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
       throw new SdkError("slippage needs to be set", SdkError.NO_SLIPPAGE);
     }
 
-    const zapProtocol = this.yearn.services.zapper.getZapProtocol({ vault: toVault });
+    const zapProtocol = this.getZapProtocol({ vault: toVault });
 
     const zapInParams = await this.yearn.services.zapper
       .zapIn(from, zapToken, amount, toVault, options.gasPrice || "0", options.slippage, skipGasEstimate, zapProtocol)
@@ -523,7 +523,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
       return { needsApproving: false };
     }
 
-    const zapProtocol = this.yearn.services.zapper.getZapProtocol({ vault: toVault });
+    const zapProtocol = this.getZapProtocol({ vault: toVault });
 
     const isApprovalNeeded = await this.yearn.services.zapper
       .zapInApprovalState(from, sellToken, zapProtocol)
@@ -622,7 +622,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
   }
 
   private getVaultContract({ toVault, signer }: { toVault: Address; signer: JsonRpcSigner }): VaultContractType {
-    const zapProtocol = this.yearn.services.zapper.getZapProtocol({ vault: toVault });
+    const zapProtocol = this.getZapProtocol({ vault: toVault });
 
     return zapProtocol === ZapProtocol.PICKLE
       ? new PickleJarContract(toVault, signer)
@@ -652,7 +652,9 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
   }
 
   private async getVault({ toVault, vaultContract }: GetVaultArgs): Promise<DepositableVault> {
-    if (PickleJars.includes(toVault)) {
+    const zapProtocol = this.getZapProtocol({ vault: toVault });
+
+    if (zapProtocol === ZapProtocol.PICKLE) {
       const [decimals, pricePerShare] = await Promise.all([
         vaultContract.decimals().catch(() => {
           throw new EthersError("no decimals", EthersError.NO_DECIMALS);
@@ -676,5 +678,9 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     const [vault] = await this.yearn.vaults.get([toVault]);
 
     return vault;
+  }
+
+  private getZapProtocol({ vault }: { vault: Address }): ZapProtocol {
+    return PickleJars.includes(vault) ? ZapProtocol.PICKLE : ZapProtocol.YEARN;
   }
 }
