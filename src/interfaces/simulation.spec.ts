@@ -13,6 +13,8 @@ import { Yearn } from "../yearn";
 import { SimulationInterface } from "./simulation";
 
 const tokenMock = jest.fn(() => Promise.resolve("0x0000000000000000000000000000000000000001"));
+const decimalsMock = jest.fn(() => Promise.resolve(1));
+const pricePerShareMock = jest.fn(() => Promise.resolve(1));
 const zapInApprovalStateMock = jest.fn(() => Promise.resolve({ isApproved: false }));
 const zapInApprovalTransactionMock = jest.fn(() => Promise.resolve({ from: "0x000", to: "0x000", data: "" }));
 const zapOutApprovalStateMock = jest.fn(() => Promise.resolve({ isApproved: false }));
@@ -39,6 +41,8 @@ jest.mock("@ethersproject/contracts");
 jest.mock("../vault", () => ({
   PickleJarContract: jest.fn().mockImplementation(() => ({
     token: tokenMock,
+    decimals: decimalsMock,
+    pricePerShare: pricePerShareMock,
     encodeDeposit: jest.fn().mockReturnValue(Promise.resolve("encodeDeposit")),
   })),
   YearnVaultContract: jest.fn().mockImplementation(() => ({

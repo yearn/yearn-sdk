@@ -8,8 +8,19 @@ import { ServiceInterface } from "../common";
 import { EthAddress, WethAddress, ZeroAddress } from "../helpers";
 import { PickleJars } from "../services/partners/pickle";
 import { SimulationExecutor, SimulationResponse } from "../simulationExecutor";
-import { Address, Integer, PriceFetchingError, SdkError, Vault, ZapperError, ZapProtocol } from "../types";
-import { SimulationOptions, TransactionOutcome } from "../types/custom/simulation";
+import {
+  Address,
+  DepositableVault,
+  EthersError,
+  Integer,
+  PriceFetchingError,
+  SdkError,
+  SimulationOptions,
+  Token,
+  TransactionOutcome,
+  ZapperError,
+  ZapProtocol,
+} from "../types";
 import { toBN } from "../utils";
 import { PickleJarContract, VaultContract, YearnVaultContract } from "../vault";
 import { getZapInDetails, ZapInWith } from "../zap";
@@ -24,19 +35,19 @@ export type DepositArgs = {
 
 type DirectDepositArgs = {
   depositArgs: DepositArgs;
-  vault: Vault;
+  vault: DepositableVault;
   vaultContract: VaultContract;
 };
 
 type ZapInSimulationDepositArgs = {
   zapInWith: ZapInWith;
-  vault: Vault;
+  vault: DepositableVault;
   depositArgs: DepositArgs;
 };
 
 type DirectDepositSimulationArgs = {
   vaultContract: VaultContractType;
-  vault: Vault;
+  vault: DepositableVault;
   depositArgs: DepositArgs;
   signer: JsonRpcSigner;
 };
@@ -44,6 +55,11 @@ type DirectDepositSimulationArgs = {
 type ApprovalData = { approvalTransactionId?: string; forkId?: string };
 
 type VaultContractType = PickleJarContract | YearnVaultContract;
+
+type GetVaultArgs = {
+  toVault: Address;
+  vaultContract: VaultContractType;
+};
 
 /**
  * [[SimulationInterface]] allows the simulation of ethereum transactions using Tenderly's api.
@@ -67,11 +83,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
 
     const vaultContract = this.getVaultContract({ toVault, signer });
 
-    if (PickleJars.includes(toVault)) {
-      throw new SdkError(`Depositing with PickleJars ${toVault} not implemented!`);
-    }
-
-    const [vault] = await this.yearn.vaults.get([toVault]);
+    const vault = await this.getVault({ toVault, vaultContract });
 
     if (!vault) {
       throw new SdkError(`Could not get vault: ${toVault}`);
@@ -83,7 +95,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
       throw new SdkError(`Could not find the token by address: ${sellToken}`);
     }
 
-    const isUnderlyingToken = await this.yearn.vaults.isUnderlyingToken(toVault, token.address);
+    const isUnderlyingToken = await this.isUnderlyingToken({ toVault, token });
 
     if (isUnderlyingToken) {
       return this.handleDirectSimulationDeposit({ depositArgs, vaultContract, vault, signer });
@@ -325,7 +337,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     skipGasEstimate,
   }: {
     depositArgs: DepositArgs;
-    vault: Vault;
+    vault: DepositableVault;
     skipGasEstimate: boolean;
   }): Promise<TransactionOutcome> {
     const zapToken = sellToken === EthAddress ? ZeroAddress : sellToken;
@@ -548,7 +560,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     vault,
   }: {
     depositArgs: DepositArgs;
-    vault: Vault;
+    vault: DepositableVault;
   }): Promise<{ simulateFn: (save: boolean) => Promise<TransactionOutcome>; forkId?: string }> {
     if (!depositArgs.options.slippage) {
       throw new SdkError("slippage needs to be specified for a zap", SdkError.NO_SLIPPAGE);
@@ -629,5 +641,40 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     }
 
     throw new SdkError(`zapInWith "${zapInWith}" not supported yet!`);
+  }
+
+  private async isUnderlyingToken({ toVault, token }: { toVault: Address; token: Token }): Promise<boolean> {
+    if (PickleJars.includes(toVault)) {
+      return false;
+    }
+
+    return this.yearn.vaults.isUnderlyingToken(toVault, token.address);
+  }
+
+  private async getVault({ toVault, vaultContract }: GetVaultArgs): Promise<DepositableVault> {
+    if (PickleJars.includes(toVault)) {
+      const [decimals, pricePerShare] = await Promise.all([
+        vaultContract.decimals().catch(() => {
+          throw new EthersError("no decimals", EthersError.NO_DECIMALS);
+        }),
+        vaultContract.pricePerShare().catch(() => {
+          throw new EthersError("no price per share", EthersError.NO_PRICE_PER_SHARE);
+        }),
+      ]);
+
+      return {
+        address: toVault,
+        token: "0x9461173740d27311b176476fa27e94c681b1ea6b",
+        decimals: decimals.toString(),
+        metadata: {
+          zapInWith: "zapperZapIn",
+          pricePerShare: pricePerShare.toString(),
+        },
+      };
+    }
+
+    const [vault] = await this.yearn.vaults.get([toVault]);
+
+    return vault;
   }
 }

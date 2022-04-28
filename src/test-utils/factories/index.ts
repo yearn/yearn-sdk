@@ -3,6 +3,7 @@ export * from "./apy.factory";
 export * from "./asset.factory";
 export * from "./assetHistoricEarnings.factory";
 export * from "./balance.factory";
+export * from "./depositableVault.factory";
 export * from "./earningsAssetData.factory";
 export * from "./earningsUserData.factory";
 export * from "./populatedTransaction.factory";
