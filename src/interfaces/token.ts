@@ -233,6 +233,16 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
   }
 
   /**
+   * TODO: Should get a single token directly instead of filtering
+   * @param address then token address
+   * @returns the token
+   */
+  async findByAddress(address: Address): Promise<Token | undefined> {
+    const supportedTokens = await this.supported();
+    return supportedTokens.find((token) => token.address === address);
+  }
+
+  /**
    * Fetch the token amount that spender is allowed to spend on behalf of owner
    * @param ownerAddress
    * @param tokenAddress

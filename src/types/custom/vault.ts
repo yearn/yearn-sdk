@@ -1,5 +1,9 @@
+import { PartialDeep } from "type-fest";
+
+import { Vault } from "..";
 import { Address, Integer, TypedMap, Usdc } from "../common";
 import { ZapOptions } from "./zapper";
+
 /**
  * Annual Percentage Yield of a particular for backscratcher vaults coming from api.yearn.finance.
  */
@@ -58,3 +62,13 @@ export interface VaultUserMetadata {
   assetAddress: Address;
   earned: Usdc;
 }
+
+export type DepositableVault = {
+  address: Address;
+  token: Address;
+  decimals: Integer;
+  metadata: {
+    zapInWith?: string;
+    pricePerShare: Integer;
+  };
+} & PartialDeep<Vault>;

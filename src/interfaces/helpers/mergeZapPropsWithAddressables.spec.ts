@@ -1,7 +1,8 @@
+import { FANTOM_TOKEN } from "../../helpers";
 import { createMockTokenMarketData, createMockVaultMetadata } from "../../test-utils/factories";
-import { mergeZapperPropsWithAddressables } from "./mergeZapperPropsWithAddressables";
+import { mergeZapPropsWithAddressables } from "./mergeZapPropsWithAddressables";
 
-describe("mergeZapperPropsWithAddressables", () => {
+describe("mergeZapPropsWithAddressables", () => {
   it("should set the zapper properties on an addressable", async () => {
     const vaultMetadataMock = {
       zappable: createMockVaultMetadata({
@@ -26,14 +27,16 @@ describe("mergeZapperPropsWithAddressables", () => {
       random: createMockTokenMarketData({ label: "Random", address: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48" }),
     };
 
-    const actual = mergeZapperPropsWithAddressables(
-      [vaultMetadataMock.zappable, vaultMetadataMock.notZappable],
-      [
+    const actual = mergeZapPropsWithAddressables({
+      addressables: [vaultMetadataMock.zappable, vaultMetadataMock.notZappable],
+      supportedVaultAddresses: [
         vaultTokenMarketDataMock.zappable.address,
         vaultTokenMarketDataMock.notInVaults.address,
         vaultTokenMarketDataMock.random.address,
-      ]
-    );
+      ],
+      zapInType: "zapperZapIn",
+      zapOutType: "zapperZapOut",
+    });
 
     expect(actual.length).toEqual(2);
     expect(actual).toEqual(
@@ -44,6 +47,46 @@ describe("mergeZapperPropsWithAddressables", () => {
           allowZapOut: true,
           zapInWith: "zapperZapIn",
           zapOutWith: "zapperZapOut",
+        },
+        {
+          ...vaultMetadataMock.notZappable,
+          allowZapIn: false,
+          allowZapOut: false,
+          zapInWith: undefined,
+          zapOutWith: undefined,
+        },
+      ])
+    );
+  });
+
+  it("should set the ftmApeZap properties on an addressable", async () => {
+    const vaultMetadataMock = {
+      ftm: createMockVaultMetadata({
+        displayName: "Zappable",
+        address: FANTOM_TOKEN.address,
+      }),
+      notZappable: createMockVaultMetadata({
+        displayName: "Not Zappable",
+        address: "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+      }),
+    };
+
+    const actual = mergeZapPropsWithAddressables({
+      addressables: [vaultMetadataMock.ftm, vaultMetadataMock.notZappable],
+      supportedVaultAddresses: [FANTOM_TOKEN.address],
+      zapInType: "ftmApeZap",
+      zapOutType: "ftmApeZap",
+    });
+
+    expect(actual.length).toEqual(2);
+    expect(actual).toEqual(
+      expect.arrayContaining([
+        {
+          ...vaultMetadataMock.ftm,
+          allowZapIn: true,
+          allowZapOut: true,
+          zapInWith: "ftmApeZap",
+          zapOutWith: "ftmApeZap",
         },
         {
           ...vaultMetadataMock.notZappable,

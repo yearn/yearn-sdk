@@ -249,10 +249,10 @@ describe("VaultInterface", () => {
           {
             ...vaultDynamic,
             decimals: "18",
-            name: "ASSET",
-            symbol: "ASS",
-            token: "0x001",
-            version: "1",
+            name: "WETH yVault",
+            symbol: "yvWETH",
+            token: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+            version: "0.4.2",
             metadata: {
               ...vaultDynamic.metadata,
               historicEarnings: [
@@ -820,13 +820,10 @@ describe("VaultInterface", () => {
 
   describe("deposit", () => {
     describe("when is zapping into pickle jar", () => {
-      beforeEach(() => {
-        PickleJarsMock.PickleJars = ["0xVault"];
-      });
-
       it("should call zapIn with correct arguments and pickle as the zapProtocol", async () => {
         const zapInMock = jest.fn();
         (vaultInterface as any).zapIn = zapInMock;
+        (vaultInterface as any).isZappingIntoPickleJar = jest.fn().mockReturnValueOnce(true);
 
         const [vault, token, amount, account] = ["0xVault", "0xToken", "1", "0xAccount"];
 
@@ -840,6 +837,7 @@ describe("VaultInterface", () => {
         mockedYearn = new (Yearn as jest.Mock<Yearn<ChainId>>)();
         mockedYearn.services.partner = new (PartnerService as unknown as jest.Mock<PartnerService<ChainId>>)();
         vaultInterface = new VaultInterface(mockedYearn, 1, new Context({}));
+        (vaultInterface as any).isZappingIntoPickleJar = jest.fn().mockReturnValueOnce(true);
 
         const [vault, token, amount, account] = ["0xVault", "0xToken", "1", "0xAccount"];
 
@@ -866,19 +864,6 @@ describe("VaultInterface", () => {
       });
 
       describe("when vault ref token is the same as the token", () => {
-        describe("when token is eth address", () => {
-          it("should throw", async () => {
-            const assetStaticVaultV2 = createMockAssetStaticVaultV2({ token: EthAddress });
-            vaultInterface.getStatic = jest.fn().mockResolvedValue([assetStaticVaultV2]);
-
-            try {
-              await vaultInterface.deposit("0xVault", EthAddress, "1", "0xAccount");
-            } catch (error) {
-              expect(error).toStrictEqual(new SdkError("deposit:v2:eth not implemented"));
-            }
-          });
-        });
-
         describe("when token is not eth address", () => {
           describe("when there is no partner service", () => {
             it("should deposit directly into a yearn vault", async () => {
@@ -892,14 +877,7 @@ describe("VaultInterface", () => {
 
               const actualDeposit = await vaultInterface.deposit(vault, token, amount, account);
 
-              expect(Contract).toHaveBeenCalledTimes(1);
-              expect(Contract).toHaveBeenCalledWith(
-                "0xVault",
-                ["function deposit(uint256 amount) public", "function withdraw(uint256 amount) public"],
-                {
-                  sendTransaction: sendTransactionMock,
-                }
-              );
+              expect(Contract).not.toHaveBeenCalledTimes(1);
 
               expect(partnerPopulateDepositTransactionMock).not.toHaveBeenCalled();
               expect(executeVaultContractTransactionMock).toHaveBeenCalledTimes(1);

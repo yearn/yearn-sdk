@@ -46,6 +46,7 @@ jest.mock("./services/telegram", () => ({
     sendMessage: jest.fn(),
   })),
 }));
+
 jest.mock("./context", () => ({
   Context: jest.fn().mockImplementation(() => ({
     provider: {
@@ -64,6 +65,7 @@ describe("Simulation executor", () => {
   beforeEach(() => {
     const mockedTelegramService = new MockedTelegramServiceClass();
     simulationExecutor = new SimulationExecutor(mockedTelegramService, new Context({}));
+    jest.spyOn(console, "error").mockImplementation();
   });
 
   afterEach(() => {
@@ -72,6 +74,51 @@ describe("Simulation executor", () => {
 
   afterAll(() => {
     jest.restoreAllMocks();
+  });
+
+  describe("simulateRaw", () => {
+    it("should call `makeSimulationRequest` with correct params", async () => {
+      expect.assertions(2);
+      const makeSimulationRequestSpy = jest.spyOn(simulationExecutor, "makeSimulationRequest");
+
+      await simulationExecutor.simulateRaw("0x000", "0x000", "1", {}, "2");
+
+      expect(makeSimulationRequestSpy).toHaveBeenCalledTimes(1);
+      expect(makeSimulationRequestSpy).toHaveBeenCalledWith("0x000", "0x000", "1", {}, "2");
+    });
+  });
+
+  describe("simulateVaultInteraction", () => {
+    let spy: jest.SpyInstance;
+    beforeEach(() => {
+      spy = jest.spyOn(simulationExecutor, "makeSimulationRequest").mockReturnValueOnce(
+        Promise.resolve({
+          simulation: {
+            id: "",
+          },
+          transaction: {
+            transaction_info: {
+              call_trace: { output: "", calls: [] },
+              logs: [],
+            },
+          },
+        })
+      );
+    });
+
+    afterEach(() => {
+      spy.mockRestore();
+    });
+
+    it("should fail with SimulationError no log", async () => {
+      expect.assertions(2);
+      try {
+        await simulationExecutor.simulateVaultInteraction("0x000", "0x000", "1", "0x0000", {});
+      } catch (error) {
+        expect(error).toBeInstanceOf(SimulationError);
+        expect(error).toHaveProperty("error_code", SimulationError.NO_LOG);
+      }
+    });
   });
 
   describe("makeSimulationRequest", () => {
@@ -142,36 +189,65 @@ describe("Simulation executor", () => {
     });
   });
 
-  describe("simulateVaultInteraction", () => {
-    let spy: jest.SpyInstance;
-    beforeEach(() => {
-      spy = jest.spyOn(simulationExecutor, "makeSimulationRequest").mockReturnValueOnce(
-        Promise.resolve({
-          simulation: {
-            id: "",
-          },
-          transaction: {
-            transaction_info: {
-              call_trace: { output: "", calls: [] },
-              logs: [],
-            },
-          },
-        })
-      );
+  describe("executeSimulationWithReSimulationOnFailure", () => {
+    const simulateFn = jest.fn();
+    const deleteForkSpy = jest.spyOn(SimulationExecutor.prototype as any, "deleteFork");
+
+    describe("when the simulation is successful", () => {
+      beforeEach(() => {
+        simulateFn.mockResolvedValueOnce(true);
+      });
+
+      it("should return the result", async () => {
+        const actual = await simulationExecutor.executeSimulationWithReSimulationOnFailure(simulateFn, null);
+
+        expect(actual).toEqual(true);
+        expect(simulateFn).toHaveBeenCalledTimes(1);
+        expect(simulateFn).toHaveBeenCalledWith(false);
+        expect(deleteForkSpy).not.toHaveBeenCalled();
+      });
+
+      it("should delete the fork when one was used by the transaction", async () => {
+        const actual = await simulationExecutor.executeSimulationWithReSimulationOnFailure(simulateFn, "42");
+
+        expect(actual).toEqual(true);
+        expect(simulateFn).toHaveBeenCalledTimes(1);
+        expect(simulateFn).toHaveBeenCalledWith(false);
+        expect(deleteForkSpy).toHaveBeenCalledTimes(1);
+        expect(deleteForkSpy).toHaveBeenCalledWith("42");
+      });
     });
 
-    afterEach(() => {
-      spy.mockRestore();
+    describe("when the first simulation fails", () => {
+      it("should re-simulate the transaction with `save` set to `true` when the first simulation fails", async () => {
+        simulateFn.mockRejectedValueOnce(new Error("simulation failed"));
+        simulateFn.mockResolvedValueOnce(true);
+
+        await expect(
+          simulationExecutor.executeSimulationWithReSimulationOnFailure(simulateFn, "42")
+        ).rejects.toThrowError("simulation failed");
+        expect(simulateFn).toHaveBeenCalledTimes(2);
+        expect(simulateFn).toHaveBeenNthCalledWith(1, false);
+        expect(simulateFn).toHaveBeenNthCalledWith(2, true);
+        expect(console.error).not.toHaveBeenCalled();
+      });
     });
 
-    it("should fail with SimulationError no log", async () => {
-      expect.assertions(2);
-      try {
-        await simulationExecutor.simulateVaultInteraction("0x000", "0x000", "1", "0x0000", {});
-      } catch (error) {
-        expect(error).toBeInstanceOf(SimulationError);
-        expect(error).toHaveProperty("error_code", SimulationError.NO_LOG);
-      }
+    describe("when the first and second simulation fail", () => {
+      beforeEach(() => {
+        simulateFn.mockRejectedValueOnce(new Error("simulation failed"));
+        simulateFn.mockRejectedValue(new Error("re-simulation failed"));
+      });
+
+      it("should re-simulate the transaction with `save` set to `true` and log the second error", async () => {
+        await expect(
+          simulationExecutor.executeSimulationWithReSimulationOnFailure(simulateFn, "42")
+        ).rejects.toThrowError("simulation failed");
+        expect(simulateFn).toHaveBeenCalledTimes(2);
+        expect(simulateFn).toHaveBeenNthCalledWith(1, false);
+        expect(simulateFn).toHaveBeenNthCalledWith(2, true);
+        expect(console.error).toHaveBeenCalledWith(new Error("re-simulation failed"));
+      });
     });
   });
 
