@@ -10,16 +10,56 @@ import { PickleJars } from "../services/partners/pickle";
 import { SimulationExecutor, SimulationResponse } from "../simulationExecutor";
 import {
   Address,
+  DepositableVault,
   EthersError,
   Integer,
   PriceFetchingError,
   SdkError,
-  ZapApprovalTransactionOutput,
+  SimulationOptions,
+  Token,
+  TransactionOutcome,
   ZapperError,
   ZapProtocol,
 } from "../types";
-import { SimulationOptions, TransactionOutcome } from "../types/custom/simulation";
+import { toBN } from "../utils";
 import { PickleJarContract, VaultContract, YearnVaultContract } from "../vault";
+import { getZapInDetails, ZapInWith } from "../zap";
+
+export type DepositArgs = {
+  from: Address;
+  sellToken: Address;
+  amount: Integer;
+  toVault: Address;
+  options: SimulationOptions;
+};
+
+type DirectDepositArgs = {
+  depositArgs: DepositArgs;
+  vault: DepositableVault;
+  vaultContract: VaultContract;
+};
+
+type ZapInSimulationDepositArgs = {
+  zapInWith: ZapInWith;
+  vault: DepositableVault;
+  depositArgs: DepositArgs;
+};
+
+type DirectDepositSimulationArgs = {
+  vaultContract: VaultContractType;
+  vault: DepositableVault;
+  depositArgs: DepositArgs;
+  signer: JsonRpcSigner;
+};
+
+type ApprovalData = { approvalTransactionId?: string; forkId?: string };
+
+type VaultContractType = PickleJarContract | YearnVaultContract;
+
+type GetVaultArgs = {
+  toVault: Address;
+  vaultContract: VaultContractType;
+};
 
 /**
  * [[SimulationInterface]] allows the simulation of ethereum transactions using Tenderly's api.
@@ -37,85 +77,56 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     toVault: Address,
     options: SimulationOptions = {}
   ): Promise<TransactionOutcome> {
+    const depositArgs = { from, sellToken, amount, toVault, options };
+
     const signer = this.ctx.provider.write.getSigner(from);
-    const zapProtocol = PickleJars.includes(toVault) ? ZapProtocol.PICKLE : ZapProtocol.YEARN;
-    const vaultContract =
-      zapProtocol === ZapProtocol.PICKLE
-        ? new PickleJarContract(toVault, signer)
-        : new YearnVaultContract(toVault, signer);
 
-    const underlyingToken = await vaultContract.token().catch(() => {
-      throw new EthersError("failed to fetch token", EthersError.FAIL_TOKEN_FETCH);
-    });
-    const isZapping = underlyingToken !== sellToken;
-    let forkId: string | undefined;
-    let simulateDeposit: (save: boolean) => Promise<TransactionOutcome>;
+    const vaultContract = this.getVaultContract({ toVault, signer });
 
-    if (isZapping) {
-      if (!options.slippage) {
-        throw new SdkError("slippage needs to be specified for a zap", SdkError.NO_SLIPPAGE);
-      }
+    const vault = await this.getVault({ toVault, vaultContract });
 
-      let needsApproving: boolean;
-
-      if (sellToken === EthAddress) {
-        needsApproving = false;
-      } else {
-        needsApproving = await this.yearn.services.zapper
-          .zapInApprovalState(from, sellToken, zapProtocol)
-          .then((state) => !state.isApproved)
-          .catch(() => {
-            throw new ZapperError("approval state", ZapperError.ZAP_IN_APPROVAL_STATE);
-          });
-      }
-
-      forkId = needsApproving ? await this.simulationExecutor.createFork() : undefined;
-      options.forkId = forkId;
-
-      const approvalTransactionId = needsApproving
-        ? await this.yearn.services.zapper
-            .zapInApprovalTransaction(from, sellToken, "0", zapProtocol)
-            .catch(() => {
-              throw new ZapperError("approval", ZapperError.ZAP_IN_APPROVAL);
-            })
-            .then(async (approvalTransaction) => {
-              return await this.simulateZapApprovalTransaction(approvalTransaction, options);
-            })
-            .then((res) => res.simulation.id)
-        : undefined;
-      options.root = approvalTransactionId;
-
-      simulateDeposit = (save: boolean): Promise<TransactionOutcome> => {
-        options.save = save;
-        return this.zapIn(
-          from,
-          sellToken,
-          underlyingToken,
-          amount,
-          toVault,
-          vaultContract,
-          zapProtocol,
-          needsApproving,
-          options
-        );
-      };
-    } else {
-      const needsApproving = await this.depositNeedsApproving(from, sellToken, toVault, amount, signer);
-
-      forkId = needsApproving ? await this.simulationExecutor.createFork() : undefined;
-      options.forkId = forkId;
-
-      const approvalTransactionId = needsApproving
-        ? await this.approve(from, sellToken, amount, toVault, options)
-        : undefined;
-      options.root = approvalTransactionId;
-
-      simulateDeposit = (save: boolean): Promise<TransactionOutcome> => {
-        options.save = save;
-        return this.directDeposit(from, sellToken, amount, toVault, vaultContract, options);
-      };
+    if (!vault) {
+      throw new SdkError(`Could not get vault: ${toVault}`);
     }
-    return this.simulationExecutor.executeSimulationWithReSimulationOnFailure(simulateDeposit, forkId);
+
+    const token = await this.yearn.tokens.findByAddress(sellToken);
+
+    if (!token) {
+      throw new SdkError(`Could not find the token by address: ${sellToken}`);
+    }
+
+    const isUnderlyingToken = await this.isUnderlyingToken({ toVault, token });
+
+    if (isUnderlyingToken) {
+      return this.handleDirectSimulationDeposit({ depositArgs, vaultContract, vault, signer });
+    }
+
+    const { isZapInSupported, zapInWith } = getZapInDetails({ chainId: this.chainId, token, vault });
+
+    if (isZapInSupported && zapInWith) {
+      return this.handleZapInSimulationDeposit({ depositArgs, zapInWith, vault });
+    }
+
+    throw new SdkError(`Deposit of ${token.address} to ${toVault} is not supported`);
+  }
+
+  private async handleDirectSimulationDeposit({
+    depositArgs,
+    vaultContract,
+    vault,
+    signer,
+  }: DirectDepositSimulationArgs): Promise<TransactionOutcome> {
+    const { approvalTransactionId: root, forkId } = await this.getApprovalData({ depositArgs, signer });
+
+    const simulateFn = (save: boolean): Promise<TransactionOutcome> => {
+      return this.directDeposit({
+        depositArgs: { ...depositArgs, options: { ...depositArgs.options, forkId, save, root } },
+        vaultContract,
+        vault,
+      });
+    };
+
+    return this.simulationExecutor.executeSimulationWithReSimulationOnFailure(simulateFn, forkId);
   }
 
   async withdraw(
@@ -157,8 +168,8 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
             .catch(() => {
               throw new ZapperError("zap out approval transaction", ZapperError.ZAP_OUT_APPROVAL);
             })
-            .then(async (approvalTransaction) => {
-              return await this.simulateZapApprovalTransaction(approvalTransaction, options);
+            .then(async ({ from, to, data }) => {
+              return this.simulationExecutor.makeSimulationRequest(from, to, data, { ...options, save: true });
             })
             .then((res) => res.simulation.id)
         : undefined;
@@ -178,67 +189,18 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     return this.simulationExecutor.executeSimulationWithReSimulationOnFailure(simulateWithdrawal, forkId);
   }
 
-  private async approve(
-    from: Address,
-    token: Address,
-    amount: Integer,
-    vault: Address,
-    options: SimulationOptions
-  ): Promise<string> {
-    const TokenAbi = ["function approve(address spender, uint256 amount) returns (bool)"];
-    const signer = this.ctx.provider.write.getSigner(from);
-    const tokenContract = new Contract(token, TokenAbi, signer);
-    const isUsingPartnerService = this.shouldUsePartnerService(vault);
-    const partnerServiceId = await this.yearn.services.partner?.address;
-    const addressToApprove = (isUsingPartnerService && partnerServiceId) || vault;
-    const encodedInputData = tokenContract.interface.encodeFunctionData("approve", [addressToApprove, amount]);
-    options.save = true;
-
-    const simulationResponse: SimulationResponse = await this.simulationExecutor.makeSimulationRequest(
-      from,
-      token,
-      encodedInputData,
-      options
-    );
-
-    return simulationResponse.simulation.id;
-  }
-
-  private async depositNeedsApproving(
-    from: Address,
-    token: Address,
-    vault: Address,
-    amount: Integer,
-    signer: JsonRpcSigner
-  ): Promise<boolean> {
-    const TokenAbi = ["function allowance(address owner, address spender) view returns (uint256)"];
-    const contract = new Contract(token, TokenAbi, signer);
-    const isUsingPartnerService = this.shouldUsePartnerService(vault);
-    const addressToCheck = (isUsingPartnerService && this.yearn.services.partner?.address) || vault;
-    const result = await contract.allowance(from, addressToCheck).catch(() => {
-      "deposit needs approving";
-    });
-    return new BigNumber(result.toString()).lt(new BigNumber(amount));
-  }
-
-  private async directDeposit(
-    from: Address,
-    sellToken: Address,
-    amount: Integer,
-    toVault: Address,
-    vaultContract: VaultContract,
-    options: SimulationOptions
-  ): Promise<TransactionOutcome> {
-    const encodedInputData = await (this.shouldUsePartnerService(toVault)
-      ? this.yearn.services.partner?.encodeDeposit(toVault, amount)
-      : vaultContract.encodeDeposit(amount));
+  private async directDeposit({
+    depositArgs: { toVault, amount, from, sellToken, options },
+    vaultContract,
+    vault,
+  }: DirectDepositArgs): Promise<TransactionOutcome> {
+    const encodedInputData = await this.getEncodedInputData({ vaultContract, amount, toVault });
 
     if (!encodedInputData) {
-      throw new Error("directDeposit#encodeDeposit failed");
+      throw new SdkError("directDeposit#encodeDeposit failed");
     }
 
-    const partnerAddress = await this.yearn.services.partner?.address;
-    const addressToDeposit = (this.shouldUsePartnerService(toVault) && partnerAddress) || toVault;
+    const addressToDeposit = await this.getActionableAddress({ toVault });
 
     const tokensReceived = await this.simulationExecutor.simulateVaultInteraction(
       from,
@@ -254,21 +216,25 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
         throw new PriceFetchingError("Error fetching price", PriceFetchingError.FETCHING_PRICE_ORACLE);
       });
 
-    const [decimals, pricePerShare] = await Promise.all([
-      vaultContract.decimals().catch(() => {
-        throw new EthersError("no decimals", EthersError.NO_DECIMALS);
-      }),
-      vaultContract.pricePerShare().catch(() => {
-        throw new EthersError("no price per share", EthersError.NO_PRICE_PER_SHARE);
-      }),
-    ]);
+    const {
+      decimals,
+      metadata: { pricePerShare },
+    } = vault;
 
-    const targetUnderlyingTokensReceived = new BigNumber(tokensReceived)
-      .div(new BigNumber(10).pow(decimals))
+    if (!decimals) {
+      throw new SdkError(`Decimals missing for vault ${vault.address}`);
+    }
+
+    if (!pricePerShare) {
+      throw new SdkError(`Price per share missing in vault ${vault.address} metadata`);
+    }
+
+    const targetUnderlyingTokensReceived = toBN(tokensReceived)
+      .div(toBN(10).pow(decimals))
       .multipliedBy(pricePerShare)
       .toFixed(0);
 
-    const result: TransactionOutcome = {
+    return {
       sourceTokenAddress: sellToken,
       sourceTokenAmount: amount,
       targetTokenAddress: toVault,
@@ -279,109 +245,51 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
       conversionRate: 1,
       slippage: 0,
     };
-
-    return result;
   }
 
-  private async zapIn(
-    from: Address,
-    sellToken: Address,
-    underlyingTokenAddress: Address,
-    amount: Integer,
-    toVault: Address,
-    vaultContract: VaultContract,
-    zapProtocol: ZapProtocol,
-    skipGasEstimate: boolean,
-    options: SimulationOptions
-  ): Promise<TransactionOutcome> {
-    const zapToken = sellToken === EthAddress ? ZeroAddress : sellToken;
-
-    if (!options.slippage) {
-      throw new SdkError("slippage needs to be set", SdkError.NO_SLIPPAGE);
+  private async getEncodedInputData({
+    vaultContract,
+    amount,
+    toVault,
+  }: {
+    vaultContract: VaultContract;
+    amount: Integer;
+    toVault: Address;
+  }): Promise<Address | undefined> {
+    if (!this.shouldUsePartnerService(toVault)) {
+      return vaultContract.encodeDeposit(amount);
     }
 
-    const zapInParams = await this.yearn.services.zapper
-      .zapIn(from, zapToken, amount, toVault, options.gasPrice || "0", options.slippage, skipGasEstimate, zapProtocol)
-      .catch(() => {
-        throw new ZapperError("zap in", ZapperError.ZAP_IN);
-      });
+    return this.yearn.services.partner?.encodeDeposit(toVault, amount);
+  }
 
-    const value = new BigNumber(zapInParams.value).toFixed(0);
-
-    options.gasPrice = options.gasPrice || zapInParams.gasPrice;
-    if (!skipGasEstimate) {
-      options.gasLimit = zapInParams.gas;
+  private async getActionableAddress({ toVault }: { toVault: Address }): Promise<Address> {
+    if (!this.shouldUsePartnerService(toVault)) {
+      return toVault;
     }
 
-    const tokensReceived = await this.simulationExecutor.simulateVaultInteraction(
-      from,
-      zapInParams.to,
-      zapInParams.data,
-      toVault,
-      options,
-      value
-    );
+    const partnerAddress = await this.yearn.services.partner?.address;
 
-    const [decimals, pricePerShare] = await Promise.all([
-      vaultContract.decimals().catch(() => {
-        throw new EthersError("no decimals", EthersError.NO_DECIMALS);
-      }),
-      vaultContract.pricePerShare().catch(() => {
-        throw new EthersError("no price per share", EthersError.NO_PRICE_PER_SHARE);
-      }),
-    ]);
-    const targetUnderlyingTokensReceived = new BigNumber(tokensReceived)
-      .div(new BigNumber(10).pow(decimals))
-      .multipliedBy(pricePerShare)
-      .toFixed(0);
+    return partnerAddress || toVault;
+  }
 
-    let amountReceivedUsdc: BigNumber;
+  private async depositNeedsApproving({
+    depositArgs: { from, sellToken, amount, toVault },
+    signer,
+  }: {
+    depositArgs: DepositArgs;
+    signer: JsonRpcSigner;
+  }): Promise<boolean> {
+    const TokenAbi = ["function allowance(address owner, address spender) view returns (uint256)"];
+    const contract = new Contract(sellToken, TokenAbi, signer);
+    const addressToCheck = await this.getActionableAddress({ toVault });
 
-    switch (zapProtocol) {
-      case ZapProtocol.YEARN:
-        amountReceivedUsdc = await this.yearn.services.oracle
-          .getNormalizedValueUsdc(toVault, tokensReceived)
-          .then((price) => new BigNumber(price))
-          .catch(() => {
-            throw new PriceFetchingError("error fetching price", PriceFetchingError.FETCHING_PRICE_ORACLE);
-          });
-        break;
-      case ZapProtocol.PICKLE:
-        amountReceivedUsdc = (
-          await this.yearn.services.pickle
-            .getPriceUsdc(toVault)
-            .catch(() => {
-              throw new PriceFetchingError("error fetching price", PriceFetchingError.FETCHING_PRICE_PICKLE);
-            })
-            .then((usdc) => new BigNumber(usdc))
-        )
-          .dividedBy(new BigNumber(10).pow(decimals))
-          .multipliedBy(new BigNumber(tokensReceived));
-        break;
+    try {
+      const allowance = await contract.allowance(from, addressToCheck);
+      return toBN(allowance.toString()).lt(toBN(amount));
+    } catch (error) {
+      throw new SdkError(`Failed to get allowance from the contract: ${error}`);
     }
-
-    const oracleToken = sellToken === EthAddress ? WethAddress : sellToken;
-    const zapInAmountUsdc = new BigNumber(
-      await this.yearn.services.oracle.getNormalizedValueUsdc(oracleToken, amount).catch(() => {
-        throw new PriceFetchingError("error fetching price", PriceFetchingError.FETCHING_PRICE_ORACLE);
-      })
-    );
-
-    const conversionRate = amountReceivedUsdc.div(new BigNumber(zapInAmountUsdc)).toNumber();
-
-    const result: TransactionOutcome = {
-      sourceTokenAddress: sellToken,
-      sourceTokenAmount: amount,
-      targetTokenAddress: zapInParams.buyTokenAddress,
-      targetTokenAmount: tokensReceived,
-      targetTokenAmountUsdc: amountReceivedUsdc.toFixed(0),
-      targetUnderlyingTokenAddress: underlyingTokenAddress,
-      targetUnderlyingTokenAmount: targetUnderlyingTokensReceived,
-      conversionRate: conversionRate,
-      slippage: 1 - conversionRate,
-    };
-
-    return result;
   }
 
   private async directWithdraw(
@@ -423,6 +331,111 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     return result;
   }
 
+  private async zapIn({
+    depositArgs: { sellToken, from, amount, toVault, options },
+    vault,
+    skipGasEstimate,
+  }: {
+    depositArgs: DepositArgs;
+    vault: DepositableVault;
+    skipGasEstimate: boolean;
+  }): Promise<TransactionOutcome> {
+    const zapToken = sellToken === EthAddress ? ZeroAddress : sellToken;
+
+    if (!options.slippage) {
+      throw new SdkError("slippage needs to be set", SdkError.NO_SLIPPAGE);
+    }
+
+    const zapProtocol = this.getZapProtocol({ vault: toVault });
+
+    const zapInParams = await this.yearn.services.zapper
+      .zapIn(from, zapToken, amount, toVault, options.gasPrice || "0", options.slippage, skipGasEstimate, zapProtocol)
+      .catch(() => {
+        throw new ZapperError("zap in", ZapperError.ZAP_IN);
+      });
+
+    const value = toBN(zapInParams.value).toFixed(0);
+
+    options.gasPrice = options.gasPrice || zapInParams.gasPrice;
+    if (!skipGasEstimate) {
+      options.gasLimit = zapInParams.gas;
+    }
+
+    const tokensReceived = await this.simulationExecutor.simulateVaultInteraction(
+      from,
+      zapInParams.to,
+      zapInParams.data,
+      toVault,
+      options,
+      value
+    );
+
+    const {
+      decimals,
+      metadata: { pricePerShare },
+      token: underlyingTokenAddress,
+    } = vault;
+
+    if (!decimals) {
+      throw new SdkError(`Decimals missing for vault ${vault.address}`);
+    }
+
+    if (!pricePerShare) {
+      throw new SdkError(`Price per share missing in vault ${vault.address} metadata`);
+    }
+
+    const targetUnderlyingTokensReceived = toBN(tokensReceived)
+      .div(toBN(10).pow(decimals))
+      .multipliedBy(pricePerShare)
+      .toFixed(0);
+
+    let amountReceivedUsdc: BigNumber;
+
+    switch (zapProtocol) {
+      case ZapProtocol.YEARN:
+        amountReceivedUsdc = await this.yearn.services.oracle
+          .getNormalizedValueUsdc(toVault, tokensReceived)
+          .then((price) => toBN(price))
+          .catch(() => {
+            throw new PriceFetchingError("error fetching price", PriceFetchingError.FETCHING_PRICE_ORACLE);
+          });
+        break;
+      case ZapProtocol.PICKLE:
+        amountReceivedUsdc = (
+          await this.yearn.services.pickle
+            .getPriceUsdc(toVault)
+            .catch(() => {
+              throw new PriceFetchingError("error fetching price", PriceFetchingError.FETCHING_PRICE_PICKLE);
+            })
+            .then((usdc) => toBN(usdc))
+        )
+          .dividedBy(toBN(10).pow(decimals))
+          .multipliedBy(toBN(tokensReceived));
+        break;
+    }
+
+    const oracleToken = sellToken === EthAddress ? WethAddress : sellToken;
+    const zapInAmountUsdc = toBN(
+      await this.yearn.services.oracle.getNormalizedValueUsdc(oracleToken, amount).catch(() => {
+        throw new PriceFetchingError("error fetching price", PriceFetchingError.FETCHING_PRICE_ORACLE);
+      })
+    );
+
+    const conversionRate = amountReceivedUsdc.div(zapInAmountUsdc).toNumber();
+
+    return {
+      sourceTokenAddress: sellToken,
+      sourceTokenAmount: amount,
+      targetTokenAddress: zapInParams.buyTokenAddress,
+      targetTokenAmount: tokensReceived,
+      targetTokenAmountUsdc: amountReceivedUsdc.toFixed(0),
+      targetUnderlyingTokenAddress: underlyingTokenAddress,
+      targetUnderlyingTokenAmount: targetUnderlyingTokensReceived,
+      conversionRate: conversionRate,
+      slippage: 1 - conversionRate,
+    };
+  }
+
   private async zapOut(
     from: Address,
     toToken: Address,
@@ -456,7 +469,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
           options,
           zapOutParams.value
         );
-        return new BigNumber(response.transaction.transaction_info.call_trace.output).toFixed(0);
+        return toBN(response.transaction.transaction_info.call_trace.output).toFixed(0);
       } else {
         return await this.simulationExecutor.simulateVaultInteraction(
           from,
@@ -479,7 +492,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
       throw new PriceFetchingError("error fetching price", PriceFetchingError.FETCHING_PRICE_ORACLE);
     });
 
-    const conversionRate = new BigNumber(zapOutAmountUsdc).div(new BigNumber(soldAssetAmountUsdc)).toNumber();
+    const conversionRate = toBN(zapOutAmountUsdc).div(toBN(soldAssetAmountUsdc)).toNumber();
 
     const result: TransactionOutcome = {
       sourceTokenAddress: fromVault,
@@ -496,20 +509,178 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     return result;
   }
 
-  private shouldUsePartnerService(vault: string): boolean {
+  private shouldUsePartnerService(vault: Address): boolean {
     return !!this.yearn.services.partner?.isAllowed(vault);
   }
 
-  private async simulateZapApprovalTransaction(
-    zapApprovalTransaction: ZapApprovalTransactionOutput,
-    options: SimulationOptions
-  ): Promise<SimulationResponse> {
-    options.save = true;
-    return await this.simulationExecutor.makeSimulationRequest(
-      zapApprovalTransaction.from,
-      zapApprovalTransaction.to,
-      zapApprovalTransaction.data,
-      options
+  private async getZapperZapInApprovalData({
+    sellToken,
+    from,
+    toVault,
+    options,
+  }: DepositArgs): Promise<{ needsApproving: boolean } & ApprovalData> {
+    if (sellToken === EthAddress) {
+      return { needsApproving: false };
+    }
+
+    const zapProtocol = this.getZapProtocol({ vault: toVault });
+
+    const isApprovalNeeded = await this.yearn.services.zapper
+      .zapInApprovalState(from, sellToken, zapProtocol)
+      .then((state) => !state.isApproved)
+      .catch(() => {
+        throw new ZapperError("approval state", ZapperError.ZAP_IN_APPROVAL_STATE);
+      });
+
+    if (!isApprovalNeeded) {
+      return { needsApproving: false };
+    }
+
+    const forkId = await this.simulationExecutor.createFork();
+
+    const approvalTransactionId = await this.yearn.services.zapper
+      .zapInApprovalTransaction(from, sellToken, "0", zapProtocol)
+      .catch(() => {
+        throw new ZapperError("approval", ZapperError.ZAP_IN_APPROVAL);
+      })
+      .then(async ({ from, to, data }) => {
+        return this.simulationExecutor.makeSimulationRequest(from, to, data, { ...options, forkId, save: true });
+      })
+      .then((res) => res.simulation.id);
+
+    return {
+      needsApproving: true,
+      approvalTransactionId,
+      forkId,
+    };
+  }
+
+  private async getZapperZapInSimulationArgs({
+    depositArgs,
+    vault,
+  }: {
+    depositArgs: DepositArgs;
+    vault: DepositableVault;
+  }): Promise<{ simulateFn: (save: boolean) => Promise<TransactionOutcome>; forkId?: string }> {
+    if (!depositArgs.options.slippage) {
+      throw new SdkError("slippage needs to be specified for a zap", SdkError.NO_SLIPPAGE);
+    }
+
+    const { needsApproving, approvalTransactionId, forkId } = await this.getZapperZapInApprovalData(depositArgs);
+
+    const simulateFn = (save: boolean): Promise<TransactionOutcome> => {
+      return this.zapIn({
+        depositArgs: {
+          ...depositArgs,
+          options: { ...depositArgs.options, forkId, save, root: approvalTransactionId },
+        },
+        vault,
+        skipGasEstimate: needsApproving,
+      });
+    };
+
+    return { simulateFn, forkId };
+  }
+
+  private async approve({ from, sellToken, amount, toVault, options }: DepositArgs): Promise<string> {
+    const tokenAbi = ["function approve(address spender, uint256 amount) returns (bool)"];
+    const signer = this.ctx.provider.write.getSigner(from);
+    const tokenContract = new Contract(sellToken, tokenAbi, signer);
+
+    const addressToApprove = await this.getActionableAddress({ toVault });
+
+    const encodedInputData = tokenContract.interface.encodeFunctionData("approve", [addressToApprove, amount]);
+
+    const simulationResponse: SimulationResponse = await this.simulationExecutor.makeSimulationRequest(
+      from,
+      sellToken,
+      encodedInputData,
+      { ...options, save: true }
     );
+
+    return simulationResponse.simulation.id;
+  }
+
+  private async getApprovalData({
+    depositArgs,
+    signer,
+  }: {
+    depositArgs: DepositArgs;
+    signer: JsonRpcSigner;
+  }): Promise<ApprovalData> {
+    const depositNeedsApproving = await this.depositNeedsApproving({ depositArgs, signer });
+
+    if (!depositNeedsApproving) {
+      return {};
+    }
+
+    const forkId = await this.simulationExecutor.createFork();
+
+    const approvalTransactionId = await this.approve({ ...depositArgs, options: { ...depositArgs.options, forkId } });
+
+    return { approvalTransactionId, forkId };
+  }
+
+  private getVaultContract({ toVault, signer }: { toVault: Address; signer: JsonRpcSigner }): VaultContractType {
+    const zapProtocol = this.getZapProtocol({ vault: toVault });
+
+    return zapProtocol === ZapProtocol.PICKLE
+      ? new PickleJarContract(toVault, signer)
+      : new YearnVaultContract(toVault, signer);
+  }
+
+  private async handleZapInSimulationDeposit({ zapInWith, vault, depositArgs }: ZapInSimulationDepositArgs) {
+    if (zapInWith === "zapperZapIn") {
+      const { simulateFn, forkId } = await this.getZapperZapInSimulationArgs({ depositArgs, vault });
+
+      return this.simulationExecutor.executeSimulationWithReSimulationOnFailure(simulateFn, forkId);
+    }
+
+    if (zapInWith === "ftmApeZap") {
+      throw new SdkError("ftmApeZap not implemented yet!");
+    }
+
+    throw new SdkError(`zapInWith "${zapInWith}" not supported yet!`);
+  }
+
+  private async isUnderlyingToken({ toVault, token }: { toVault: Address; token: Token }): Promise<boolean> {
+    if (PickleJars.includes(toVault)) {
+      return false;
+    }
+
+    return this.yearn.vaults.isUnderlyingToken(toVault, token.address);
+  }
+
+  private async getVault({ toVault, vaultContract }: GetVaultArgs): Promise<DepositableVault> {
+    const zapProtocol = this.getZapProtocol({ vault: toVault });
+
+    if (zapProtocol === ZapProtocol.PICKLE) {
+      const [decimals, pricePerShare] = await Promise.all([
+        vaultContract.decimals().catch(() => {
+          throw new EthersError("no decimals", EthersError.NO_DECIMALS);
+        }),
+        vaultContract.pricePerShare().catch(() => {
+          throw new EthersError("no price per share", EthersError.NO_PRICE_PER_SHARE);
+        }),
+      ]);
+
+      return {
+        address: toVault,
+        token: "0x9461173740d27311b176476fa27e94c681b1ea6b",
+        decimals: decimals.toString(),
+        metadata: {
+          zapInWith: "zapperZapIn",
+          pricePerShare: pricePerShare.toString(),
+        },
+      };
+    }
+
+    const [vault] = await this.yearn.vaults.get([toVault]);
+
+    return vault;
+  }
+
+  private getZapProtocol({ vault }: { vault: Address }): ZapProtocol {
+    return PickleJars.includes(vault) ? ZapProtocol.PICKLE : ZapProtocol.YEARN;
   }
 }

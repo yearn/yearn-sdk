@@ -205,13 +205,46 @@ export class SimulationExecutor {
     } catch (error) {
       // re-simulate the transaction with `save` set to true so the failure can be analyzed later
       try {
-        simulate(true);
+        await simulate(true);
       } catch (error) {
         console.error(error);
       }
 
       throw error;
     }
+  }
+
+  /**
+   * Create a new fork that can be used to simulate multiple sequential transactions on
+   * e.g. approval followed by a deposit.
+   * @returns the uuid of a new fork that has been created
+   */
+  async createFork(): Promise<string> {
+    interface Response {
+      simulation_fork: {
+        id: string;
+      };
+    }
+
+    const body = {
+      alias: "",
+      description: "",
+      network_id: "1",
+    };
+
+    const response: Response = await await fetch(`${baseUrl}/fork`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+    })
+      .then((res) => res.json())
+      .catch(() => {
+        throw new TenderlyError("failed to create fork", TenderlyError.CREATE_FORK);
+      });
+
+    return response.simulation_fork.id;
   }
 
   /**
@@ -275,39 +308,6 @@ export class SimulationExecutor {
     });
 
     return result;
-  }
-
-  /**
-   * Create a new fork that can be used to simulate multiple sequential transactions on
-   * e.g. approval followed by a deposit.
-   * @returns the uuid of a new fork that has been created
-   */
-  async createFork(): Promise<string> {
-    interface Response {
-      simulation_fork: {
-        id: string;
-      };
-    }
-
-    const body = {
-      alias: "",
-      description: "",
-      network_id: "1",
-    };
-
-    const response: Response = await await fetch(`${baseUrl}/fork`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(body),
-    })
-      .then((res) => res.json())
-      .catch(() => {
-        throw new TenderlyError("failed to create fork", TenderlyError.CREATE_FORK);
-      });
-
-    return response.simulation_fork.id;
   }
 
   /**

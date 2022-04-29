@@ -6,7 +6,9 @@ import { ChainId, SdkError } from "..";
 import { Context } from "../context";
 import { PartnerService } from "../services/partner";
 import { SimulationExecutor } from "../simulationExecutor";
-import { EthersError, PriceFetchingError, ZapperError } from "../types/custom/simulation";
+import { createMockAssetStaticVaultV2, createMockDepositableVault, createMockToken } from "../test-utils/factories";
+import { ZapProtocol } from "../types";
+import { PriceFetchingError, ZapperError } from "../types/custom/simulation";
 import { Yearn } from "../yearn";
 import { SimulationInterface } from "./simulation";
 
@@ -18,10 +20,14 @@ const zapInApprovalTransactionMock = jest.fn(() => Promise.resolve({ from: "0x00
 const zapOutApprovalStateMock = jest.fn(() => Promise.resolve({ isApproved: false }));
 const zapOutApprovalTransactionMock = jest.fn(() => Promise.resolve({ from: "0x000", to: "0x000", data: "" }));
 const getNormalizedValueUsdcMock = jest.fn(() => Promise.resolve("10"));
-const zapInMock = jest.fn(() => Promise.resolve(true));
+const zapInMock = jest.fn(() => Promise.resolve({ from: "0x000", to: "0x0000", data: "encodeDeposit" }));
 const zapOutMock = jest.fn(() => Promise.resolve(true));
+const getZapProtocolMock = jest.fn();
 const partnerEncodeDepositMock = jest.fn().mockReturnValue("encodedInputData");
 const partnerIsAllowedMock = jest.fn().mockReturnValue(true);
+const vaultsGetMock = jest.fn();
+const isUnderlyingTokenMock = jest.fn();
+const tokensFindByAddressMock = jest.fn();
 
 jest.mock("../services/partner", () => ({
   PartnerService: jest.fn().mockImplementation(() => ({
@@ -41,8 +47,6 @@ jest.mock("../vault", () => ({
   })),
   YearnVaultContract: jest.fn().mockImplementation(() => ({
     token: tokenMock,
-    decimals: decimalsMock,
-    pricePerShare: pricePerShareMock,
     encodeDeposit: jest.fn().mockReturnValue("encodeDeposit"),
   })),
 }));
@@ -78,10 +82,19 @@ jest.mock("../yearn", () => ({
         zapOutApprovalTransaction: zapOutApprovalTransactionMock,
         zapIn: zapInMock,
         zapOut: zapOutMock,
+        getZapProtocol: getZapProtocolMock,
       },
+    },
+    tokens: {
+      findByAddress: tokensFindByAddressMock,
+    },
+    vaults: {
+      get: vaultsGetMock,
+      isUnderlyingToken: isUnderlyingTokenMock,
     },
   })),
 }));
+
 jest.mock("../context", () => ({
   Context: jest.fn().mockImplementation(() => ({
     provider: {
@@ -120,8 +133,10 @@ describe("Simulation interface", () => {
       SimulationExecutor.prototype,
       "executeSimulationWithReSimulationOnFailure"
     );
+    jest.spyOn(console, "error").mockImplementation();
 
     (Contract as any).prototype.allowance = jest.fn().mockReturnValue(Promise.resolve("100000000000"));
+    getZapProtocolMock.mockReturnValue(ZapProtocol.YEARN);
   });
 
   afterEach(() => {
@@ -129,15 +144,32 @@ describe("Simulation interface", () => {
   });
 
   describe("deposit", () => {
-    it("should fail with Ethers Error failed to fetch token", async () => {
-      expect.assertions(2);
-      tokenMock.mockReturnValueOnce(Promise.reject(new Error("something bad happened")));
-      try {
-        await simulationInterface.deposit("0x000", "0x000", "1", "0x000");
-      } catch (error) {
-        expect(error).toBeInstanceOf(EthersError);
-        expect(error).toHaveProperty("error_code", EthersError.FAIL_TOKEN_FETCH);
-      }
+    beforeEach(() => {
+      const zapperZapInSupportedToken = createMockToken({ supported: { zapper: true, zapperZapIn: true } });
+      tokensFindByAddressMock.mockResolvedValue(zapperZapInSupportedToken);
+
+      const vaultMock = createMockAssetStaticVaultV2();
+      const zapperZapInVaultMetadata = {
+        ...vaultMock,
+        metadata: { ...vaultMock.metadata, allowZapIn: true, zapInWith: "zapperZapIn" },
+      };
+      vaultsGetMock.mockResolvedValue([zapperZapInVaultMetadata]);
+    });
+
+    it("should fail with SdkError when there is no vault token", async () => {
+      vaultsGetMock.mockReturnValueOnce(Promise.reject(new Error("something bad happened")));
+
+      return expect(simulationInterface.deposit("0x000", "0x000", "1", "0x000")).rejects.toThrowError(
+        "something bad happened"
+      );
+    });
+
+    it("should fail with SdkError when there is no token", async () => {
+      tokensFindByAddressMock.mockReturnValueOnce(Promise.reject(new Error("Token not found!")));
+
+      return expect(simulationInterface.deposit("0x000", "0x000", "1", "0x000")).rejects.toThrowError(
+        "Token not found!"
+      );
     });
 
     it("should fail with SDK no slippage error if none was passed", async () => {
@@ -191,25 +223,35 @@ describe("Simulation interface", () => {
     it("should fail with No decimals error", async () => {
       expect.assertions(2);
       tokenMock.mockReturnValueOnce(Promise.resolve("0x001"));
-      decimalsMock.mockReturnValueOnce(Promise.reject(new Error("something bad happened")));
-      try {
-        await simulationInterface.deposit("0x000", "0x000", "1", "0x000", { slippage: 1 });
-      } catch (error) {
-        expect(error).toBeInstanceOf(EthersError);
-        expect(error).toHaveProperty("error_code", EthersError.NO_DECIMALS);
-      }
+      const vaultMock = createMockAssetStaticVaultV2();
+      const zapperZapInVaultWithoutDecimals = {
+        ...vaultMock,
+        decimals: undefined,
+        metadata: { ...vaultMock.metadata, allowZapIn: true, zapInWith: "zapperZapIn" },
+      };
+      vaultsGetMock.mockResolvedValue([zapperZapInVaultWithoutDecimals]);
+
+      await expect(simulationInterface.deposit("0x000", "0x000", "1", "0x000", { slippage: 1 })).rejects.toThrowError(
+        "Decimals missing for vault 0x001"
+      );
+      expect(console.error).toHaveBeenCalledWith(new Error("Decimals missing for vault 0x001"));
     });
 
     it("should fail with No price per share error", async () => {
       expect.assertions(2);
+      const vaultMock = createMockAssetStaticVaultV2();
       tokenMock.mockReturnValueOnce(Promise.resolve("0x001"));
-      pricePerShareMock.mockReturnValueOnce(Promise.reject(new Error("something bad happened")));
-      try {
-        await simulationInterface.deposit("0x000", "0x000", "1", "0x000", { slippage: 1 });
-      } catch (error) {
-        expect(error).toBeInstanceOf(EthersError);
-        expect(error).toHaveProperty("error_code", EthersError.NO_PRICE_PER_SHARE);
-      }
+      const zapperZapInVaultWithoutPricePerShare = {
+        ...vaultMock,
+        decimals: "18",
+        metadata: { ...vaultMock.metadata, allowZapIn: true, zapInWith: "zapperZapIn", pricePerShare: undefined },
+      };
+      vaultsGetMock.mockResolvedValue([zapperZapInVaultWithoutPricePerShare]);
+
+      await expect(simulationInterface.deposit("0x000", "0x000", "1", "0x000", { slippage: 1 })).rejects.toThrowError(
+        "Price per share missing in vault 0x001 metadata"
+      );
+      expect(console.error).toHaveBeenCalledWith(new Error("Price per share missing in vault 0x001 metadata"));
     });
 
     it("should fail with PriceFetchingError while fetching the oracle price", async () => {
@@ -226,6 +268,7 @@ describe("Simulation interface", () => {
 
     it("should fail with PriceFetchingError while fetching the pickle price", async () => {
       expect.assertions(2);
+      getZapProtocolMock.mockReturnValue(ZapProtocol.PICKLE);
       tokenMock.mockReturnValueOnce(Promise.resolve("0x001"));
       getNormalizedValueUsdcMock.mockReturnValueOnce(Promise.reject(new Error("something bad happened")));
       try {
@@ -259,16 +302,35 @@ describe("Simulation interface", () => {
         expect(executeSimulationWithReSimulationOnFailureSpy).toHaveBeenCalledTimes(1);
         expect(partnerEncodeDepositMock).toHaveBeenCalledTimes(0);
         expect(simulateVaultInteractionSpy).toHaveBeenCalledTimes(1);
-        expect(simulateVaultInteractionSpy).toHaveBeenCalledWith("0x000", "0x0000", "encodeDeposit", "0x0000", {
-          forkId: undefined,
-          root: undefined,
-          save: undefined,
-          slippage: 1,
-        });
+        expect(simulateVaultInteractionSpy).toHaveBeenCalledWith(
+          "0x000",
+          "0x0000",
+          "encodeDeposit",
+          "0x0000",
+          {
+            forkId: "1",
+            root: "id",
+            slippage: 1,
+          },
+          "0"
+        );
       });
     });
 
     describe("when it has the partner service", () => {
+      beforeEach(() => {
+        const nativeToken = createMockToken();
+        tokensFindByAddressMock.mockResolvedValue(nativeToken);
+
+        const vaultMock = createMockAssetStaticVaultV2();
+        const zapperZapInVaultMetadata = {
+          ...vaultMock,
+          metadata: { ...vaultMock.metadata, allowZapIn: true, zapInWith: "zapperZapIn" },
+        };
+        vaultsGetMock.mockResolvedValue([zapperZapInVaultMetadata]);
+        isUnderlyingTokenMock.mockResolvedValueOnce(true);
+      });
+
       it("should call the partner contract", async () => {
         const mockedYearn = new MockedYearnClass();
         mockedYearn.services.partner = new (PartnerService as unknown as jest.Mock<PartnerService<ChainId>>)();
@@ -287,6 +349,19 @@ describe("Simulation interface", () => {
           slippage: 1,
         });
       });
+    });
+
+    it("should fail if deposit of token to vault is not supported", async () => {
+      expect.assertions(1);
+      tokenMock.mockReturnValueOnce(Promise.resolve("0x001"));
+      const depositableVaultMock = createMockDepositableVault();
+      vaultsGetMock.mockResolvedValue([
+        { ...depositableVaultMock, metadata: { ...depositableVaultMock.metadata, zapInWith: undefined } },
+      ]);
+
+      await expect(simulationInterface.deposit("0x000", "0x000", "1", "0x000", { slippage: 1 })).rejects.toThrowError(
+        "Deposit of 0x001 to 0x000 is not supported"
+      );
     });
   });
 

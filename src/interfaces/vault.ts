@@ -1,12 +1,12 @@
 import { BigNumber } from "@ethersproject/bignumber";
 import { MaxUint256 } from "@ethersproject/constants";
-import { CallOverrides, Contract } from "@ethersproject/contracts";
-import { TransactionRequest, TransactionResponse } from "@ethersproject/providers";
+import { CallOverrides, Contract, PopulatedTransaction } from "@ethersproject/contracts";
+import { JsonRpcSigner, TransactionRequest, TransactionResponse } from "@ethersproject/providers";
 
 import { CachedFetcher } from "../cache";
-import { ChainId, isEthereum } from "../chain";
+import { ChainId, isEthereum, isFantom } from "../chain";
 import { ContractAddressId, ServiceInterface } from "../common";
-import { chunkArray, EthAddress, isNativeToken, WethAddress } from "../helpers";
+import { chunkArray, EthAddress, FANTOM_TOKEN, isNativeToken, WethAddress } from "../helpers";
 import { PickleJars } from "../services/partners/pickle";
 import {
   Address,
@@ -27,7 +27,7 @@ import {
   ZapProtocol,
 } from "../types";
 import { Position, Vault } from "../types";
-import { mergeZapperPropsWithAddressables } from "./helpers";
+import { mergeZapPropsWithAddressables } from "./helpers";
 
 const VaultAbi = ["function deposit(uint256 amount) public", "function withdraw(uint256 amount) public"];
 
@@ -154,7 +154,22 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
 
     if (isEthereum(this.chainId)) {
       const vaultTokenMarketData = await this.yearn.services.zapper.supportedVaultAddresses();
-      metadataOverrides = mergeZapperPropsWithAddressables(metadataOverrides, vaultTokenMarketData);
+      metadataOverrides = mergeZapPropsWithAddressables({
+        addressables: metadataOverrides,
+        supportedVaultAddresses: vaultTokenMarketData,
+        zapInType: "zapperZapIn",
+        zapOutType: "zapperZapOut",
+      });
+    }
+
+    if (isFantom(this.chainId)) {
+      const ftmApeZappableVault = [FANTOM_TOKEN.address]; // hardcoded for now
+      metadataOverrides = mergeZapPropsWithAddressables({
+        addressables: metadataOverrides,
+        supportedVaultAddresses: ftmApeZappableVault,
+        zapInType: "ftmApeZap",
+        zapOutType: "ftmApeZap",
+      });
     }
 
     const adapters = Object.values(this.yearn.services.lens.adapters.vaults);
@@ -399,7 +414,7 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
   private async getDepositContractAddress(vaultAddress: Address, tokenAddress: Address): Promise<Address> {
     if (isNativeToken(tokenAddress)) return vaultAddress;
 
-    const willZapToPickleJar = PickleJars.includes(vaultAddress);
+    const willZapToPickleJar = this.isZappingIntoPickleJar({ vault: vaultAddress });
     let willDepositUnderlyingToken = false;
     if (!willZapToPickleJar) {
       willDepositUnderlyingToken = await this.isUnderlyingToken(vaultAddress, tokenAddress);
@@ -429,7 +444,7 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
     return zapContractAddress;
   }
 
-  private async isUnderlyingToken(vaultAddress: Address, tokenAddress: Address): Promise<boolean> {
+  async isUnderlyingToken(vaultAddress: Address, tokenAddress: Address): Promise<boolean> {
     const [vault] = await this.getStatic([vaultAddress]);
     return vault.token === tokenAddress;
   }
@@ -452,37 +467,25 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
     overrides: CallOverrides = {}
   ): Promise<TransactionResponse> {
     const signer = this.ctx.provider.write.getSigner(account);
-    const isZappingIntoPickleJar = PickleJars.includes(vault);
 
-    if (isZappingIntoPickleJar) {
+    if (this.isZappingIntoPickleJar({ vault })) {
       return this.zapIn(vault, token, amount, account, options, ZapProtocol.PICKLE, overrides);
     }
 
     const [vaultRef] = await this.getStatic([vault], overrides);
-    if (vaultRef.token === token) {
-      if (token === EthAddress) {
-        throw new SdkError("deposit:v2:eth not implemented");
-      } else {
-        const shouldUsePartner = this.shouldUsePartnerService(vault);
-        const vaultContract = new Contract(vault, VaultAbi, signer);
-
-        const makeTransaction = async (overrides: CallOverrides): Promise<TransactionResponse> => {
-          const tx = shouldUsePartner
-            ? await this.yearn.services.partner?.populateDepositTransaction(vault, amount, overrides)
-            : await vaultContract.populateTransaction.deposit(amount, overrides);
-
-          if (!tx) {
-            throw new SdkError("deposit transaction failed");
-          }
-
-          return this.yearn.services.transaction.sendTransaction(tx);
-        };
-
-        return this.executeVaultContractTransaction(makeTransaction, overrides);
-      }
-    } else {
+    if (vaultRef.token !== token) {
       return this.zapIn(vault, token, amount, account, options, ZapProtocol.YEARN, overrides);
     }
+
+    return this.executeVaultContractTransaction(async (overrides: CallOverrides): Promise<TransactionResponse> => {
+      const populatedTransaction = await this.populateDepositTransaction({ vault, amount, overrides, signer });
+
+      if (!populatedTransaction) {
+        throw new SdkError("deposit transaction failed");
+      }
+
+      return this.yearn.services.transaction.sendTransaction(populatedTransaction);
+    }, overrides);
   }
 
   /**
@@ -687,5 +690,28 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
       composite: null,
     };
     return apy;
+  }
+
+  async populateDepositTransaction({
+    vault,
+    amount,
+    overrides,
+    signer,
+  }: {
+    vault: Address;
+    amount: Integer;
+    overrides: CallOverrides;
+    signer: JsonRpcSigner;
+  }): Promise<PopulatedTransaction | undefined> {
+    if (this.shouldUsePartnerService(vault)) {
+      return this.yearn.services.partner?.populateDepositTransaction(vault, amount, overrides);
+    }
+
+    const vaultContract = new Contract(vault, VaultAbi, signer);
+    return vaultContract.populateTransaction.deposit(amount, overrides);
+  }
+
+  private isZappingIntoPickleJar({ vault }: { vault: string }) {
+    return PickleJars.includes(vault);
   }
 }

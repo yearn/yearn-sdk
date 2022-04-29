@@ -59,3 +59,4 @@ export { VisionService } from "./services/vision";
 export { ZapperService } from "./services/zapper";
 export * from "./types";
 export { Yearn } from "./yearn";
+export * from "./zap";
