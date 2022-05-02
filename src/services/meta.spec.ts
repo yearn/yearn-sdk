@@ -13,6 +13,12 @@ describe("MetaService", () => {
   beforeEach(() => {
     meta = new MetaService(1, new Context({}));
     jest.spyOn(console, "error").mockImplementation();
+    const tokenMetadata1 = createMockTokenMetadata({ address: "0x001" });
+    const tokenMetadata2 = createMockTokenMetadata({ address: "0x002" });
+    (global.fetch as any).mockResolvedValue({
+      ok: true,
+      json: async () => [tokenMetadata1, tokenMetadata2],
+    });
   });
 
   afterEach(() => {
@@ -40,6 +46,37 @@ describe("MetaService", () => {
       expect(global.fetch).toHaveBeenCalledTimes(1);
       expect(global.fetch).toHaveBeenCalledWith("https://meta.yearn.network/tokens/1/all");
       expect(actual).toEqual(expect.arrayContaining([tokenMetadata1, tokenMetadata2]));
+      expect(actual).not.toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            address: "0x002",
+          }),
+        ])
+      );
+    });
+
+    it("should fetch all tokens metadata from the addresses given and replace localized strings", async () => {
+      meta = new MetaService(1, new Context({ locale: 'es' }));
+
+      const tokenMetadata1 = createMockTokenMetadata({ address: "0x001", localization: { es: { name: '', description: 'Spanish text' }, } });
+      const tokenMetadataIgnored = createMockTokenMetadata({ address: "0x002" });
+      const tokenMetadata2 = createMockTokenMetadata({ address: "0x003", localization: { es: { name: '', description: 'Spanish text' }, } });
+      (global.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        json: async () => [tokenMetadata1, tokenMetadataIgnored, tokenMetadata2],
+      });
+
+      const actual = await meta.tokens(["0x001", "0x003"]);
+
+      expect(global.fetch).toHaveBeenCalledTimes(1);
+      expect(global.fetch).toHaveBeenCalledWith("https://meta.yearn.network/tokens/1/all");
+      expect(actual).toEqual(expect.arrayContaining([{
+        ...tokenMetadata1,
+        description: 'Spanish text',
+      }, {
+        ...tokenMetadata2,
+        description: 'Spanish text',
+      }]));
       expect(actual).not.toEqual(
         expect.arrayContaining([
           expect.objectContaining({
