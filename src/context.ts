@@ -65,6 +65,7 @@ export interface ContextValue {
   cache?: CacheConfiguration;
   subgraph?: SubgraphConfiguration;
   partnerId?: string;
+  locale?: string;
 }
 
 const DefaultContext: ContextValue = {
@@ -153,5 +154,9 @@ export class Context implements ContextValue {
 
   get partnerId(): string | undefined {
     return this.ctx.partnerId;
+  }
+
+  get locale(): string {
+    return this.ctx.locale || 'en';
   }
 }

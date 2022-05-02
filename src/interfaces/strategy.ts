@@ -151,7 +151,7 @@ export class StrategyInterface<T extends ChainId> extends ServiceInterface<T> {
         const metadata: StrategyMetadata = {
           address: strategy.address,
           name: metadatum?.name || strategy.name || "Strategy",
-          description: metadatum?.description ?? "I don't have a description for this strategy yet",
+          description: metadatum?.localization[this.ctx.locale].description ?? "I don't have a description for this strategy yet",
           protocols: metadatum?.protocols ?? [],
         };
 

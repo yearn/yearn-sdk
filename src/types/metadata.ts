@@ -72,6 +72,11 @@ export type Metadata = {
  */
 export type TypeId = keyof Metadata;
 
+export interface Localization {
+  name: string;
+  description: string;
+}
+
 /**
  * Token metadata from yearn-meta
  */
@@ -83,7 +88,7 @@ export interface TokenMetadata {
   tokenIconOverride?: string;
   tokenSymbolOverride?: string;
   tokenNameOverride?: string;
-  localization: Record<string, unknown>;
+  localization: Record<string, Localization>;
 }
 
 export interface StrategyMetadata {
@@ -96,6 +101,7 @@ export interface StrategyMetadata {
 export interface StrategiesMetadata {
   name: string;
   description: string;
+  localization: Record<string, Localization>;
   addresses: Address[];
   protocols: string[];
 }
