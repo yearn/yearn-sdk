@@ -157,6 +157,6 @@ export class Context implements ContextValue {
   }
 
   get locale(): string {
-    return this.ctx.locale || 'en';
+    return this.ctx.locale || "en";
   }
 }
