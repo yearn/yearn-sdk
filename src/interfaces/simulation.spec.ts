@@ -379,11 +379,9 @@ describe("Simulation interface", () => {
     });
 
     it("should fail with SDK no slippage error if none was passed", async () => {
-      vaultsGetMock.mockReturnValueOnce(Promise.reject(new Error("something bad happened")));
-
       return expect(
         simulationInterface.withdraw("0x000", "0x000", "1", "0x0000000000000000000000000000000000000001")
-      ).rejects.toThrowError("something bad happened");
+      ).rejects.toThrowError(new SdkError("slippage needs to be specified for a zap", SdkError.NO_SLIPPAGE));
     });
 
     it("should fail with ZapperError zap out approval state error", async () => {
