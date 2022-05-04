@@ -176,7 +176,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     const signer = this.ctx.provider.write.getSigner(from);
     const vaultContract = new YearnVaultContract(fromVault, signer);
 
-    const vault = await this.getZappableVault({ vaultAddress: fromVault, vaultContract });
+    const [vault] = await this.yearn.vaults.get([fromVault]);
 
     if (!vault) {
       throw new SdkError(`Could not get vault: ${fromVault}`);
@@ -720,7 +720,6 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
         }),
       ]);
 
-      // TODO: Handle withdrawal
       return {
         address: vaultAddress,
         token: "0x9461173740d27311b176476fa27e94c681b1ea6b",
