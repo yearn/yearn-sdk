@@ -456,5 +456,21 @@ describe("Simulation interface", () => {
         expect(error).toHaveProperty("error_code", PriceFetchingError.FETCHING_PRICE_ORACLE);
       }
     });
+
+    it("should throw when withdraw is not supported", async () => {
+      isUnderlyingTokenMock.mockResolvedValue(false);
+
+      const unsupportedToken = createMockToken({ supported: { zapper: false } });
+      tokensFindByAddressMock.mockResolvedValue(unsupportedToken);
+
+      const zappableVaultMock = createMockZappableVault();
+      vaultsGetMock.mockResolvedValue([
+        { ...zappableVaultMock, metadata: { ...zappableVaultMock.metadata, zapOutWith: undefined } },
+      ]);
+
+      return expect(
+        simulationInterface.withdraw("0x000", "0x000", "1", "0x0000000000000000000000000000000000000001")
+      ).rejects.toThrowError("Withdraw from 0x000 to 0x0000000000000000000000000000000000000001 is not supported");
+    });
   });
 });
