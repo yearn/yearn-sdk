@@ -10,6 +10,7 @@ export * from "./token.factory";
 export * from "./tokenBalance.factory";
 export * from "./tokenMarketData.factory";
 export * from "./tokenMetadata.factory";
+export * from "./transactionOutcome.factory";
 export * from "./vaultMetadata.factory";
 export * from "./zappableVault.factory";
 export * from "./zapperToken.factory";

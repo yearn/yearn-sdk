@@ -185,7 +185,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     const token = await this.yearn.tokens.findByAddress(toToken);
 
     if (!token) {
-      throw new SdkError(`Could not find the token by address: ${from}`);
+      throw new SdkError(`Could not find the token by address: ${toToken}`);
     }
 
     const isUnderlyingToken = await this.isUnderlyingToken({ vault: fromVault, address: token.address });

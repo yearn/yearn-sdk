@@ -6,7 +6,12 @@ import { ChainId, SdkError } from "..";
 import { Context } from "../context";
 import { PartnerService } from "../services/partner";
 import { SimulationExecutor } from "../simulationExecutor";
-import { createMockAssetStaticVaultV2, createMockToken, createMockZappableVault } from "../test-utils/factories";
+import {
+  createMockAssetStaticVaultV2,
+  createMockToken,
+  createMockTransactionOutcome,
+  createMockZappableVault,
+} from "../test-utils/factories";
 import { ZapProtocol } from "../types";
 import { PriceFetchingError, ZapperError } from "../types/custom/simulation";
 import { Yearn } from "../yearn";
@@ -485,6 +490,33 @@ describe("Simulation interface", () => {
       return expect(
         simulationInterface.withdraw("0x000", "0x000", "1", "0x0000000000000000000000000000000000000001")
       ).rejects.toThrowError("Withdraw from 0x000 to 0x0000000000000000000000000000000000000001 is not supported");
+    });
+
+    it("should call the directWithdraw with the correct arguments when withdrawing the underlying token", async () => {
+      isUnderlyingTokenMock.mockResolvedValue(true);
+      const transactionOutcomeMock = createMockTransactionOutcome();
+      const directWithdrawMock = jest.fn().mockResolvedValueOnce(transactionOutcomeMock);
+      (SimulationInterface as any).prototype.directWithdraw = directWithdrawMock;
+
+      await simulationInterface.withdraw("0xWallet", "0xVault", "1", "0xToken", {
+        slippage: 1,
+      });
+
+      expect(directWithdrawMock).toHaveBeenCalledWith({
+        amount: "1",
+        from: "0xWallet",
+        fromVault: "0xVault",
+        options: {
+          save: false,
+          slippage: 1,
+        },
+        toToken: "0xToken",
+        vaultContract: {
+          encodeDeposit: expect.any(Function),
+          token: expect.any(Function),
+        },
+      });
+      expect(executeSimulationWithReSimulationOnFailureSpy).toHaveBeenCalledTimes(1);
     });
   });
 });
