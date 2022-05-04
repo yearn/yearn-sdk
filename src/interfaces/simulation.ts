@@ -188,7 +188,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
       throw new SdkError(`Could not find the token by address: ${from}`);
     }
 
-    const isUnderlyingToken = await this.isUnderlyingToken({ vault: fromVault, address: toToken });
+    const isUnderlyingToken = await this.isUnderlyingToken({ vault: fromVault, address: token.address });
 
     if (isUnderlyingToken) {
       const simulateFn = (save: boolean): Promise<TransactionOutcome> => {
