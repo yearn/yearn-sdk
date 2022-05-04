@@ -378,6 +378,22 @@ describe("Simulation interface", () => {
       vaultsGetMock.mockResolvedValue([zapperZapOutVaultMetadata]);
     });
 
+    it("should fail when the vault is not found", async () => {
+      vaultsGetMock.mockResolvedValueOnce([]);
+
+      return expect(simulationInterface.withdraw("0xWallet", "0xVault", "1", "0xToken")).rejects.toThrowError(
+        new SdkError("Could not get vault: 0xVault")
+      );
+    });
+
+    it("should fail when the token is not found", async () => {
+      tokensFindByAddressMock.mockResolvedValueOnce(undefined);
+
+      return expect(simulationInterface.withdraw("0xWallet", "0xVault", "1", "0xToken")).rejects.toThrowError(
+        new SdkError("Could not find the token by address: 0xToken")
+      );
+    });
+
     it("should fail with SDK no slippage error if none was passed", async () => {
       return expect(
         simulationInterface.withdraw("0x000", "0x000", "1", "0x0000000000000000000000000000000000000001")
