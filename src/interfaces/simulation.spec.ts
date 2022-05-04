@@ -6,7 +6,7 @@ import { ChainId, SdkError } from "..";
 import { Context } from "../context";
 import { PartnerService } from "../services/partner";
 import { SimulationExecutor } from "../simulationExecutor";
-import { createMockAssetStaticVaultV2, createMockDepositableVault, createMockToken } from "../test-utils/factories";
+import { createMockAssetStaticVaultV2, createMockToken, createMockZappableVault } from "../test-utils/factories";
 import { ZapProtocol } from "../types";
 import { PriceFetchingError, ZapperError } from "../types/custom/simulation";
 import { Yearn } from "../yearn";
@@ -354,7 +354,7 @@ describe("Simulation interface", () => {
     it("should fail if deposit of token to vault is not supported", async () => {
       expect.assertions(1);
       tokenMock.mockReturnValueOnce(Promise.resolve("0x001"));
-      const depositableVaultMock = createMockDepositableVault();
+      const depositableVaultMock = createMockZappableVault();
       vaultsGetMock.mockResolvedValue([
         { ...depositableVaultMock, metadata: { ...depositableVaultMock.metadata, zapInWith: undefined } },
       ]);

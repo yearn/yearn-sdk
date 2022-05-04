@@ -9,7 +9,6 @@ import { PickleJars } from "../services/partners/pickle";
 import { SimulationExecutor, SimulationResponse } from "../simulationExecutor";
 import {
   Address,
-  DepositableVault,
   EthersError,
   Integer,
   PriceFetchingError,
@@ -17,6 +16,7 @@ import {
   SimulationOptions,
   Token,
   TransactionOutcome,
+  ZappableVault,
   ZapperError,
   ZapProtocol,
 } from "../types";
@@ -34,19 +34,19 @@ export type DepositArgs = {
 
 type DirectDepositArgs = {
   depositArgs: DepositArgs;
-  vault: DepositableVault;
+  vault: ZappableVault;
   vaultContract: VaultContract;
 };
 
 type ZapInSimulationDepositArgs = {
   zapInWith: ZapInWith;
-  vault: DepositableVault;
+  vault: ZappableVault;
   depositArgs: DepositArgs;
 };
 
 type DirectDepositSimulationArgs = {
   vaultContract: VaultContractType;
-  vault: DepositableVault;
+  vault: ZappableVault;
   depositArgs: DepositArgs;
   signer: JsonRpcSigner;
 };
@@ -55,10 +55,6 @@ type ApprovalData = { approvalTransactionId?: string; forkId?: string };
 
 type VaultContractType = PickleJarContract | YearnVaultContract;
 
-type GetVaultArgs = {
-  toVault: Address;
-  vaultContract: VaultContractType;
-};
 import { getZapOutDetails, ZapOutWith } from "../zap";
 
 type GetWithdrawApprovalData = {
@@ -122,7 +118,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
 
     const vaultContract = this.getVaultContract({ toVault, signer });
 
-    const vault = await this.getVault({ toVault, vaultContract });
+    const vault = await this.getZappableVault({ vaultAddress: toVault, vaultContract });
 
     if (!vault) {
       throw new SdkError(`Could not get vault: ${toVault}`);
@@ -134,7 +130,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
       throw new SdkError(`Could not find the token by address: ${sellToken}`);
     }
 
-    const isUnderlyingToken = await this.isUnderlyingToken({ toVault, token });
+    const isUnderlyingToken = await this.isUnderlyingToken({ vault: toVault, address: token.address });
 
     if (isUnderlyingToken) {
       return this.handleDirectSimulationDeposit({ depositArgs, vaultContract, vault, signer });
@@ -180,16 +176,25 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     const signer = this.ctx.provider.write.getSigner(from);
     const vaultContract = new YearnVaultContract(fromVault, signer);
 
-    const [vault] = await this.yearn.vaults.get([fromVault]);
+    const vault = await this.getZappableVault({ vaultAddress: fromVault, vaultContract });
 
     if (!vault) {
       throw new SdkError(`Could not get vault: ${fromVault}`);
     }
 
-    const token = await this.yearn.tokens.findByAddress(from);
+    const token = await this.yearn.tokens.findByAddress(toToken);
 
     if (!token) {
       throw new SdkError(`Could not find the token by address: ${from}`);
+    }
+
+    const isUnderlyingToken = await this.isUnderlyingToken({ vault: fromVault, address: toToken });
+
+    if (isUnderlyingToken) {
+      const simulateFn = (save: boolean): Promise<TransactionOutcome> => {
+        return this.directWithdraw({ ...withdrawArgs, vaultContract, options: { ...options, save } });
+      };
+      return this.simulationExecutor.executeSimulationWithReSimulationOnFailure(simulateFn);
     }
 
     const { isZapOutSupported, zapOutWith } = getZapOutDetails({ chainId: this.chainId, token, vault });
@@ -198,17 +203,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
       return this.handleZapOutSimulation({ withdrawArgs, zapOutWith, token });
     }
 
-    const underlyingToken = this.yearn.vaults.isUnderlyingToken(fromVault, toToken);
-
-    if (!isZapOutSupported && !underlyingToken) {
-      throw new SdkError(`Withdraw of ${from} from ${fromVault} is not supported`);
-    }
-
-    return this.simulationExecutor.executeSimulationWithReSimulationOnFailure(
-      (save: boolean): Promise<TransactionOutcome> => {
-        return this.directWithdraw({ ...withdrawArgs, vaultContract, options: { ...options, save } });
-      }
-    );
+    throw new SdkError(`Withdraw from ${fromVault} to ${toToken} is not supported`);
   }
 
   private async getWithdrawApprovalData({ from, fromVault, options }: GetWithdrawApprovalData) {
@@ -353,7 +348,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     skipGasEstimate,
   }: {
     depositArgs: DepositArgs;
-    vault: DepositableVault;
+    vault: ZappableVault;
     skipGasEstimate: boolean;
   }): Promise<TransactionOutcome> {
     const zapToken = sellToken === EthAddress ? ZeroAddress : sellToken;
@@ -362,7 +357,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
       throw new SdkError("slippage needs to be set", SdkError.NO_SLIPPAGE);
     }
 
-    const zapProtocol = this.getZapProtocol({ vault: toVault });
+    const zapProtocol = this.getZapProtocol({ vaultAddress: toVault });
 
     const zapInParams = await this.yearn.services.zapper
       .zapIn(from, zapToken, amount, toVault, options.gasPrice || "0", options.slippage, skipGasEstimate, zapProtocol)
@@ -578,7 +573,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
       return { needsApproving: false };
     }
 
-    const zapProtocol = this.getZapProtocol({ vault: toVault });
+    const zapProtocol = this.getZapProtocol({ vaultAddress: toVault });
 
     const isApprovalNeeded = await this.yearn.services.zapper
       .zapInApprovalState(from, sellToken, zapProtocol)
@@ -615,7 +610,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     vault,
   }: {
     depositArgs: DepositArgs;
-    vault: DepositableVault;
+    vault: ZappableVault;
   }): Promise<{ simulateFn: (save: boolean) => Promise<TransactionOutcome>; forkId?: string }> {
     if (!depositArgs.options.slippage) {
       throw new SdkError("slippage needs to be specified for a zap", SdkError.NO_SLIPPAGE);
@@ -677,7 +672,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
   }
 
   private getVaultContract({ toVault, signer }: { toVault: Address; signer: JsonRpcSigner }): VaultContractType {
-    const zapProtocol = this.getZapProtocol({ vault: toVault });
+    const zapProtocol = this.getZapProtocol({ vaultAddress: toVault });
 
     return zapProtocol === ZapProtocol.PICKLE
       ? new PickleJarContract(toVault, signer)
@@ -698,16 +693,22 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     throw new SdkError(`zapInWith "${zapInWith}" not supported yet!`);
   }
 
-  private async isUnderlyingToken({ toVault, token }: { toVault: Address; token: Token }): Promise<boolean> {
-    if (PickleJars.includes(toVault)) {
+  private async isUnderlyingToken({ vault, address }: { vault: Address; address: Token["address"] }): Promise<boolean> {
+    if (PickleJars.includes(vault)) {
       return false;
     }
 
-    return this.yearn.vaults.isUnderlyingToken(toVault, token.address);
+    return this.yearn.vaults.isUnderlyingToken(vault, address);
   }
 
-  private async getVault({ toVault, vaultContract }: GetVaultArgs): Promise<DepositableVault> {
-    const zapProtocol = this.getZapProtocol({ vault: toVault });
+  private async getZappableVault({
+    vaultAddress,
+    vaultContract,
+  }: {
+    vaultAddress: Address;
+    vaultContract: VaultContractType;
+  }): Promise<ZappableVault> {
+    const zapProtocol = this.getZapProtocol({ vaultAddress });
 
     if (zapProtocol === ZapProtocol.PICKLE) {
       const [decimals, pricePerShare] = await Promise.all([
@@ -719,24 +720,26 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
         }),
       ]);
 
+      // TODO: Handle withdrawal
       return {
-        address: toVault,
+        address: vaultAddress,
         token: "0x9461173740d27311b176476fa27e94c681b1ea6b",
         decimals: decimals.toString(),
         metadata: {
           zapInWith: "zapperZapIn",
+          zapOutWith: "zapperZapOut",
           pricePerShare: pricePerShare.toString(),
         },
       };
     }
 
-    const [vault] = await this.yearn.vaults.get([toVault]);
+    const [vault] = await this.yearn.vaults.get([vaultAddress]);
 
     return vault;
   }
 
-  private getZapProtocol({ vault }: { vault: Address }): ZapProtocol {
-    return PickleJars.includes(vault) ? ZapProtocol.PICKLE : ZapProtocol.YEARN;
+  private getZapProtocol({ vaultAddress }: { vaultAddress: Address }): ZapProtocol {
+    return PickleJars.includes(vaultAddress) ? ZapProtocol.PICKLE : ZapProtocol.YEARN;
   }
 
   private async getZapperZapOutSimulationArgs({

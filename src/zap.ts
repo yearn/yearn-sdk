@@ -1,5 +1,5 @@
 import { ChainId, isEthereum, isFantom } from "./chain";
-import { DepositableVault, Token, VaultDynamic } from "./types";
+import { Token, ZappableVault } from "./types";
 
 export type ZapInWith = keyof Token["supported"];
 
@@ -12,13 +12,13 @@ type ZapOutDetails = { isZapOutSupported: boolean; zapOutWith: ZapOutWith | null
 type ZapInArgs = {
   chainId: ChainId;
   token: Partial<Token>;
-  vault: DepositableVault;
+  vault: ZappableVault;
 };
 
 type ZapOutArgs = {
   chainId: ChainId;
   token: Partial<Token>;
-  vault: VaultDynamic;
+  vault: ZappableVault;
 };
 
 export function getZapInDetails({ chainId, token, vault }: ZapInArgs): ZapInDetails {
