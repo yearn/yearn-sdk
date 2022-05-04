@@ -230,10 +230,14 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
 
     try {
       const zapApprovalTransaction = await this.yearn.services.zapper.zapOutApprovalTransaction(from, fromVault, "0");
-      const { simulation } = await this.simulateZapApprovalTransaction(zapApprovalTransaction, {
-        ...options,
-        forkId,
-      });
+
+      const { simulation } = await this.simulationExecutor.makeSimulationRequest(
+        zapApprovalTransaction.from,
+        zapApprovalTransaction.to,
+        zapApprovalTransaction.data,
+        { ...options, forkId, save: true }
+      );
+
       return { needsApproving: true, root: simulation.id, forkId };
     } catch (error) {
       throw new ZapperError("zap out approval transaction", ZapperError.ZAP_OUT_APPROVAL);
