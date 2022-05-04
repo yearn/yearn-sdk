@@ -471,7 +471,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
         throw new PriceFetchingError("error fetching price", PriceFetchingError.FETCHING_PRICE_ORACLE);
       });
 
-    const result: TransactionOutcome = {
+    return {
       sourceTokenAddress: fromVault,
       sourceTokenAmount: amount,
       targetTokenAddress: toToken,
@@ -482,8 +482,6 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
       conversionRate: 1,
       slippage: 0,
     };
-
-    return result;
   }
 
   private async zapOut({
@@ -544,7 +542,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
 
     const conversionRate = toBN(zapOutAmountUsdc).div(toBN(soldAssetAmountUsdc)).toNumber();
 
-    const result: TransactionOutcome = {
+    return {
       sourceTokenAddress: fromVault,
       sourceTokenAmount: amount,
       targetTokenAddress: toToken,
@@ -555,8 +553,6 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
       conversionRate: conversionRate,
       slippage: 1 - conversionRate,
     };
-
-    return result;
   }
 
   private shouldUsePartnerService(vault: Address): boolean {
