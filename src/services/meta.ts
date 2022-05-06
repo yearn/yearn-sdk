@@ -1,5 +1,6 @@
 import { Service } from "../common";
 import { Address, SdkError, StrategiesMetadata, TokenMetadata, VaultMetadataOverrides } from "../types";
+import { getLocalizedString } from "../utils/localization";
 
 const META_URL = "https://meta.yearn.network";
 
@@ -16,10 +17,12 @@ export class MetaService extends Service {
     if (!addresses) {
       return tokensMetadata.map((tokenMetadata: TokenMetadata) => ({
         ...tokenMetadata,
-        description:
-          tokenMetadata.localization[this.ctx.locale]?.description ??
-          tokenMetadata.description ??
-          "I don't have a description for this token yet",
+        description: getLocalizedString({
+          obj: tokenMetadata,
+          property: "description",
+          locale: this.ctx.locale,
+          fallback: "I don't have a description for this token yet",
+        }),
       }));
     }
 
@@ -27,10 +30,12 @@ export class MetaService extends Service {
       .filter((tokenMetadata: TokenMetadata) => addresses.includes(tokenMetadata.address))
       .map((tokenMetadata: TokenMetadata) => ({
         ...tokenMetadata,
-        description:
-          tokenMetadata.localization[this.ctx.locale]?.description ??
-          tokenMetadata.description ??
-          "I don't have a description for this token yet",
+        description: getLocalizedString({
+          obj: tokenMetadata,
+          property: "description",
+          locale: this.ctx.locale,
+          fallback: "I don't have a description for this token yet",
+        }),
       }));
   }
 
@@ -44,10 +49,12 @@ export class MetaService extends Service {
 
       const returnedValue: TokenMetadata = await response.json();
 
-      returnedValue.description =
-        returnedValue.localization[this.ctx.locale]?.description ??
-        returnedValue.description ??
-        "I don't have a description for this token yet";
+      returnedValue.description = getLocalizedString({
+        obj: returnedValue,
+        property: "description",
+        locale: this.ctx.locale,
+        fallback: "I don't have a description for this token yet",
+      });
 
       return returnedValue;
     } catch (error) {

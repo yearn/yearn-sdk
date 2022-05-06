@@ -7,6 +7,7 @@ import { ChainId } from "../chain";
 import { ServiceInterface } from "../common";
 import { Address, StrategiesMetadata, StrategyMetadata } from "../types";
 import { VaultStrategiesMetadata } from "../types/strategy";
+import { getLocalizedString } from "../utils/localization";
 
 interface VaultData {
   address: Address;
@@ -151,8 +152,12 @@ export class StrategyInterface<T extends ChainId> extends ServiceInterface<T> {
         const metadata: StrategyMetadata = {
           address: strategy.address,
           name: metadatum?.name || strategy.name || "Strategy",
-          description:
-            metadatum?.localization[this.ctx.locale]?.description ?? "I don't have a description for this strategy yet",
+          description: getLocalizedString({
+            obj: metadatum,
+            property: "description",
+            locale: this.ctx.locale,
+            fallback: "I don't have a description for this strategy yet",
+          }),
           protocols: metadatum?.protocols ?? [],
         };
 

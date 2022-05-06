@@ -55,3 +55,8 @@ export type Unit = string;
  * Utility type to describe a map of predefined keys with the same value.
  */
 export type TypedMap<K extends string | number | symbol, V> = { [key in K]: V };
+
+/**
+ * Accepted locales.
+ */
+export type Locale = "de" | "el" | "en" | "es" | "fr" | "hi" | "id" | "ja" | "pt" | "ru" | "tr" | "vi" | "zh";
