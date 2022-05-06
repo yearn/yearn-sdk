@@ -207,10 +207,6 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
   }
 
   private async getWithdrawApprovalData({ from, fromVault, options }: GetWithdrawApprovalData) {
-    if (fromVault === EthAddress) {
-      return { needsApproving: false };
-    }
-
     try {
       const { isApproved } = await this.yearn.services.zapper.zapOutApprovalState(from, fromVault);
 
