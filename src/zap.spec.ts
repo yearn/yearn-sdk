@@ -1,12 +1,12 @@
-import { ChainId, DepositableVault, getZapInDetails } from ".";
-import { createMockDepositableVault, createMockToken } from "./test-utils/factories";
+import { ChainId, getZapInDetails, getZapOutDetails, ZappableVault } from ".";
+import { createMockToken, createMockZappableVault } from "./test-utils/factories";
 
 describe("Zap", () => {
   describe("getZapInDetails", () => {
-    let depositableVault: DepositableVault;
+    let depositableVault: ZappableVault;
 
     beforeEach(() => {
-      depositableVault = createMockDepositableVault();
+      depositableVault = createMockZappableVault();
     });
 
     it("should return `false` if token does not support zaps", () => {
@@ -79,6 +79,90 @@ describe("Zap", () => {
           };
 
           const actual = getZapInDetails({ chainId: 250, token, vault });
+
+          expect(actual).toEqual(expectation);
+        }
+      );
+    });
+  });
+
+  describe("getZapOutDetails", () => {
+    let withdrawableVault: ZappableVault;
+
+    beforeEach(() => {
+      withdrawableVault = createMockZappableVault();
+    });
+
+    it("should return `false` if token does not support zaps", () => {
+      const token = createMockToken({ supported: undefined });
+
+      const actual = getZapOutDetails({ chainId: 1, token, vault: withdrawableVault });
+
+      expect(actual).toEqual({ isZapOutSupported: false, zapOutWith: null });
+    });
+
+    it("should return `false` if vault metadata doesn't have `zapOutWith` is not given", () => {
+      const token = createMockToken({ supported: { zapperZapOut: true } });
+      const vaultWithoutZapOutWith = {
+        ...withdrawableVault,
+        metadata: { ...withdrawableVault.metadata, allowZapOut: true, zapOutWith: undefined },
+      };
+
+      const actual = getZapOutDetails({ chainId: 1, token, vault: vaultWithoutZapOutWith });
+
+      expect(actual).toEqual({ isZapOutSupported: false, zapOutWith: null });
+    });
+
+    it("should return `false` when the chain is unsupported", () => {
+      const token = createMockToken({ supported: { zapperZapOut: true } });
+
+      const actual = getZapOutDetails({ chainId: 42 as ChainId, token, vault: withdrawableVault });
+
+      expect(actual).toEqual({ isZapOutSupported: false, zapOutWith: null });
+    });
+
+    describe("when is Ethereum", () => {
+      it.each`
+        supported                                 | zapOutWith         | expectation
+        ${{ zapper: true, zapperZapOut: true }}   | ${"zapperZapOut"}  | ${{ isZapOutSupported: true, zapOutWith: "zapperZapOut" }}
+        ${{ zapper: false, zapperZapOut: false }} | ${"zapperZapOut"}  | ${{ isZapOutSupported: false, zapOutWith: null }}
+        ${{ zapper: true, zapperZapOut: false }}  | ${"zapperZapOut"}  | ${{ isZapOutSupported: false, zapOutWith: null }}
+        ${{ zapper: false, zapperZapOut: true }}  | ${"zapperZapOut"}  | ${{ isZapOutSupported: false, zapOutWith: null }}
+        ${{ zapper: true, zapperZapOut: true }}   | ${"invalidZapOut"} | ${{ isZapOutSupported: false, zapOutWith: null }}
+        ${{ zapper: false, zapperZapOut: false }} | ${"invalidZapOut"} | ${{ isZapOutSupported: false, zapOutWith: null }}
+        ${{ zapper: true, zapperZapOut: false }}  | ${"invalidZapOut"} | ${{ isZapOutSupported: false, zapOutWith: null }}
+        ${{ zapper: false, zapperZapOut: true }}  | ${"invalidZapOut"} | ${{ isZapOutSupported: false, zapOutWith: null }}
+      `(
+        `should return \`$expectation\` when token supports \`$supported\`, and vaultMetadata has \`$zapOutWith\``,
+        ({ supported, zapOutWith, expectation }) => {
+          const token = createMockToken({ supported });
+          const vault = {
+            ...withdrawableVault,
+            metadata: { ...withdrawableVault.metadata, zapOutWith },
+          };
+
+          const actual = getZapOutDetails({ chainId: 1, token, vault });
+
+          expect(actual).toEqual(expectation);
+        }
+      );
+    });
+
+    describe("when is Fantom", () => {
+      it.each`
+        supported               | zapOutWith     | expectation
+        ${{ ftmApeZap: true }}  | ${"ftmApeZap"} | ${{ isZapOutSupported: true, zapOutWith: "ftmApeZap" }}
+        ${{ ftmApeZap: false }} | ${"ftmApeZap"} | ${{ isZapOutSupported: false, zapOutWith: null }}
+      `(
+        `should return \`$expectation\` when token supports \`$supported\`, and vaultMetadata has \`$zapOutWith\``,
+        ({ supported, zapOutWith, expectation }) => {
+          const token = createMockToken({ supported });
+          const vault = {
+            ...withdrawableVault,
+            metadata: { ...withdrawableVault.metadata, zapOutWith },
+          };
+
+          const actual = getZapOutDetails({ chainId: 250, token, vault });
 
           expect(actual).toEqual(expectation);
         }
