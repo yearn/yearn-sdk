@@ -156,7 +156,7 @@ export class StrategyInterface<T extends ChainId> extends ServiceInterface<T> {
             obj: metadatum,
             property: "description",
             locale: this.ctx.locale,
-            fallback: "I don't have a description for this strategy yet",
+            fallback: "Vault strategy missing",
           }),
           protocols: metadatum?.protocols ?? [],
         };

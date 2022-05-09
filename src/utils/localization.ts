@@ -6,7 +6,6 @@ interface LocalizationObject {
 type LocalizedObject<T extends string> = LocalizationObject & {
   [key in T]: string;
 };
-// interface LocalizedObject<T> extends { localization: Localization; };
 
 export const getLocalizedString = <T extends string>({
   obj,
@@ -15,7 +14,7 @@ export const getLocalizedString = <T extends string>({
   fallback,
 }: {
   obj?: LocalizedObject<T>;
-  property: T;
+  property?: T;
   locale: Locale;
   fallback: string;
-}): string => obj?.localization[locale]?.description ?? (obj && obj[property]) ?? fallback;
+}): string => obj?.localization[locale]?.description ?? (obj && property && obj[property]) ?? fallback;

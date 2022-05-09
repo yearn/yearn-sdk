@@ -21,7 +21,7 @@ export class MetaService extends Service {
           obj: tokenMetadata,
           property: "description",
           locale: this.ctx.locale,
-          fallback: "I don't have a description for this token yet",
+          fallback: "Token description missing",
         }),
       }));
     }
@@ -34,7 +34,7 @@ export class MetaService extends Service {
           obj: tokenMetadata,
           property: "description",
           locale: this.ctx.locale,
-          fallback: "I don't have a description for this token yet",
+          fallback: "Token description missing",
         }),
       }));
   }
@@ -53,7 +53,7 @@ export class MetaService extends Service {
         obj: returnedValue,
         property: "description",
         locale: this.ctx.locale,
-        fallback: "I don't have a description for this token yet",
+        fallback: "Token description missing",
       });
 
       return returnedValue;
