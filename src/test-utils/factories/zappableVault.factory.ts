@@ -1,6 +1,6 @@
-import { DepositableVault } from "../..";
+import { ZappableVault } from "../..";
 
-const DEFAULT_DEPOSITABLE_VAULT: DepositableVault = {
+const DEFAULT_ZAPPABLE_VAULT: ZappableVault = {
   address: "0x001",
   token: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
   decimals: "18",
@@ -13,7 +13,7 @@ const DEFAULT_DEPOSITABLE_VAULT: DepositableVault = {
   },
 };
 
-export const createMockDepositableVault = (overwrites: Partial<DepositableVault> = {}): DepositableVault => ({
-  ...DEFAULT_DEPOSITABLE_VAULT,
+export const createMockZappableVault = (overwrites: Partial<ZappableVault> = {}): ZappableVault => ({
+  ...DEFAULT_ZAPPABLE_VAULT,
   ...overwrites,
 });

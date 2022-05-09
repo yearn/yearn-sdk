@@ -6,7 +6,12 @@ import { ChainId, SdkError } from "..";
 import { Context } from "../context";
 import { PartnerService } from "../services/partner";
 import { SimulationExecutor } from "../simulationExecutor";
-import { createMockAssetStaticVaultV2, createMockDepositableVault, createMockToken } from "../test-utils/factories";
+import {
+  createMockAssetStaticVaultV2,
+  createMockToken,
+  createMockTransactionOutcome,
+  createMockZappableVault,
+} from "../test-utils/factories";
 import { ZapProtocol } from "../types";
 import { PriceFetchingError, ZapperError } from "../types/custom/simulation";
 import { Yearn } from "../yearn";
@@ -354,7 +359,7 @@ describe("Simulation interface", () => {
     it("should fail if deposit of token to vault is not supported", async () => {
       expect.assertions(1);
       tokenMock.mockReturnValueOnce(Promise.resolve("0x001"));
-      const depositableVaultMock = createMockDepositableVault();
+      const depositableVaultMock = createMockZappableVault();
       vaultsGetMock.mockResolvedValue([
         { ...depositableVaultMock, metadata: { ...depositableVaultMock.metadata, zapInWith: undefined } },
       ]);
@@ -366,15 +371,38 @@ describe("Simulation interface", () => {
   });
 
   describe("withdraw", () => {
+    beforeEach(() => {
+      const zapperZapOutSupportedToken = createMockToken({ supported: { zapper: true, zapperZapOut: true } });
+      tokensFindByAddressMock.mockResolvedValue(zapperZapOutSupportedToken);
+
+      const vaultMock = createMockAssetStaticVaultV2();
+      const zapperZapOutVaultMetadata = {
+        ...vaultMock,
+        metadata: { ...vaultMock.metadata, allowZapOut: true, zapOutWith: "zapperZapOut" },
+      };
+      vaultsGetMock.mockResolvedValue([zapperZapOutVaultMetadata]);
+    });
+
+    it("should fail when the vault is not found", async () => {
+      vaultsGetMock.mockResolvedValueOnce([]);
+
+      return expect(simulationInterface.withdraw("0xWallet", "0xVault", "1", "0xToken")).rejects.toThrowError(
+        new SdkError("Could not get vault: 0xVault")
+      );
+    });
+
+    it("should fail when the token is not found", async () => {
+      tokensFindByAddressMock.mockResolvedValueOnce(undefined);
+
+      return expect(simulationInterface.withdraw("0xWallet", "0xVault", "1", "0xToken")).rejects.toThrowError(
+        new SdkError("Could not find the token by address: 0xToken")
+      );
+    });
+
     it("should fail with SDK no slippage error if none was passed", async () => {
-      expect.assertions(2);
-      tokenMock.mockImplementationOnce(() => Promise.resolve("0x001"));
-      try {
-        await simulationInterface.withdraw("0x000", "0x000", "1", "0x0000000000000000000000000000000000000001");
-      } catch (error) {
-        expect(error).toBeInstanceOf(SdkError);
-        expect(error).toHaveProperty("error_code", SdkError.NO_SLIPPAGE);
-      }
+      return expect(
+        simulationInterface.withdraw("0x000", "0x000", "1", "0x0000000000000000000000000000000000000001")
+      ).rejects.toThrowError(new SdkError("slippage needs to be specified for a zap", SdkError.NO_SLIPPAGE));
     });
 
     it("should fail with ZapperError zap out approval state error", async () => {
@@ -446,6 +474,49 @@ describe("Simulation interface", () => {
         expect(error).toBeInstanceOf(PriceFetchingError);
         expect(error).toHaveProperty("error_code", PriceFetchingError.FETCHING_PRICE_ORACLE);
       }
+    });
+
+    it("should throw when withdraw is not supported", async () => {
+      isUnderlyingTokenMock.mockResolvedValue(false);
+
+      const unsupportedToken = createMockToken({ supported: { zapper: false } });
+      tokensFindByAddressMock.mockResolvedValue(unsupportedToken);
+
+      const zappableVaultMock = createMockZappableVault();
+      vaultsGetMock.mockResolvedValue([
+        { ...zappableVaultMock, metadata: { ...zappableVaultMock.metadata, zapOutWith: undefined } },
+      ]);
+
+      return expect(
+        simulationInterface.withdraw("0x000", "0x000", "1", "0x0000000000000000000000000000000000000001")
+      ).rejects.toThrowError("Withdraw from 0x000 to 0x0000000000000000000000000000000000000001 is not supported");
+    });
+
+    it("should call the directWithdraw with the correct arguments when withdrawing the underlying token", async () => {
+      isUnderlyingTokenMock.mockResolvedValue(true);
+      const transactionOutcomeMock = createMockTransactionOutcome();
+      const directWithdrawMock = jest.fn().mockResolvedValueOnce(transactionOutcomeMock);
+      (SimulationInterface as any).prototype.directWithdraw = directWithdrawMock;
+
+      await simulationInterface.withdraw("0xWallet", "0xVault", "1", "0xToken", {
+        slippage: 1,
+      });
+
+      expect(directWithdrawMock).toHaveBeenCalledWith({
+        amount: "1",
+        from: "0xWallet",
+        fromVault: "0xVault",
+        options: {
+          save: false,
+          slippage: 1,
+        },
+        toToken: "0xToken",
+        vaultContract: {
+          encodeDeposit: expect.any(Function),
+          token: expect.any(Function),
+        },
+      });
+      expect(executeSimulationWithReSimulationOnFailureSpy).toHaveBeenCalledTimes(1);
     });
   });
 });

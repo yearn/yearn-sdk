@@ -63,12 +63,13 @@ export interface VaultUserMetadata {
   earned: Usdc;
 }
 
-export type DepositableVault = {
+export type ZappableVault = {
   address: Address;
   token: Address;
   decimals: Integer;
   metadata: {
     zapInWith?: string;
+    zapOutWith?: string;
     pricePerShare: Integer;
   };
 } & PartialDeep<Vault>;
