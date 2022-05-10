@@ -335,7 +335,6 @@ export class ZapperService extends Service {
       gasPrice: gasPrice,
       slippagePercentage: slippagePercentage.toString(),
       api_key: this.ctx.zapper,
-      shouldSellEntireBalance: "true",
       skipGasEstimate: skipGasEstimate ? "true" : "false",
       ...(signature && { signature }),
     });
