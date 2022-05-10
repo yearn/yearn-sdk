@@ -1,4 +1,4 @@
-import { Address, Integer } from "./common";
+import { Address, Integer, Locale } from "./common";
 import { EarningsDayData } from "./custom/earnings";
 import { Apy } from "./custom/vault";
 import { VaultStrategiesMetadata } from "./strategy";
@@ -70,6 +70,12 @@ export type Metadata = {
  */
 export type TypeId = keyof Metadata;
 
+export interface LocalizedProperties {
+  name?: string;
+  description: string;
+}
+
+export type Localization = Partial<Record<Locale, LocalizedProperties>>;
 /**
  * Token metadata from yearn-meta
  */
@@ -81,7 +87,7 @@ export interface TokenMetadata {
   tokenIconOverride?: string;
   tokenSymbolOverride?: string;
   tokenNameOverride?: string;
-  localization: Record<string, unknown>;
+  localization: Localization;
 }
 
 export interface StrategyMetadata {
@@ -94,6 +100,7 @@ export interface StrategyMetadata {
 export interface StrategiesMetadata {
   name: string;
   description: string;
+  localization: Localization;
   addresses: Address[];
   protocols: string[];
 }

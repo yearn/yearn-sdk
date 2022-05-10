@@ -1,5 +1,6 @@
 import { Service } from "../common";
 import { Address, SdkError, StrategiesMetadata, TokenMetadata, VaultMetadataOverrides } from "../types";
+import { getLocalizedString } from "../utils/localization";
 
 const META_URL = "https://meta.yearn.network";
 
@@ -9,13 +10,33 @@ const META_URL = "https://meta.yearn.network";
  */
 export class MetaService extends Service {
   async tokens(addresses?: Address[]): Promise<TokenMetadata[]> {
-    const tokensMetadata = await fetch(`${META_URL}/tokens/${this.chainId}/all`).then((res) => res.json());
+    const tokensMetadata: TokenMetadata[] = await fetch(`${META_URL}/tokens/${this.chainId}/all`).then((res) =>
+      res.json()
+    );
 
     if (!addresses) {
-      return tokensMetadata;
+      return tokensMetadata.map((tokenMetadata: TokenMetadata) => ({
+        ...tokenMetadata,
+        description: getLocalizedString({
+          obj: tokenMetadata,
+          property: "description",
+          locale: this.ctx.locale,
+          fallback: "Token description missing",
+        }),
+      }));
     }
 
-    return tokensMetadata.filter((tokenMetadata: TokenMetadata) => addresses.includes(tokenMetadata.address));
+    return tokensMetadata
+      .filter((tokenMetadata: TokenMetadata) => addresses.includes(tokenMetadata.address))
+      .map((tokenMetadata: TokenMetadata) => ({
+        ...tokenMetadata,
+        description: getLocalizedString({
+          obj: tokenMetadata,
+          property: "description",
+          locale: this.ctx.locale,
+          fallback: "Token description missing",
+        }),
+      }));
   }
 
   async token(address: Address): Promise<TokenMetadata | null> {
@@ -26,7 +47,16 @@ export class MetaService extends Service {
         throw new SdkError(`Failed to fetch token with address "${address}". HTTP error: ${response.status}`);
       }
 
-      return response.json();
+      const returnedValue: TokenMetadata = await response.json();
+
+      returnedValue.description = getLocalizedString({
+        obj: returnedValue,
+        property: "description",
+        locale: this.ctx.locale,
+        fallback: "Token description missing",
+      });
+
+      return returnedValue;
     } catch (error) {
       console.error(error);
     }
