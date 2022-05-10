@@ -117,7 +117,7 @@ export class ZapperService extends Service {
     const url = "https://api.zapper.fi/v2/apps/yearn/tokens";
     const params = new URLSearchParams({
       network: "ethereum",
-      type: "vault",
+      groupId: "vault",
       api_key: this.ctx.zapper,
     });
 
