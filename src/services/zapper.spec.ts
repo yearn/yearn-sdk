@@ -103,7 +103,7 @@ describe("ZapperService", () => {
 
           expect(fetchSpy).toHaveBeenCalledTimes(1);
           expect(fetchSpy).toHaveBeenCalledWith(
-            "https://api.zapper.fi/v2/apps/yearn/tokens?network=ethereum&type=vault&api_key=ZAPPER_API_KEY"
+            "https://api.zapper.fi/v2/apps/yearn/tokens?network=ethereum&groupId=vault&api_key=ZAPPER_API_KEY"
           );
           expect(actual).toEqual([mockTokenMarketData.address]);
         });
