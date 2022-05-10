@@ -2,7 +2,7 @@ import { JsonRpcProvider } from "@ethersproject/providers";
 import EventEmitter from "events";
 import { PartialDeep } from "type-fest";
 
-import { Address, SdkError } from "./types";
+import { Address, Locale, SdkError } from "./types";
 
 export interface AddressesOverride {
   lens?: Address;
@@ -65,6 +65,7 @@ export interface ContextValue {
   cache?: CacheConfiguration;
   subgraph?: SubgraphConfiguration;
   partnerId?: string;
+  locale?: Locale;
 }
 
 const DefaultContext: ContextValue = {
@@ -153,5 +154,9 @@ export class Context implements ContextValue {
 
   get partnerId(): string | undefined {
     return this.ctx.partnerId;
+  }
+
+  get locale(): Locale {
+    return this.ctx.locale || "en";
   }
 }
