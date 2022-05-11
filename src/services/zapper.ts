@@ -27,8 +27,9 @@ export class ZapperService extends Service {
    */
   async supportedTokens(): Promise<Token[]> {
     const url = "https://api.zapper.fi/v2/prices";
-    const params = new URLSearchParams({ api_key: this.ctx.zapper });
-    const zapperTokens: ZapperToken[] = await fetch(`${url}?${params}`)
+    const zapperTokens: ZapperToken[] = await fetch(url, {
+      headers: { Authorization: `Basic ${this.ctx.zapper}` },
+    })
       .then(handleHttpError)
       .then((res) => res.json());
 
@@ -72,9 +73,10 @@ export class ZapperService extends Service {
     const url = "https://api.zapper.fi/v2/apps/tokens/balances";
     const params = new URLSearchParams({
       "addresses[]": Array.isArray(addresses) ? addresses.join() : addresses,
-      api_key: this.ctx.zapper,
     });
-    const { balances } = await fetch(`${url}?${params}`)
+    const { balances } = await fetch(`${url}?${params}`, {
+      headers: { Authorization: `Basic ${this.ctx.zapper}` },
+    })
       .then(handleHttpError)
       .then((res) => res.json());
     Object.keys(balances).forEach((address) => {
@@ -118,10 +120,11 @@ export class ZapperService extends Service {
     const params = new URLSearchParams({
       network: "ethereum",
       groupId: "vault",
-      api_key: this.ctx.zapper,
     });
 
-    const vaultTokenMarketData = await fetch(`${url}?${params}`)
+    const vaultTokenMarketData = await fetch(`${url}?${params}`, {
+      headers: { Authorization: `Basic ${this.ctx.zapper}` },
+    })
       .then(handleHttpError)
       .then((res) => res.json());
 
@@ -139,7 +142,9 @@ export class ZapperService extends Service {
     const params = new URLSearchParams({
       eip1559: "false",
     });
-    const gas = await fetch(`${url}?${params}`)
+    const gas = await fetch(`${url}?${params}`, {
+      headers: { Authorization: `Basic ${this.ctx.zapper}` },
+    })
       .then(handleHttpError)
       .then((res) => res.json());
     return gas;
@@ -160,9 +165,10 @@ export class ZapperService extends Service {
     const params = new URLSearchParams({
       ownerAddress: from,
       sellTokenAddress: token,
-      api_key: this.ctx.zapper,
     });
-    const response: ZapApprovalStateOutput = await fetch(`${url}?${params}`)
+    const response: ZapApprovalStateOutput = await fetch(`${url}?${params}`, {
+      headers: { Authorization: `Basic ${this.ctx.zapper}` },
+    })
       .then(handleHttpError)
       .then((res) => res.json());
 
@@ -187,9 +193,10 @@ export class ZapperService extends Service {
       gasPrice,
       ownerAddress: from,
       sellTokenAddress: token,
-      api_key: this.ctx.zapper,
     });
-    const response: ZapApprovalTransactionOutput = await fetch(`${url}?${params}`)
+    const response: ZapApprovalTransactionOutput = await fetch(`${url}?${params}`, {
+      headers: { Authorization: `Basic ${this.ctx.zapper}` },
+    })
       .then(handleHttpError)
       .then((res) => res.json());
 
@@ -211,9 +218,10 @@ export class ZapperService extends Service {
     const params = new URLSearchParams({
       ownerAddress: from,
       sellTokenAddress: token,
-      api_key: this.ctx.zapper,
     });
-    const response: ZapApprovalStateOutput = await fetch(`${url}?${params}`)
+    const response: ZapApprovalStateOutput = await fetch(`${url}?${params}`, {
+      headers: { Authorization: `Basic ${this.ctx.zapper}` },
+    })
       .then(handleHttpError)
       .then((res) => res.json());
 
@@ -238,9 +246,10 @@ export class ZapperService extends Service {
       gasPrice,
       ownerAddress: from,
       sellTokenAddress: token,
-      api_key: this.ctx.zapper,
     });
-    const response: ZapApprovalTransactionOutput = await fetch(`${url}?${params}`)
+    const response: ZapApprovalTransactionOutput = await fetch(`${url}?${params}`, {
+      headers: { Authorization: `Basic ${this.ctx.zapper}` },
+    })
       .then(handleHttpError)
       .then((res) => res.json());
 
@@ -284,12 +293,13 @@ export class ZapperService extends Service {
       poolAddress: vault,
       gasPrice: gasPrice,
       slippagePercentage: slippagePercentage.toString(),
-      api_key: this.ctx.zapper,
       skipGasEstimate: skipGasEstimate ? "true" : "false",
       ...((partnerId && { partnerId }) || {}),
     });
 
-    const response: ZapOutput = await fetch(`${url}?${params}`)
+    const response: ZapOutput = await fetch(`${url}?${params}`, {
+      headers: { Authorization: `Basic ${this.ctx.zapper}` },
+    })
       .then(handleHttpError)
       .then((res) => res.json());
 
@@ -334,11 +344,12 @@ export class ZapperService extends Service {
       poolAddress: vault,
       gasPrice: gasPrice,
       slippagePercentage: slippagePercentage.toString(),
-      api_key: this.ctx.zapper,
       skipGasEstimate: skipGasEstimate ? "true" : "false",
       ...(signature && { signature }),
     });
-    const response: ZapOutput = await fetch(`${url}?${params}`)
+    const response: ZapOutput = await fetch(`${url}?${params}`, {
+      headers: { Authorization: `Basic ${this.ctx.zapper}` },
+    })
       .then(handleHttpError)
       .then((res) => res.json());
 
