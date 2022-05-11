@@ -123,7 +123,7 @@ export class Context implements ContextValue {
 
   get zapper(): string {
     if (this.ctx.zapper) return encode({ str: `${this.ctx.zapper}:`, encoding: "base64" });
-    throw new SdkError("zapperAuthToken must be undefined in Context for this feature to work.");
+    throw new SdkError("zapper must be undefined in Context for this feature to work.");
   }
 
   get etherscan(): string {
