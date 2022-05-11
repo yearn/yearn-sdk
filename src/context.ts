@@ -3,6 +3,7 @@ import EventEmitter from "events";
 import { PartialDeep } from "type-fest";
 
 import { Address, Locale, SdkError } from "./types";
+import { encode } from "./utils";
 
 export interface AddressesOverride {
   lens?: Address;
@@ -121,7 +122,7 @@ export class Context implements ContextValue {
   }
 
   get zapper(): string {
-    if (this.ctx.zapper) return this.ctx.zapper;
+    if (this.ctx.zapper) return encode({ str: `${this.ctx.zapper}:`, encoding: "base64" });
     throw new SdkError("zapper must be undefined in Context for this feature to work.");
   }
 

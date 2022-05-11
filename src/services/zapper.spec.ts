@@ -10,7 +10,7 @@ const getAddressMock = jest.fn();
 
 jest.mock("../context", () => ({
   Context: jest.fn().mockImplementation(() => ({
-    zapper: "ZAPPER_API_KEY",
+    zapper: "OTZlMGNjNTEtYTYyZS00MmNhLWFjZWUtOTEwZWE3ZDJhMjQxOg==",
   })),
 }));
 
@@ -103,7 +103,10 @@ describe("ZapperService", () => {
 
           expect(fetchSpy).toHaveBeenCalledTimes(1);
           expect(fetchSpy).toHaveBeenCalledWith(
-            "https://api.zapper.fi/v1/protocols/yearn/token-market-data?network=ethereum&type=vault&api_key=ZAPPER_API_KEY"
+            "https://api.zapper.fi/v2/apps/yearn/tokens?network=ethereum&groupId=vault",
+            {
+              headers: { Authorization: `Basic OTZlMGNjNTEtYTYyZS00MmNhLWFjZWUtOTEwZWE3ZDJhMjQxOg==` },
+            }
           );
           expect(actual).toEqual([mockTokenMarketData.address]);
         });
