@@ -65,7 +65,7 @@ describe("PropertiesAggregatorService", () => {
     });
   });
 
-  describe("getProperty", () => {
+  describe("getProperties", () => {
     beforeEach(() => {
       getPropertiesMock.mockReturnValue(["firstResult", "secondResult"]);
     });
