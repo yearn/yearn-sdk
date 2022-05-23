@@ -53,6 +53,7 @@ export { RegistryV2Adapter } from "./services/adapters/registry";
 export { AssetService } from "./services/assets";
 export { LensService } from "./services/lens";
 export { OracleService } from "./services/oracle";
+export { PropertiesAggregatorService } from "./services/propertiesAggregator";
 export { SubgraphService } from "./services/subgraph";
 export { TelegramService } from "./services/telegram";
 export { VisionService } from "./services/vision";
