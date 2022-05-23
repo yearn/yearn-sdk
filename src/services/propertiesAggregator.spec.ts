@@ -59,10 +59,7 @@ describe("PropertiesAggregatorService", () => {
     it("should call the properties aggregator contract's getProperty method", async () => {
       const propertyName = "name";
       const paramType = ParamType.from(`string ${propertyName}`);
-      await propertiesAggregatorService.getProperty({
-        target: targetAddress,
-        paramType: paramType,
-      });
+      await propertiesAggregatorService.getProperty(targetAddress, paramType);
 
       expect(getPropertyMock).toHaveBeenCalledTimes(1);
       expect(getPropertyMock).toHaveBeenCalledWith(targetAddress, propertyName);

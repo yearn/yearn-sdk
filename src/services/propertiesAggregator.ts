@@ -7,11 +7,11 @@ import { Address } from "../types";
 
 type DecodingType = string | BigNumber;
 
-type PropertyAggregatorArgs = {
-  target: Address;
-  paramType: ParamType;
-};
-
+/**
+ * [[PropertiesAggregatorService]] allows queries of a contract's methods to be aggregated into one
+ * call, with the limitation that none of the methods can have arguments. Method names are dynamically provided
+ * in order to provide flexibility for easily adding or removing property queries in the future
+ */
 export class PropertiesAggregatorService<T extends ChainId> extends ContractService<T> {
   static abi = [
     "function getProperty(address target, string calldata name) public view returns (bytes memory)",
@@ -25,7 +25,13 @@ export class PropertiesAggregatorService<T extends ChainId> extends ContractServ
     return this._getContract(PropertiesAggregatorService.abi, PropertiesAggregatorService.contractId, this.ctx);
   }
 
-  async getProperty({ target, paramType }: PropertyAggregatorArgs): Promise<string> {
+  /**
+   * Fetches a single property from the target contract, assuming no arguments are used for the property
+   * @param target The target contract to perform the call on
+   * @param paramType Ethers' `ParamType` object that contains data about the method to call e.g. ParamType.from("string name")
+   * @returns The decoded result of the property query
+   */
+  async getProperty(target: Address, paramType: ParamType): Promise<DecodingType> {
     const contract = await this.contract;
     const data = await contract.read.getProperty(target, paramType.name);
     const decoded = this.coder.decode([paramType.type], data)[0];
@@ -33,6 +39,12 @@ export class PropertiesAggregatorService<T extends ChainId> extends ContractServ
     return Promise.resolve(decoded);
   }
 
+  /**
+   * Simultaneously fetches multiple properties from the target contract, assuming no arguments are used for each property
+   * @param target The target contract to perform the call on
+   * @param paramTypes An array of Ethers' `ParamType` object that contains data about the method to call e.g. ParamType.from("string name")
+   * @returns An object with the inputted property names as keys, and corresponding decoded data as values
+   */
   async getProperties(target: Address, paramTypes: ParamType[]): Promise<Record<string, DecodingType>> {
     const contract = await this.contract;
     const names = paramTypes.map((param) => param.name);
