@@ -6,7 +6,6 @@ import { Context } from "../context";
 import { AddressProvider } from "./addressProvider";
 import { PropertiesAggregatorService } from "./propertiesAggregator";
 
-const decodeMock = jest.fn().mockResolvedValue("decoded");
 const targetAddress = "0x5D7201c10AfD0Ed1a1F408E321Ef0ebc7314B086";
 
 jest.mock("./addressProvider", () => ({
@@ -19,9 +18,9 @@ jest.mock("@ethersproject/abi", () => {
   const original = jest.requireActual("@ethersproject/abi");
   return {
     ...original,
-    AbiCoder: jest.fn().mockImplementation(() => ({
-      decode: decodeMock,
-    })),
+    defaultAbiCoder: {
+      decode: jest.fn().mockReturnValue("decoded"),
+    },
   };
 });
 

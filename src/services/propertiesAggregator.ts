@@ -1,4 +1,4 @@
-import { AbiCoder, ParamType } from "@ethersproject/abi";
+import { defaultAbiCoder, ParamType } from "@ethersproject/abi";
 import { BigNumber } from "@ethersproject/bignumber";
 
 import { ChainId } from "../chain";
@@ -19,8 +19,6 @@ export class PropertiesAggregatorService<T extends ChainId> extends ContractServ
   ];
   static contractId = ContractAddressId.propertiesAggregator;
 
-  private coder = new AbiCoder();
-
   get contract(): Promise<WrappedContract> {
     return this._getContract(PropertiesAggregatorService.abi, PropertiesAggregatorService.contractId, this.ctx);
   }
@@ -34,7 +32,7 @@ export class PropertiesAggregatorService<T extends ChainId> extends ContractServ
   async getProperty(target: Address, paramType: ParamType): Promise<DecodingType> {
     const contract = await this.contract;
     const data = await contract.read.getProperty(target, paramType.name);
-    const decoded = this.coder.decode([paramType.type], data)[0];
+    const decoded = defaultAbiCoder.decode([paramType.type], data)[0];
 
     return Promise.resolve(decoded);
   }
@@ -53,7 +51,7 @@ export class PropertiesAggregatorService<T extends ChainId> extends ContractServ
     const result: Record<string, DecodingType> = {};
     paramTypes.forEach((paramType, index) => {
       const datum = data[index];
-      const decoded = this.coder.decode([paramType.type], datum)[0];
+      const decoded = defaultAbiCoder.decode([paramType.type], datum)[0];
       result[paramType.name] = decoded;
     });
     return Promise.resolve(result);
