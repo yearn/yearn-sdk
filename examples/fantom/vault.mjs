@@ -9,7 +9,7 @@ const provider = new JsonRpcProvider(url);
 const yearn = new Yearn(250, {
   provider,
   addresses: Addresses,
-  cache: { useCache: false },
+  cache: { useCache: false }
 });
 
 async function main() {
