@@ -66,6 +66,7 @@ const assetsHistoricEarningsMock = jest.fn();
 const sendTransactionUsingServiceMock = jest.fn();
 const partnerPopulateDepositTransactionMock = jest.fn();
 const partnerIsAllowedMock = jest.fn().mockReturnValue(true);
+const propertiesAggregatorGetPropertiesMock = jest.fn();
 
 jest.mock("../services/partner", () => ({
   PartnerService: jest.fn().mockImplementation(() => ({
@@ -78,6 +79,9 @@ jest.mock("../services/partner", () => ({
 jest.mock("../yearn", () => ({
   Yearn: jest.fn().mockImplementation(() => ({
     services: {
+      propertiesAggregator: {
+        getProperties: propertiesAggregatorGetPropertiesMock,
+      },
       meta: {
         vaults: metaVaultsMock,
       },
@@ -1051,6 +1055,62 @@ describe("VaultInterface", () => {
           }
         });
       });
+    });
+  });
+
+  describe("getInfo", () => {
+    it("should return values from property aggregator", async () => {
+      const lastReportTimestamp = 1653392108;
+      const lastReportDate = new Date(lastReportTimestamp * 1000);
+
+      const name = "name";
+      const symbol = "symbol";
+      const apiVersion = "0.3.5";
+      const emergencyShutdown = false;
+      const managementFee = BigNumber.from(200);
+      const performanceFee = BigNumber.from(2000);
+      const totalAssets = BigNumber.from(123);
+      const depositLimit = BigNumber.from(456);
+      const debtRatio = BigNumber.from(10000);
+      const management = "0x727fe1759430df13655ddb0731dE0D0FDE929b04";
+      const governance = "0xC0E2830724C946a6748dDFE09753613cd38f6767";
+      const guardian = "0x72a34AbafAB09b15E7191822A679f28E067C4a16";
+      const rewards = "0x89716Ad7EDC3be3B35695789C475F3e7A3Deb12a";
+
+      const propertiesAggregatorReturnValue = {
+        lastReport: BigNumber.from(lastReportTimestamp),
+        name,
+        symbol,
+        apiVersion,
+        emergencyShutdown,
+        managementFee,
+        performanceFee,
+        totalAssets,
+        depositLimit,
+        debtRatio,
+        management,
+        governance,
+        guardian,
+        rewards,
+      };
+
+      propertiesAggregatorGetPropertiesMock.mockReturnValue(propertiesAggregatorReturnValue);
+
+      const result = await vaultInterface.getInfo("0x1e2fe8074a5ce1Bb7394856B0C618E75D823B93b");
+      expect(result.lastReport).toEqual(lastReportDate);
+      expect(result.name).toEqual(name);
+      expect(result.symbol).toEqual(symbol);
+      expect(result.apiVersion).toEqual(apiVersion);
+      expect(result.emergencyShutdown).toEqual(emergencyShutdown);
+      expect(result.managementFee).toEqual(managementFee);
+      expect(result.performanceFee).toEqual(performanceFee);
+      expect(result.totalAssets).toEqual(totalAssets);
+      expect(result.depositLimit).toEqual(depositLimit);
+      expect(result.debtRatio).toEqual(debtRatio);
+      expect(result.management).toEqual(management);
+      expect(result.governance).toEqual(governance);
+      expect(result.guardian).toEqual(guardian);
+      expect(result.rewards).toEqual(rewards);
     });
   });
 });

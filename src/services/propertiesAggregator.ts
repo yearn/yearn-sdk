@@ -5,7 +5,7 @@ import { ChainId } from "../chain";
 import { ContractAddressId, ContractService, WrappedContract } from "../common";
 import { Address } from "../types";
 
-type DecodingType = string | BigNumber;
+type DecodingType = string | BigNumber | boolean;
 
 /**
  * [[PropertiesAggregatorService]] allows queries of a contract's methods to be aggregated into one
