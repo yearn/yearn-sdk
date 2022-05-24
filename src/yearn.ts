@@ -18,6 +18,7 @@ import { MetaService } from "./services/meta";
 import { OracleService } from "./services/oracle";
 import { PartnerService } from "./services/partner";
 import { PickleService } from "./services/partners/pickle";
+import { PropertiesAggregatorService } from "./services/propertiesAggregator";
 import { SubgraphService } from "./services/subgraph";
 import { TelegramService } from "./services/telegram";
 import { TransactionService } from "./services/transaction";
@@ -47,6 +48,7 @@ type ServicesType<T extends ChainId> = {
   pickle: PickleService;
   helper: HelperService<T>;
   partner?: PartnerService<T>;
+  propertiesAggregator: PropertiesAggregatorService<T>;
 };
 
 /**
@@ -163,6 +165,7 @@ export class Yearn<T extends ChainId> {
       allowList: allowlistService,
       transaction: new TransactionService(chainId, ctx, allowlistService),
       partner: ctx.partnerId ? new PartnerService(chainId, ctx, addressProvider, ctx.partnerId) : undefined,
+      propertiesAggregator: new PropertiesAggregatorService(chainId, ctx, addressProvider),
     };
   }
 
