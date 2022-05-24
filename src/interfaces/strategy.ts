@@ -113,18 +113,14 @@ export class StrategyInterface<T extends ChainId> extends ServiceInterface<T> {
       const days = (harvest.time.getTime() - previousHarvest.time.getTime()) / 1000 / 60 / 60 / 24;
 
       // need to use BigNumber.js since days could be less than 0, which Ether's BigNumber type does not support
-      const bigNumDays = new BigNumberJs(days);
+      const daysBigJs = new BigNumberJs(days);
 
       // need to use the assets at the block of the previous harvest, since that's what the current harvest's gains are based on
       const estimatedTotalAssetsBigJs = new BigNumberJs(previousHarvest.estimatedTotalAssets.toString());
 
       // apr = gain / estimated total assets / days since previous harvest * 365
       const gainBigJs = new BigNumberJs(harvest.gain.toString());
-      const apr = gainBigJs
-        .div(estimatedTotalAssetsBigJs)
-        .div(bigNumDays)
-        .multipliedBy(new BigNumberJs(365))
-        .toNumber();
+      const apr = gainBigJs.div(estimatedTotalAssetsBigJs).div(daysBigJs).multipliedBy(new BigNumberJs(365)).toNumber();
 
       harvests[index].apr = apr;
     });
