@@ -1,3 +1,4 @@
+import { BigNumber } from "@ethersproject/bignumber";
 import { PartialDeep } from "type-fest";
 
 import { Vault } from "..";
@@ -73,3 +74,20 @@ export type ZappableVault = {
     pricePerShare: Integer;
   };
 } & PartialDeep<Vault>;
+
+export interface VaultInfo {
+  name: string;
+  symbol: string;
+  apiVersion: string;
+  emergencyShutdown: boolean;
+  lastReport: Date;
+  managementFee: BigNumber;
+  performanceFee: BigNumber;
+  totalAssets: BigNumber;
+  depositLimit: BigNumber;
+  debtRatio: BigNumber;
+  management: Address;
+  governance: Address;
+  guardian: Address;
+  rewards: Address;
+}
