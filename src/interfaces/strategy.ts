@@ -47,15 +47,19 @@ export class StrategyInterface<T extends ChainId> extends ServiceInterface<T> {
    * Get information about the harvests of a strategy, based on `Harvested(uint256 profit, uint256 loss, uint256 debtPayment, uint256 debtOutstanding)`
    * events that are emitted when the strategy is harvested
    * @param strategyAddress the address of the strategy
-   * @param fromBlock the block to query harvest events from
-   * @param toBlock the bock to query harvest events to
+   * @param fromBlock optional block to query harvest events from, if omitted then with no limit
+   * @param toBlock optional block to query harvest events to, if omitted then to the most recent block
    * @returns `HarvestData` which includes information such as the gain of the harvest in USDC, the time of the harvest, and the apr since the previous harvest
    */
-  async getHarvests(
-    strategyAddress: Address,
-    fromBlock: BlockTag | undefined,
-    toBlock: BlockTag | undefined
-  ): Promise<HarvestData[]> {
+  async getHarvests({
+    strategyAddress,
+    fromBlock,
+    toBlock,
+  }: {
+    strategyAddress: Address;
+    fromBlock?: BlockTag;
+    toBlock?: BlockTag;
+  }): Promise<HarvestData[]> {
     const contract = new Contract(strategyAddress, StrategyAbi, this.ctx.provider.read);
     const filter = contract.filters.Harvested();
     const harvestEvents = await contract.queryFilter(filter, fromBlock, toBlock);
@@ -73,6 +77,7 @@ export class StrategyInterface<T extends ChainId> extends ServiceInterface<T> {
 
     const harvestPromises = harvestEvents.map(async (event) => {
       const gain: BigNumber = event.args?.profit ?? BigNumber.from(0);
+      const loss: BigNumber = event.args?.loss ?? BigNumber.from(0);
       const gainUsdc = gain.mul(usdcPrice).div(BigNumber.from(10).pow(decimals));
 
       const [timestamp, estimatedTotalAssets] = await Promise.all([
@@ -84,6 +89,7 @@ export class StrategyInterface<T extends ChainId> extends ServiceInterface<T> {
         transactionId: event.transactionHash,
         gain,
         gainUsdc,
+        loss,
         time: new Date(timestamp * 1000),
         estimatedTotalAssets,
         apr: 0, // will be filled in using the `populateHarvestAprs` function
@@ -114,6 +120,11 @@ export class StrategyInterface<T extends ChainId> extends ServiceInterface<T> {
 
       // need to use BigNumber.js since days could be less than 0, which Ether's BigNumber type does not support
       const daysBigJs = new BigNumberJs(days);
+
+      if (previousHarvest.estimatedTotalAssets.toString() === "0") {
+        harvests[index].apr = 0;
+        return;
+      }
 
       // need to use the assets at the block of the previous harvest, since that's what the current harvest's gains are based on
       const estimatedTotalAssetsBigJs = new BigNumberJs(previousHarvest.estimatedTotalAssets.toString());

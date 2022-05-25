@@ -10,30 +10,32 @@ const provider = new JsonRpcProvider(url);
 const yearn = new Yearn(1, {
   provider,
   addresses: Addresses,
-  cache: { useCache: false }
+  cache: { useCache: false },
 });
 
 async function main() {
-  const vaults = await yearn.vaults.get();
+  const result = await yearn.strategies.getHarvests("0x342491C093A640c7c2347c4FFA7D8b9cBC84D1EB", 14342009);
+  console.log(result);
+  // const vaults = await yearn.vaults.get();
 
-  const vaultsTable = new Table();
-  vaultsTable.push(...vaults.map(vault => [vault.metadata.displayName, vault.address, vault.typeId]));
+  // const vaultsTable = new Table();
+  // vaultsTable.push(...vaults.map(vault => [vault.metadata.displayName, vault.address, vault.typeId]));
 
-  console.log("V1 & V2 vaults:");
-  console.log(vaultsTable.toString());
+  // console.log("V1 & V2 vaults:");
+  // console.log(vaultsTable.toString());
 
-  const positions = await yearn.vaults.positionsOf(YearnGovernance);
+  // const positions = await yearn.vaults.positionsOf(YearnGovernance);
 
-  const positionsTable = new Table();
-  positionsTable.push(
-    ...positions.map(position => {
-      const vault = vaults.find(vault => vault.address === position.assetAddress);
-      return [vault.name, position.balance];
-    })
-  );
+  // const positionsTable = new Table();
+  // positionsTable.push(
+  //   ...positions.map(position => {
+  //     const vault = vaults.find(vault => vault.address === position.assetAddress);
+  //     return [vault.name, position.balance];
+  //   })
+  // );
 
-  console.log("Yearn Multisig vault positions:");
-  console.log(positionsTable.toString());
+  // console.log("Yearn Multisig vault positions:");
+  // console.log(positionsTable.toString());
 }
 
 main();

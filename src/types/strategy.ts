@@ -11,6 +11,7 @@ export interface HarvestData {
   transactionId: string;
   gain: BigNumber;
   gainUsdc: BigNumber;
+  loss: BigNumber;
   time: Date;
   estimatedTotalAssets: BigNumber;
   apr: number;
