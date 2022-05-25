@@ -1,3 +1,4 @@
+import { ParamType } from "@ethersproject/abi";
 import { BigNumber } from "@ethersproject/bignumber";
 import { MaxUint256 } from "@ethersproject/constants";
 import { CallOverrides, Contract, PopulatedTransaction } from "@ethersproject/contracts";
@@ -19,6 +20,7 @@ import {
   TokenAllowance,
   TokenMetadata,
   VaultDynamic,
+  VaultInfo,
   VaultMetadataOverrides,
   VaultStatic,
   VaultsUserSummary,
@@ -542,6 +544,49 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
 
       return this.executeZapperTransaction(transactionRequest, overrides, BigNumber.from(zapOutParams.gasPrice));
     }
+  }
+
+  /**
+   * Fetches information a vault in a single call
+   * @param vaultAddress the vault to query's address
+   * @returns a `VaultInfo` object which includes various information about a vault, for example, its name and total assets
+   */
+  async getInfo(vaultAddress: Address): Promise<VaultInfo> {
+    const properties = [
+      "string name",
+      "string symbol",
+      "string apiVersion",
+      "bool emergencyShutdown",
+      "uint256 lastReport",
+      "uint256 managementFee",
+      "uint256 performanceFee",
+      "uint256 totalAssets",
+      "uint256 depositLimit",
+      "uint256 debtRatio",
+      "address management",
+      "address governance",
+      "address guardian",
+      "address rewards",
+    ].map((prop) => ParamType.from(prop));
+
+    const result = await this.yearn.services.propertiesAggregator.getProperties(vaultAddress, properties);
+
+    return {
+      name: result.name as string,
+      symbol: result.symbol as string,
+      apiVersion: result.apiVersion as string,
+      emergencyShutdown: result.emergencyShutdown as boolean,
+      lastReport: new Date((result.lastReport as BigNumber).mul(BigNumber.from(1000)).toNumber()),
+      managementFee: result.managementFee as BigNumber,
+      performanceFee: result.performanceFee as BigNumber,
+      totalAssets: result.totalAssets as BigNumber,
+      depositLimit: result.depositLimit as BigNumber,
+      debtRatio: result.debtRatio as BigNumber,
+      management: result.management as Address,
+      governance: result.governance as Address,
+      guardian: result.guardian as Address,
+      rewards: result.rewards as Address,
+    };
   }
 
   private async zapIn(
