@@ -92,7 +92,7 @@ export class StrategyInterface<T extends ChainId> extends ServiceInterface<T> {
         loss,
         time: new Date(timestamp * 1000),
         estimatedTotalAssets,
-        apr: 0, // will be filled in using the `populateHarvestAprs` function
+        apr: undefined, // will be filled in using the `populateHarvestAprs` function
       };
     });
 
@@ -108,11 +108,15 @@ export class StrategyInterface<T extends ChainId> extends ServiceInterface<T> {
   private populateHarvestAprs(harvests: HarvestData[]): HarvestData[] {
     // loop through the harvests, and calculate the apr by referencing the time since the previous harvest
     harvests.forEach((harvest, index) => {
-      // if the gain is 0 or if this is the last harvest then the apr is 0
-      if (harvest.gain === BigNumber.from(0) || index + 1 === harvests.length) {
+      // if the gain is 0 then the apr is 0
+      if (harvest.gain === BigNumber.from(0)) {
         harvests[index].apr = 0;
         return;
+      } else if (index + 1 === harvests.length) {
+        // if this is the oldest harvest leave the apy as undefined since there is no previous harvest to compare it against
+        return;
       }
+
       const previousHarvest = harvests[index + 1];
 
       // get the difference in days between this harvest and the one prior

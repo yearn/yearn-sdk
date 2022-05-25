@@ -130,6 +130,6 @@ describe("StrategyInterface", () => {
 
     const result = await strategyInterface.getHarvests({ strategyAddress: "" });
     expect(result[0].apr).toEqual(260.89285714285717);
-    expect(result[1].apr).toEqual(0);
+    expect(result[1].apr).toBeUndefined();
   });
 });

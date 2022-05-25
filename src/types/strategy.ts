@@ -14,5 +14,5 @@ export interface HarvestData {
   loss: BigNumber;
   time: Date;
   estimatedTotalAssets: BigNumber;
-  apr: number;
+  apr?: number;
 }
