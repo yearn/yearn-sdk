@@ -56,6 +56,13 @@ export interface IronBankMarketMetadata {
 }
 
 /**
+ * Lens-defined metadata for a Voting Escrow
+ */
+export interface VotingEscrowMetadata {
+  apy?: Apy;
+}
+
+/**
  * Key Value representation of metadata names and types.
  * Used mainly to provide correct type-guards for asset types.
  */
@@ -63,6 +70,7 @@ export type Metadata = {
   VAULT_V2: VaultMetadata;
   VAULT_V1: VaultMetadata;
   IRON_BANK_MARKET: IronBankMarketMetadata;
+  VOTING_ESCROW: VotingEscrowMetadata;
 };
 
 /**

@@ -14,5 +14,6 @@ export * from "./custom/ironbank";
 export * from "./custom/simulation";
 export * from "./custom/token";
 export * from "./custom/vault";
+export * from "./custom/votingEscrow";
 export * from "./custom/zapper";
 export * from "./metadata";

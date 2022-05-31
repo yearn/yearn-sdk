@@ -94,6 +94,6 @@ export type Asset<T extends TypeId> = AssetStatic<T> & AssetDynamic<T> & { typeI
 /**
  * Possible assets that lens can return.
  */
-export type GenericAsset = Asset<"VAULT_V1"> | Asset<"VAULT_V2"> | Asset<"IRON_BANK_MARKET">;
+export type GenericAsset = Asset<"VAULT_V1"> | Asset<"VAULT_V2"> | Asset<"IRON_BANK_MARKET"> | Asset<"VOTING_ESCROW">;
 
-export type TokenDataSource = "vaults" | "ironBank" | "zapper" | "labs" | "sdk";
+export type TokenDataSource = "vaults" | "ironBank" | "zapper" | "labs" | "sdk" | "votingEscrow";
