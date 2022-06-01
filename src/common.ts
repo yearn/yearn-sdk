@@ -65,6 +65,7 @@ export enum ContractAddressId {
   zapperZapOut = "ZAPPER_ZAP_OUT",
   pickleZapIn = "PICKLE_ZAP_IN",
   propertiesAggregator = "PROPERTIES_AGGREGATOR",
+  gaugeRegistry = "GAUGE_REGISTRY",
   unused = "UNUSED",
 }
 

@@ -2,6 +2,10 @@ import BigNumber from "bignumber.js";
 
 import { Integer, Unit } from "../types";
 
+BigNumber.set({ EXPONENTIAL_AT: 50 });
+
+export const USDC_DECIMALS = 6;
+
 export const toBN = (amount?: Integer | number): BigNumber => {
   return new BigNumber(amount || "0");
 };

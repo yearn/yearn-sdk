@@ -1,3 +1,5 @@
+import { ParamType } from "@ethersproject/abi";
+import { BigNumber } from "@ethersproject/bignumber";
 import { CallOverrides, Contract, PopulatedTransaction } from "@ethersproject/contracts";
 import { JsonRpcSigner, TransactionRequest, TransactionResponse } from "@ethersproject/providers";
 
@@ -14,12 +16,15 @@ import {
   SdkError,
   Token,
   TokenAllowance,
+  TypeId,
   VotingEscrow,
   VotingEscrowDynamic,
   VotingEscrowMetadata,
   VotingEscrowStatic,
+  VotingEscrowUserMetadata,
   VotingEscrowUserSummary,
 } from "../types";
+import { keyBy, toBN, toUnit, USDC_DECIMALS } from "../utils";
 
 const VotingEscrowAbi = [
   "function create_lock(uint256 _value, uint256 _unlock_time) public",
@@ -27,9 +32,12 @@ const VotingEscrowAbi = [
   "function increase_unlock_time(uint256 _unlock_time) public",
   "function withdraw() public",
   "function force_withdraw() public",
+  "function locked(address arg0) public view returns (tuple(uint128 amount, uint256 end))",
   "function locked__end(address _addr) public view returns (uint256)",
   "function balanceOf(address addr) public view returns (uint256)",
 ];
+
+const GaugeRegistryAbi = ["function veToken() public view returns (address)"];
 
 export class VotingEscrowInterface<T extends ChainId> extends ServiceInterface<T> {
   /**
@@ -38,8 +46,17 @@ export class VotingEscrowInterface<T extends ChainId> extends ServiceInterface<T
    * @returns VotingEscrow array
    */
   async get({ addresses }: { addresses?: Address[] }): Promise<VotingEscrow[]> {
-    console.log(addresses);
-    throw new Error("NOT IMPLEMENTED");
+    const supportedAddresses = await this.getSupportedAddresses({ addresses });
+    const staticData = await this.getStatic({ addresses: supportedAddresses });
+    const dynamicData = await this.getDynamic({ addresses: supportedAddresses });
+    const staticDataMap = keyBy(staticData, "address");
+    const dynamicDataMap = keyBy(dynamicData, "address");
+    const votingEscrows: VotingEscrow[] = supportedAddresses.map((address) => ({
+      ...staticDataMap[address],
+      ...dynamicDataMap[address],
+    }));
+
+    return votingEscrows;
   }
 
   /**
@@ -48,8 +65,27 @@ export class VotingEscrowInterface<T extends ChainId> extends ServiceInterface<T
    * @returns VotingEscrowStatic array
    */
   async getStatic({ addresses }: { addresses?: Address[] }): Promise<VotingEscrowStatic[]> {
-    console.log(addresses);
-    throw new Error("NOT IMPLEMENTED");
+    const supportedAddresses = await this.getSupportedAddresses({ addresses });
+    const properties = ["address token", "string name", "string version", "string symbol", "uint256 decimals"].map(
+      (prop) => ParamType.from(prop)
+    );
+    const staticDataPromises = supportedAddresses.map(async (address) => {
+      const { token, name, version, symbol, decimals } = await this.yearn.services.propertiesAggregator.getProperties(
+        address,
+        properties
+      );
+      const staticData: VotingEscrowStatic = {
+        address,
+        typeId: "VOTING_ESCROW",
+        token: token as Address,
+        name: name as string,
+        version: version as string,
+        symbol: symbol as string,
+        decimals: (decimals as BigNumber).toString(),
+      };
+      return staticData;
+    });
+    return Promise.all(staticDataPromises);
   }
 
   /**
@@ -58,8 +94,28 @@ export class VotingEscrowInterface<T extends ChainId> extends ServiceInterface<T
    * @returns VotingEscrowDynamic array
    */
   async getDynamic({ addresses }: { addresses?: Address[] }): Promise<VotingEscrowDynamic[]> {
-    console.log(addresses);
-    throw new Error("NOT IMPLEMENTED");
+    const supportedAddresses = await this.getSupportedAddresses({ addresses });
+    const properties = ["address token", "uint256 supply"].map((prop) => ParamType.from(prop));
+    const dynamicDataPromises = supportedAddresses.map(async (address) => {
+      const { token, supply } = await this.yearn.services.propertiesAggregator.getProperties(address, properties);
+      const amount = (supply as BigNumber).toString();
+      const priceUsdc = await this.yearn.services.oracle.getPriceUsdc(token as Address);
+      const underlyingTokenBalance = {
+        amount,
+        amountUsdc: toBN(amount)
+          .times(toUnit({ amount: priceUsdc, decimals: USDC_DECIMALS }))
+          .toFixed(0),
+      };
+      const dynamicData: VotingEscrowDynamic = {
+        address,
+        typeId: "VOTING_ESCROW",
+        tokenId: token as Address,
+        underlyingTokenBalance,
+        metadata: {}, // TODO: get apy
+      };
+      return dynamicData;
+    });
+    return Promise.all(dynamicDataPromises);
   }
 
   /**
@@ -69,8 +125,43 @@ export class VotingEscrowInterface<T extends ChainId> extends ServiceInterface<T
    * @returns Position array
    */
   async positionsOf({ account, addresses }: { account: Address; addresses?: Address[] }): Promise<Position[]> {
-    console.log(account, addresses);
-    throw new Error("NOT IMPLEMENTED");
+    const votingEscrows = await this.get({ addresses });
+    const votingEscrowAddresses = votingEscrows.map(({ address }) => address);
+    const underlyingTokens = votingEscrows.map(({ token }) => token);
+    const tokenBalances = await this.yearn.services.helper.tokenBalances(account, votingEscrowAddresses);
+    const tokenBalancesMap = keyBy(tokenBalances, "address");
+    const tokenPrices = await this.yearn.services.helper.tokenPrices(underlyingTokens);
+    const tokenPricesMap = keyBy(tokenPrices, "address");
+    // TODO: add YIELD position based on rewards
+    // const properties = ["address reward_pool"].map((prop) => ParamType.from(prop));
+    const positionsPromises = votingEscrows.map(async ({ address, token }) => {
+      // const { reward_pool: rewardPool } = await this.yearn.services.propertiesAggregator.getProperties(
+      //   address,
+      //   properties
+      // );
+      const balance = tokenBalancesMap[address].balance;
+      const priceUsdc = tokenPricesMap[token].priceUsdc;
+      const votingEscrowContract = new Contract(address, VotingEscrowAbi, this.ctx.provider.read);
+      const locked = await votingEscrowContract.locked(account);
+      const amount = (locked.amount as BigNumber).toString();
+      const underlyingTokenBalance = {
+        amount,
+        amountUsdc: toBN(amount)
+          .times(toUnit({ amount: priceUsdc, decimals: USDC_DECIMALS }))
+          .toFixed(0),
+      };
+      const position: Position = {
+        assetAddress: address,
+        tokenAddress: token,
+        typeId: "DEPOSIT",
+        balance,
+        underlyingTokenBalance,
+        assetAllowances: [],
+        tokenAllowances: [],
+      };
+      return position;
+    });
+    return Promise.all(positionsPromises);
   }
 
   /**
@@ -87,7 +178,7 @@ export class VotingEscrowInterface<T extends ChainId> extends ServiceInterface<T
    * Get all Voting Escrows metadata of an account
    * @param accountAddress user wallet address
    * @param addresses filter, if not provided, all are returned
-   * @returns VotingEscrowMetadata array
+   * @returns VotingEscrowUserMetadata array
    */
   async metadataOf({
     account,
@@ -95,7 +186,7 @@ export class VotingEscrowInterface<T extends ChainId> extends ServiceInterface<T
   }: {
     account: Address;
     addresses?: Address[];
-  }): Promise<VotingEscrowMetadata[]> {
+  }): Promise<VotingEscrowUserMetadata[]> {
     console.log(account, addresses);
     throw new Error("NOT IMPLEMENTED");
   }
@@ -291,4 +382,15 @@ export class VotingEscrowInterface<T extends ChainId> extends ServiceInterface<T
   }
 
   // claimReward
+
+  private async getSupportedAddresses({ addresses }: { addresses?: Address[] }): Promise<Address[]> {
+    const gaugeRegistryAddress = await this.yearn.addressProvider.addressById(ContractAddressId.gaugeRegistry);
+    const gaugeRegistryContract = new Contract(gaugeRegistryAddress, GaugeRegistryAbi, this.ctx.provider.read);
+    const veTokenAddress = await gaugeRegistryContract.veToken();
+    const votingEscrowAddresses = [veTokenAddress];
+    const supportedAddresses = addresses
+      ? addresses.filter((address) => votingEscrowAddresses.includes(address))
+      : votingEscrowAddresses;
+    return supportedAddresses;
+  }
 }
