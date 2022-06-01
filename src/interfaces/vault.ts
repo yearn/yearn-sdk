@@ -701,7 +701,7 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
       if (!dynamic.metadata.apy) {
         dynamic.metadata.apy = this.makeEmptyApy();
       }
-      dynamic.metadata.apy.net_apy = overrides.apyOverride;
+      dynamic.metadata.apy.netApy = overrides.apyOverride;
       dynamic.metadata.apy.type = "override";
     }
 
@@ -728,9 +728,9 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
   private makeEmptyApy(): Apy {
     const apy: Apy = {
       type: "manual_override",
-      gross_apr: 0,
-      net_apy: 0,
-      fees: { performance: null, withdrawal: null, management: null, keep_crv: null, cvx_keep_crv: null },
+      grossApr: 0,
+      netApy: 0,
+      fees: { performance: null, withdrawal: null, management: null, keepCrv: null, cvxKeepCrv: null },
       points: null,
       composite: null,
     };

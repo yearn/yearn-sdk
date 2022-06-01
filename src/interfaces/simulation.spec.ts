@@ -120,8 +120,8 @@ describe("Simulation interface", () => {
     jest.spyOn(SimulationExecutor.prototype, "makeSimulationRequest").mockReturnValueOnce(
       Promise.resolve({
         transaction: {
-          transaction_info: {
-            call_trace: { output: "1", calls: null },
+          transactionInfo: {
+            callTrace: { output: "1", calls: null },
             logs: [],
           },
         },
@@ -184,7 +184,7 @@ describe("Simulation interface", () => {
         await simulationInterface.deposit("0x000", "0x000", "1", "0x000");
       } catch (error) {
         expect(error).toBeInstanceOf(SdkError);
-        expect(error).toHaveProperty("error_code", SdkError.NO_SLIPPAGE);
+        expect(error).toHaveProperty("errorCode", SdkError.NO_SLIPPAGE);
       }
     });
 
@@ -196,7 +196,7 @@ describe("Simulation interface", () => {
         await simulationInterface.deposit("0x000", "0x000", "1", "0x000", { slippage: 1 });
       } catch (error) {
         expect(error).toBeInstanceOf(ZapperError);
-        expect(error).toHaveProperty("error_code", ZapperError.ZAP_IN_APPROVAL_STATE);
+        expect(error).toHaveProperty("errorCode", ZapperError.ZAP_IN_APPROVAL_STATE);
       }
     });
 
@@ -209,7 +209,7 @@ describe("Simulation interface", () => {
         await simulationInterface.deposit("0x000", "0x000", "1", "0x000", { slippage: 1 });
       } catch (error) {
         expect(error).toBeInstanceOf(ZapperError);
-        expect(error).toHaveProperty("error_code", ZapperError.ZAP_IN_APPROVAL);
+        expect(error).toHaveProperty("errorCode", ZapperError.ZAP_IN_APPROVAL);
       }
     });
 
@@ -221,7 +221,7 @@ describe("Simulation interface", () => {
         await simulationInterface.deposit("0x000", "0x000", "1", "0x000", { slippage: 1 });
       } catch (error) {
         expect(error).toBeInstanceOf(ZapperError);
-        expect(error).toHaveProperty("error_code", ZapperError.ZAP_IN);
+        expect(error).toHaveProperty("errorCode", ZapperError.ZAP_IN);
       }
     });
 
@@ -267,7 +267,7 @@ describe("Simulation interface", () => {
         await simulationInterface.deposit("0x000", "0x000", "1", "0x000", { slippage: 1 });
       } catch (error) {
         expect(error).toBeInstanceOf(PriceFetchingError);
-        expect(error).toHaveProperty("error_code", PriceFetchingError.FETCHING_PRICE_ORACLE);
+        expect(error).toHaveProperty("errorCode", PriceFetchingError.FETCHING_PRICE_ORACLE);
       }
     });
 
@@ -282,7 +282,7 @@ describe("Simulation interface", () => {
         });
       } catch (error) {
         expect(error).toBeInstanceOf(PriceFetchingError);
-        expect(error).toHaveProperty("error_code", PriceFetchingError.FETCHING_PRICE_PICKLE);
+        expect(error).toHaveProperty("errorCode", PriceFetchingError.FETCHING_PRICE_PICKLE);
       }
     });
 
@@ -294,7 +294,7 @@ describe("Simulation interface", () => {
         await simulationInterface.deposit("0x000", "0x001", "1", "0x0000", { slippage: 1 });
       } catch (error) {
         expect(error).toBeInstanceOf(PriceFetchingError);
-        expect(error).toHaveProperty("error_code", PriceFetchingError.FETCHING_PRICE_ORACLE);
+        expect(error).toHaveProperty("errorCode", PriceFetchingError.FETCHING_PRICE_ORACLE);
       }
     });
 
@@ -415,7 +415,7 @@ describe("Simulation interface", () => {
         });
       } catch (error) {
         expect(error).toBeInstanceOf(ZapperError);
-        expect(error).toHaveProperty("error_code", ZapperError.ZAP_OUT_APPROVAL_STATE);
+        expect(error).toHaveProperty("errorCode", ZapperError.ZAP_OUT_APPROVAL_STATE);
       }
     });
 
@@ -430,7 +430,7 @@ describe("Simulation interface", () => {
         });
       } catch (error) {
         expect(error).toBeInstanceOf(ZapperError);
-        expect(error).toHaveProperty("error_code", ZapperError.ZAP_OUT_APPROVAL);
+        expect(error).toHaveProperty("errorCode", ZapperError.ZAP_OUT_APPROVAL);
       }
     });
 
@@ -444,7 +444,7 @@ describe("Simulation interface", () => {
         });
       } catch (error) {
         expect(error).toBeInstanceOf(ZapperError);
-        expect(error).toHaveProperty("error_code", ZapperError.ZAP_OUT);
+        expect(error).toHaveProperty("errorCode", ZapperError.ZAP_OUT);
       }
     });
 
@@ -458,7 +458,7 @@ describe("Simulation interface", () => {
         });
       } catch (error) {
         expect(error).toBeInstanceOf(PriceFetchingError);
-        expect(error).toHaveProperty("error_code", PriceFetchingError.FETCHING_PRICE_ORACLE);
+        expect(error).toHaveProperty("errorCode", PriceFetchingError.FETCHING_PRICE_ORACLE);
       }
     });
 
@@ -472,7 +472,7 @@ describe("Simulation interface", () => {
         });
       } catch (error) {
         expect(error).toBeInstanceOf(PriceFetchingError);
-        expect(error).toHaveProperty("error_code", PriceFetchingError.FETCHING_PRICE_ORACLE);
+        expect(error).toHaveProperty("errorCode", PriceFetchingError.FETCHING_PRICE_ORACLE);
       }
     });
 

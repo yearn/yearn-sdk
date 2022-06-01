@@ -12,11 +12,11 @@ const latestBlockKey = -1;
 
 export interface SimulationResponse {
   transaction: {
-    transaction_info: {
-      call_trace: SimulationCallTrace;
+    transactionInfo: {
+      callTrace: SimulationCallTrace;
       logs: SimulationLog[];
     };
-    error_message?: string;
+    errorMessage?: string;
   };
   simulation: {
     id: string;
@@ -98,7 +98,7 @@ export class SimulationExecutor {
 
     const encodedTransferFunction = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"; // keccak256("Transfer(address,address,uint256)")
 
-    const log = response.transaction.transaction_info.logs
+    const log = response.transaction.transactionInfo.logs
       .reverse()
       .find(
         (log) =>
@@ -137,13 +137,13 @@ export class SimulationExecutor {
       from,
       to,
       input: data,
-      network_id: transactionRequest.chainId?.toString() || "1",
-      block_number: latestBlockKey,
-      simulation_type: "quick",
+      networkId: transactionRequest.chainId?.toString() || "1",
+      blockNumber: latestBlockKey,
+      simulationType: "quick",
       root: options?.root,
       value: transactionRequest.value?.toString() || "0",
       gas: parseInt(transactionRequest.gasLimit?.toString() || "0"),
-      gas_price: transactionRequest.gasPrice?.toString() || 0,
+      gasPrice: transactionRequest.gasPrice?.toString() || 0,
       save: options.save || true,
       nonce: transactionRequest.nonce,
     };
@@ -160,7 +160,7 @@ export class SimulationExecutor {
         throw new TenderlyError("simulation call to Tenderly failed", TenderlyError.SIMULATION_CALL);
       });
 
-    const errorMessage = simulationResponse.transaction.error_message;
+    const errorMessage = simulationResponse.transaction.errorMessage;
 
     if (errorMessage) {
       if (options.save) {
@@ -169,7 +169,7 @@ export class SimulationExecutor {
       throw new SimulationError(errorMessage, SimulationError.TENDERLY_RESPONSE_ERROR);
     } else {
       // even though the transaction has been successful one of it's calls could have failed i.e. a partial revert might have happened
-      const allCalls = this.getAllSimulationCalls(simulationResponse.transaction.transaction_info.call_trace);
+      const allCalls = this.getAllSimulationCalls(simulationResponse.transaction.transactionInfo.callTrace);
       const partialRevertError = allCalls.find((call) => call.error)?.error;
       if (partialRevertError) {
         const errorMessage = "Partial Revert - " + partialRevertError;
@@ -221,7 +221,7 @@ export class SimulationExecutor {
    */
   async createFork(): Promise<string> {
     interface Response {
-      simulation_fork: {
+      simulationFork: {
         id: string;
       };
     }
@@ -229,7 +229,7 @@ export class SimulationExecutor {
     const body = {
       alias: "",
       description: "",
-      network_id: "1",
+      networkId: "1",
     };
 
     const response: Response = await await fetch(`${baseUrl}/fork`, {
@@ -244,7 +244,7 @@ export class SimulationExecutor {
         throw new TenderlyError("failed to create fork", TenderlyError.CREATE_FORK);
       });
 
-    return response.simulation_fork.id;
+    return response.simulationFork.id;
   }
 
   /**

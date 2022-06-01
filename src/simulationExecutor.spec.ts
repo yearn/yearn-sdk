@@ -13,8 +13,8 @@ global.fetch = jest.fn(() =>
         id: "simulation-id",
       },
       transaction: {
-        transaction_info: {
-          call_trace: { calls: [] },
+        transactionInfo: {
+          callTrace: { calls: [] },
         },
       },
     }),
@@ -97,8 +97,8 @@ describe("Simulation executor", () => {
             id: "",
           },
           transaction: {
-            transaction_info: {
-              call_trace: { output: "", calls: [] },
+            transactionInfo: {
+              callTrace: { output: "", calls: [] },
               logs: [],
             },
           },
@@ -116,7 +116,7 @@ describe("Simulation executor", () => {
         await simulationExecutor.simulateVaultInteraction("0x000", "0x000", "1", "0x0000", {});
       } catch (error) {
         expect(error).toBeInstanceOf(SimulationError);
-        expect(error).toHaveProperty("error_code", SimulationError.NO_LOG);
+        expect(error).toHaveProperty("errorCode", SimulationError.NO_LOG);
       }
     });
   });
@@ -129,7 +129,7 @@ describe("Simulation executor", () => {
         await simulationExecutor.makeSimulationRequest("0x000", "0x000", "1", {});
       } catch (error) {
         expect(error).toBeInstanceOf(EthersError);
-        expect(error).toHaveProperty("error_code", EthersError.POPULATING_TRANSACTION);
+        expect(error).toHaveProperty("errorCode", EthersError.POPULATING_TRANSACTION);
       }
     });
 
@@ -140,7 +140,7 @@ describe("Simulation executor", () => {
         await simulationExecutor.makeSimulationRequest("0x000", "0x000", "1", {});
       } catch (error) {
         expect(error).toBeInstanceOf(TenderlyError);
-        expect(error).toHaveProperty("error_code", TenderlyError.SIMULATION_CALL);
+        expect(error).toHaveProperty("errorCode", TenderlyError.SIMULATION_CALL);
       }
     });
 
@@ -150,7 +150,7 @@ describe("Simulation executor", () => {
         Promise.resolve({
           json: jest.fn().mockReturnValue({
             transaction: {
-              error_message: "some error",
+              errorMessage: "some error",
             },
           }),
         })
@@ -159,7 +159,7 @@ describe("Simulation executor", () => {
         await simulationExecutor.makeSimulationRequest("0x000", "0x000", "1", {});
       } catch (error) {
         expect(error).toBeInstanceOf(SimulationError);
-        expect(error).toHaveProperty("error_code", SimulationError.TENDERLY_RESPONSE_ERROR);
+        expect(error).toHaveProperty("errorCode", SimulationError.TENDERLY_RESPONSE_ERROR);
         expect(error).toHaveProperty("message", "some error");
       }
     });
@@ -173,8 +173,8 @@ describe("Simulation executor", () => {
               id: "simulation-id",
             },
             transaction: {
-              transaction_info: {
-                call_trace: { calls: [{ error: "some error happened " }] },
+              transactionInfo: {
+                callTrace: { calls: [{ error: "some error happened " }] },
               },
             },
           }),
@@ -184,7 +184,7 @@ describe("Simulation executor", () => {
         await simulationExecutor.makeSimulationRequest("0x000", "0x000", "1", {});
       } catch (error) {
         expect(error).toBeInstanceOf(SimulationError);
-        expect(error).toHaveProperty("error_code", SimulationError.PARTIAL_REVERT);
+        expect(error).toHaveProperty("errorCode", SimulationError.PARTIAL_REVERT);
       }
     });
   });
@@ -259,7 +259,7 @@ describe("Simulation executor", () => {
         await simulationExecutor.createFork();
       } catch (error) {
         expect(error).toBeInstanceOf(TenderlyError);
-        expect(error).toHaveProperty("error_code", TenderlyError.CREATE_FORK);
+        expect(error).toHaveProperty("errorCode", TenderlyError.CREATE_FORK);
       }
     });
   });

@@ -159,7 +159,7 @@ export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
             if (apys[datum.assetAddress]?.type === "new") {
               return BigZero;
             }
-            const apy = apys[datum.assetAddress]?.net_apy || 0;
+            const apy = apys[datum.assetAddress]?.netApy || 0;
             return new BigNumber(apy).times(datum.balanceUsdc).div(holdings);
           })
           .reduce((sum, value) => sum.plus(value));
@@ -234,7 +234,7 @@ export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
       id: vault,
     });
 
-    const labels = blocks.map((block) => `block_${block}`);
+    const labels = blocks.map((block) => `block${block}`);
 
     const token = data.vault.token.id as Address;
     const priceUsdc = await this.yearn.services.oracle.getPriceUsdc(token).then((price) => new BigNumber(price));

@@ -6,9 +6,9 @@ export class TelegramService extends Service {
       return;
     }
     const params = new URLSearchParams({
-      chat_id: this.ctx.simulation.telegramChatId,
+      chatId: this.ctx.simulation.telegramChatId,
       text: text,
-      disable_web_page_preview: "true",
+      disableWebPagePreview: "true",
     });
     const url = `https://api.telegram.org/bot${this.ctx.simulation.telegramBotId}/sendMessage?` + params;
     fetch(url);

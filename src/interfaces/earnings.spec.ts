@@ -199,7 +199,7 @@ describe("EarningsInterface", () => {
         const accountAddress: Address = "0x001";
         visionApyMock.mockResolvedValue({
           [accountAddress]: createMockApy({
-            net_apy: 42,
+            netApy: 42,
           }),
         });
         getAddressMock.mockReturnValue(accountAddress);
@@ -227,7 +227,7 @@ describe("EarningsInterface", () => {
         const accountAddress: Address = "0x001";
         visionApyMock.mockResolvedValue({
           [accountAddress]: createMockApy({
-            net_apy: 42,
+            netApy: 42,
             type: "new",
           }),
         });
@@ -294,7 +294,7 @@ describe("EarningsInterface", () => {
     beforeEach(() => {
       subgraphFetchQueryMock.mockResolvedValue({
         data: {
-          block_30380: {
+          block30380: {
             strategies: [
               {
                 latestReport: {
@@ -305,7 +305,7 @@ describe("EarningsInterface", () => {
             ],
             vaultDayData: [{ timestamp: "1648887421" }],
           },
-          block_36140: {
+          block36140: {
             strategies: [
               {
                 latestReport: {
@@ -316,7 +316,7 @@ describe("EarningsInterface", () => {
             ],
             vaultDayData: [{ timestamp: "1648801021" }],
           },
-          block_41900: {
+          block41900: {
             strategies: [
               {
                 latestReport: {

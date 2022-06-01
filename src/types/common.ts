@@ -1,9 +1,9 @@
 export class CustomError extends Error {
-  error_type: string;
+  errorType: string;
 
-  constructor(message: string, error_type: string) {
+  constructor(message: string, errorType: string) {
     super(message);
-    this.error_type = error_type;
+    this.errorType = errorType;
   }
 }
 
@@ -14,12 +14,12 @@ export class CustomError extends Error {
  * - http request errors
  */
 export class SdkError extends CustomError {
-  error_code?: string;
+  errorCode?: string;
   static NO_SLIPPAGE = "no_slippage";
 
-  constructor(message: string, error_code?: string) {
+  constructor(message: string, errorCode?: string) {
     super(message, "sdk");
-    this.error_code = error_code;
+    this.errorCode = errorCode;
   }
 }
 

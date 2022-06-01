@@ -513,7 +513,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
           options,
           zapOutParams.value
         );
-        return toBN(response.transaction.transaction_info.call_trace.output).toFixed(0);
+        return toBN(response.transaction.transactionInfo.callTrace.output).toFixed(0);
       } else {
         return await this.simulationExecutor.simulateVaultInteraction(
           from,

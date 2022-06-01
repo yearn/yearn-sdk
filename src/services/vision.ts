@@ -23,14 +23,14 @@ export function convertCompositeApyToSnakeCase(apy: Apy | undefined): Apy | unde
               boost: apy.composite.boost
                 ? apy.composite.boost
                 : (apy.composite as unknown as BackscracherApyComposite).currentBoost,
-              pool_apy: apy.composite.pool_apy
-                ? apy.composite.pool_apy
+              poolApy: apy.composite.poolApy
+                ? apy.composite.poolApy
                 : (apy.composite as unknown as BackscracherApyComposite).poolApy,
-              boosted_apr: apy.composite.boosted_apr
-                ? apy.composite.boosted_apr
+              boostedApr: apy.composite.boostedApr
+                ? apy.composite.boostedApr
                 : (apy.composite as unknown as BackscracherApyComposite).boostedApy,
-              base_apr: apy.composite.base_apr
-                ? apy.composite.base_apr
+              baseApr: apy.composite.baseApr
+                ? apy.composite.baseApr
                 : (apy.composite as unknown as BackscracherApyComposite).baseApy,
             }
           : null,

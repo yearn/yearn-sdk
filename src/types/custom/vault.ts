@@ -21,27 +21,27 @@ export interface BackscracherApyComposite {
  */
 export interface Apy {
   type: string;
-  gross_apr: number;
-  net_apy: number;
+  grossApr: number;
+  netApy: number;
   fees: {
     performance: number | null;
     withdrawal: number | null;
     management: number | null;
-    keep_crv: number | null;
-    cvx_keep_crv: number | null;
+    keepCrv: number | null;
+    cvxKeepCrv: number | null;
   };
   points: {
-    week_ago: number;
-    month_ago: number;
+    weekAgo: number;
+    monthAgo: number;
     inception: number;
   } | null;
   composite: {
     boost: number;
-    pool_apy: number;
-    boosted_apr: number;
-    base_apr: number;
-    cvx_apr: number;
-    rewards_apr: number;
+    poolApy: number;
+    boostedApr: number;
+    baseApr: number;
+    cvxApr: number;
+    rewardsApr: number;
   } | null;
 }
 
