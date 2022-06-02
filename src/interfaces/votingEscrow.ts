@@ -1,5 +1,6 @@
 import { ParamType } from "@ethersproject/abi";
 import { BigNumber } from "@ethersproject/bignumber";
+import { MaxUint256 } from "@ethersproject/constants";
 import { CallOverrides, Contract, PopulatedTransaction } from "@ethersproject/contracts";
 import { JsonRpcSigner, TransactionRequest, TransactionResponse } from "@ethersproject/providers";
 
@@ -23,8 +24,13 @@ import {
   VotingEscrowStatic,
   VotingEscrowUserMetadata,
   VotingEscrowUserSummary,
+  WriteTransactionProps,
+  WriteTransactionResult,
 } from "../types";
 import { keyBy, toBN, toUnit, USDC_DECIMALS } from "../utils";
+
+const DAY = 86400;
+const WEEK = DAY * 7;
 
 const VotingEscrowAbi = [
   "function create_lock(uint256 _value, uint256 _unlock_time) public",
@@ -228,8 +234,7 @@ export class VotingEscrowInterface<T extends ChainId> extends ServiceInterface<T
     tokenAddress: Address;
     votingEscrowAddress: Address;
   }): Promise<TokenAllowance> {
-    console.log(accountAddress, tokenAddress, votingEscrowAddress);
-    throw new Error("NOT IMPLEMENTED");
+    return this.yearn.tokens.allowance(accountAddress, tokenAddress, votingEscrowAddress);
   }
 
   /**
@@ -238,24 +243,37 @@ export class VotingEscrowInterface<T extends ChainId> extends ServiceInterface<T
    * @param tokenAddress
    * @param votingEscrowAddress
    * @param amount
+   * @param populate return populated transaction payload when truthy
    * @param overrides
-   * @returns TransactionResponse
+   * @returns TransactionResponse | PopulatedTransaction
    */
+  async approveLock<P extends WriteTransactionProps>(props: P): WriteTransactionResult<P>;
   async approveLock({
     accountAddress,
     tokenAddress,
     votingEscrowAddress,
     amount,
+    populate,
     overrides = {},
   }: {
     accountAddress: Address;
     tokenAddress: Address;
     votingEscrowAddress: Address;
     amount?: Integer;
+    populate?: boolean;
     overrides?: CallOverrides;
-  }): Promise<TransactionResponse> {
-    console.log(accountAddress, tokenAddress, votingEscrowAddress, amount, overrides);
-    throw new Error("NOT IMPLEMENTED");
+  }): Promise<TransactionResponse | PopulatedTransaction> {
+    const tx = await this.yearn.tokens.populateApprove(
+      accountAddress,
+      tokenAddress,
+      votingEscrowAddress,
+      amount ?? MaxUint256.toString(),
+      overrides
+    );
+
+    if (populate) return tx;
+
+    return this.yearn.services.transaction.sendTransaction(tx);
   }
 
   /**
@@ -265,15 +283,17 @@ export class VotingEscrowInterface<T extends ChainId> extends ServiceInterface<T
    * @param votingEscrowAddress
    * @param amount
    * @param time In weeks
+   * @param populate return populated transaction payload when truthy
    * @param overrides
-   * @returns transaction
+   * @returns TransactionResponse | PopulatedTransaction
    */
+  async lock<P extends WriteTransactionProps>(props: P): WriteTransactionResult<P>;
   async lock({
     accountAddress,
-    tokenAddress,
     votingEscrowAddress,
     amount,
     time,
+    populate,
     overrides = {},
   }: {
     accountAddress: Address;
@@ -281,10 +301,21 @@ export class VotingEscrowInterface<T extends ChainId> extends ServiceInterface<T
     votingEscrowAddress: Address;
     amount: Integer;
     time: number;
+    populate?: boolean;
     overrides?: CallOverrides;
-  }): Promise<TransactionResponse> {
-    console.log(accountAddress, tokenAddress, votingEscrowAddress, amount, time, overrides);
-    throw new Error("NOT IMPLEMENTED");
+  }): Promise<TransactionResponse | PopulatedTransaction> {
+    const provider = this.ctx.provider.read;
+    const blockNumber = await provider.getBlockNumber();
+    const block = await provider.getBlock(blockNumber);
+    const lockTime = time * WEEK;
+    const unlockTime = toBN(block.timestamp).plus(lockTime).toFixed(0);
+    const signer = this.ctx.provider.write.getSigner(accountAddress);
+    const votingEscrowContract = new Contract(votingEscrowAddress, VotingEscrowAbi, signer);
+    const tx = await votingEscrowContract.populateTransaction.create_lock(amount, unlockTime, overrides);
+
+    if (populate) return tx;
+
+    return this.yearn.services.transaction.sendTransaction(tx);
   }
 
   /**
@@ -294,24 +325,32 @@ export class VotingEscrowInterface<T extends ChainId> extends ServiceInterface<T
    * @param votingEscrowAddress
    * @param amount
    * @param time In weeks
+   * @param populate return populated transaction payload when truthy
    * @param overrides
-   * @returns transaction
+   * @returns TransactionResponse | PopulatedTransaction
    */
+  async increaseLockAmount<P extends WriteTransactionProps>(props: P): WriteTransactionResult<P>;
   async increaseLockAmount({
     accountAddress,
-    tokenAddress,
     votingEscrowAddress,
     amount,
+    populate,
     overrides = {},
   }: {
     accountAddress: Address;
     tokenAddress: Address;
     votingEscrowAddress: Address;
     amount: Integer;
+    populate?: boolean;
     overrides?: CallOverrides;
-  }): Promise<TransactionResponse> {
-    console.log(accountAddress, tokenAddress, votingEscrowAddress, amount, overrides);
-    throw new Error("NOT IMPLEMENTED");
+  }): Promise<TransactionResponse | PopulatedTransaction> {
+    const signer = this.ctx.provider.write.getSigner(accountAddress);
+    const votingEscrowContract = new Contract(votingEscrowAddress, VotingEscrowAbi, signer);
+    const tx = await votingEscrowContract.populateTransaction.increase_amount(amount, overrides);
+
+    if (populate) return tx;
+
+    return this.yearn.services.transaction.sendTransaction(tx);
   }
 
   /**
@@ -319,69 +358,99 @@ export class VotingEscrowInterface<T extends ChainId> extends ServiceInterface<T
    * @param accountAddress
    * @param tokenAddress
    * @param votingEscrowAddress
-   * @param time In weeks
+   * @param time New period in weeks
+   * @param populate return populated transaction payload when truthy
    * @param overrides
-   * @returns transaction
+   * @returns TransactionResponse | PopulatedTransaction
    */
+  async extendLockTime<P extends WriteTransactionProps>(props: P): WriteTransactionResult<P>;
   async extendLockTime({
     accountAddress,
-    tokenAddress,
     votingEscrowAddress,
     time,
+    populate,
     overrides = {},
   }: {
     accountAddress: Address;
     tokenAddress: Address;
     votingEscrowAddress: Address;
-    amount: Integer;
     time: number;
+    populate?: boolean;
     overrides?: CallOverrides;
-  }): Promise<TransactionResponse> {
-    console.log(accountAddress, tokenAddress, votingEscrowAddress, time, overrides);
-    throw new Error("NOT IMPLEMENTED");
+  }): Promise<TransactionResponse | PopulatedTransaction> {
+    const provider = this.ctx.provider.read;
+    const blockNumber = await provider.getBlockNumber();
+    const block = await provider.getBlock(blockNumber);
+    const lockTime = time * WEEK;
+    const unlockTime = toBN(block.timestamp).plus(lockTime).toFixed(0);
+    const signer = this.ctx.provider.write.getSigner(accountAddress);
+    const votingEscrowContract = new Contract(votingEscrowAddress, VotingEscrowAbi, signer);
+    const tx = await votingEscrowContract.populateTransaction.increase_unlock_time(unlockTime, overrides);
+
+    if (populate) return tx;
+
+    return this.yearn.services.transaction.sendTransaction(tx);
   }
 
   /**
    * Withdraw unlocked tokens from Voting Escrow
    * @param accountAddress
    * @param votingEscrowAddress
+   * @param populate return populated transaction payload when truthy
    * @param overrides
-   * @returns transaction
+   * @returns TransactionResponse | PopulatedTransaction
    */
+  async withdrawUnlocked<P extends WriteTransactionProps>(props: P): WriteTransactionResult<P>;
   async withdrawUnlocked({
     accountAddress,
     votingEscrowAddress,
+    populate,
     overrides = {},
   }: {
     accountAddress: Address;
     votingEscrowAddress: Address;
+    populate?: boolean;
     overrides?: CallOverrides;
-  }): Promise<TransactionResponse> {
-    console.log(accountAddress, votingEscrowAddress, overrides);
-    throw new Error("NOT IMPLEMENTED");
+  }): Promise<TransactionResponse | PopulatedTransaction> {
+    const signer = this.ctx.provider.write.getSigner(accountAddress);
+    const votingEscrowContract = new Contract(votingEscrowAddress, VotingEscrowAbi, signer);
+    const tx = await votingEscrowContract.populateTransaction.withdraw(overrides);
+
+    if (populate) return tx;
+
+    return this.yearn.services.transaction.sendTransaction(tx);
   }
 
   /**
    * Withdraw locked tokens from Voting Escrow with a penalty
    * @param accountAddress
    * @param votingEscrowAddress
+   * @param populate return populated transaction payload when truthy
    * @param overrides
-   * @returns transaction
+   * @returns TransactionResponse | PopulatedTransaction
    */
+  async withdrawLocked<P extends WriteTransactionProps>(props: P): WriteTransactionResult<P>;
   async withdrawLocked({
     accountAddress,
     votingEscrowAddress,
+    populate,
     overrides = {},
   }: {
     accountAddress: Address;
     votingEscrowAddress: Address;
+    populate?: boolean;
     overrides?: CallOverrides;
-  }): Promise<TransactionResponse> {
-    console.log(accountAddress, votingEscrowAddress, overrides);
-    throw new Error("NOT IMPLEMENTED");
+  }): Promise<TransactionResponse | PopulatedTransaction> {
+    const signer = this.ctx.provider.write.getSigner(accountAddress);
+    const votingEscrowContract = new Contract(votingEscrowAddress, VotingEscrowAbi, signer);
+    const tx = await votingEscrowContract.populateTransaction.force_withdraw(overrides);
+
+    if (populate) return tx;
+
+    return this.yearn.services.transaction.sendTransaction(tx);
   }
 
-  // claimReward
+  // TODO: claimReward
 
   private async getSupportedAddresses({ addresses }: { addresses?: Address[] }): Promise<Address[]> {
     const gaugeRegistryAddress = await this.yearn.addressProvider.addressById(ContractAddressId.gaugeRegistry);
