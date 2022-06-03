@@ -66,7 +66,9 @@ type ServicesType<T extends ChainId> = {
  * ```
  */
 export class Yearn<T extends ChainId> {
-  _ctxValue: ContextValue;
+  private _chainId: ChainId;
+  private _context: Context;
+  private _assetServiceState?: AssetServiceState;
 
   services: ServicesType<T>;
   adapters: Adapters<T>;
@@ -77,8 +79,6 @@ export class Yearn<T extends ChainId> {
   ironBank: IronBankInterface<T>;
   simulation: SimulationInterface<T>;
   strategies: StrategyInterface<T>;
-
-  context: Context;
 
   /**
    * This promise can be **optionally** awaited to assure that all services
@@ -99,8 +99,9 @@ export class Yearn<T extends ChainId> {
    * @param assetServiceState the asset service does some expensive computation at initialization, passing the state from a previous sdk instance can prevent this
    */
   constructor(chainId: T, context: ContextValue, assetServiceState?: AssetServiceState) {
-    this._ctxValue = context;
-    this.context = new Context(context);
+    this._chainId = chainId;
+    this._context = new Context(context);
+    this._assetServiceState = assetServiceState;
 
     this.addressProvider = new AddressProvider(chainId, this.context);
     const allowListService = new AllowListService(chainId, this.context, this.addressProvider);
@@ -126,6 +127,73 @@ export class Yearn<T extends ChainId> {
     this.ready = Promise.all([this.services.asset.ready]);
   }
 
+  get chainId(): ChainId {
+    return this._chainId;
+  }
+
+  set chainId(chainId: ChainId) {
+    this._chainId = chainId;
+  }
+
+  get context(): Context {
+    return this._context;
+  }
+
+  set context(context: Context) {
+    this._context = context;
+  }
+
+  get assetServiceState(): AssetServiceState | undefined {
+    return this._assetServiceState;
+  }
+
+  set assetServiceState(assetServiceState: AssetServiceState | undefined) {
+    this._assetServiceState = assetServiceState;
+  }
+
+  get config(): { chainId: ChainId; context: Context; assetServiceState?: AssetServiceState } {
+    return { chainId: this.chainId, context: this.context, assetServiceState: this.assetServiceState };
+  }
+
+  set config({
+    chainId,
+    context,
+    assetServiceState,
+  }: {
+    chainId: ChainId;
+    context: ContextValue;
+    assetServiceState?: AssetServiceState;
+  }) {
+    this.chainId = chainId;
+    this.context = new Context(context);
+    this.assetServiceState = assetServiceState;
+
+    this.addressProvider = new AddressProvider(chainId, this.context);
+    const allowListService = new AllowListService(chainId, this.context, this.addressProvider);
+
+    this.services = this._initServices(
+      chainId,
+      this.context,
+      this.addressProvider,
+      allowListService,
+      assetServiceState
+    );
+    this.adapters = this._initAdapters(chainId);
+
+    this.vaults = new VaultInterface(this, chainId, this.context);
+    this.tokens = new TokenInterface(this, chainId, this.context);
+    this.earnings = new EarningsInterface(this, chainId, this.context);
+    this.fees = new FeesInterface(this, chainId, this.context);
+    this.ironBank = new IronBankInterface(this, chainId, this.context);
+    this.simulation = new SimulationInterface(this, chainId, this.context);
+    this.strategies = new StrategyInterface(this, chainId, this.context);
+
+    this.ready = Promise.all([this.services.asset.ready]);
+  }
+
+  /**
+   * @deprecated Use `config` setter instead.
+   */
   setChainId(chainId: ChainId): void {
     this.addressProvider = new AddressProvider(chainId, this.context);
     const allowListService = new AllowListService(chainId, this.context, this.addressProvider);
