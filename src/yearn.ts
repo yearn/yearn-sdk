@@ -51,6 +51,8 @@ type ServicesType<T extends ChainId> = {
   propertiesAggregator: PropertiesAggregatorService<T>;
 };
 
+type Config = { chainId: ChainId; context: Context; assetServiceState?: AssetServiceState };
+
 /**
  * [[Yearn]] is a wrapper for all the services and interfaces of the SDK.
  *
@@ -151,19 +153,11 @@ export class Yearn<T extends ChainId> {
     this._assetServiceState = assetServiceState;
   }
 
-  get config(): { chainId: ChainId; context: Context; assetServiceState?: AssetServiceState } {
+  get config(): Config {
     return { chainId: this.chainId, context: this.context, assetServiceState: this.assetServiceState };
   }
 
-  set config({
-    chainId,
-    context,
-    assetServiceState,
-  }: {
-    chainId: ChainId;
-    context: ContextValue;
-    assetServiceState?: AssetServiceState;
-  }) {
+  set config({ chainId, context, assetServiceState }: Config) {
     this.chainId = chainId;
     this.context = new Context(context);
     this.assetServiceState = assetServiceState;
