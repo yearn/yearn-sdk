@@ -89,7 +89,7 @@ const DefaultContext: ContextValue = {
 export class Context implements ContextValue {
   static PROVIDER = "refresh:provider";
 
-  private ctx: ContextValue;
+  private _ctx: ContextValue;
 
   /**
    * For internal events only.
@@ -97,9 +97,13 @@ export class Context implements ContextValue {
   events: EventEmitter;
 
   constructor(ctx: ContextValue) {
-    this.ctx = Object.assign({}, DefaultContext, ctx);
+    this._ctx = Object.assign({}, DefaultContext, ctx);
     this.events = new EventEmitter().setMaxListeners(100);
     this.setProvider(ctx.provider);
+  }
+
+  get ctx(): ContextValue {
+    return this._ctx;
   }
 
   /**
