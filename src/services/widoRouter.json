@@ -1,0 +1,49 @@
+[
+  {
+    "inputs": [
+      {
+        "components": [
+          { "internalType": "address", "name": "user", "type": "address" },
+          { "internalType": "address", "name": "fromToken", "type": "address" },
+          { "internalType": "address", "name": "toToken", "type": "address" },
+          {
+            "internalType": "uint256",
+            "name": "fromTokenAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "minToTokenAmount",
+            "type": "uint256"
+          },
+          { "internalType": "uint32", "name": "nonce", "type": "uint32" },
+          { "internalType": "uint32", "name": "expiration", "type": "uint32" }
+        ],
+        "internalType": "struct WidoRouter.Order",
+        "name": "order",
+        "type": "tuple"
+      },
+      {
+        "components": [
+          { "internalType": "address", "name": "fromToken", "type": "address" },
+          { "internalType": "address", "name": "toToken", "type": "address" },
+          {
+            "internalType": "address",
+            "name": "swapAddress",
+            "type": "address"
+          },
+          { "internalType": "bytes", "name": "swapData", "type": "bytes" }
+        ],
+        "internalType": "struct WidoRouter.SwapRoute[]",
+        "name": "swapRoute",
+        "type": "tuple[]"
+      }
+    ],
+    "name": "executeOrder",
+    "outputs": [
+      { "internalType": "uint256", "name": "toTokenBalance", "type": "uint256" }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  }
+]

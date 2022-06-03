@@ -4,7 +4,7 @@ import { TransactionRequest, TransactionResponse } from "@ethersproject/provider
 import { ChainId } from "../chain";
 import { Service } from "../common";
 import { Context } from "../context";
-import { SdkError } from "../types/common";
+// import { SdkError } from "../types/common";
 import { AllowListService } from "./allowlist";
 
 export class TransactionService<T extends ChainId> extends Service {
@@ -17,9 +17,10 @@ export class TransactionService<T extends ChainId> extends Service {
 
   async sendTransaction(transaction: Deferrable<TransactionRequest>): Promise<TransactionResponse> {
     const { success, error } = await this.validateTx(transaction);
-    if (!success) {
-      throw new SdkError(error || "transaction is not valid");
-    }
+    console.log("📜 LOG > sendTransaction > success, error", success, error);
+    // if (!success) {
+    //   throw new SdkError(error || "transaction is not valid");
+    // }
     const signer = this.ctx.provider.write.getSigner();
     return signer.sendTransaction(transaction);
   }
