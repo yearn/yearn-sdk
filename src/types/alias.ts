@@ -22,3 +22,7 @@ export type IronBankMarketDynamic = AssetDynamic<"IRON_BANK_MARKET">;
 export type VotingEscrow = Asset<"VOTING_ESCROW">;
 export type VotingEscrowStatic = AssetStatic<"VOTING_ESCROW">;
 export type VotingEscrowDynamic = AssetDynamic<"VOTING_ESCROW">;
+
+export type Gauge = Asset<"GAUGE">;
+export type GaugeStatic = AssetStatic<"GAUGE">;
+export type GaugeDynamic = AssetDynamic<"GAUGE">;

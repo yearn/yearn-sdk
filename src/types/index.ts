@@ -10,6 +10,7 @@ export * from "./asset";
 export * from "./common";
 export * from "./custom/assets";
 export * from "./custom/earnings";
+export * from "./custom/gauge";
 export * from "./custom/ironbank";
 export * from "./custom/simulation";
 export * from "./custom/token";
