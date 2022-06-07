@@ -1,29 +1,19 @@
 import { ParamType } from "@ethersproject/abi";
 import { BigNumber } from "@ethersproject/bignumber";
-import { MaxUint256 } from "@ethersproject/constants";
 import { CallOverrides, Contract, PopulatedTransaction } from "@ethersproject/contracts";
-import { JsonRpcSigner, TransactionRequest, TransactionResponse } from "@ethersproject/providers";
+import { TransactionResponse } from "@ethersproject/providers";
 
-// import { CachedFetcher } from "../cache";
-import { ChainId, isEthereum } from "../chain";
+import { ChainId } from "../chain";
 import { ContractAddressId, ServiceInterface } from "../common";
-import { chunkArray, isNativeToken } from "../helpers";
 import {
   Address,
-  Apy,
   Balance,
   Gauge,
   GaugeDynamic,
-  GaugeMetadata,
   GaugeStatic,
-  GaugeUserMetadata,
-  GaugeUserSummary,
   Integer,
   Position,
-  SdkError,
   Token,
-  TokenAllowance,
-  TypeId,
   WriteTransactionProps,
   WriteTransactionResult,
 } from "../types";
@@ -190,28 +180,6 @@ export class GaugeInterface<T extends ChainId> extends ServiceInterface<T> {
     });
     return Promise.all(positionsPromises);
   }
-
-  // TODO: check for summaryOf and metadataOf use cases
-  // /**
-  //  * Get the Gauge user summary of an account
-  //  * @param accountAddress user wallet address
-  //  * @returns GaugeUserSummary
-  //  */
-  // async summaryOf({ account }: { account: Address }): Promise<GaugeUserSummary> {
-  //   console.log(account);
-  //   throw new Error("NOT IMPLEMENTED");
-  // }
-
-  // /**
-  //  * Get all Gauge metadata of an account
-  //  * @param accountAddress user wallet address
-  //  * @param addresses filter, if not provided, all are returned
-  //  * @returns GaugeUserMetadata array
-  //  */
-  // async metadataOf({ account, addresses }: { account: Address; addresses?: Address[] }): Promise<GaugeUserMetadata[]> {
-  //   console.log(account, addresses);
-  //   throw new Error("NOT IMPLEMENTED");
-  // }
 
   /**
    * Get all Gauge underlying token balances of an account

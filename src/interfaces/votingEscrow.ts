@@ -2,28 +2,20 @@ import { ParamType } from "@ethersproject/abi";
 import { BigNumber } from "@ethersproject/bignumber";
 import { MaxUint256 } from "@ethersproject/constants";
 import { CallOverrides, Contract, PopulatedTransaction } from "@ethersproject/contracts";
-import { JsonRpcSigner, TransactionRequest, TransactionResponse } from "@ethersproject/providers";
+import { TransactionResponse } from "@ethersproject/providers";
 
-// import { CachedFetcher } from "../cache";
-import { ChainId, isEthereum } from "../chain";
+import { ChainId } from "../chain";
 import { ContractAddressId, ServiceInterface } from "../common";
-import { chunkArray, isNativeToken } from "../helpers";
 import {
   Address,
-  Apy,
   Balance,
   Integer,
   Position,
-  SdkError,
   Token,
   TokenAllowance,
-  TypeId,
   VotingEscrow,
   VotingEscrowDynamic,
-  VotingEscrowMetadata,
   VotingEscrowStatic,
-  VotingEscrowUserMetadata,
-  VotingEscrowUserSummary,
   WriteTransactionProps,
   WriteTransactionResult,
 } from "../types";
@@ -40,7 +32,6 @@ const VotingEscrowAbi = [
   "function force_withdraw() public",
   "function locked(address arg0) public view returns (tuple(uint128 amount, uint256 end))",
   "function locked__end(address _addr) public view returns (uint256)",
-  "function balanceOf(address addr) public view returns (uint256)",
 ];
 
 const GaugeRegistryAbi = ["function veToken() public view returns (address)"];
@@ -169,34 +160,6 @@ export class VotingEscrowInterface<T extends ChainId> extends ServiceInterface<T
     });
     return Promise.all(positionsPromises);
   }
-
-  // TODO: check for summaryOf and metadataOf use cases
-  // /**
-  //  * Get the Voting Escrow user summary of an account
-  //  * @param accountAddress user wallet address
-  //  * @returns VotingEscrowUserSummary
-  //  */
-  // async summaryOf({ account }: { account: Address }): Promise<VotingEscrowUserSummary> {
-  //   console.log(account);
-  //   throw new Error("NOT IMPLEMENTED");
-  // }
-
-  // /**
-  //  * Get all Voting Escrows metadata of an account
-  //  * @param accountAddress user wallet address
-  //  * @param addresses filter, if not provided, all are returned
-  //  * @returns VotingEscrowUserMetadata array
-  //  */
-  // async metadataOf({
-  //   account,
-  //   addresses,
-  // }: {
-  //   account: Address;
-  //   addresses?: Address[];
-  // }): Promise<VotingEscrowUserMetadata[]> {
-  //   console.log(account, addresses);
-  //   throw new Error("NOT IMPLEMENTED");
-  // }
 
   /**
    * Get all Voting Escrows underlying token balances of an account
