@@ -2,11 +2,13 @@ import { ChainId } from "./chain";
 import { Context, ContextValue } from "./context";
 import { EarningsInterface } from "./interfaces/earnings";
 import { FeesInterface } from "./interfaces/fees";
+import { GaugeInterface } from "./interfaces/gauge";
 import { IronBankInterface } from "./interfaces/ironbank";
 import { SimulationInterface } from "./interfaces/simulation";
 import { StrategyInterface } from "./interfaces/strategy";
 import { TokenInterface } from "./interfaces/token";
 import { VaultInterface } from "./interfaces/vault";
+import { VotingEscrowInterface } from "./interfaces/votingEscrow";
 import { IronBankAdapter } from "./services/adapters/ironbank";
 import { RegistryAdapter, RegistryV2Adapter } from "./services/adapters/registry";
 import { AddressProvider } from "./services/addressProvider";
@@ -77,6 +79,8 @@ export class Yearn<T extends ChainId> {
   ironBank: IronBankInterface<T>;
   simulation: SimulationInterface<T>;
   strategies: StrategyInterface<T>;
+  votingEscrows: VotingEscrowInterface<T>;
+  gauges: GaugeInterface<T>;
 
   context: Context;
 
@@ -122,6 +126,8 @@ export class Yearn<T extends ChainId> {
     this.ironBank = new IronBankInterface(this, chainId, this.context);
     this.simulation = new SimulationInterface(this, chainId, this.context);
     this.strategies = new StrategyInterface(this, chainId, this.context);
+    this.votingEscrows = new VotingEscrowInterface(this, chainId, this.context);
+    this.gauges = new GaugeInterface(this, chainId, this.context);
 
     this.ready = Promise.all([this.services.asset.ready]);
   }
@@ -140,6 +146,8 @@ export class Yearn<T extends ChainId> {
     this.ironBank = new IronBankInterface(this, chainId, this.context);
     this.simulation = new SimulationInterface(this, chainId, this.context);
     this.strategies = new StrategyInterface(this, chainId, this.context);
+    this.votingEscrows = new VotingEscrowInterface(this, chainId, this.context);
+    this.gauges = new GaugeInterface(this, chainId, this.context);
 
     this.ready = Promise.all([this.services.asset.ready]);
   }
