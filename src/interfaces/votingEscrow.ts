@@ -170,32 +170,33 @@ export class VotingEscrowInterface<T extends ChainId> extends ServiceInterface<T
     return Promise.all(positionsPromises);
   }
 
-  /**
-   * Get the Voting Escrow user summary of an account
-   * @param accountAddress user wallet address
-   * @returns VotingEscrowUserSummary
-   */
-  async summaryOf({ account }: { account: Address }): Promise<VotingEscrowUserSummary> {
-    console.log(account);
-    throw new Error("NOT IMPLEMENTED");
-  }
+  // TODO: check for summaryOf and metadataOf use cases
+  // /**
+  //  * Get the Voting Escrow user summary of an account
+  //  * @param accountAddress user wallet address
+  //  * @returns VotingEscrowUserSummary
+  //  */
+  // async summaryOf({ account }: { account: Address }): Promise<VotingEscrowUserSummary> {
+  //   console.log(account);
+  //   throw new Error("NOT IMPLEMENTED");
+  // }
 
-  /**
-   * Get all Voting Escrows metadata of an account
-   * @param accountAddress user wallet address
-   * @param addresses filter, if not provided, all are returned
-   * @returns VotingEscrowUserMetadata array
-   */
-  async metadataOf({
-    account,
-    addresses,
-  }: {
-    account: Address;
-    addresses?: Address[];
-  }): Promise<VotingEscrowUserMetadata[]> {
-    console.log(account, addresses);
-    throw new Error("NOT IMPLEMENTED");
-  }
+  // /**
+  //  * Get all Voting Escrows metadata of an account
+  //  * @param accountAddress user wallet address
+  //  * @param addresses filter, if not provided, all are returned
+  //  * @returns VotingEscrowUserMetadata array
+  //  */
+  // async metadataOf({
+  //   account,
+  //   addresses,
+  // }: {
+  //   account: Address;
+  //   addresses?: Address[];
+  // }): Promise<VotingEscrowUserMetadata[]> {
+  //   console.log(account, addresses);
+  //   throw new Error("NOT IMPLEMENTED");
+  // }
 
   /**
    * Get all Voting Escrows underlying token balances of an account
@@ -204,8 +205,24 @@ export class VotingEscrowInterface<T extends ChainId> extends ServiceInterface<T
    * @returns Balance array
    */
   async balances({ account, addresses }: { account: Address; addresses?: Address[] }): Promise<Balance[]> {
-    console.log(account, addresses);
-    throw new Error("NOT IMPLEMENTED");
+    const votingEscrows = await this.get({ addresses });
+    const underlyingTokensAddresses = votingEscrows.map(({ token }) => token);
+    const tokens = await this.yearn.services.helper.tokens(underlyingTokensAddresses);
+    const tokensMap = keyBy(tokens, "address");
+    const tokenBalances = await this.yearn.services.helper.tokenBalances(account, underlyingTokensAddresses);
+    const tokenBalancesMap = keyBy(tokenBalances, "address");
+    const balances = underlyingTokensAddresses.map((address) => {
+      const { balance, balanceUsdc, priceUsdc } = tokenBalancesMap[address];
+      const token = tokensMap[address];
+      return {
+        address: account,
+        token,
+        balance,
+        balanceUsdc,
+        priceUsdc,
+      };
+    });
+    return balances;
   }
 
   /**
@@ -214,8 +231,28 @@ export class VotingEscrowInterface<T extends ChainId> extends ServiceInterface<T
    * @returns Token array
    */
   async tokens({ addresses }: { addresses?: Address[] }): Promise<Token[]> {
-    console.log(addresses);
-    throw new Error("NOT IMPLEMENTED");
+    const votingEscrows = await this.get({ addresses });
+    const underlyingTokensAddresses = votingEscrows.map(({ token }) => token);
+    const tokens = await this.yearn.services.helper.tokens(underlyingTokensAddresses);
+    const tokensMap = keyBy(tokens, "address");
+    const icons = await this.yearn.services.asset.icon(underlyingTokensAddresses);
+    const tokenPrices = await this.yearn.services.helper.tokenPrices(underlyingTokensAddresses);
+    const tokenPricesMap = keyBy(tokenPrices, "address");
+    const tokensMetadata = await this.yearn.tokens.metadata(underlyingTokensAddresses);
+    const tokensMetadataMap = keyBy(tokensMetadata, "address");
+    const underlyingTokens: Token[] = underlyingTokensAddresses.map((address) => {
+      return {
+        ...tokensMap[address],
+        icon: icons[address],
+        priceUsdc: tokenPricesMap[address].priceUsdc,
+        dataSource: "votingEscrow",
+        supported: {
+          votingEscrow: true,
+        },
+        metadata: tokensMetadataMap[address],
+      };
+    });
+    return underlyingTokens;
   }
 
   /**

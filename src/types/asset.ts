@@ -31,6 +31,8 @@ export interface Token extends ERC20 {
     vaults?: boolean;
     ironBank?: boolean;
     labs?: boolean;
+    votingEscrow?: boolean;
+    gauge?: boolean;
   };
   metadata?: TokenMetadata;
 }
