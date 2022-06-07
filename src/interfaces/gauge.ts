@@ -30,9 +30,9 @@ import {
 import { keyBy, toBN, toUnit, USDC_DECIMALS } from "../utils";
 
 const GaugeAbi = [
-  "function deposit(uint256 _amount) public returns (bool)",
-  "function withdraw(uint256 _amount, bool _claim, bool _lock) public returns (bool)",
-  "function withdraw() public returns (bool)",
+  "function deposit(uint256 _amount) external returns (bool)",
+  "function withdraw(uint256 _amount, bool _claim, bool _lock) external returns (bool)",
+  "function getReward() external returns (bool)",
 ];
 
 const GaugeRegistryAbi = [
@@ -231,6 +231,104 @@ export class GaugeInterface<T extends ChainId> extends ServiceInterface<T> {
   async tokens({ addresses }: { addresses?: Address[] }): Promise<Token[]> {
     console.log(addresses);
     throw new Error("NOT IMPLEMENTED");
+  }
+
+  /**
+   * Stake an amount of tokens into a Gauge
+   * @param accountAddress
+   * @param tokenAddress
+   * @param votingEscrowAddress
+   * @param amount
+   * @param populate return populated transaction payload when truthy
+   * @param overrides
+   * @returns TransactionResponse | PopulatedTransaction
+   */
+  async stake<P extends WriteTransactionProps>(props: P): WriteTransactionResult<P>;
+  async stake({
+    accountAddress,
+    votingEscrowAddress,
+    amount,
+    populate,
+    overrides = {},
+  }: {
+    accountAddress: Address;
+    tokenAddress: Address;
+    votingEscrowAddress: Address;
+    amount: Integer;
+    populate?: boolean;
+    overrides?: CallOverrides;
+  }): Promise<TransactionResponse | PopulatedTransaction> {
+    const signer = this.ctx.provider.write.getSigner(accountAddress);
+    const gaugeContract = new Contract(votingEscrowAddress, GaugeAbi, signer);
+    const tx = await gaugeContract.populateTransaction.deposit(amount, overrides);
+
+    if (populate) return tx;
+
+    return this.yearn.services.transaction.sendTransaction(tx);
+  }
+
+  /**
+   * Unstake an amount of tokens from a Gauge
+   * @param accountAddress
+   * @param votingEscrowAddress
+   * @param amount
+   * @param populate return populated transaction payload when truthy
+   * @param overrides
+   * @returns TransactionResponse | PopulatedTransaction
+   */
+  async unstake<P extends WriteTransactionProps>(props: P): WriteTransactionResult<P>;
+  async unstake({
+    accountAddress,
+    votingEscrowAddress,
+    amount,
+    populate,
+    overrides = {},
+  }: {
+    accountAddress: Address;
+    votingEscrowAddress: Address;
+    amount: Integer;
+    populate?: boolean;
+    overrides?: CallOverrides;
+  }): Promise<TransactionResponse | PopulatedTransaction> {
+    const claim = false;
+    const lock = false;
+    const signer = this.ctx.provider.write.getSigner(accountAddress);
+    const gaugeContract = new Contract(votingEscrowAddress, GaugeAbi, signer);
+    const tx = await gaugeContract.populateTransaction.withdraw(amount, claim, lock, overrides);
+
+    if (populate) return tx;
+
+    return this.yearn.services.transaction.sendTransaction(tx);
+  }
+
+  /**
+   * Claim reward tokens from a Gauge
+   * @param accountAddress
+   * @param votingEscrowAddress
+   * @param amount
+   * @param populate return populated transaction payload when truthy
+   * @param overrides
+   * @returns TransactionResponse | PopulatedTransaction
+   */
+  async claimRewards<P extends WriteTransactionProps>(props: P): WriteTransactionResult<P>;
+  async claimRewards({
+    accountAddress,
+    votingEscrowAddress,
+    populate,
+    overrides = {},
+  }: {
+    accountAddress: Address;
+    votingEscrowAddress: Address;
+    populate?: boolean;
+    overrides?: CallOverrides;
+  }): Promise<TransactionResponse | PopulatedTransaction> {
+    const signer = this.ctx.provider.write.getSigner(accountAddress);
+    const gaugeContract = new Contract(votingEscrowAddress, GaugeAbi, signer);
+    const tx = await gaugeContract.populateTransaction.getReward(overrides);
+
+    if (populate) return tx;
+
+    return this.yearn.services.transaction.sendTransaction(tx);
   }
 
   private async getSupportedAddresses({ addresses }: { addresses?: Address[] }): Promise<Address[]> {
