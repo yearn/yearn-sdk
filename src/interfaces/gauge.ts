@@ -228,9 +228,9 @@ export class GaugeInterface<T extends ChainId> extends ServiceInterface<T> {
         ...tokensMap[address],
         icon: icons[address],
         priceUsdc: tokenPricesMap[address].priceUsdc,
-        dataSource: "gauge",
+        dataSource: "gauges",
         supported: {
-          gauge: true,
+          gauges: true,
         },
         metadata: tokensMetadataMap[address],
       };

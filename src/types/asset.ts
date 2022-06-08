@@ -31,8 +31,8 @@ export interface Token extends ERC20 {
     vaults?: boolean;
     ironBank?: boolean;
     labs?: boolean;
-    votingEscrow?: boolean;
-    gauge?: boolean;
+    votingEscrows?: boolean;
+    gauges?: boolean;
   };
   metadata?: TokenMetadata;
 }
@@ -103,4 +103,4 @@ export type GenericAsset =
   | Asset<"VOTING_ESCROW">
   | Asset<"GAUGE">;
 
-export type TokenDataSource = "vaults" | "ironBank" | "zapper" | "labs" | "sdk" | "votingEscrow" | "gauge";
+export type TokenDataSource = "vaults" | "ironBank" | "zapper" | "labs" | "sdk" | "votingEscrows" | "gauges";

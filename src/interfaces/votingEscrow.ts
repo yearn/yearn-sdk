@@ -208,9 +208,9 @@ export class VotingEscrowInterface<T extends ChainId> extends ServiceInterface<T
         ...tokensMap[address],
         icon: icons[address],
         priceUsdc: tokenPricesMap[address].priceUsdc,
-        dataSource: "votingEscrow",
+        dataSource: "votingEscrows",
         supported: {
-          votingEscrow: true,
+          votingEscrows: true,
         },
         metadata: tokensMetadataMap[address],
       };

@@ -98,6 +98,8 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
         ironBank: new Set<Address>(),
         labs: new Set<Address>(),
         sdk: new Set<Address>(),
+        votingEscrows: new Set<Address>(),
+        gauges: new Set<Address>(),
       }
     );
 
