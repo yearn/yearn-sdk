@@ -433,6 +433,11 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
       return vaultAddress;
     }
 
+    if (isFantom(this.chainId)) {
+      // wido router
+      return "0x7Bbd6348db83C2fb3633Eebb70367E1AEc258764";
+    }
+
     const zapContractId = willZapToPickleJar ? ContractAddressId.pickleZapIn : ContractAddressId.zapperZapIn;
     const zapContractAddress = await this.yearn.addressProvider.addressById(zapContractId);
     return zapContractAddress;
@@ -441,6 +446,11 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
   private async getWithdrawContractAddress(vaultAddress: Address, tokenAddress: Address): Promise<Address> {
     const willWithdrawToUnderlyingToken = await this.isUnderlyingToken(vaultAddress, tokenAddress);
     if (willWithdrawToUnderlyingToken) return vaultAddress;
+
+    if (isFantom(this.chainId)) {
+      // wido router
+      return "0x7Bbd6348db83C2fb3633Eebb70367E1AEc258764";
+    }
 
     const zapContractAddress = await this.yearn.addressProvider.addressById(ContractAddressId.zapperZapOut);
     return zapContractAddress;
@@ -521,6 +531,10 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
         throw new SdkError("zap operations should have a slippage set");
       }
 
+      if (isFantom(this.chainId)) {
+        const populatedTransaction = await this.yearn.services.wido.withdraw(account, token, amount, vault, signer);
+        return this.yearn.services.transaction.sendTransaction(populatedTransaction);
+      }
       const zapOutParams = await this.yearn.services.zapper.zapOut(
         account,
         token,
@@ -600,6 +614,12 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
   ): Promise<TransactionResponse> {
     if (options.slippage === undefined) {
       throw new SdkError("zap operations should have a slippage set");
+    }
+
+    if (isFantom(this.chainId)) {
+      const signer = this.ctx.provider.write.getSigner(account);
+      const populatedTransaction = await this.yearn.services.wido.deposit(account, token, amount, vault, signer);
+      return this.yearn.services.transaction.sendTransaction(populatedTransaction);
     }
 
     const zapInParams = await this.yearn.services.zapper.zapIn(
