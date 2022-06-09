@@ -129,36 +129,46 @@ export class VotingEscrowInterface<T extends ChainId> extends ServiceInterface<T
     const tokenBalancesMap = keyBy(tokenBalances, "address");
     const tokenPrices = await this.yearn.services.helper.tokenPrices(underlyingTokens);
     const tokenPricesMap = keyBy(tokenPrices, "address");
-    // TODO: add YIELD position based on rewards
-    // const properties = ["address reward_pool"].map((prop) => ParamType.from(prop));
     const positionsPromises = votingEscrows.map(async ({ address, token }) => {
-      // const { reward_pool: rewardPool } = await this.yearn.services.propertiesAggregator.getProperties(
-      //   address,
-      //   properties
-      // );
-      const balance = tokenBalancesMap[address].balance;
-      const priceUsdc = tokenPricesMap[token].priceUsdc;
+      const { balance } = tokenBalancesMap[address];
+      const { priceUsdc } = tokenPricesMap[token];
       const votingEscrowContract = new Contract(address, VotingEscrowAbi, this.ctx.provider.read);
       const locked = await votingEscrowContract.locked(account);
       const amount = (locked.amount as BigNumber).toString();
-      const underlyingTokenBalance = {
-        amount,
-        amountUsdc: toBN(amount)
-          .times(toUnit({ amount: priceUsdc, decimals: USDC_DECIMALS }))
-          .toFixed(0),
-      };
-      const position: Position = {
+      const depositPosition: Position = {
         assetAddress: address,
         tokenAddress: token,
         typeId: "DEPOSIT",
         balance,
-        underlyingTokenBalance,
+        underlyingTokenBalance: {
+          amount,
+          amountUsdc: toBN(amount)
+            .times(toUnit({ amount: priceUsdc, decimals: USDC_DECIMALS }))
+            .toFixed(0),
+        },
         assetAllowances: [],
         tokenAllowances: [],
       };
-      return position;
+      const claimable = await votingEscrowContract.callStatic.claim(account);
+      const rewardBalance = (claimable as BigNumber).toString();
+      const yieldPosition: Position = {
+        assetAddress: address,
+        tokenAddress: token,
+        typeId: "YIELD",
+        balance: rewardBalance,
+        underlyingTokenBalance: {
+          amount: rewardBalance,
+          amountUsdc: toBN(rewardBalance)
+            .times(toUnit({ amount: priceUsdc, decimals: USDC_DECIMALS }))
+            .toFixed(0),
+        },
+        assetAllowances: [],
+        tokenAllowances: [],
+      };
+      return [depositPosition, yieldPosition];
     });
-    return Promise.all(positionsPromises);
+    const positions = await Promise.all(positionsPromises);
+    return positions.flat().filter(({ balance }) => toBN(balance).gt(0));
   }
 
   /**
