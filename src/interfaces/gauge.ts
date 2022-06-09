@@ -22,6 +22,7 @@ import {
 import { keyBy, toBN, toUnit, USDC_DECIMALS } from "../utils";
 
 const GaugeAbi = [
+  "function earned(address _account) public view returns (uint256)",
   "function deposit(uint256 _amount) external returns (bool)",
   "function withdraw(uint256 _amount, bool _claim, bool _lock) external returns (bool)",
   "function getReward() external returns (bool)",
@@ -90,9 +91,11 @@ export class GaugeInterface<T extends ChainId> extends ServiceInterface<T> {
    */
   async getDynamic({ addresses }: { addresses?: Address[] }): Promise<GaugeDynamic[]> {
     const supportedAddresses = await this.getSupportedAddresses({ addresses });
-    const gaugeProperties = ["address stakingToken", "uint256 totalSupply"].map((prop) => ParamType.from(prop));
+    const gaugeProperties = ["address stakingToken", "uint256 totalSupply", "address rewardToken"].map((prop) =>
+      ParamType.from(prop)
+    );
     const gaugesDataPromises = supportedAddresses.map(async (address) => {
-      const { stakingToken, totalSupply } = await this.yearn.services.propertiesAggregator.getProperties(
+      const { stakingToken, totalSupply, rewardToken } = await this.yearn.services.propertiesAggregator.getProperties(
         address,
         gaugeProperties
       );
@@ -100,6 +103,7 @@ export class GaugeInterface<T extends ChainId> extends ServiceInterface<T> {
         address,
         vaultAddress: stakingToken as Address,
         totalStaked: (totalSupply as BigNumber).toString(),
+        rewardToken: rewardToken as Address,
       };
     });
     const gaugesData = await Promise.all(gaugesDataPromises);
@@ -111,7 +115,7 @@ export class GaugeInterface<T extends ChainId> extends ServiceInterface<T> {
     const tokenPrices = await this.yearn.services.helper.tokenPrices(underlyingTokens);
     const tokenPricesMap = keyBy(tokenPrices, "address");
     const dynamicData = supportedAddresses.map((address) => {
-      const { vaultAddress, totalStaked } = gaugesDataMap[address];
+      const { vaultAddress, totalStaked, rewardToken } = gaugesDataMap[address];
       const { token, decimals, metadata } = vaultsMap[vaultAddress];
       const { priceUsdc } = tokenPricesMap[token];
       const amount = totalStaked;
@@ -127,7 +131,7 @@ export class GaugeInterface<T extends ChainId> extends ServiceInterface<T> {
       const dynamicData: GaugeDynamic = {
         address,
         typeId: "GAUGE",
-        tokenId: vaultAddress as Address,
+        tokenId: vaultAddress,
         underlyingTokenBalance,
         metadata: {
           // TODO: get apy
@@ -135,6 +139,7 @@ export class GaugeInterface<T extends ChainId> extends ServiceInterface<T> {
           displayName: metadata.displayName,
           vaultPricePerShare: metadata.pricePerShare,
           vaultUnderlyingToken: token,
+          rewardToken,
         },
       };
       return dynamicData;
@@ -152,35 +157,57 @@ export class GaugeInterface<T extends ChainId> extends ServiceInterface<T> {
     const gauges = await this.get({ addresses });
     const gaugeAddresses = gauges.map(({ address }) => address);
     const underlyingTokenAddresses = gauges.map(({ metadata }) => metadata.vaultUnderlyingToken);
+    const rewardTokenAddresses = gauges.map(({ metadata }) => metadata.rewardToken);
+    const uniqueRewardTokenAddresses = [...new Set(rewardTokenAddresses)];
     const gaugeBalances = await this.yearn.services.helper.tokenBalances(account, gaugeAddresses);
     const gaugeBalancesMap = keyBy(gaugeBalances, "address");
-    const tokenPrices = await this.yearn.services.helper.tokenPrices(underlyingTokenAddresses);
+    const tokenPrices = await this.yearn.services.helper.tokenPrices([
+      ...underlyingTokenAddresses,
+      ...uniqueRewardTokenAddresses,
+    ]);
     const tokenPricesMap = keyBy(tokenPrices, "address");
-    // TODO: add YIELD position based on rewards
     const positionsPromises = gauges.map(async ({ address, token, decimals, metadata }) => {
       const { balance } = gaugeBalancesMap[address];
-      const { priceUsdc } = tokenPricesMap[metadata.vaultUnderlyingToken];
+      const underlyingTokenPriceUsdc = tokenPricesMap[metadata.vaultUnderlyingToken].priceUsdc;
       const underlyingTokenAmount = toBN(balance)
         .times(toUnit({ amount: metadata.vaultPricePerShare, decimals: parseInt(decimals) }))
         .toFixed(0);
-      const underlyingTokenBalance = {
-        amount: underlyingTokenAmount,
-        amountUsdc: toBN(underlyingTokenAmount)
-          .times(toUnit({ amount: priceUsdc, decimals: USDC_DECIMALS }))
-          .toFixed(0),
-      };
-      const position: Position = {
+      const depositPosition: Position = {
         assetAddress: address,
         tokenAddress: token,
         typeId: "DEPOSIT",
         balance,
-        underlyingTokenBalance,
+        underlyingTokenBalance: {
+          amount: underlyingTokenAmount,
+          amountUsdc: toBN(underlyingTokenAmount)
+            .times(toUnit({ amount: underlyingTokenPriceUsdc, decimals: USDC_DECIMALS }))
+            .toFixed(0),
+        },
         assetAllowances: [],
         tokenAllowances: [],
       };
-      return position;
+      const votingEscrowContract = new Contract(address, GaugeAbi, this.ctx.provider.read);
+      const earned = await votingEscrowContract.earned(account);
+      const rewardBalance = earned.toString();
+      const rewardTokenPriceUsdc = tokenPricesMap[metadata.vaultUnderlyingToken].priceUsdc;
+      const yieldPosition: Position = {
+        assetAddress: address,
+        tokenAddress: metadata.rewardToken,
+        typeId: "YIELD",
+        balance: rewardBalance,
+        underlyingTokenBalance: {
+          amount: rewardBalance,
+          amountUsdc: toBN(rewardBalance)
+            .times(toUnit({ amount: rewardTokenPriceUsdc, decimals: USDC_DECIMALS }))
+            .toFixed(0),
+        },
+        assetAllowances: [],
+        tokenAllowances: [],
+      };
+      return [depositPosition, yieldPosition];
     });
-    return Promise.all(positionsPromises);
+    const positions = await Promise.all(positionsPromises);
+    return positions.flat().filter(({ balance }) => toBN(balance).gt(0));
   }
 
   /**

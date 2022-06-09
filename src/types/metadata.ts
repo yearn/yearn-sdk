@@ -72,6 +72,7 @@ export interface GaugeMetadata {
   vaultApy?: Apy;
   vaultPricePerShare: Integer;
   vaultUnderlyingToken: Address;
+  rewardToken: Address;
 }
 
 /**
