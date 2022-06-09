@@ -186,8 +186,8 @@ export class GaugeInterface<T extends ChainId> extends ServiceInterface<T> {
         assetAllowances: [],
         tokenAllowances: [],
       };
-      const votingEscrowContract = new Contract(address, GaugeAbi, this.ctx.provider.read);
-      const earned = await votingEscrowContract.earned(account);
+      const gaugeContract = new Contract(address, GaugeAbi, this.ctx.provider.read);
+      const earned = await gaugeContract.earned(account);
       const rewardBalance = earned.toString();
       const rewardTokenPriceUsdc = tokenPricesMap[metadata.vaultUnderlyingToken].priceUsdc;
       const yieldPosition: Position = {
