@@ -1,5 +1,6 @@
 import { ParamType } from "@ethersproject/abi";
 import { BigNumber } from "@ethersproject/bignumber";
+import { MaxUint256 } from "@ethersproject/constants";
 import { CallOverrides, Contract, PopulatedTransaction } from "@ethersproject/contracts";
 import { TransactionResponse } from "@ethersproject/providers";
 
@@ -14,6 +15,7 @@ import {
   Integer,
   Position,
   Token,
+  TokenAllowance,
   WriteTransactionProps,
   WriteTransactionResult,
 } from "../types";
@@ -236,6 +238,64 @@ export class GaugeInterface<T extends ChainId> extends ServiceInterface<T> {
       };
     });
     return underlyingTokens;
+  }
+
+  /**
+   * Fetch the token amount that has been allowed to be used to stake
+   * @param accountAddress
+   * @param tokenAddress
+   * @param gaugeAddress
+   * @returns TokenAllowance
+   */
+  async getStakeAllowance({
+    accountAddress,
+    tokenAddress,
+    gaugeAddress,
+  }: {
+    accountAddress: Address;
+    tokenAddress: Address;
+    gaugeAddress: Address;
+  }): Promise<TokenAllowance> {
+    return this.yearn.tokens.allowance(accountAddress, tokenAddress, gaugeAddress);
+  }
+
+  /**
+   * Approve the token amount to allow to be used to stake
+   * @param accountAddress
+   * @param tokenAddress
+   * @param gaugeAddress
+   * @param amount
+   * @param populate return populated transaction payload when truthy
+   * @param overrides
+   * @returns TransactionResponse | PopulatedTransaction
+   */
+  async approveStake<P extends WriteTransactionProps>(props: P): WriteTransactionResult<P>;
+  async approveStake({
+    accountAddress,
+    tokenAddress,
+    gaugeAddress,
+    amount,
+    populate,
+    overrides = {},
+  }: {
+    accountAddress: Address;
+    tokenAddress: Address;
+    gaugeAddress: Address;
+    amount?: Integer;
+    populate?: boolean;
+    overrides?: CallOverrides;
+  }): Promise<TransactionResponse | PopulatedTransaction> {
+    const tx = await this.yearn.tokens.populateApprove(
+      accountAddress,
+      tokenAddress,
+      gaugeAddress,
+      amount ?? MaxUint256.toString(),
+      overrides
+    );
+
+    if (populate) return tx;
+
+    return this.yearn.services.transaction.sendTransaction(tx);
   }
 
   /**
