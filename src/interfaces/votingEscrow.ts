@@ -321,7 +321,6 @@ export class VotingEscrowInterface<T extends ChainId> extends ServiceInterface<T
   /**
    * Increase the amount of tokens locked on the Voting Escrow
    * @param accountAddress
-   * @param tokenAddress
    * @param votingEscrowAddress
    * @param amount
    * @param time In weeks
@@ -338,7 +337,6 @@ export class VotingEscrowInterface<T extends ChainId> extends ServiceInterface<T
     overrides = {},
   }: {
     accountAddress: Address;
-    tokenAddress: Address;
     votingEscrowAddress: Address;
     amount: Integer;
     populate?: boolean;
@@ -356,7 +354,6 @@ export class VotingEscrowInterface<T extends ChainId> extends ServiceInterface<T
   /**
    * Extend the time to lock the tokens on the Voting Escrow
    * @param accountAddress
-   * @param tokenAddress
    * @param votingEscrowAddress
    * @param time New period in weeks
    * @param populate return populated transaction payload when truthy
