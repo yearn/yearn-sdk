@@ -25,14 +25,16 @@ const DAY = 86400;
 const WEEK = DAY * 7;
 
 const VotingEscrowAbi = [
+  "function locked(address arg0) public view returns (tuple(uint128 amount, uint256 end))",
+  "function locked__end(address _addr) public view returns (uint256)",
   "function create_lock(uint256 _value, uint256 _unlock_time) public",
   "function increase_amount(uint256 _value) public",
   "function increase_unlock_time(uint256 _unlock_time) public",
   "function withdraw() public",
   "function force_withdraw() public",
-  "function locked(address arg0) public view returns (tuple(uint128 amount, uint256 end))",
-  "function locked__end(address _addr) public view returns (uint256)",
 ];
+
+const VotingEscrowRewardsAbi = ["function claim() public returns (uint256)"];
 
 const GaugeRegistryAbi = ["function veToken() public view returns (address)"];
 
@@ -92,9 +94,13 @@ export class VotingEscrowInterface<T extends ChainId> extends ServiceInterface<T
    */
   async getDynamic({ addresses }: { addresses?: Address[] }): Promise<VotingEscrowDynamic[]> {
     const supportedAddresses = await this.getSupportedAddresses({ addresses });
-    const properties = ["address token", "uint256 supply"].map((prop) => ParamType.from(prop));
+    const properties = ["address token", "uint256 supply", "address reward_pool"].map((prop) => ParamType.from(prop));
     const dynamicDataPromises = supportedAddresses.map(async (address) => {
-      const { token, supply } = await this.yearn.services.propertiesAggregator.getProperties(address, properties);
+      const {
+        token,
+        supply,
+        reward_pool: rewardPool,
+      } = await this.yearn.services.propertiesAggregator.getProperties(address, properties);
       const amount = (supply as BigNumber).toString();
       const priceUsdc = await this.yearn.services.oracle.getPriceUsdc(token as Address);
       const underlyingTokenBalance = {
@@ -108,7 +114,10 @@ export class VotingEscrowInterface<T extends ChainId> extends ServiceInterface<T
         typeId: "VOTING_ESCROW",
         tokenId: token as Address,
         underlyingTokenBalance,
-        metadata: {}, // TODO: get apy
+        // TODO: get apy
+        metadata: {
+          rewardPool: rewardPool as Address,
+        },
       };
       return dynamicData;
     });
@@ -129,7 +138,7 @@ export class VotingEscrowInterface<T extends ChainId> extends ServiceInterface<T
     const tokenBalancesMap = keyBy(tokenBalances, "address");
     const tokenPrices = await this.yearn.services.helper.tokenPrices(underlyingTokens);
     const tokenPricesMap = keyBy(tokenPrices, "address");
-    const positionsPromises = votingEscrows.map(async ({ address, token }) => {
+    const positionsPromises = votingEscrows.map(async ({ address, token, metadata }) => {
       const { balance } = tokenBalancesMap[address];
       const { priceUsdc } = tokenPricesMap[token];
       const votingEscrowContract = new Contract(address, VotingEscrowAbi, this.ctx.provider.read);
@@ -149,7 +158,13 @@ export class VotingEscrowInterface<T extends ChainId> extends ServiceInterface<T
         assetAllowances: [],
         tokenAllowances: [],
       };
-      const claimable = await votingEscrowContract.callStatic.claim(account);
+      // TODO: check if callable through properties aggregator contract
+      const votingEscrowRewardsContract = new Contract(
+        metadata.rewardPool,
+        VotingEscrowRewardsAbi,
+        this.ctx.provider.read
+      );
+      const claimable = await votingEscrowRewardsContract.callStatic.claim();
       const rewardBalance = (claimable as BigNumber).toString();
       const yieldPosition: Position = {
         assetAddress: address,
@@ -457,7 +472,35 @@ export class VotingEscrowInterface<T extends ChainId> extends ServiceInterface<T
     return this.yearn.services.transaction.sendTransaction(tx);
   }
 
-  // TODO: claimReward
+  /**
+   * Claim reward tokens from from Voting Escrow
+   * @param accountAddress
+   * @param votingEscrowAddress
+   * @param populate return populated transaction payload when truthy
+   * @param overrides
+   * @returns TransactionResponse | PopulatedTransaction
+   */
+  async claimRewards<P extends WriteTransactionProps>(props: P): WriteTransactionResult<P>;
+  async claimRewards({
+    accountAddress,
+    votingEscrowAddress,
+    populate,
+    overrides = {},
+  }: {
+    accountAddress: Address;
+    votingEscrowAddress: Address;
+    populate?: boolean;
+    overrides?: CallOverrides;
+  }): Promise<TransactionResponse | PopulatedTransaction> {
+    const [votingEscrow] = await this.get({ addresses: [votingEscrowAddress] });
+    const signer = this.ctx.provider.write.getSigner(accountAddress);
+    const votingEscrowRewardsContract = new Contract(votingEscrow.metadata.rewardPool, VotingEscrowRewardsAbi, signer);
+    const tx = await votingEscrowRewardsContract.populateTransaction.claim(overrides);
+
+    if (populate) return tx;
+
+    return this.yearn.services.transaction.sendTransaction(tx);
+  }
 
   private async getSupportedAddresses({ addresses }: { addresses?: Address[] }): Promise<Address[]> {
     const gaugeRegistryAddress = await this.yearn.addressProvider.addressById(ContractAddressId.gaugeRegistry);

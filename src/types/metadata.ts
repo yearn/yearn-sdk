@@ -60,6 +60,7 @@ export interface IronBankMarketMetadata {
  */
 export interface VotingEscrowMetadata {
   apy?: Apy;
+  rewardPool: Address;
 }
 
 /**
