@@ -1,7 +1,7 @@
 import { ParamType } from "@ethersproject/abi";
 import { BigNumber } from "@ethersproject/bignumber";
 import { MaxUint256 } from "@ethersproject/constants";
-import { CallOverrides, Contract, PopulatedTransaction } from "@ethersproject/contracts";
+import { Contract, PopulatedTransaction } from "@ethersproject/contracts";
 import { TransactionResponse } from "@ethersproject/providers";
 
 import { ChainId } from "../chain";
@@ -32,6 +32,31 @@ const GaugeRegistryAbi = [
   "function getVaults() public view returns (address[] memory)",
   "function gauges(address _addr) public view returns (address)",
 ];
+
+interface ApproveStakeProps extends WriteTransactionProps {
+  accountAddress: Address;
+  tokenAddress: Address;
+  gaugeAddress: Address;
+  amount?: Integer;
+}
+
+interface StakeProps extends WriteTransactionProps {
+  accountAddress: Address;
+  tokenAddress: Address;
+  votingEscrowAddress: Address;
+  amount: Integer;
+}
+
+interface UnstakeProps extends WriteTransactionProps {
+  accountAddress: Address;
+  votingEscrowAddress: Address;
+  amount: Integer;
+}
+
+interface ClaimRewardsProps extends WriteTransactionProps {
+  accountAddress: Address;
+  votingEscrowAddress: Address;
+}
 
 export class GaugeInterface<T extends ChainId> extends ServiceInterface<T> {
   /**
@@ -153,13 +178,19 @@ export class GaugeInterface<T extends ChainId> extends ServiceInterface<T> {
    * @param addresses filter, if not provided, all are returned
    * @returns Position array
    */
-  async positionsOf({ account, addresses }: { account: Address; addresses?: Address[] }): Promise<Position[]> {
+  async positionsOf({
+    accountAddress,
+    addresses,
+  }: {
+    accountAddress: Address;
+    addresses?: Address[];
+  }): Promise<Position[]> {
     const gauges = await this.get({ addresses });
     const gaugeAddresses = gauges.map(({ address }) => address);
     const underlyingTokenAddresses = gauges.map(({ metadata }) => metadata.vaultUnderlyingToken);
     const rewardTokenAddresses = gauges.map(({ metadata }) => metadata.rewardToken);
     const uniqueRewardTokenAddresses = [...new Set(rewardTokenAddresses)];
-    const gaugeBalances = await this.yearn.services.helper.tokenBalances(account, gaugeAddresses);
+    const gaugeBalances = await this.yearn.services.helper.tokenBalances(accountAddress, gaugeAddresses);
     const gaugeBalancesMap = keyBy(gaugeBalances, "address");
     const tokenPrices = await this.yearn.services.helper.tokenPrices([
       ...underlyingTokenAddresses,
@@ -187,7 +218,7 @@ export class GaugeInterface<T extends ChainId> extends ServiceInterface<T> {
         tokenAllowances: [],
       };
       const gaugeContract = new Contract(address, GaugeAbi, this.ctx.provider.read);
-      const earned = await gaugeContract.earned(account);
+      const earned = await gaugeContract.earned(accountAddress);
       const rewardBalance = earned.toString();
       const rewardTokenPriceUsdc = tokenPricesMap[metadata.vaultUnderlyingToken].priceUsdc;
       const yieldPosition: Position = {
@@ -216,18 +247,24 @@ export class GaugeInterface<T extends ChainId> extends ServiceInterface<T> {
    * @param addresses filter, if not provided, all are returned
    * @returns Balance array
    */
-  async balances({ account, addresses }: { account: Address; addresses?: Address[] }): Promise<Balance[]> {
+  async balances({
+    accountAddress,
+    addresses,
+  }: {
+    accountAddress: Address;
+    addresses?: Address[];
+  }): Promise<Balance[]> {
     const gauges = await this.get({ addresses });
     const vaultsAddresses = gauges.map(({ token }) => token);
     const tokens = await this.yearn.services.helper.tokens(vaultsAddresses);
     const tokensMap = keyBy(tokens, "address");
-    const tokenBalances = await this.yearn.services.helper.tokenBalances(account, vaultsAddresses);
+    const tokenBalances = await this.yearn.services.helper.tokenBalances(accountAddress, vaultsAddresses);
     const tokenBalancesMap = keyBy(tokenBalances, "address");
     const balances = vaultsAddresses.map((address) => {
       const { balance, balanceUsdc, priceUsdc } = tokenBalancesMap[address];
       const token = tokensMap[address];
       return {
-        address: account,
+        address: accountAddress,
         token,
         balance,
         balanceUsdc,
@@ -296,7 +333,7 @@ export class GaugeInterface<T extends ChainId> extends ServiceInterface<T> {
    * @param overrides
    * @returns TransactionResponse | PopulatedTransaction
    */
-  async approveStake<P extends WriteTransactionProps>(props: P): WriteTransactionResult<P>;
+  async approveStake<P extends ApproveStakeProps>(props: P): WriteTransactionResult<P>;
   async approveStake({
     accountAddress,
     tokenAddress,
@@ -304,14 +341,7 @@ export class GaugeInterface<T extends ChainId> extends ServiceInterface<T> {
     amount,
     populate,
     overrides = {},
-  }: {
-    accountAddress: Address;
-    tokenAddress: Address;
-    gaugeAddress: Address;
-    amount?: Integer;
-    populate?: boolean;
-    overrides?: CallOverrides;
-  }): Promise<TransactionResponse | PopulatedTransaction> {
+  }: ApproveStakeProps): Promise<TransactionResponse | PopulatedTransaction> {
     const tx = await this.yearn.tokens.populateApprove(
       accountAddress,
       tokenAddress,
@@ -335,21 +365,14 @@ export class GaugeInterface<T extends ChainId> extends ServiceInterface<T> {
    * @param overrides
    * @returns TransactionResponse | PopulatedTransaction
    */
-  async stake<P extends WriteTransactionProps>(props: P): WriteTransactionResult<P>;
+  async stake<P extends StakeProps>(props: P): WriteTransactionResult<P>;
   async stake({
     accountAddress,
     votingEscrowAddress,
     amount,
     populate,
     overrides = {},
-  }: {
-    accountAddress: Address;
-    tokenAddress: Address;
-    votingEscrowAddress: Address;
-    amount: Integer;
-    populate?: boolean;
-    overrides?: CallOverrides;
-  }): Promise<TransactionResponse | PopulatedTransaction> {
+  }: StakeProps): Promise<TransactionResponse | PopulatedTransaction> {
     const signer = this.ctx.provider.write.getSigner(accountAddress);
     const gaugeContract = new Contract(votingEscrowAddress, GaugeAbi, signer);
     const tx = await gaugeContract.populateTransaction.deposit(amount, overrides);
@@ -368,20 +391,14 @@ export class GaugeInterface<T extends ChainId> extends ServiceInterface<T> {
    * @param overrides
    * @returns TransactionResponse | PopulatedTransaction
    */
-  async unstake<P extends WriteTransactionProps>(props: P): WriteTransactionResult<P>;
+  async unstake<P extends UnstakeProps>(props: P): WriteTransactionResult<P>;
   async unstake({
     accountAddress,
     votingEscrowAddress,
     amount,
     populate,
     overrides = {},
-  }: {
-    accountAddress: Address;
-    votingEscrowAddress: Address;
-    amount: Integer;
-    populate?: boolean;
-    overrides?: CallOverrides;
-  }): Promise<TransactionResponse | PopulatedTransaction> {
+  }: UnstakeProps): Promise<TransactionResponse | PopulatedTransaction> {
     const claim = false;
     const lock = false;
     const signer = this.ctx.provider.write.getSigner(accountAddress);
@@ -402,18 +419,13 @@ export class GaugeInterface<T extends ChainId> extends ServiceInterface<T> {
    * @param overrides
    * @returns TransactionResponse | PopulatedTransaction
    */
-  async claimRewards<P extends WriteTransactionProps>(props: P): WriteTransactionResult<P>;
+  async claimRewards<P extends ClaimRewardsProps>(props: P): WriteTransactionResult<P>;
   async claimRewards({
     accountAddress,
     votingEscrowAddress,
     populate,
     overrides = {},
-  }: {
-    accountAddress: Address;
-    votingEscrowAddress: Address;
-    populate?: boolean;
-    overrides?: CallOverrides;
-  }): Promise<TransactionResponse | PopulatedTransaction> {
+  }: ClaimRewardsProps): Promise<TransactionResponse | PopulatedTransaction> {
     const signer = this.ctx.provider.write.getSigner(accountAddress);
     const gaugeContract = new Contract(votingEscrowAddress, GaugeAbi, signer);
     const tx = await gaugeContract.populateTransaction.getReward(overrides);

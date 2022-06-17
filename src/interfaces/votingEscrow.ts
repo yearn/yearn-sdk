@@ -1,7 +1,7 @@
 import { ParamType } from "@ethersproject/abi";
 import { BigNumber } from "@ethersproject/bignumber";
 import { MaxUint256 } from "@ethersproject/constants";
-import { CallOverrides, Contract, PopulatedTransaction } from "@ethersproject/contracts";
+import { Contract, PopulatedTransaction } from "@ethersproject/contracts";
 import { TransactionResponse } from "@ethersproject/providers";
 
 import { ChainId } from "../chain";
@@ -37,6 +37,49 @@ const VotingEscrowAbi = [
 const VotingEscrowRewardsAbi = ["function claim() public returns (uint256)"];
 
 const GaugeRegistryAbi = ["function veToken() public view returns (address)"];
+
+interface ApproveLockProps extends WriteTransactionProps {
+  accountAddress: Address;
+  tokenAddress: Address;
+  votingEscrowAddress: Address;
+  amount?: Integer;
+}
+
+interface LockProps extends WriteTransactionProps {
+  accountAddress: Address;
+  tokenAddress: Address;
+  votingEscrowAddress: Address;
+  amount: Integer;
+  time: number;
+}
+
+interface IncreaseLockAMountProps extends WriteTransactionProps {
+  accountAddress: Address;
+  votingEscrowAddress: Address;
+  amount: Integer;
+}
+
+interface ExtendLockTimeProps extends WriteTransactionProps {
+  accountAddress: Address;
+  tokenAddress: Address;
+  votingEscrowAddress: Address;
+  time: number;
+}
+
+interface WithdrawUnlockedProps extends WriteTransactionProps {
+  accountAddress: Address;
+  votingEscrowAddress: Address;
+}
+
+interface WithdrawLockedProps extends WriteTransactionProps {
+  accountAddress: Address;
+  votingEscrowAddress: Address;
+}
+
+interface ClaimRewardsProps extends WriteTransactionProps {
+  accountAddress: Address;
+  votingEscrowAddress: Address;
+}
 
 export class VotingEscrowInterface<T extends ChainId> extends ServiceInterface<T> {
   /**
@@ -130,11 +173,17 @@ export class VotingEscrowInterface<T extends ChainId> extends ServiceInterface<T
    * @param addresses filter, if not provided, all are returned
    * @returns Position array
    */
-  async positionsOf({ account, addresses }: { account: Address; addresses?: Address[] }): Promise<Position[]> {
+  async positionsOf({
+    accountAddress,
+    addresses,
+  }: {
+    accountAddress: Address;
+    addresses?: Address[];
+  }): Promise<Position[]> {
     const votingEscrows = await this.get({ addresses });
     const votingEscrowAddresses = votingEscrows.map(({ address }) => address);
     const underlyingTokens = votingEscrows.map(({ token }) => token);
-    const tokenBalances = await this.yearn.services.helper.tokenBalances(account, votingEscrowAddresses);
+    const tokenBalances = await this.yearn.services.helper.tokenBalances(accountAddress, votingEscrowAddresses);
     const tokenBalancesMap = keyBy(tokenBalances, "address");
     const tokenPrices = await this.yearn.services.helper.tokenPrices(underlyingTokens);
     const tokenPricesMap = keyBy(tokenPrices, "address");
@@ -142,7 +191,7 @@ export class VotingEscrowInterface<T extends ChainId> extends ServiceInterface<T
       const { balance } = tokenBalancesMap[address];
       const { priceUsdc } = tokenPricesMap[token];
       const votingEscrowContract = new Contract(address, VotingEscrowAbi, this.ctx.provider.read);
-      const locked = await votingEscrowContract.locked(account);
+      const locked = await votingEscrowContract.locked(accountAddress);
       const amount = (locked.amount as BigNumber).toString();
       const depositPosition: Position = {
         assetAddress: address,
@@ -192,18 +241,24 @@ export class VotingEscrowInterface<T extends ChainId> extends ServiceInterface<T
    * @param addresses filter, if not provided, all are returned
    * @returns Balance array
    */
-  async balances({ account, addresses }: { account: Address; addresses?: Address[] }): Promise<Balance[]> {
+  async balances({
+    accountAddress,
+    addresses,
+  }: {
+    accountAddress: Address;
+    addresses?: Address[];
+  }): Promise<Balance[]> {
     const votingEscrows = await this.get({ addresses });
     const underlyingTokensAddresses = votingEscrows.map(({ token }) => token);
     const tokens = await this.yearn.services.helper.tokens(underlyingTokensAddresses);
     const tokensMap = keyBy(tokens, "address");
-    const tokenBalances = await this.yearn.services.helper.tokenBalances(account, underlyingTokensAddresses);
+    const tokenBalances = await this.yearn.services.helper.tokenBalances(accountAddress, underlyingTokensAddresses);
     const tokenBalancesMap = keyBy(tokenBalances, "address");
     const balances = underlyingTokensAddresses.map((address) => {
       const { balance, balanceUsdc, priceUsdc } = tokenBalancesMap[address];
       const token = tokensMap[address];
       return {
-        address: account,
+        address: accountAddress,
         token,
         balance,
         balanceUsdc,
@@ -268,11 +323,10 @@ export class VotingEscrowInterface<T extends ChainId> extends ServiceInterface<T
    * @param tokenAddress
    * @param votingEscrowAddress
    * @param amount
-   * @param populate return populated transaction payload when truthy
    * @param overrides
    * @returns TransactionResponse | PopulatedTransaction
    */
-  async approveLock<P extends WriteTransactionProps>(props: P): WriteTransactionResult<P>;
+  async approveLock<P extends ApproveLockProps>(props: P): WriteTransactionResult<P>;
   async approveLock({
     accountAddress,
     tokenAddress,
@@ -280,14 +334,7 @@ export class VotingEscrowInterface<T extends ChainId> extends ServiceInterface<T
     amount,
     populate,
     overrides = {},
-  }: {
-    accountAddress: Address;
-    tokenAddress: Address;
-    votingEscrowAddress: Address;
-    amount?: Integer;
-    populate?: boolean;
-    overrides?: CallOverrides;
-  }): Promise<TransactionResponse | PopulatedTransaction> {
+  }: ApproveLockProps): Promise<TransactionResponse | PopulatedTransaction> {
     const tx = await this.yearn.tokens.populateApprove(
       accountAddress,
       tokenAddress,
@@ -312,7 +359,7 @@ export class VotingEscrowInterface<T extends ChainId> extends ServiceInterface<T
    * @param overrides
    * @returns TransactionResponse | PopulatedTransaction
    */
-  async lock<P extends WriteTransactionProps>(props: P): WriteTransactionResult<P>;
+  async lock<P extends LockProps>(props: P): WriteTransactionResult<P>;
   async lock({
     accountAddress,
     votingEscrowAddress,
@@ -320,15 +367,7 @@ export class VotingEscrowInterface<T extends ChainId> extends ServiceInterface<T
     time,
     populate,
     overrides = {},
-  }: {
-    accountAddress: Address;
-    tokenAddress: Address;
-    votingEscrowAddress: Address;
-    amount: Integer;
-    time: number;
-    populate?: boolean;
-    overrides?: CallOverrides;
-  }): Promise<TransactionResponse | PopulatedTransaction> {
+  }: LockProps): Promise<TransactionResponse | PopulatedTransaction> {
     const provider = this.ctx.provider.read;
     const blockNumber = await provider.getBlockNumber();
     const block = await provider.getBlock(blockNumber);
@@ -353,20 +392,14 @@ export class VotingEscrowInterface<T extends ChainId> extends ServiceInterface<T
    * @param overrides
    * @returns TransactionResponse | PopulatedTransaction
    */
-  async increaseLockAmount<P extends WriteTransactionProps>(props: P): WriteTransactionResult<P>;
+  async increaseLockAmount<P extends IncreaseLockAMountProps>(props: P): WriteTransactionResult<P>;
   async increaseLockAmount({
     accountAddress,
     votingEscrowAddress,
     amount,
     populate,
     overrides = {},
-  }: {
-    accountAddress: Address;
-    votingEscrowAddress: Address;
-    amount: Integer;
-    populate?: boolean;
-    overrides?: CallOverrides;
-  }): Promise<TransactionResponse | PopulatedTransaction> {
+  }: IncreaseLockAMountProps): Promise<TransactionResponse | PopulatedTransaction> {
     const signer = this.ctx.provider.write.getSigner(accountAddress);
     const votingEscrowContract = new Contract(votingEscrowAddress, VotingEscrowAbi, signer);
     const tx = await votingEscrowContract.populateTransaction.increase_amount(amount, overrides);
@@ -385,21 +418,14 @@ export class VotingEscrowInterface<T extends ChainId> extends ServiceInterface<T
    * @param overrides
    * @returns TransactionResponse | PopulatedTransaction
    */
-  async extendLockTime<P extends WriteTransactionProps>(props: P): WriteTransactionResult<P>;
+  async extendLockTime<P extends ExtendLockTimeProps>(props: P): WriteTransactionResult<P>;
   async extendLockTime({
     accountAddress,
     votingEscrowAddress,
     time,
     populate,
     overrides = {},
-  }: {
-    accountAddress: Address;
-    tokenAddress: Address;
-    votingEscrowAddress: Address;
-    time: number;
-    populate?: boolean;
-    overrides?: CallOverrides;
-  }): Promise<TransactionResponse | PopulatedTransaction> {
+  }: ExtendLockTimeProps): Promise<TransactionResponse | PopulatedTransaction> {
     const provider = this.ctx.provider.read;
     const blockNumber = await provider.getBlockNumber();
     const block = await provider.getBlock(blockNumber);
@@ -422,18 +448,13 @@ export class VotingEscrowInterface<T extends ChainId> extends ServiceInterface<T
    * @param overrides
    * @returns TransactionResponse | PopulatedTransaction
    */
-  async withdrawUnlocked<P extends WriteTransactionProps>(props: P): WriteTransactionResult<P>;
+  async withdrawUnlocked<P extends WithdrawUnlockedProps>(props: P): WriteTransactionResult<P>;
   async withdrawUnlocked({
     accountAddress,
     votingEscrowAddress,
     populate,
     overrides = {},
-  }: {
-    accountAddress: Address;
-    votingEscrowAddress: Address;
-    populate?: boolean;
-    overrides?: CallOverrides;
-  }): Promise<TransactionResponse | PopulatedTransaction> {
+  }: WithdrawUnlockedProps): Promise<TransactionResponse | PopulatedTransaction> {
     const signer = this.ctx.provider.write.getSigner(accountAddress);
     const votingEscrowContract = new Contract(votingEscrowAddress, VotingEscrowAbi, signer);
     const tx = await votingEscrowContract.populateTransaction.withdraw(overrides);
@@ -451,18 +472,13 @@ export class VotingEscrowInterface<T extends ChainId> extends ServiceInterface<T
    * @param overrides
    * @returns TransactionResponse | PopulatedTransaction
    */
-  async withdrawLocked<P extends WriteTransactionProps>(props: P): WriteTransactionResult<P>;
+  async withdrawLocked<P extends WithdrawLockedProps>(props: P): WriteTransactionResult<P>;
   async withdrawLocked({
     accountAddress,
     votingEscrowAddress,
     populate,
     overrides = {},
-  }: {
-    accountAddress: Address;
-    votingEscrowAddress: Address;
-    populate?: boolean;
-    overrides?: CallOverrides;
-  }): Promise<TransactionResponse | PopulatedTransaction> {
+  }: WithdrawLockedProps): Promise<TransactionResponse | PopulatedTransaction> {
     const signer = this.ctx.provider.write.getSigner(accountAddress);
     const votingEscrowContract = new Contract(votingEscrowAddress, VotingEscrowAbi, signer);
     const tx = await votingEscrowContract.populateTransaction.force_withdraw(overrides);
@@ -480,18 +496,13 @@ export class VotingEscrowInterface<T extends ChainId> extends ServiceInterface<T
    * @param overrides
    * @returns TransactionResponse | PopulatedTransaction
    */
-  async claimRewards<P extends WriteTransactionProps>(props: P): WriteTransactionResult<P>;
+  async claimRewards<P extends ClaimRewardsProps>(props: P): WriteTransactionResult<P>;
   async claimRewards({
     accountAddress,
     votingEscrowAddress,
     populate,
     overrides = {},
-  }: {
-    accountAddress: Address;
-    votingEscrowAddress: Address;
-    populate?: boolean;
-    overrides?: CallOverrides;
-  }): Promise<TransactionResponse | PopulatedTransaction> {
+  }: ClaimRewardsProps): Promise<TransactionResponse | PopulatedTransaction> {
     const [votingEscrow] = await this.get({ addresses: [votingEscrowAddress] });
     const signer = this.ctx.provider.write.getSigner(accountAddress);
     const votingEscrowRewardsContract = new Contract(votingEscrow.metadata.rewardPool, VotingEscrowRewardsAbi, signer);
