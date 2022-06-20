@@ -1,13 +1,7 @@
-import { Address, Integer, Usdc } from "../common";
-
-export interface VotingEscrowUserSummary {
-  holdings: Usdc;
-  earnings: Usdc;
-  grossApy: number;
-  estimatedYearlyYield: Integer;
-}
+import { Address } from "../common";
 
 export interface VotingEscrowUserMetadata {
   assetAddress: Address;
-  earned: Usdc;
+  unlockDate?: Date;
+  earlyExitPenaltyRatio?: number;
 }

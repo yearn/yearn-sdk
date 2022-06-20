@@ -16,13 +16,15 @@ import {
   VotingEscrow,
   VotingEscrowDynamic,
   VotingEscrowStatic,
+  VotingEscrowUserMetadata,
   WriteTransactionProps,
   WriteTransactionResult,
 } from "../types";
 import { keyBy, toBN, toUnit, USDC_DECIMALS } from "../utils";
 
-const DAY = 86400;
+const DAY = 86400; // in seconds
 const WEEK = DAY * 7;
+const MAX_TIME = DAY * 365 * 4; // 4 years
 
 const VotingEscrowAbi = [
   "function locked(address arg0) public view returns (tuple(uint128 amount, uint256 end))",
@@ -61,7 +63,6 @@ interface IncreaseLockAMountProps extends WriteTransactionProps {
 
 interface ExtendLockTimeProps extends WriteTransactionProps {
   accountAddress: Address;
-  tokenAddress: Address;
   votingEscrowAddress: Address;
   time: number;
 }
@@ -233,6 +234,44 @@ export class VotingEscrowInterface<T extends ChainId> extends ServiceInterface<T
     });
     const positions = await Promise.all(positionsPromises);
     return positions.flat().filter(({ balance }) => toBN(balance).gt(0));
+  }
+
+  /**
+   * Get the Voting Escrows user metadata of an account
+   * @param accountAddress
+   * @param addresses filter, if not provided, all are returned
+   * @returns
+   */
+  async metadataOf({
+    accountAddress,
+    addresses,
+  }: {
+    accountAddress: Address;
+    addresses?: Address[];
+  }): Promise<VotingEscrowUserMetadata[]> {
+    const votingEscrows = await this.get({ addresses });
+    const userMetadataPromises = votingEscrows.map(async ({ address }) => {
+      const votingEscrowContract = new Contract(address, VotingEscrowAbi, this.ctx.provider.read);
+      const lockedEnd = await votingEscrowContract.locked__end(accountAddress);
+      const lockedEndDate = new Date((lockedEnd as BigNumber).toString());
+
+      let unlockDate;
+      let earlyExitPenaltyRatio;
+      const hasLockTimeLeft = lockedEndDate >= new Date();
+      if (hasLockTimeLeft) {
+        unlockDate = lockedEndDate;
+        const timeLeftInSeconds = (unlockDate.getTime() - new Date().getTime()) / 1000;
+        earlyExitPenaltyRatio = Math.min(0.75, timeLeftInSeconds / MAX_TIME);
+      }
+
+      return {
+        assetAddress: address,
+        unlockDate,
+        earlyExitPenaltyRatio,
+      };
+    });
+
+    return Promise.all(userMetadataPromises);
   }
 
   /**
