@@ -13,9 +13,11 @@ import {
   Position,
   Token,
   TokenAllowance,
+  TransactionOutcome,
   VotingEscrow,
   VotingEscrowDynamic,
   VotingEscrowStatic,
+  VotingEscrowTransactionType,
   VotingEscrowUserMetadata,
   WriteTransactionProps,
   WriteTransactionResult,
@@ -29,6 +31,7 @@ const MAX_TIME = DAY * 365 * 4; // 4 years
 const VotingEscrowAbi = [
   "function locked(address arg0) public view returns (tuple(uint128 amount, uint256 end))",
   "function locked__end(address _addr) public view returns (uint256)",
+  "function modify_lock(uint256 amount, uint256 unlock_time) public returns (tuple(uint128 amount, uint256 end))",
   "function create_lock(uint256 _value, uint256 _unlock_time) public",
   "function increase_amount(uint256 _value) public",
   "function increase_unlock_time(uint256 _unlock_time) public",
@@ -305,6 +308,62 @@ export class VotingEscrowInterface<T extends ChainId> extends ServiceInterface<T
       };
     });
     return balances;
+  }
+
+  /**
+   * Get the expected outcome of executing a transaction
+   * @param accountAddress user wallet address
+   * @param votingEscrowTransactionType transaction type
+   * @param tokenAddress
+   * @param votingEscrowAddress
+   * @param amount
+   * @param time In Weeks
+   * @returns ExpectedOutcome
+   */
+  async getExpectedTransactionOutcome({
+    accountAddress,
+    votingEscrowTransactionType,
+    tokenAddress,
+    votingEscrowAddress,
+    amount,
+    time,
+  }: {
+    accountAddress: Address;
+    votingEscrowTransactionType: VotingEscrowTransactionType;
+    tokenAddress: Address;
+    votingEscrowAddress: Address;
+    amount?: Integer;
+    time?: number;
+  }): Promise<TransactionOutcome> {
+    console.log(accountAddress, votingEscrowTransactionType, tokenAddress, votingEscrowAddress, amount, time);
+    const signer = this.ctx.provider.write.getSigner(accountAddress);
+    const votingEscrowContract = new Contract(votingEscrowAddress, VotingEscrowAbi, signer);
+    let targetTokenAmount = "0";
+    switch (votingEscrowTransactionType) {
+      case "LOCK":
+      case "EXTEND":
+        if ((!amount || !time) && votingEscrowTransactionType === "LOCK")
+          throw new Error("'amount' or 'time' argument missing");
+        if (!time && votingEscrowTransactionType === "EXTEND") throw new Error("'time' argument missing");
+        const locked = await votingEscrowContract.callStatic.modify_lock(amount ?? "0", time);
+        targetTokenAmount = (locked.amount as BigNumber).toString();
+        break;
+      default:
+        throw new Error(`${votingEscrowTransactionType} not supported`);
+    }
+    const token = await this.yearn.tokens.findByAddress(tokenAddress);
+    const amountUsdc = toBN(amount)
+      .times(toUnit({ amount: token?.priceUsdc ?? "0", decimals: USDC_DECIMALS }))
+      .toFixed(0);
+
+    return {
+      sourceTokenAddress: tokenAddress,
+      sourceTokenAmount: amount ?? "0",
+      sourceTokenAmountUsdc: amountUsdc,
+      targetTokenAddress: votingEscrowAddress,
+      targetTokenAmount,
+      targetTokenAmountUsdc: amountUsdc,
+    };
   }
 
   /**

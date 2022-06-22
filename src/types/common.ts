@@ -89,3 +89,15 @@ export interface WillPopulate extends WriteTransactionProps {
  * Result to use on transactions with write contract functionality
  */
 export type WriteTransactionResult<P> = Promise<P extends WillPopulate ? PopulatedTransaction : TransactionResponse>;
+
+/**
+ * Result to use on transactions with write contract functionality
+ */
+export interface TransactionOutcome {
+  sourceTokenAddress: Address;
+  sourceTokenAmount: Integer;
+  sourceTokenAmountUsdc: Usdc;
+  targetTokenAddress: Address;
+  targetTokenAmount: Integer;
+  targetTokenAmountUsdc: Usdc;
+}
