@@ -33,6 +33,8 @@ const GaugeRegistryAbi = [
   "function gauges(address _addr) public view returns (address)",
 ];
 
+const ClaimRewardsZapAbi = ["function claim(address[] calldata , bool _lock, bool _claimVeYfi) external"];
+
 interface ApproveStakeProps extends WriteTransactionProps {
   accountAddress: Address;
   tokenAddress: Address;
@@ -43,19 +45,25 @@ interface ApproveStakeProps extends WriteTransactionProps {
 interface StakeProps extends WriteTransactionProps {
   accountAddress: Address;
   tokenAddress: Address;
-  votingEscrowAddress: Address;
+  gaugeAddress: Address;
   amount: Integer;
 }
 
 interface UnstakeProps extends WriteTransactionProps {
   accountAddress: Address;
-  votingEscrowAddress: Address;
+  gaugeAddress: Address;
   amount: Integer;
 }
 
 interface ClaimRewardsProps extends WriteTransactionProps {
   accountAddress: Address;
-  votingEscrowAddress: Address;
+  gaugeAddress: Address;
+}
+
+interface ClaimAllRewardsProps extends WriteTransactionProps {
+  accountAddress: Address;
+  addresses?: Address[];
+  claimVotingEscrow?: boolean;
 }
 
 export class GaugeInterface<T extends ChainId> extends ServiceInterface<T> {
@@ -359,7 +367,7 @@ export class GaugeInterface<T extends ChainId> extends ServiceInterface<T> {
    * Stake an amount of tokens into a Gauge
    * @param accountAddress
    * @param tokenAddress
-   * @param votingEscrowAddress
+   * @param gaugeAddress
    * @param amount
    * @param populate return populated transaction payload when truthy
    * @param overrides
@@ -368,13 +376,13 @@ export class GaugeInterface<T extends ChainId> extends ServiceInterface<T> {
   async stake<P extends StakeProps>(props: P): WriteTransactionResult<P>;
   async stake({
     accountAddress,
-    votingEscrowAddress,
+    gaugeAddress,
     amount,
     populate,
     overrides = {},
   }: StakeProps): Promise<TransactionResponse | PopulatedTransaction> {
     const signer = this.ctx.provider.write.getSigner(accountAddress);
-    const gaugeContract = new Contract(votingEscrowAddress, GaugeAbi, signer);
+    const gaugeContract = new Contract(gaugeAddress, GaugeAbi, signer);
     const tx = await gaugeContract.populateTransaction.deposit(amount, overrides);
 
     if (populate) return tx;
@@ -385,7 +393,7 @@ export class GaugeInterface<T extends ChainId> extends ServiceInterface<T> {
   /**
    * Unstake an amount of tokens from a Gauge
    * @param accountAddress
-   * @param votingEscrowAddress
+   * @param gaugeAddress
    * @param amount
    * @param populate return populated transaction payload when truthy
    * @param overrides
@@ -394,7 +402,7 @@ export class GaugeInterface<T extends ChainId> extends ServiceInterface<T> {
   async unstake<P extends UnstakeProps>(props: P): WriteTransactionResult<P>;
   async unstake({
     accountAddress,
-    votingEscrowAddress,
+    gaugeAddress,
     amount,
     populate,
     overrides = {},
@@ -402,7 +410,7 @@ export class GaugeInterface<T extends ChainId> extends ServiceInterface<T> {
     const claim = false;
     const lock = false;
     const signer = this.ctx.provider.write.getSigner(accountAddress);
-    const gaugeContract = new Contract(votingEscrowAddress, GaugeAbi, signer);
+    const gaugeContract = new Contract(gaugeAddress, GaugeAbi, signer);
     const tx = await gaugeContract.populateTransaction.withdraw(amount, claim, lock, overrides);
 
     if (populate) return tx;
@@ -413,8 +421,7 @@ export class GaugeInterface<T extends ChainId> extends ServiceInterface<T> {
   /**
    * Claim reward tokens from a Gauge
    * @param accountAddress
-   * @param votingEscrowAddress
-   * @param amount
+   * @param gaugeAddress
    * @param populate return populated transaction payload when truthy
    * @param overrides
    * @returns TransactionResponse | PopulatedTransaction
@@ -422,13 +429,48 @@ export class GaugeInterface<T extends ChainId> extends ServiceInterface<T> {
   async claimRewards<P extends ClaimRewardsProps>(props: P): WriteTransactionResult<P>;
   async claimRewards({
     accountAddress,
-    votingEscrowAddress,
+    gaugeAddress,
     populate,
     overrides = {},
   }: ClaimRewardsProps): Promise<TransactionResponse | PopulatedTransaction> {
     const signer = this.ctx.provider.write.getSigner(accountAddress);
-    const gaugeContract = new Contract(votingEscrowAddress, GaugeAbi, signer);
+    const gaugeContract = new Contract(gaugeAddress, GaugeAbi, signer);
     const tx = await gaugeContract.populateTransaction.getReward(overrides);
+
+    if (populate) return tx;
+
+    return this.yearn.services.transaction.sendTransaction(tx);
+  }
+
+  /**
+   * Claim rewards from all Gauges and Voting Escrow
+   * @param accountAddress
+   * @param addresses filter, if not provided, all are claimed
+   * @param claimVotingEscrow
+   * @param populate return populated transaction payload when truthy
+   * @param overrides
+   * @returns TransactionResponse | PopulatedTransaction
+   */
+  async claimAllRewards<P extends ClaimAllRewardsProps>(props: P): WriteTransactionResult<P>;
+  async claimAllRewards({
+    accountAddress,
+    addresses,
+    claimVotingEscrow,
+    populate,
+    overrides = {},
+  }: ClaimAllRewardsProps): Promise<TransactionResponse | PopulatedTransaction> {
+    const LOCK_REWARDS = false;
+    const gauges = await this.get({ addresses });
+    const gaugeAddresses = gauges.map(({ address }) => address);
+    const claimRewardsZapAddress = await this.yearn.addressProvider.addressById(ContractAddressId.claimRewardsZap);
+    const signer = this.ctx.provider.write.getSigner(accountAddress);
+    const gaugeContract = new Contract(claimRewardsZapAddress, ClaimRewardsZapAbi, signer);
+    const tx = await gaugeContract.populateTransaction.claim(
+      gaugeAddresses,
+      LOCK_REWARDS,
+      claimVotingEscrow ?? false,
+      overrides
+    );
 
     if (populate) return tx;
 
