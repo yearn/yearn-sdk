@@ -21,6 +21,9 @@ import {
 } from "../types";
 import { keyBy, toBN, toUnit, USDC_DECIMALS } from "../utils";
 
+const DAY = 86400; // in seconds
+const YEAR = DAY * 365;
+
 const GaugeAbi = [
   "function earned(address _account) public view returns (uint256)",
   "function deposit(uint256 _amount) external returns (bool)",
@@ -124,33 +127,41 @@ export class GaugeInterface<T extends ChainId> extends ServiceInterface<T> {
    */
   async getDynamic({ addresses }: { addresses?: Address[] }): Promise<GaugeDynamic[]> {
     const supportedAddresses = await this.getSupportedAddresses({ addresses });
-    const gaugeProperties = ["address stakingToken", "uint256 totalSupply", "address rewardToken"].map((prop) =>
-      ParamType.from(prop)
-    );
+    const gaugeProperties = [
+      "address stakingToken",
+      "uint256 totalSupply",
+      "address rewardToken",
+      "uint256 rewardRate",
+    ].map((prop) => ParamType.from(prop));
     const gaugesDataPromises = supportedAddresses.map(async (address) => {
-      const { stakingToken, totalSupply, rewardToken } = await this.yearn.services.propertiesAggregator.getProperties(
-        address,
-        gaugeProperties
-      );
+      const { stakingToken, totalSupply, rewardToken, rewardRate } =
+        await this.yearn.services.propertiesAggregator.getProperties(address, gaugeProperties);
       return {
         address,
         vaultAddress: stakingToken as Address,
         totalStaked: (totalSupply as BigNumber).toString(),
         rewardToken: rewardToken as Address,
+        rewardRate: (rewardRate as BigNumber).toString(),
       };
     });
     const gaugesData = await Promise.all(gaugesDataPromises);
+    const gaugesDataMap = keyBy(gaugesData, "address");
+    const rewardTokenAddresses = gaugesData.map(({ rewardToken }) => rewardToken);
+    const uniqueRewardTokenAddresses = [...new Set(rewardTokenAddresses)];
     const vaultAddresses = gaugesData.map(({ vaultAddress }) => vaultAddress);
     const vaults = await this.yearn.vaults.get(vaultAddresses);
     const vaultsMap = keyBy(vaults, "address");
-    const underlyingTokens = vaults.map(({ token }) => token);
-    const gaugesDataMap = keyBy(gaugesData, "address");
-    const tokenPrices = await this.yearn.services.helper.tokenPrices(underlyingTokens);
+    const underlyingTokenAddresses = vaults.map(({ token }) => token);
+    const tokenPrices = await this.yearn.services.helper.tokenPrices([
+      ...underlyingTokenAddresses,
+      ...uniqueRewardTokenAddresses,
+    ]);
     const tokenPricesMap = keyBy(tokenPrices, "address");
     const dynamicData = supportedAddresses.map((address) => {
-      const { vaultAddress, totalStaked, rewardToken } = gaugesDataMap[address];
+      const { vaultAddress, totalStaked, rewardToken, rewardRate } = gaugesDataMap[address];
       const { token, decimals, metadata } = vaultsMap[vaultAddress];
       const { priceUsdc } = tokenPricesMap[token];
+      const rewardPriceUsdc = tokenPricesMap[rewardToken].priceUsdc;
       const amount = totalStaked;
       const underlyingTokenAmount = toBN(amount)
         .times(toUnit({ amount: metadata.pricePerShare, decimals: parseInt(decimals) }))
@@ -161,13 +172,17 @@ export class GaugeInterface<T extends ChainId> extends ServiceInterface<T> {
           .times(toUnit({ amount: priceUsdc, decimals: USDC_DECIMALS }))
           .toFixed(0),
       };
+      const rewardUsdc = toBN(rewardRate)
+        .times(toUnit({ amount: rewardPriceUsdc, decimals: USDC_DECIMALS }))
+        .toFixed(0);
+      const apy = toBN(rewardUsdc).times(YEAR).dividedBy(underlyingTokenBalance.amountUsdc).toNumber();
       const dynamicData: GaugeDynamic = {
         address,
         typeId: "GAUGE",
         tokenId: vaultAddress,
         underlyingTokenBalance,
         metadata: {
-          // TODO: get apy
+          apy,
           displayIcon: metadata.displayIcon,
           displayName: metadata.displayName,
           vaultPricePerShare: metadata.pricePerShare,

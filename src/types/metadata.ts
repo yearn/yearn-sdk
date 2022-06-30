@@ -67,7 +67,7 @@ export interface VotingEscrowMetadata {
  * Lens-defined metadata for a Gauge
  */
 export interface GaugeMetadata {
-  apy?: Apy;
+  apy: number;
   displayIcon: string;
   displayName: string;
   vaultApy?: Apy;
