@@ -1,13 +1,7 @@
-import { Address, Integer, Usdc } from "../common";
-
-export interface GaugeUserSummary {
-  holdings: Usdc;
-  earnings: Usdc;
-  grossApy: number;
-  estimatedYearlyYield: Integer;
-}
+import { Address } from "../common";
 
 export interface GaugeUserMetadata {
   assetAddress: Address;
-  earned: Usdc;
+  boost: number;
+  _calculatedBoost: number; // TODO remove after confirm most accurate calc for boost
 }

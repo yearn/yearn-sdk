@@ -12,6 +12,7 @@ import {
   Gauge,
   GaugeDynamic,
   GaugeStatic,
+  GaugeUserMetadata,
   Integer,
   Position,
   Token,
@@ -26,6 +27,7 @@ const YEAR = DAY * 365;
 
 const GaugeAbi = [
   "function earned(address _account) public view returns (uint256)",
+  "function boostedBalanceOf(address _account) public view returns (uint256)",
   "function deposit(uint256 _amount) external returns (bool)",
   "function withdraw(uint256 _amount, bool _claim, bool _lock) external returns (bool)",
   "function getReward() external returns (bool)",
@@ -132,9 +134,10 @@ export class GaugeInterface<T extends ChainId> extends ServiceInterface<T> {
       "uint256 totalSupply",
       "address rewardToken",
       "uint256 rewardRate",
+      "address veToken",
     ].map((prop) => ParamType.from(prop));
     const gaugesDataPromises = supportedAddresses.map(async (address) => {
-      const { stakingToken, totalSupply, rewardToken, rewardRate } =
+      const { stakingToken, totalSupply, rewardToken, rewardRate, veToken } =
         await this.yearn.services.propertiesAggregator.getProperties(address, gaugeProperties);
       return {
         address,
@@ -142,6 +145,7 @@ export class GaugeInterface<T extends ChainId> extends ServiceInterface<T> {
         totalStaked: (totalSupply as BigNumber).toString(),
         rewardToken: rewardToken as Address,
         rewardRate: (rewardRate as BigNumber).toString(),
+        votingEscrowToken: veToken as Address,
       };
     });
     const gaugesData = await Promise.all(gaugesDataPromises);
@@ -158,7 +162,7 @@ export class GaugeInterface<T extends ChainId> extends ServiceInterface<T> {
     ]);
     const tokenPricesMap = keyBy(tokenPrices, "address");
     const dynamicData = supportedAddresses.map((address) => {
-      const { vaultAddress, totalStaked, rewardToken, rewardRate } = gaugesDataMap[address];
+      const { vaultAddress, totalStaked, rewardToken, rewardRate, votingEscrowToken } = gaugesDataMap[address];
       const { token, decimals, metadata } = vaultsMap[vaultAddress];
       const { priceUsdc } = tokenPricesMap[token];
       const rewardPriceUsdc = tokenPricesMap[rewardToken].priceUsdc;
@@ -188,6 +192,7 @@ export class GaugeInterface<T extends ChainId> extends ServiceInterface<T> {
           vaultPricePerShare: metadata.pricePerShare,
           vaultUnderlyingToken: token,
           rewardToken,
+          votingEscrowToken,
         },
       };
       return dynamicData;
@@ -262,6 +267,68 @@ export class GaugeInterface<T extends ChainId> extends ServiceInterface<T> {
     });
     const positions = await Promise.all(positionsPromises);
     return positions.flat().filter(({ balance }) => toBN(balance).gt(0));
+  }
+
+  /**
+   * Get the Gauges user metadata of an account
+   * @param accountAddress
+   * @param addresses filter, if not provided, all are returned
+   * @returns
+   */
+  async metadataOf({
+    accountAddress,
+    addresses,
+  }: {
+    accountAddress: Address;
+    addresses?: Address[];
+  }): Promise<GaugeUserMetadata[]> {
+    const gauges = await this.get({ addresses });
+    const votingEscrowsAddresses = gauges.map(({ metadata }) => metadata.votingEscrowToken);
+    const uniqueVotingEscrowsAddresses = [...new Set(votingEscrowsAddresses)];
+    const votingEscrows = await this.yearn.votingEscrows.get({ addresses: uniqueVotingEscrowsAddresses });
+    const votingEscrowsMap = keyBy(votingEscrows, "address");
+    const gaugesPositions = await this.positionsOf({ accountAddress, addresses });
+    const gaugesStakedPositions = gaugesPositions.filter(({ typeId }) => typeId === "DEPOSIT");
+    const gaugesStakedPositionsMap = keyBy(gaugesStakedPositions, "assetAddress");
+    const votingEscrowPositions = await this.yearn.votingEscrows.positionsOf({
+      accountAddress,
+      addresses: uniqueVotingEscrowsAddresses,
+    });
+    const votingEscrowLockedPositions = votingEscrowPositions.filter(({ typeId }) => typeId === "DEPOSIT");
+    const votingEscrowLockedPositionsMap = keyBy(votingEscrowLockedPositions, "assetAddress");
+    const userMetadataPromises = gauges.map(async ({ address, underlyingTokenBalance, metadata }) => {
+      const totalStakedInGauge = underlyingTokenBalance.amount;
+      const accountStakedInGauge = gaugesStakedPositionsMap[address]?.underlyingTokenBalance.amount ?? "0";
+      const totalLockedInVotingEscrow = votingEscrowsMap[metadata.votingEscrowToken].underlyingTokenBalance.amount;
+      const accountLockedInVotingEscrow =
+        votingEscrowLockedPositionsMap[metadata.votingEscrowToken]?.underlyingTokenBalance.amount ?? "0";
+      const calculatedBoostedBalance = toBN(accountStakedInGauge)
+        .times(0.1)
+        .plus(
+          toBN(totalStakedInGauge).times(toBN(accountLockedInVotingEscrow).div(totalLockedInVotingEscrow)).times(0.9)
+        );
+      const calculatedBoostRatio = toBN(accountStakedInGauge).gt(0)
+        ? calculatedBoostedBalance.div(accountStakedInGauge).toNumber()
+        : 0.1;
+      const calculatedBoost = Math.min(1, calculatedBoostRatio) * 10;
+
+      const gaugeContract = new Contract(address, GaugeAbi, this.ctx.provider.read);
+      const boostedBalance = await gaugeContract.boostedBalanceOf(accountAddress);
+      const boostRatio = toBN(accountStakedInGauge).gt(0)
+        ? toBN((boostedBalance as BigNumber).toString())
+            .div(accountStakedInGauge)
+            .toNumber()
+        : 0.1;
+      const boost = Math.min(1, boostRatio) * 10;
+
+      return {
+        assetAddress: address,
+        boost,
+        _calculatedBoost: calculatedBoost, // TODO remove after confirm most accurate calc for boost
+      };
+    });
+
+    return Promise.all(userMetadataPromises);
   }
 
   /**
