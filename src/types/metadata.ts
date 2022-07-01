@@ -74,6 +74,7 @@ export interface GaugeMetadata {
   vaultPricePerShare: Integer;
   vaultUnderlyingToken: Address;
   rewardToken: Address;
+  votingEscrowToken: Address;
 }
 
 /**
