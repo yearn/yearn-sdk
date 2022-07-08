@@ -28,8 +28,8 @@ const YEAR = DAY * 365;
 const GaugeAbi = [
   "function earned(address _account) public view returns (uint256)",
   "function boostedBalanceOf(address _account) public view returns (uint256)",
-  "function deposit(uint256 _amount) external returns (bool)",
-  "function withdraw(uint256 _amount, bool _claim, bool _lock) external returns (bool)",
+  "function deposit(uint256 _assets) external returns (uint256)",
+  "function withdraw(uint256 _assets, address _receiver, address _owner, bool _claim, bool _lock) external returns (uint256)",
   "function getReward() external returns (bool)",
 ];
 
@@ -38,7 +38,7 @@ const GaugeRegistryAbi = [
   "function gauges(address _addr) public view returns (address)",
 ];
 
-const ClaimRewardsZapAbi = ["function claim(address[] calldata , bool _lock, bool _claimVeYfi) external"];
+const ClaimRewardsZapAbi = ["function claim(address[] calldata _gauges, bool _lock, bool _claimVeYfi) external"];
 
 interface ApproveStakeProps extends WriteTransactionProps {
   accountAddress: Address;
@@ -98,20 +98,20 @@ export class GaugeInterface<T extends ChainId> extends ServiceInterface<T> {
    */
   async getStatic({ addresses }: { addresses?: Address[] }): Promise<GaugeStatic[]> {
     const supportedAddresses = await this.getSupportedAddresses({ addresses });
-    const gaugeProperties = ["address stakingToken"].map((prop) => ParamType.from(prop));
+    const gaugeProperties = ["address asset"].map((prop) => ParamType.from(prop));
     const vaultProperties = ["string name", "string version", "string symbol", "uint256 decimals"].map((prop) =>
       ParamType.from(prop)
     );
     const staticDataPromises = supportedAddresses.map(async (address) => {
-      const { stakingToken } = await this.yearn.services.propertiesAggregator.getProperties(address, gaugeProperties);
+      const { asset } = await this.yearn.services.propertiesAggregator.getProperties(address, gaugeProperties);
       const { name, version, symbol, decimals } = await this.yearn.services.propertiesAggregator.getProperties(
-        stakingToken as string,
+        asset as string,
         vaultProperties
       );
       const staticData: GaugeStatic = {
         address,
         typeId: "GAUGE",
-        token: stakingToken as Address,
+        token: asset as Address,
         name: name as string,
         version: version as string,
         symbol: symbol as string,
@@ -130,19 +130,19 @@ export class GaugeInterface<T extends ChainId> extends ServiceInterface<T> {
   async getDynamic({ addresses }: { addresses?: Address[] }): Promise<GaugeDynamic[]> {
     const supportedAddresses = await this.getSupportedAddresses({ addresses });
     const gaugeProperties = [
-      "address stakingToken",
-      "uint256 totalSupply",
+      "address asset",
+      "uint256 totalAssets",
       "address rewardToken",
       "uint256 rewardRate",
       "address veToken",
     ].map((prop) => ParamType.from(prop));
     const gaugesDataPromises = supportedAddresses.map(async (address) => {
-      const { stakingToken, totalSupply, rewardToken, rewardRate, veToken } =
+      const { asset, totalAssets, rewardToken, rewardRate, veToken } =
         await this.yearn.services.propertiesAggregator.getProperties(address, gaugeProperties);
       return {
         address,
-        vaultAddress: stakingToken as Address,
-        totalStaked: (totalSupply as BigNumber).toString(),
+        vaultAddress: asset as Address,
+        totalStaked: (totalAssets as BigNumber).toString(),
         rewardToken: rewardToken as Address,
         rewardRate: (rewardRate as BigNumber).toString(),
         votingEscrowToken: veToken as Address,
@@ -493,7 +493,14 @@ export class GaugeInterface<T extends ChainId> extends ServiceInterface<T> {
     const lock = false;
     const signer = this.ctx.provider.write.getSigner(accountAddress);
     const gaugeContract = new Contract(gaugeAddress, GaugeAbi, signer);
-    const tx = await gaugeContract.populateTransaction.withdraw(amount, claim, lock, overrides);
+    const tx = await gaugeContract.populateTransaction.withdraw(
+      amount,
+      accountAddress,
+      accountAddress,
+      claim,
+      lock,
+      overrides
+    );
 
     if (populate) return tx;
 
