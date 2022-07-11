@@ -26,17 +26,11 @@ import { keyBy, toBN, toUnit, USDC_DECIMALS } from "../utils";
 
 const DAY = 86400; // in seconds
 const WEEK = DAY * 7;
-const MAX_TIME = DAY * 365 * 4; // 4 years
 
 const VotingEscrowAbi = [
-  "function locked(address arg0) public view returns (tuple(uint128 amount, uint256 end))",
-  "function locked__end(address _addr) public view returns (uint256)",
-  "function modify_lock(uint256 amount, uint256 unlock_time) public returns (tuple(uint128 amount, uint256 end))",
-  "function create_lock(uint256 _value, uint256 _unlock_time) public",
-  "function increase_amount(uint256 _value) public",
-  "function increase_unlock_time(uint256 _unlock_time) public",
-  "function withdraw() public",
-  "function force_withdraw() public",
+  "function locked(address arg0) public view returns (tuple(uint256 amount, uint256 end))",
+  "function modify_lock(uint256 amount, uint256 unlock_time) public returns (tuple(uint256 amount, uint256 end))",
+  "function withdraw() public returns (tuple(uint256 amount, uint256 penalty))",
 ];
 
 const VotingEscrowRewardsAbi = ["function claim() public returns (uint256)"];
@@ -254,17 +248,18 @@ export class VotingEscrowInterface<T extends ChainId> extends ServiceInterface<T
   }): Promise<VotingEscrowUserMetadata[]> {
     const votingEscrows = await this.get({ addresses });
     const userMetadataPromises = votingEscrows.map(async ({ address }) => {
-      const votingEscrowContract = new Contract(address, VotingEscrowAbi, this.ctx.provider.read);
-      const lockedEnd = await votingEscrowContract.locked__end(accountAddress);
-      const lockedEndDate = new Date((lockedEnd as BigNumber).toString());
+      const signer = this.ctx.provider.write.getSigner(accountAddress);
+      const votingEscrowContract = new Contract(address, VotingEscrowAbi, signer);
+      const locked = await votingEscrowContract.locked(accountAddress);
+      const lockedEndDate = new Date((locked.end as BigNumber).toString());
 
       let unlockDate;
       let earlyExitPenaltyRatio;
       const hasLockTimeLeft = lockedEndDate >= new Date();
       if (hasLockTimeLeft) {
         unlockDate = lockedEndDate;
-        const timeLeftInSeconds = (unlockDate.getTime() - new Date().getTime()) / 1000;
-        earlyExitPenaltyRatio = Math.min(0.75, timeLeftInSeconds / MAX_TIME);
+        const toWithdraw = await votingEscrowContract.callStatic.withdraw();
+        earlyExitPenaltyRatio = toBN(toWithdraw.penalty).div(toWithdraw.amount).toNumber();
       }
 
       return {
@@ -473,7 +468,7 @@ export class VotingEscrowInterface<T extends ChainId> extends ServiceInterface<T
     const unlockTime = toBN(block.timestamp).plus(lockTime).toFixed(0);
     const signer = this.ctx.provider.write.getSigner(accountAddress);
     const votingEscrowContract = new Contract(votingEscrowAddress, VotingEscrowAbi, signer);
-    const tx = await votingEscrowContract.populateTransaction.create_lock(amount, unlockTime, overrides);
+    const tx = await votingEscrowContract.populateTransaction.modify_lock(amount, unlockTime, overrides);
 
     if (populate) return tx;
 
@@ -500,7 +495,7 @@ export class VotingEscrowInterface<T extends ChainId> extends ServiceInterface<T
   }: IncreaseLockAMountProps): Promise<TransactionResponse | PopulatedTransaction> {
     const signer = this.ctx.provider.write.getSigner(accountAddress);
     const votingEscrowContract = new Contract(votingEscrowAddress, VotingEscrowAbi, signer);
-    const tx = await votingEscrowContract.populateTransaction.increase_amount(amount, overrides);
+    const tx = await votingEscrowContract.populateTransaction.modify_lock(amount, "0", overrides);
 
     if (populate) return tx;
 
@@ -531,7 +526,7 @@ export class VotingEscrowInterface<T extends ChainId> extends ServiceInterface<T
     const unlockTime = toBN(block.timestamp).plus(lockTime).toFixed(0);
     const signer = this.ctx.provider.write.getSigner(accountAddress);
     const votingEscrowContract = new Contract(votingEscrowAddress, VotingEscrowAbi, signer);
-    const tx = await votingEscrowContract.populateTransaction.increase_unlock_time(unlockTime, overrides);
+    const tx = await votingEscrowContract.populateTransaction.modify_lock("0", unlockTime, overrides);
 
     if (populate) return tx;
 
@@ -579,7 +574,7 @@ export class VotingEscrowInterface<T extends ChainId> extends ServiceInterface<T
   }: WithdrawLockedProps): Promise<TransactionResponse | PopulatedTransaction> {
     const signer = this.ctx.provider.write.getSigner(accountAddress);
     const votingEscrowContract = new Contract(votingEscrowAddress, VotingEscrowAbi, signer);
-    const tx = await votingEscrowContract.populateTransaction.force_withdraw(overrides);
+    const tx = await votingEscrowContract.populateTransaction.withdraw(overrides);
 
     if (populate) return tx;
 
