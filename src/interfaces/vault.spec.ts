@@ -54,6 +54,7 @@ const lensAdaptersVaultsV2AssetsStaticMock = jest.fn();
 const lensAdaptersVaultsV2AssetsDynamicMock = jest.fn();
 const lensAdaptersVaultsV2TokensMock = jest.fn();
 const sendTransactionMock = jest.fn();
+const populateTransactionMock = jest.fn();
 const cachedFetcherFetchMock = jest.fn();
 const assetReadyMock = jest.fn();
 const assetIconMock: jest.Mock<IconMap<Address>> = jest.fn();
@@ -64,6 +65,7 @@ const visionApyMock = jest.fn();
 const vaultsStrategiesMetadataMock = jest.fn();
 const assetsHistoricEarningsMock = jest.fn();
 const sendTransactionUsingServiceMock = jest.fn();
+const populateTransactionUsingMockService = jest.fn();
 const partnerPopulateDepositTransactionMock = jest.fn();
 const partnerIsAllowedMock = jest.fn().mockReturnValue(true);
 const propertiesAggregatorGetPropertiesMock = jest.fn();
@@ -119,6 +121,7 @@ jest.mock("../yearn", () => ({
       },
       transaction: {
         sendTransaction: sendTransactionUsingServiceMock,
+        populateTransaction: populateTransactionUsingMockService,
       },
     },
     strategies: {
@@ -148,6 +151,7 @@ jest.mock("../context", () => ({
       write: {
         getSigner: jest.fn().mockImplementation(() => ({
           sendTransaction: sendTransactionMock,
+          populateTransaction: populateTransactionMock,
         })),
       },
     },
@@ -160,7 +164,9 @@ jest.mock("../services/partners/pickle", () => ({
 }));
 
 jest.mock("@ethersproject/contracts", () => ({
-  Contract: jest.fn(),
+  Contract: jest.fn().mockImplementation(() => ({
+    populateTransaction: { deposit: jest.fn(), withdraw: jest.fn() },
+  })),
 }));
 
 describe("VaultInterface", () => {
@@ -874,19 +880,18 @@ describe("VaultInterface", () => {
               const assetStaticVaultV2 = createMockAssetStaticVaultV2({ token: "0xToken" });
               vaultInterface.getStatic = jest.fn().mockResolvedValue([assetStaticVaultV2]);
 
-              const executeVaultContractTransactionMock = jest.fn().mockResolvedValue("trx");
-              (vaultInterface as any).executeVaultContractTransaction = executeVaultContractTransactionMock;
+              const populateDepositTransactionMock = jest.fn().mockResolvedValue("trx");
+              (vaultInterface as any).populateDepositTransaction = populateDepositTransactionMock;
 
               const [vault, token, amount, account] = ["0xVault", "0xToken", "1", "0xAccount"];
 
-              const actualDeposit = await vaultInterface.deposit(vault, token, amount, account);
+              await vaultInterface.deposit(vault, token, amount, account);
 
-              expect(Contract).not.toHaveBeenCalledTimes(1);
-
+              expect(Contract).not.toHaveBeenCalled();
+              expect(populateDepositTransactionMock).toHaveBeenCalledTimes(1);
               expect(partnerPopulateDepositTransactionMock).not.toHaveBeenCalled();
-              expect(executeVaultContractTransactionMock).toHaveBeenCalledTimes(1);
-              expect(executeVaultContractTransactionMock).toHaveBeenCalledWith(expect.any(Function), {});
-              expect(actualDeposit).toEqual("trx");
+              expect(sendTransactionUsingServiceMock).toHaveBeenCalledTimes(1);
+              expect(sendTransactionUsingServiceMock).toBeCalledWith("trx");
             });
           });
 
@@ -910,11 +915,7 @@ describe("VaultInterface", () => {
               await vaultInterface.deposit(vault, token, amount, account);
 
               expect(mockedYearn.services.partner.populateDepositTransaction).toHaveBeenCalledTimes(1);
-              expect(mockedYearn.services.partner.populateDepositTransaction).toHaveBeenCalledWith(
-                "0xVault",
-                "1",
-                undefined
-              );
+              expect(mockedYearn.services.partner.populateDepositTransaction).toHaveBeenCalledWith("0xVault", "1", {});
             });
           });
         });
@@ -972,24 +973,17 @@ describe("VaultInterface", () => {
       });
 
       it("should withdraw from a yearn vault", async () => {
-        const executeVaultContractTransactionMock = jest.fn().mockResolvedValue("trx");
-        (vaultInterface as any).executeVaultContractTransaction = executeVaultContractTransactionMock;
+        const populateWithdrawTransactionMock = jest.fn().mockResolvedValue("trx");
+        (vaultInterface as any).populateWithdrawTransaction = populateWithdrawTransactionMock;
 
         const [vault, token, amount, account] = ["0xVault", "0xToken", "1", "0xAccount"];
 
-        const actualWithdraw = await vaultInterface.withdraw(vault, token, amount, account);
+        await vaultInterface.withdraw(vault, token, amount, account);
 
-        expect(Contract).toHaveBeenCalledTimes(1);
-        expect(Contract).toHaveBeenCalledWith(
-          "0xVault",
-          ["function deposit(uint256 amount) public", "function withdraw(uint256 amount) public"],
-          {
-            sendTransaction: sendTransactionMock,
-          }
-        );
-        expect(executeVaultContractTransactionMock).toHaveBeenCalledTimes(1);
-        expect(executeVaultContractTransactionMock).toHaveBeenCalledWith(expect.any(Function), {});
-        expect(actualWithdraw).toEqual("trx");
+        expect(Contract).not.toHaveBeenCalled();
+        expect(populateWithdrawTransactionMock).toHaveBeenCalledTimes(1);
+        expect(sendTransactionUsingServiceMock).toHaveBeenCalledTimes(1);
+        expect(sendTransactionUsingServiceMock).toBeCalledWith("trx");
       });
     });
 
@@ -1001,48 +995,16 @@ describe("VaultInterface", () => {
 
       describe("when slippage is provided as an option", () => {
         it("should call zapOut with correct arguments and pickle as the zapProtocol", async () => {
-          const zapOutput = {
-            to: "0xZapOutTo",
-            from: "0xZapOutFrom",
-            data: "zapOutData",
-            value: "1",
-            gasPrice: "1",
-            gas: "1",
-          };
-          zapperZapOutMock.mockResolvedValue(zapOutput);
-          const executeZapperTransactionMock = jest.fn().mockResolvedValue("executeZapperTransactionResponse");
-          (vaultInterface as any).executeZapperTransaction = executeZapperTransactionMock;
+          const populateWithdrawTransactionMock = jest.fn().mockResolvedValue("populateWithdrawTransactionResponse");
+          (vaultInterface as any).populateWithdrawTransaction = populateWithdrawTransactionMock;
 
           const [vault, token, amount, account] = ["0xVault", "0xToken", "1", "0xAccount"];
 
-          const actualWithdraw = await vaultInterface.withdraw(vault, token, amount, account, { slippage: 1 });
+          await vaultInterface.withdraw(vault, token, amount, account, { slippage: 1 });
 
-          expect(actualWithdraw).toBe("executeZapperTransactionResponse");
-          expect(zapperZapOutMock).toHaveBeenCalledTimes(1);
-          expect(zapperZapOutMock).toHaveBeenCalledWith(
-            "0xAccount",
-            "0xToken",
-            "1",
-            "0xVault",
-            "0",
-            1,
-            false,
-            undefined,
-            undefined
-          );
-          expect(executeZapperTransactionMock).toHaveBeenCalledTimes(1);
-          expect(executeZapperTransactionMock).toHaveBeenCalledWith(
-            {
-              data: "zapOutData",
-              from: "0xZapOutFrom",
-              gasLimit: BigNumber.from(zapOutput.gas),
-              gasPrice: BigNumber.from(zapOutput.gasPrice),
-              to: "0xZapOutTo",
-              value: BigNumber.from(zapOutput.value),
-            },
-            {},
-            BigNumber.from(zapOutput.value)
-          );
+          expect(sendTransactionUsingServiceMock).toHaveBeenCalledTimes(1);
+          expect(sendTransactionUsingServiceMock).toBeCalledWith("populateWithdrawTransactionResponse");
+          expect(populateWithdrawTransactionMock).toHaveBeenCalledTimes(1);
         });
       });
 
