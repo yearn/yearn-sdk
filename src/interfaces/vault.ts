@@ -404,6 +404,23 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
     );
   }
 
+  async populateApproveWithdraw(
+    accountAddress: Address,
+    vaultAddress: Address,
+    tokenAddress: Address,
+    amount?: Integer,
+    overrides?: CallOverrides
+  ): Promise<PopulatedTransaction> {
+    const spenderAddress = await this.getWithdrawContractAddress(vaultAddress, tokenAddress);
+    return this.yearn.tokens.populateApprove(
+      accountAddress,
+      vaultAddress,
+      spenderAddress,
+      amount ?? MaxUint256.toString(),
+      overrides
+    );
+  }
+
   /**
    * Approve the token amount to allow to be used for withdraw
    * @param accountAddress

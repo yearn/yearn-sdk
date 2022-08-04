@@ -5,7 +5,7 @@ import BigNumber from "bignumber.js";
 
 import { ChainId } from "../chain";
 import { ServiceInterface } from "../common";
-import { EthAddress, WethAddress, ZeroAddress } from "../helpers";
+import { EthAddress, isNativeToken, WethAddress, ZeroAddress } from "../helpers";
 import { PickleJars } from "../services/partners/pickle";
 import { SimulationExecutor, SimulationResponse } from "../simulationExecutor";
 import {
@@ -178,25 +178,12 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     account: Address,
     simulationOutcome: SimulationResponse
   ): Promise<TransactionOutcome> {
-    const encodedTransferFunction = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"; // keccak256("Transfer(address,address,uint256)")
-
-    const transferDataLog = simulationOutcome.transaction.transaction_info.logs
-      .reverse()
-      .find(
-        (log) =>
-          log.raw.topics[0] === encodedTransferFunction &&
-          getAddress(log.raw.topics[2].slice(-40)) === getAddress(account)
-      );
-
-    if (!transferDataLog)
-      throw new SimulationError(`No log of transferring token to ${account}`, SimulationError.NO_LOG);
-
     const [vaultData] = await this.yearn.vaults.get([vault]);
+    const targetTokenAmount = await this.parseSimulationTargetTokenAmount(vault, account, simulationOutcome);
     const sourceTokenAmountUsdc = await this.yearn.services.oracle.getNormalizedValueUsdc(
       token === EthAddress ? WethAddress : token,
       amount
     );
-    const targetTokenAmount = toBN(transferDataLog.raw.data).toFixed(0);
     const targetTokenAmountUsdc = await this.yearn.services.oracle.getNormalizedValueUsdc(vault, targetTokenAmount);
     const targetUnderlyingTokenAmount = toBN(targetTokenAmount)
       .div(toBN(10).pow(vaultData.decimals))
@@ -215,6 +202,29 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
       conversionRate,
       slippage: 1 - conversionRate,
     };
+  }
+
+  private async parseSimulationTargetTokenAmount(
+    targetToken: Address,
+    account: Address,
+    simulationOutcome: SimulationResponse
+  ): Promise<Integer> {
+    if (isNativeToken(targetToken))
+      return toBN(simulationOutcome.transaction.transaction_info.call_trace.output).toFixed(0);
+
+    const encodedTransferFunction = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"; // keccak256("Transfer(address,address,uint256)")
+    const transferDataLog = simulationOutcome.transaction.transaction_info.logs
+      .reverse()
+      .find(
+        (log) =>
+          log.raw.topics[0] === encodedTransferFunction &&
+          getAddress(log.raw.topics[2].slice(-40)) === getAddress(account)
+      );
+
+    if (!transferDataLog)
+      throw new SimulationError(`No log of transferring token to ${account}`, SimulationError.NO_LOG);
+
+    return toBN(transferDataLog.raw.data).toFixed(0);
   }
 
   async deposit(
@@ -274,6 +284,94 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     };
 
     return this.simulationExecutor.executeSimulationWithReSimulationOnFailure(simulateFn, forkId);
+  }
+
+  async _withdraw(
+    vault: Address,
+    token: Address,
+    amount: Integer,
+    account: Address,
+    options: DepositOptions = {},
+    overrides: CallOverrides = {}
+  ): Promise<TransactionOutcome> {
+    const forkId = await this.simulationExecutor.createFork();
+    const allowance = await this.yearn.vaults.getWithdrawAllowance(account, vault, token);
+
+    let approveSimulationId;
+    const needsApprove = toBN(amount).gt(allowance.amount);
+    if (needsApprove) {
+      const { from, to, data, value } = await this.yearn.vaults.populateApproveWithdraw(
+        account,
+        vault,
+        token,
+        amount,
+        overrides
+      );
+      if (!from || !to || !data || !value) throw Error("Error populating approve transaction");
+
+      const { simulation } = await this.simulationExecutor.makeSimulationRequest(
+        from,
+        to,
+        data,
+        {
+          forkId,
+          save: true,
+        },
+        value.toString()
+      );
+      approveSimulationId = simulation.id;
+    }
+
+    const { from, to, data, value } = await this.yearn.vaults.populateWithdrawTransaction({
+      vault,
+      token,
+      amount,
+      account,
+      options: { ...options, skipGasEstimate: needsApprove },
+      overrides,
+    });
+    if (!from || !to || !data || !value) throw Error("Error populating withdraw transaction");
+
+    const simulationOutcome = await this.simulationExecutor.makeSimulationRequest(
+      from,
+      to,
+      data as string,
+      {
+        forkId,
+        root: approveSimulationId,
+        save: true,
+      },
+      value.toString()
+    );
+
+    await this.simulationExecutor.deleteFork(forkId);
+
+    return await this.parseWithdrawSimulationOutcome(vault, token, amount, account, simulationOutcome);
+  }
+
+  private async parseWithdrawSimulationOutcome(
+    vault: Address,
+    token: Address,
+    amount: Integer,
+    account: Address,
+    simulationOutcome: SimulationResponse
+  ): Promise<TransactionOutcome> {
+    const targetTokenAmount = await this.parseSimulationTargetTokenAmount(token, account, simulationOutcome);
+    const sourceTokenAmountUsdc = await this.yearn.services.oracle.getNormalizedValueUsdc(vault, amount);
+    const targetTokenAmountUsdc = await this.yearn.services.oracle.getNormalizedValueUsdc(token, targetTokenAmount);
+    const conversionRate = toBN(targetTokenAmountUsdc).div(sourceTokenAmountUsdc).toNumber();
+
+    return {
+      sourceTokenAddress: token,
+      sourceTokenAmount: amount,
+      targetTokenAddress: vault,
+      targetTokenAmount,
+      targetTokenAmountUsdc,
+      targetUnderlyingTokenAddress: vault,
+      targetUnderlyingTokenAmount: targetTokenAmount,
+      conversionRate,
+      slippage: 1 - conversionRate,
+    };
   }
 
   async withdraw(
