@@ -315,7 +315,7 @@ export class SimulationExecutor {
    * @param forkId the fork to be deleted
    * @returns the deletion response
    */
-  private async deleteFork(forkId: string): Promise<Response> {
+  async deleteFork(forkId: string): Promise<Response> {
     return await fetch(`${baseUrl}/fork/${forkId}`, { method: "DELETE" });
   }
 

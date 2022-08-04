@@ -1,4 +1,5 @@
-import { Contract } from "@ethersproject/contracts";
+import { getAddress } from "@ethersproject/address";
+import { CallOverrides, Contract } from "@ethersproject/contracts";
 import { JsonRpcSigner } from "@ethersproject/providers";
 import BigNumber from "bignumber.js";
 
@@ -9,10 +10,12 @@ import { PickleJars } from "../services/partners/pickle";
 import { SimulationExecutor, SimulationResponse } from "../simulationExecutor";
 import {
   Address,
+  DepositOptions,
   EthersError,
   Integer,
   PriceFetchingError,
   SdkError,
+  SimulationError,
   SimulationOptions,
   Token,
   TransactionOutcome,
@@ -104,6 +107,115 @@ type ZapOutSimulationArgs = {
  */
 export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> {
   private simulationExecutor = new SimulationExecutor(this.yearn.services.telegram, this.ctx);
+
+  async _deposit(
+    vault: Address,
+    token: Address,
+    amount: Integer,
+    account: Address,
+    options: DepositOptions = {},
+    overrides: CallOverrides = {}
+  ): Promise<TransactionOutcome> {
+    const forkId = await this.simulationExecutor.createFork();
+    const allowance = await this.yearn.vaults.getDepositAllowance(account, vault, token);
+
+    let approveSimulationId;
+    const needsApprove = toBN(amount).gt(allowance.amount);
+    if (needsApprove) {
+      const { from, to, data, value } = await this.yearn.vaults.populateApproveDeposit(
+        account,
+        vault,
+        token,
+        amount,
+        overrides
+      );
+      if (!from || !to || !data || !value) throw Error("Error populating approve transaction");
+
+      const { simulation } = await this.simulationExecutor.makeSimulationRequest(
+        from,
+        to,
+        data,
+        {
+          forkId,
+          save: true,
+        },
+        value.toString()
+      );
+      approveSimulationId = simulation.id;
+    }
+
+    const { from, to, data, value } = await this.yearn.vaults.populateDepositTransaction({
+      vault,
+      token,
+      amount,
+      account,
+      options: { ...options, skipGasEstimate: needsApprove },
+      overrides,
+    });
+    if (!from || !to || !data || !value) throw Error("Error populating deposit transaction");
+
+    const simulationOutcome = await this.simulationExecutor.makeSimulationRequest(
+      from,
+      to,
+      data as string,
+      {
+        forkId,
+        root: approveSimulationId,
+        save: true,
+      },
+      value.toString()
+    );
+
+    await this.simulationExecutor.deleteFork(forkId);
+
+    return await this.parseDepositSimulationOutcome(vault, token, amount, account, simulationOutcome);
+  }
+
+  private async parseDepositSimulationOutcome(
+    vault: Address,
+    token: Address,
+    amount: Integer,
+    account: Address,
+    simulationOutcome: SimulationResponse
+  ): Promise<TransactionOutcome> {
+    const encodedTransferFunction = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"; // keccak256("Transfer(address,address,uint256)")
+
+    const transferDataLog = simulationOutcome.transaction.transaction_info.logs
+      .reverse()
+      .find(
+        (log) =>
+          log.raw.topics[0] === encodedTransferFunction &&
+          getAddress(log.raw.topics[2].slice(-40)) === getAddress(account)
+      );
+
+    if (!transferDataLog)
+      throw new SimulationError(`No log of transferring token to ${account}`, SimulationError.NO_LOG);
+
+    const [vaultData] = await this.yearn.vaults.get([vault]);
+    const sourceTokenAmountUsdc = await this.yearn.services.oracle.getNormalizedValueUsdc(
+      token === EthAddress ? WethAddress : token,
+      amount
+    );
+    const targetTokenAmount = toBN(transferDataLog.raw.data).toFixed(0);
+    const targetTokenAmountUsdc = await this.yearn.services.oracle.getNormalizedValueUsdc(vault, targetTokenAmount);
+    const targetUnderlyingTokenAmount = toBN(targetTokenAmount)
+      .div(toBN(10).pow(vaultData.decimals))
+      .multipliedBy(vaultData.metadata.pricePerShare)
+      .toFixed(0);
+    const conversionRate = toBN(targetTokenAmountUsdc).div(sourceTokenAmountUsdc).toNumber();
+
+    return {
+      sourceTokenAddress: token,
+      sourceTokenAmount: amount,
+      targetTokenAddress: vault,
+      targetTokenAmount,
+      targetTokenAmountUsdc,
+      targetUnderlyingTokenAddress: vault,
+      targetUnderlyingTokenAmount,
+      conversionRate,
+      slippage: 1 - conversionRate,
+    };
+  }
 
   async deposit(
     from: Address,
