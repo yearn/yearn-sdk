@@ -108,6 +108,46 @@ type ZapOutSimulationArgs = {
 export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> {
   private simulationExecutor = new SimulationExecutor(this.yearn.services.telegram, this.ctx);
 
+  async deposit(
+    from: Address,
+    sellToken: Address,
+    amount: Integer,
+    toVault: Address,
+    options: SimulationOptions = {}
+  ): Promise<TransactionOutcome> {
+    const depositArgs = { from, sellToken, amount, toVault, options };
+
+    const signer = this.ctx.provider.write.getSigner(from);
+
+    const vaultContract = this.getVaultContract({ toVault, signer });
+
+    const vault = await this.getZappableVault({ vaultAddress: toVault, vaultContract });
+
+    if (!vault) {
+      throw new SdkError(`Could not get vault: ${toVault}`);
+    }
+
+    const token = await this.yearn.tokens.findByAddress(sellToken);
+
+    if (!token) {
+      throw new SdkError(`Could not find the token by address: ${sellToken}`);
+    }
+
+    const isUnderlyingToken = await this.isUnderlyingToken({ vault: toVault, address: token.address });
+
+    if (isUnderlyingToken) {
+      return this.handleDirectSimulationDeposit({ depositArgs, vaultContract, vault, signer });
+    }
+
+    const { isZapInSupported, zapInWith } = getZapInDetails({ chainId: this.chainId, token, vault });
+
+    if (isZapInSupported && zapInWith) {
+      return this.handleZapInSimulationDeposit({ depositArgs, zapInWith, vault });
+    }
+
+    throw new SdkError(`Deposit of ${token.address} to ${toVault} is not supported`);
+  }
+
   async _deposit(
     vault: Address,
     token: Address,
@@ -227,63 +267,46 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     return toBN(transferDataLog.raw.data).toFixed(0);
   }
 
-  async deposit(
+  async withdraw(
     from: Address,
-    sellToken: Address,
+    fromVault: Address,
     amount: Integer,
-    toVault: Address,
+    toToken: Address,
     options: SimulationOptions = {}
   ): Promise<TransactionOutcome> {
-    const depositArgs = { from, sellToken, amount, toVault, options };
+    const withdrawArgs = { from, fromVault, amount, toToken, options };
 
     const signer = this.ctx.provider.write.getSigner(from);
+    const vaultContract = new YearnVaultContract(fromVault, signer);
 
-    const vaultContract = this.getVaultContract({ toVault, signer });
-
-    const vault = await this.getZappableVault({ vaultAddress: toVault, vaultContract });
+    const [vault] = await this.yearn.vaults.get([fromVault]);
 
     if (!vault) {
-      throw new SdkError(`Could not get vault: ${toVault}`);
+      throw new SdkError(`Could not get vault: ${fromVault}`);
     }
 
-    const token = await this.yearn.tokens.findByAddress(sellToken);
+    const token = await this.yearn.tokens.findByAddress(toToken);
 
     if (!token) {
-      throw new SdkError(`Could not find the token by address: ${sellToken}`);
+      throw new SdkError(`Could not find the token by address: ${toToken}`);
     }
 
-    const isUnderlyingToken = await this.isUnderlyingToken({ vault: toVault, address: token.address });
+    const isUnderlyingToken = await this.isUnderlyingToken({ vault: fromVault, address: token.address });
 
     if (isUnderlyingToken) {
-      return this.handleDirectSimulationDeposit({ depositArgs, vaultContract, vault, signer });
+      const simulateFn = (save: boolean): Promise<TransactionOutcome> => {
+        return this.directWithdraw({ ...withdrawArgs, vaultContract, options: { ...options, save } });
+      };
+      return this.simulationExecutor.executeSimulationWithReSimulationOnFailure(simulateFn);
     }
 
-    const { isZapInSupported, zapInWith } = getZapInDetails({ chainId: this.chainId, token, vault });
+    const { isZapOutSupported, zapOutWith } = getZapOutDetails({ chainId: this.chainId, token, vault });
 
-    if (isZapInSupported && zapInWith) {
-      return this.handleZapInSimulationDeposit({ depositArgs, zapInWith, vault });
+    if (isZapOutSupported && zapOutWith) {
+      return this.handleZapOutSimulation({ withdrawArgs, zapOutWith, token });
     }
 
-    throw new SdkError(`Deposit of ${token.address} to ${toVault} is not supported`);
-  }
-
-  private async handleDirectSimulationDeposit({
-    depositArgs,
-    vaultContract,
-    vault,
-    signer,
-  }: DirectDepositSimulationArgs): Promise<TransactionOutcome> {
-    const { approvalTransactionId: root, forkId } = await this.getApprovalData({ depositArgs, signer });
-
-    const simulateFn = (save: boolean): Promise<TransactionOutcome> => {
-      return this.directDeposit({
-        depositArgs: { ...depositArgs, options: { ...depositArgs.options, forkId, save, root } },
-        vaultContract,
-        vault,
-      });
-    };
-
-    return this.simulationExecutor.executeSimulationWithReSimulationOnFailure(simulateFn, forkId);
+    throw new SdkError(`Withdraw from ${fromVault} to ${toToken} is not supported`);
   }
 
   async _withdraw(
@@ -374,75 +397,23 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     };
   }
 
-  async withdraw(
-    from: Address,
-    fromVault: Address,
-    amount: Integer,
-    toToken: Address,
-    options: SimulationOptions = {}
-  ): Promise<TransactionOutcome> {
-    const withdrawArgs = { from, fromVault, amount, toToken, options };
+  private async handleDirectSimulationDeposit({
+    depositArgs,
+    vaultContract,
+    vault,
+    signer,
+  }: DirectDepositSimulationArgs): Promise<TransactionOutcome> {
+    const { approvalTransactionId: root, forkId } = await this.getApprovalData({ depositArgs, signer });
 
-    const signer = this.ctx.provider.write.getSigner(from);
-    const vaultContract = new YearnVaultContract(fromVault, signer);
+    const simulateFn = (save: boolean): Promise<TransactionOutcome> => {
+      return this.directDeposit({
+        depositArgs: { ...depositArgs, options: { ...depositArgs.options, forkId, save, root } },
+        vaultContract,
+        vault,
+      });
+    };
 
-    const [vault] = await this.yearn.vaults.get([fromVault]);
-
-    if (!vault) {
-      throw new SdkError(`Could not get vault: ${fromVault}`);
-    }
-
-    const token = await this.yearn.tokens.findByAddress(toToken);
-
-    if (!token) {
-      throw new SdkError(`Could not find the token by address: ${toToken}`);
-    }
-
-    const isUnderlyingToken = await this.isUnderlyingToken({ vault: fromVault, address: token.address });
-
-    if (isUnderlyingToken) {
-      const simulateFn = (save: boolean): Promise<TransactionOutcome> => {
-        return this.directWithdraw({ ...withdrawArgs, vaultContract, options: { ...options, save } });
-      };
-      return this.simulationExecutor.executeSimulationWithReSimulationOnFailure(simulateFn);
-    }
-
-    const { isZapOutSupported, zapOutWith } = getZapOutDetails({ chainId: this.chainId, token, vault });
-
-    if (isZapOutSupported && zapOutWith) {
-      return this.handleZapOutSimulation({ withdrawArgs, zapOutWith, token });
-    }
-
-    throw new SdkError(`Withdraw from ${fromVault} to ${toToken} is not supported`);
-  }
-
-  private async getWithdrawApprovalData({ from, fromVault, options }: GetWithdrawApprovalData) {
-    try {
-      const { isApproved } = await this.yearn.services.zapper.zapOutApprovalState(from, fromVault);
-
-      if (isApproved) {
-        return { needsApproving: false };
-      }
-    } catch (error) {
-      throw new ZapperError("zap out approval state", ZapperError.ZAP_OUT_APPROVAL_STATE);
-    }
-
-    const forkId = await this.simulationExecutor.createFork();
-
-    try {
-      const zapApprovalTransaction = await this.yearn.services.zapper.zapOutApprovalTransaction(from, fromVault, "0");
-
-      const { simulation } = await this.simulationExecutor.makeSimulationRequest(
-        zapApprovalTransaction.from,
-        zapApprovalTransaction.to,
-        zapApprovalTransaction.data,
-        { ...options, forkId, save: true }
-      );
-
-      return { needsApproving: true, root: simulation.id, forkId };
-    } catch (error) {
-      throw new ZapperError("zap out approval transaction", ZapperError.ZAP_OUT_APPROVAL);
-    }
+    return this.simulationExecutor.executeSimulationWithReSimulationOnFailure(simulateFn, forkId);
   }
 
   private async directDeposit({
@@ -651,6 +622,35 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
       conversionRate: conversionRate,
       slippage: 1 - conversionRate,
     };
+  }
+
+  private async getWithdrawApprovalData({ from, fromVault, options }: GetWithdrawApprovalData) {
+    try {
+      const { isApproved } = await this.yearn.services.zapper.zapOutApprovalState(from, fromVault);
+
+      if (isApproved) {
+        return { needsApproving: false };
+      }
+    } catch (error) {
+      throw new ZapperError("zap out approval state", ZapperError.ZAP_OUT_APPROVAL_STATE);
+    }
+
+    const forkId = await this.simulationExecutor.createFork();
+
+    try {
+      const zapApprovalTransaction = await this.yearn.services.zapper.zapOutApprovalTransaction(from, fromVault, "0");
+
+      const { simulation } = await this.simulationExecutor.makeSimulationRequest(
+        zapApprovalTransaction.from,
+        zapApprovalTransaction.to,
+        zapApprovalTransaction.data,
+        { ...options, forkId, save: true }
+      );
+
+      return { needsApproving: true, root: simulation.id, forkId };
+    } catch (error) {
+      throw new ZapperError("zap out approval transaction", ZapperError.ZAP_OUT_APPROVAL);
+    }
   }
 
   private async directWithdraw({
