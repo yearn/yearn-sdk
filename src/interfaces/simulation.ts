@@ -169,7 +169,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
         amount,
         overrides
       );
-      if (!from || !to || !data || !value) throw Error("Error populating approve transaction");
+      if (!from || !to || !data) throw Error("Error populating approve transaction");
 
       const { simulation } = await this.simulationExecutor.makeSimulationRequest(
         from,
@@ -179,7 +179,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
           forkId,
           save: true,
         },
-        value.toString()
+        value ? value.toString() : undefined
       );
       approveSimulationId = simulation.id;
     }
@@ -192,7 +192,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
       options: { ...options, skipGasEstimate: needsApprove },
       overrides,
     });
-    if (!from || !to || !data || !value) throw Error("Error populating deposit transaction");
+    if (!from || !to || !data) throw Error("Error populating deposit transaction");
 
     const simulationOutcome = await this.simulationExecutor.makeSimulationRequest(
       from,
@@ -203,7 +203,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
         root: approveSimulationId,
         save: true,
       },
-      value.toString()
+      value ? value.toString() : undefined
     );
 
     await this.simulationExecutor.deleteFork(forkId);
@@ -330,7 +330,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
         amount,
         overrides
       );
-      if (!from || !to || !data || !value) throw Error("Error populating approve transaction");
+      if (!from || !to || !data) throw Error("Error populating approve transaction");
 
       const { simulation } = await this.simulationExecutor.makeSimulationRequest(
         from,
@@ -340,7 +340,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
           forkId,
           save: true,
         },
-        value.toString()
+        value ? value.toString() : undefined
       );
       approveSimulationId = simulation.id;
     }
@@ -353,7 +353,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
       options: { ...options, skipGasEstimate: needsApprove },
       overrides,
     });
-    if (!from || !to || !data || !value) throw Error("Error populating withdraw transaction");
+    if (!from || !to || !data) throw Error("Error populating withdraw transaction");
 
     const simulationOutcome = await this.simulationExecutor.makeSimulationRequest(
       from,
@@ -364,7 +364,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
         root: approveSimulationId,
         save: true,
       },
-      value.toString()
+      value ? value.toString() : undefined
     );
 
     await this.simulationExecutor.deleteFork(forkId);
@@ -381,7 +381,10 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
   ): Promise<TransactionOutcome> {
     const targetTokenAmount = await this.parseSimulationTargetTokenAmount(token, account, simulationOutcome);
     const sourceTokenAmountUsdc = await this.yearn.services.oracle.getNormalizedValueUsdc(vault, amount);
-    const targetTokenAmountUsdc = await this.yearn.services.oracle.getNormalizedValueUsdc(token, targetTokenAmount);
+    const targetTokenAmountUsdc = await this.yearn.services.oracle.getNormalizedValueUsdc(
+      token === EthAddress ? WethAddress : token,
+      targetTokenAmount
+    );
     const conversionRate = toBN(targetTokenAmountUsdc).div(sourceTokenAmountUsdc).toNumber();
 
     return {

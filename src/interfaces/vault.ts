@@ -614,7 +614,8 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
     };
 
     const combinedParams = { ...transactionRequest, ...overrides };
-    return await this.yearn.services.transaction.populateTransaction(combinedParams);
+    const signer = this.ctx.provider.write.getSigner(account);
+    return await signer.populateTransaction(combinedParams);
   }
 
   private fillTokenMetadataOverrides(token: Token, overrides: TokenMetadata): void {
@@ -751,7 +752,7 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
       vault,
       "0",
       options.slippage,
-      false,
+      options.skipGasEstimate ?? false,
       undefined,
       options.signature
     );
@@ -765,7 +766,7 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
     };
 
     const combinedParams = { ...transactionRequest, ...overrides };
-    return await this.yearn.services.transaction.populateTransaction(combinedParams);
+    return await signer.populateTransaction(combinedParams);
   }
 
   private isZappingIntoPickleJar({ vault }: { vault: string }) {
