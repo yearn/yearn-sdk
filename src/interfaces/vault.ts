@@ -1,7 +1,7 @@
 import { ParamType } from "@ethersproject/abi";
 import { BigNumber } from "@ethersproject/bignumber";
 import { MaxUint256 } from "@ethersproject/constants";
-import { CallOverrides, Contract } from "@ethersproject/contracts";
+import { CallOverrides, Contract, PopulatedTransaction } from "@ethersproject/contracts";
 import { TransactionRequest, TransactionResponse } from "@ethersproject/providers";
 
 import { CachedFetcher } from "../cache";
@@ -361,6 +361,23 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
     return this.yearn.tokens.allowance(accountAddress, vaultAddress, spenderAddress);
   }
 
+  async populateApproveDeposit(
+    accountAddress: Address,
+    vaultAddress: Address,
+    tokenAddress: Address,
+    amount?: Integer,
+    overrides?: CallOverrides
+  ): Promise<PopulatedTransaction> {
+    const spenderAddress = await this.getDepositContractAddress(vaultAddress, tokenAddress);
+    return this.yearn.tokens.populateApprove(
+      accountAddress,
+      tokenAddress,
+      spenderAddress,
+      amount ?? MaxUint256.toString(),
+      overrides
+    );
+  }
+
   /**
    * Approve the token amount to allow to be used for deposits
    * @param accountAddress
@@ -381,6 +398,23 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
     return this.yearn.tokens.approve(
       accountAddress,
       tokenAddress,
+      spenderAddress,
+      amount ?? MaxUint256.toString(),
+      overrides
+    );
+  }
+
+  async populateApproveWithdraw(
+    accountAddress: Address,
+    vaultAddress: Address,
+    tokenAddress: Address,
+    amount?: Integer,
+    overrides?: CallOverrides
+  ): Promise<PopulatedTransaction> {
+    const spenderAddress = await this.getWithdrawContractAddress(vaultAddress, tokenAddress);
+    return this.yearn.tokens.populateApprove(
+      accountAddress,
+      vaultAddress,
       spenderAddress,
       amount ?? MaxUint256.toString(),
       overrides
@@ -566,7 +600,7 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
       vault,
       "0",
       options.slippage,
-      false,
+      options.skipGasEstimate ?? false,
       zapProtocol,
       this.yearn.services.partner?.partnerId
     );
@@ -580,7 +614,8 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
     };
 
     const combinedParams = { ...transactionRequest, ...overrides };
-    return await this.yearn.services.transaction.populateTransaction(combinedParams);
+    const signer = this.ctx.provider.write.getSigner(account);
+    return await signer.populateTransaction(combinedParams);
   }
 
   private fillTokenMetadataOverrides(token: Token, overrides: TokenMetadata): void {
@@ -717,7 +752,7 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
       vault,
       "0",
       options.slippage,
-      false,
+      options.skipGasEstimate ?? false,
       undefined,
       options.signature
     );
@@ -731,7 +766,7 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
     };
 
     const combinedParams = { ...transactionRequest, ...overrides };
-    return await this.yearn.services.transaction.populateTransaction(combinedParams);
+    return await signer.populateTransaction(combinedParams);
   }
 
   private isZappingIntoPickleJar({ vault }: { vault: string }) {

@@ -34,11 +34,6 @@ export class TransactionService<T extends ChainId> extends Service {
     }
   }
 
-  async populateTransaction(transaction: Deferrable<TransactionRequest>): Promise<TransactionRequest> {
-    const signer = this.ctx.provider.write.getSigner();
-    return await signer.populateTransaction(transaction);
-  }
-
   private async validateTx(transaction: Deferrable<TransactionRequest>): Promise<{ success: boolean; error?: string }> {
     if (!this.allowListService) return Promise.resolve({ success: true, error: undefined });
 

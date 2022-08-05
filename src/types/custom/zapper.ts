@@ -13,6 +13,7 @@ export interface GasPrice {
 export interface ZapOptions {
   slippage?: number;
   gas?: keyof GasPrice;
+  skipGasEstimate?: boolean;
 }
 
 export interface ZapApprovalStateOutput {
