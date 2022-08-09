@@ -15,6 +15,8 @@ export const SUPPORTED_ZAP_OUT_ADDRESSES_MAINNET = {
   WBTC: "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
 };
 
+export const SUPPORTED_ZAP_OUT_TOKEN_SYMBOLS = ["ETH", "DAI", "USDC", "USDT", "WBTC"];
+
 export const FANTOM_TOKEN: Token = {
   address: ZeroAddress,
   name: "Fantom",
