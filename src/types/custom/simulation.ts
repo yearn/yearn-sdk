@@ -12,7 +12,7 @@ export class SimulationError extends CustomError {
   }
 }
 
-export class ZapperError extends CustomError {
+export class ZapError extends CustomError {
   error_code: string;
   static ZAP_IN_APPROVAL_STATE = "zap_in_approval_state";
   static ZAP_IN_APPROVAL = "zap_in_approval";
@@ -22,7 +22,7 @@ export class ZapperError extends CustomError {
   static ZAP_OUT = "zap_out";
 
   constructor(message: string, error_code: string) {
-    super(message, "zapper");
+    super(message, "zap");
     this.error_code = error_code;
   }
 }

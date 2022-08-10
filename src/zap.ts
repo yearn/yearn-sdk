@@ -30,7 +30,7 @@ export function getZapInDetails({ chainId, token, vault }: ZapInArgs): ZapInDeta
     const { zapInWith } = vault.metadata;
 
     if (zapInWith && isValidZap(zapInWith, token.supported)) {
-      const isZapInSupported = Boolean(token.supported.zapper) && Boolean(token.supported[zapInWith]);
+      const isZapInSupported = Boolean(token.supported[zapInWith]);
       return { isZapInSupported, zapInWith: isZapInSupported ? zapInWith : null };
     }
   }
@@ -54,7 +54,7 @@ export function getZapOutDetails({ chainId, token, vault }: ZapOutArgs): ZapOutD
     const { zapOutWith } = vault.metadata;
 
     if (zapOutWith && isValidZap(zapOutWith, token.supported)) {
-      const isZapOutSupported = Boolean(token.supported.zapper) && Boolean(token.supported[zapOutWith]);
+      const isZapOutSupported = Boolean(token.supported[zapOutWith]);
       return { isZapOutSupported, zapOutWith: isZapOutSupported ? zapOutWith : null };
     }
   }

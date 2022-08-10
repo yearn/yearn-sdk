@@ -7,8 +7,9 @@ import { EthAddress, handleHttpError, SUPPORTED_ZAP_OUT_TOKEN_SYMBOLS, usdc, Zer
 import { Address, Balance, Integer, Token, TokenAllowance } from "../types";
 
 const API = "https://api.portals.fi";
+const AFFILIATE_ADDRESS = "0xFEB4acf3df3cDEA7399794D0869ef76A6EfAff52";
 
-export class ZapperService extends Service {
+export class PortalsService extends Service {
   async supportedTokens(): Promise<Token[]> {
     const network = Chains[this.chainId];
     const endpoint = `${API}/v1/tokens/${network}`;
@@ -175,8 +176,8 @@ export class ZapperService extends Service {
     amount: Integer,
     account: Address,
     slippagePercentage: number,
-    partnerId: string,
     validate = true
+    // partnerId?: string,
   ): Promise<TransactionRequest> {
     const network = Chains[this.chainId];
     const endpoint = `${API}/v1/portal/${network}`;
@@ -187,7 +188,7 @@ export class ZapperService extends Service {
       sellAmount: amount,
       buyToken: vault,
       slippagePercentage: slippagePercentage.toString(),
-      partner: partnerId,
+      partner: AFFILIATE_ADDRESS,
       validate: validate ? "true" : "false",
     });
     const { tx } = await fetch(`${endpoint}?${params}`)
@@ -203,8 +204,8 @@ export class ZapperService extends Service {
     amount: Integer,
     account: Address,
     slippagePercentage: number,
-    partnerId: string,
     validate = true
+    // partnerId: string,
   ): Promise<TransactionRequest> {
     const network = Chains[this.chainId];
     const endpoint = `${API}/v1/portal/${network}`;
@@ -215,7 +216,7 @@ export class ZapperService extends Service {
       sellAmount: amount,
       buyToken,
       slippagePercentage: slippagePercentage.toString(),
-      partner: partnerId,
+      partner: AFFILIATE_ADDRESS,
       validate: validate ? "true" : "false",
     });
     const { tx } = await fetch(`${endpoint}?${params}`)
