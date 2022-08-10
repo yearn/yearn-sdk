@@ -589,7 +589,7 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
     account: Address,
     options: DepositOptions = {},
     _zapProtocol: ZapProtocol = ZapProtocol.YEARN,
-    overrides: CallOverrides = {}
+    _overrides: CallOverrides = {}
   ): Promise<TransactionRequest> {
     if (options.slippage === undefined) throw new SdkError("zap operations should have a slippage set");
 
@@ -607,13 +607,11 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
       to: zapInParams.to,
       from: zapInParams.from,
       data: zapInParams.data,
-      value: BigNumber.from(zapInParams.value),
-      gasLimit: BigNumber.from(zapInParams.gasLimit),
+      value: zapInParams.value,
+      gasLimit: zapInParams.gasLimit,
     };
 
-    const combinedParams = { ...transactionRequest, ...overrides };
-    const signer = this.ctx.provider.write.getSigner(account);
-    return await signer.populateTransaction(combinedParams);
+    return transactionRequest;
   }
 
   private fillTokenMetadataOverrides(token: Token, overrides: TokenMetadata): void {
@@ -756,12 +754,11 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
       to: zapOutParams.to,
       from: zapOutParams.from,
       data: zapOutParams.data,
-      value: BigNumber.from(zapOutParams.value),
-      gasLimit: BigNumber.from(zapOutParams.gasLimit),
+      value: zapOutParams.value,
+      gasLimit: zapOutParams.gasLimit,
     };
 
-    const combinedParams = { ...transactionRequest, ...overrides };
-    return await signer.populateTransaction(combinedParams);
+    return transactionRequest;
   }
 
   private isZappingIntoPickleJar({ vault }: { vault: string }) {
