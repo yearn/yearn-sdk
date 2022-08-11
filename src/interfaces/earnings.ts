@@ -423,6 +423,7 @@ export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
     switch (this.chainId) {
       case 1:
       case 1337:
+      case 10:
       case 42161:
         return 5760;
       case 250:
@@ -434,6 +435,7 @@ export class EarningsInterface<C extends ChainId> extends ServiceInterface<C> {
     switch (this.chainId) {
       case 1:
       case 1337:
+      case 10:
       case 42161:
         return 100;
       case 250:

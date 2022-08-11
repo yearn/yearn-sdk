@@ -15,6 +15,11 @@ export class SubgraphService extends Service {
         // no fallback for mainnet as the hosted version has been deprecated.
         this.yearnSubgraphEndpoint = ctx.subgraph?.mainnetSubgraphEndpoint;
         break;
+      case 10:
+        this.yearnSubgraphEndpoint =
+          ctx.subgraph?.optimismSubgraphEndpoint ||
+          "https://api.thegraph.com/subgraphs/name/yearn/yearn-vaults-v2-optimism";
+        break;
       case 250:
         this.yearnSubgraphEndpoint =
           ctx.subgraph?.fantomSubgraphEndpoint ||
