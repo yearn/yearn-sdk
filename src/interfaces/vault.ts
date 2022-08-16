@@ -607,8 +607,8 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
       to: zapInParams.to,
       from: zapInParams.from,
       data: zapInParams.data,
-      value: zapInParams.value,
-      gasLimit: zapInParams.gasLimit,
+      value: zapInParams.value ? BigNumber.from(zapInParams.value).toString() : undefined,
+      gasLimit: zapInParams.gasLimit ? BigNumber.from(zapInParams.gasLimit).toString() : undefined,
     };
 
     return transactionRequest;
@@ -754,8 +754,8 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
       to: zapOutParams.to,
       from: zapOutParams.from,
       data: zapOutParams.data,
-      value: zapOutParams.value,
-      gasLimit: zapOutParams.gasLimit,
+      value: zapOutParams.value ? BigNumber.from(zapOutParams.value).toString() : undefined,
+      gasLimit: zapOutParams.gasLimit ? BigNumber.from(zapOutParams.gasLimit).toString() : undefined,
     };
 
     return transactionRequest;
