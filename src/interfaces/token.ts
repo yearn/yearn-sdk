@@ -60,9 +60,19 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
       throw new SdkError(`the chain ${this.chainId} hasn't been implemented yet`);
     }
 
+    const supportedTokens = await this.supported();
+    const supportedTokensMap = supportedTokens.reduce((obj, token) => {
+      obj[token.address] = token;
+      return obj;
+    }, {} as Record<Address, Token>);
+
     if (Array.isArray(tokens)) {
       const entries = await Promise.all(
         tokens.map(async (token) => {
+          if (supportedTokensMap[token]?.dataSource === "portals") {
+            const price = supportedTokensMap[token].priceUsdc;
+            if (price) return [token, price];
+          }
           const price = await this.yearn.services.oracle.getPriceUsdc(token, overrides);
           return [token, price];
         })

@@ -13,9 +13,8 @@ export class PortalsService extends Service {
   async supportedTokens(): Promise<Token[]> {
     const network = Chains[this.chainId];
     const endpoint = `${API}/v1/tokens/${network}`;
-    const params = new URLSearchParams({
-      "platforms[]": ["native", "basic"].join(),
-    });
+    const params = new URLSearchParams();
+    ["native", "basic"].forEach((platform) => params.append("platforms[]", platform));
     const { tokens } = await fetch(`${endpoint}?${params}`)
       .then(handleHttpError)
       .then((res) => res.json());

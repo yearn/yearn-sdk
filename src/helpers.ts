@@ -1,6 +1,7 @@
 import { BigNumber } from "@ethersproject/bignumber";
 
 import { Address, Integer, SdkError, Token, Usdc } from "./types";
+import { toBN } from "./utils";
 
 export const ZeroAddress = "0x0000000000000000000000000000000000000000";
 export const EthAddress = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";
@@ -70,7 +71,9 @@ export async function handleHttpError(response: Response): Promise<Response> {
 
 // formally convert USD values to USDC values (* 1e6), using Usdc type alias.
 export function usdc(usd: unknown): Usdc {
-  return BigNumber.from(Math.floor(Number(usd) * 1e6)).toString();
+  return toBN(usd as string)
+    .times(10 ** 6)
+    .toFixed(0);
 }
 
 // formally convert BigNumber to Integer type alias.
