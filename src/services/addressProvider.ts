@@ -55,6 +55,10 @@ export class AddressProvider<T extends ChainId> extends Service {
   }
 
   async addressById(id: ContractAddressId): Promise<Address> {
+    // TODO: remove hardcoded addresses once contracts are finalized and set on address provider
+    if (id === ContractAddressId.portalsZapIn) return "0x169242aD32592d4A9f9395C80a882491E4edaf60";
+    if (id === ContractAddressId.portalsZapOut) return "0x70ed999E2849A3C85EB4a6288B90c7ecA7b807F4";
+
     const { address: cachedAddress, timestamp } = this.cachedAddressesById.get(id) || {};
 
     if (cachedAddress && this.isCacheFresh({ timestamp })) {
