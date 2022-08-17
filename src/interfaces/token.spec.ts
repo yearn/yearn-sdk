@@ -105,6 +105,7 @@ jest.mock("../context", () => ({
         getBalance: jest.fn().mockResolvedValue(BigNumber.from("42000000000000000000")), // 42
       },
     },
+    cache: { useCache: false },
   })),
 }));
 
