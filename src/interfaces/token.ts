@@ -61,7 +61,7 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
     }
 
     const supportedTokens = await this.supported();
-    const supportedTokensMap = supportedTokens.reduce((obj, token) => {
+    const supportedTokensMap = supportedTokens?.reduce((obj, token) => {
       obj[token.address] = token;
       return obj;
     }, {} as Record<Address, Token>);
@@ -69,7 +69,7 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
     if (Array.isArray(tokens)) {
       const entries = await Promise.all(
         tokens.map(async (token) => {
-          if (supportedTokensMap[token]?.dataSource === "portals") {
+          if (supportedTokensMap && supportedTokensMap[token]?.dataSource === "portals") {
             const price = supportedTokensMap[token].priceUsdc;
             if (price) return [token, price];
           }

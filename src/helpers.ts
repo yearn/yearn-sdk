@@ -122,6 +122,10 @@ export function convertSecondsMillisOrMicrosToMillis(timestamp: string | number)
  * @returns combined arrays by address without duplicates
  */
 export function mergeByAddress<T extends { address: Address }>(a: T[], b: T[]): T[] {
+  if (!a || a.length === 0) return b;
+
+  if (!b || b.length === 0) return a;
+
   const filter = new Set(a.map(({ address }) => address));
 
   return [...a, ...b.filter(({ address }) => !filter.has(address))];
