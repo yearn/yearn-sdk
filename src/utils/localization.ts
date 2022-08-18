@@ -17,4 +17,11 @@ export const getLocalizedString = <T extends string>({
   property?: T;
   locale: Locale;
   fallback: string;
-}): string => obj?.localization[locale]?.description ?? (obj && property && obj[property]) ?? fallback;
+}): string => {
+  if (obj?.localization && obj.localization[locale]?.description) {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    return obj.localization[locale]!.description;
+  }
+
+  return (obj && property && obj[property]) ?? fallback;
+};
