@@ -95,7 +95,6 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
       {
         zapper: new Set<Address>(),
         vaults: new Set<Address>(),
-        ironBank: new Set<Address>(),
         labs: new Set<Address>(),
         sdk: new Set<Address>(),
       }
@@ -104,7 +103,6 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
     const balances: SourceBalances = {
       zapper: [],
       vaults: [],
-      ironBank: [],
       labs: [],
       sdk: [],
     };
@@ -160,10 +158,7 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
         ({ address, balance }) => balance !== "0" && addresses.vaults.has(address)
       );
 
-      const ironBankBalances = await this.yearn.ironBank.balances(account);
-      balances.ironBank = ironBankBalances.filter(({ address }) => addresses.ironBank.has(address));
-
-      return [...balances.vaults, ...balances.ironBank, ...balances.zapper, ...balances.sdk];
+      return [...balances.vaults, ...balances.zapper, ...balances.sdk];
     }
 
     console.error(`the chain ${this.chainId} hasn't been implemented yet`);
@@ -198,20 +193,17 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
     }
 
     const vaultsTokens = await this.yearn.vaults.tokens();
-    const ironBankTokens = await this.yearn.ironBank.tokens();
-
-    const vaultsAndIronBankTokens = mergeByAddress(vaultsTokens, ironBankTokens);
 
     if (isFantom(this.chainId)) {
       const priceUsdc = await this.yearn.services.oracle.getPriceUsdc(WrappedFantomAddress);
-      vaultsAndIronBankTokens.push({ ...FANTOM_TOKEN, priceUsdc });
+      vaultsTokens.push({ ...FANTOM_TOKEN, priceUsdc });
     }
 
     if (!zapperTokens.length) {
-      return vaultsAndIronBankTokens;
+      return vaultsTokens;
     }
 
-    const allSupportedTokens = mergeByAddress(vaultsAndIronBankTokens, zapperTokens);
+    const allSupportedTokens = mergeByAddress(vaultsTokens, zapperTokens);
 
     const zapperTokensUniqueAddresses = new Set(zapperTokens.map(({ address }) => address));
 
