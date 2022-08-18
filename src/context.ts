@@ -10,7 +10,6 @@ export interface AddressesOverride {
   oracle?: Address;
   adapters: {
     registryV2?: Address;
-    ironBank?: Address;
   };
   helper?: Address;
   allowList?: Address;

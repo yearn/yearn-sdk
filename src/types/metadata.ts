@@ -36,33 +36,12 @@ export interface VaultMetadata {
 }
 
 /**
- * Lens-defined metadata for an IronBank market.
- */
-export interface IronBankMarketMetadata {
-  totalSuppliedUsdc: Integer;
-  totalBorrowedUsdc: Integer;
-  lendAprBips: Integer;
-  borrowAprBips: Integer;
-  lendApyBips: Integer;
-  borrowApyBips: Integer;
-  liquidity: Integer;
-  liquidityUsdc: Integer;
-  totalCollateralTokens: Integer;
-  collateralFactor: Integer;
-  collateralCap: Integer;
-  isActive: boolean;
-  reserveFactor: Integer;
-  exchangeRate: Integer;
-}
-
-/**
  * Key Value representation of metadata names and types.
  * Used mainly to provide correct type-guards for asset types.
  */
 export type Metadata = {
   VAULT_V2: VaultMetadata;
   VAULT_V1: VaultMetadata;
-  IRON_BANK_MARKET: IronBankMarketMetadata;
 };
 
 /**

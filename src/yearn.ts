@@ -2,12 +2,10 @@ import { ChainId } from "./chain";
 import { Context, ContextValue } from "./context";
 import { EarningsInterface } from "./interfaces/earnings";
 import { FeesInterface } from "./interfaces/fees";
-import { IronBankInterface } from "./interfaces/ironbank";
 import { SimulationInterface } from "./interfaces/simulation";
 import { StrategyInterface } from "./interfaces/strategy";
 import { TokenInterface } from "./interfaces/token";
 import { VaultInterface } from "./interfaces/vault";
-import { IronBankAdapter } from "./services/adapters/ironbank";
 import { RegistryAdapter, RegistryV2Adapter } from "./services/adapters/registry";
 import { AddressProvider } from "./services/addressProvider";
 import { AllowListService } from "./services/allowlist";
@@ -31,7 +29,6 @@ export type Adapters<T extends ChainId> = {
     v1: RegistryAdapter;
     v2: RegistryV2Adapter<T>;
   };
-  ironBank: IronBankAdapter<T>;
 };
 
 type ServicesType<T extends ChainId> = {
@@ -74,7 +71,6 @@ export class Yearn<T extends ChainId> {
   tokens: TokenInterface<T>;
   earnings: EarningsInterface<T>;
   fees: FeesInterface<T>;
-  ironBank: IronBankInterface<T>;
   simulation: SimulationInterface<T>;
   strategies: StrategyInterface<T>;
 
@@ -119,7 +115,6 @@ export class Yearn<T extends ChainId> {
     this.tokens = new TokenInterface(this, chainId, this.context);
     this.earnings = new EarningsInterface(this, chainId, this.context);
     this.fees = new FeesInterface(this, chainId, this.context);
-    this.ironBank = new IronBankInterface(this, chainId, this.context);
     this.simulation = new SimulationInterface(this, chainId, this.context);
     this.strategies = new StrategyInterface(this, chainId, this.context);
 
@@ -137,7 +132,6 @@ export class Yearn<T extends ChainId> {
     this.tokens = new TokenInterface(this, chainId, this.context);
     this.earnings = new EarningsInterface(this, chainId, this.context);
     this.fees = new FeesInterface(this, chainId, this.context);
-    this.ironBank = new IronBankInterface(this, chainId, this.context);
     this.simulation = new SimulationInterface(this, chainId, this.context);
     this.strategies = new StrategyInterface(this, chainId, this.context);
 
@@ -174,7 +168,6 @@ export class Yearn<T extends ChainId> {
       vaults: {
         v2: new RegistryV2Adapter(chainId, this.context, this.addressProvider),
       },
-      ironBank: new IronBankAdapter(chainId, this.context, this.addressProvider),
     } as Adapters<T>;
   }
 }
