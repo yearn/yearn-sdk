@@ -29,7 +29,6 @@ export interface Token extends ERC20 {
     zapperZapOut?: boolean;
     ftmApeZap?: boolean;
     vaults?: boolean;
-    ironBank?: boolean;
     labs?: boolean;
   };
   metadata?: TokenMetadata;
@@ -94,6 +93,6 @@ export type Asset<T extends TypeId> = AssetStatic<T> & AssetDynamic<T> & { typeI
 /**
  * Possible assets that lens can return.
  */
-export type GenericAsset = Asset<"VAULT_V1"> | Asset<"VAULT_V2"> | Asset<"IRON_BANK_MARKET">;
+export type GenericAsset = Asset<"VAULT_V1"> | Asset<"VAULT_V2">;
 
 export type TokenDataSource = "vaults" | "zapper" | "labs" | "sdk";
