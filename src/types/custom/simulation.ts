@@ -5,6 +5,7 @@ export class SimulationError extends CustomError {
   static NO_LOG = "no_log";
   static TENDERLY_RESPONSE_ERROR = "tenderly_response_error";
   static PARTIAL_REVERT = "partial_revert";
+  static INVALID_TYPE = "invalid_type";
 
   constructor(message: string, error_code: string) {
     super(message, "simulation");

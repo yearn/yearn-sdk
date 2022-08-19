@@ -191,7 +191,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     const simulationOutcome = await this.simulationExecutor.makeSimulationRequest(
       from,
       to,
-      data as string,
+      data,
       {
         forkId,
         root: approveSimulationId,
@@ -354,7 +354,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     const simulationOutcome = await this.simulationExecutor.makeSimulationRequest(
       from,
       to,
-      data as string,
+      data,
       {
         forkId,
         root: approveSimulationId,
@@ -552,7 +552,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     const tokensReceived = await this.simulationExecutor.simulateVaultInteraction(
       from,
       zapInParams.to,
-      zapInParams.data as string,
+      zapInParams.data,
       toVault,
       options,
       value
@@ -650,7 +650,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
       const { simulation } = await this.simulationExecutor.makeSimulationRequest(
         zapApprovalTransaction.from,
         zapApprovalTransaction.to,
-        zapApprovalTransaction.data as string,
+        zapApprovalTransaction.data,
         { ...options, forkId, save: true }
       );
 
@@ -728,7 +728,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
         const response: SimulationResponse = await this.simulationExecutor.makeSimulationRequest(
           from,
           zapOutParams.to,
-          zapOutParams.data as string,
+          zapOutParams.data,
           options,
           zapOutParams.value?.toString()
         );
@@ -737,7 +737,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
         return await this.simulationExecutor.simulateVaultInteraction(
           from,
           zapOutParams.to,
-          zapOutParams.data as string,
+          zapOutParams.data,
           toToken,
           options,
           zapOutParams.value?.toString()
