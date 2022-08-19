@@ -70,8 +70,8 @@ export async function handleHttpError(response: Response): Promise<Response> {
 }
 
 // formally convert USD values to USDC values (* 1e6), using Usdc type alias.
-export function usdc(usd: unknown): Usdc {
-  return toBN(usd as string)
+export function usdc(usd: Usdc): Usdc {
+  return toBN(usd)
     .times(10 ** 6)
     .toFixed(0);
 }
