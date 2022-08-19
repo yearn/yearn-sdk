@@ -471,7 +471,7 @@ describe("TokenInterface", () => {
           });
 
           it("should overwrite zap tokens' data with our own in case of duplicates", async () => {
-            const vaultsTokenAlsoInZap = createMockToken({
+            const vaultsTokenInZap = createMockToken({
               address: "0x002",
               symbol: "VAULT",
               name: "Vault Token in Zap",
@@ -486,9 +486,10 @@ describe("TokenInterface", () => {
               priceUsdc: "22",
             });
 
+            vaultsTokensMock.mockResolvedValue([vaultsTokenNotInZap, vaultsTokenInZap]);
             zapSupportedTokensMock.mockResolvedValue([
               {
-                ...vaultsTokenAlsoInZap,
+                ...vaultsTokenInZap,
                 priceUsdc: "2",
                 supported: {},
               },
@@ -502,7 +503,7 @@ describe("TokenInterface", () => {
               expect.arrayContaining([
                 vaultsTokenNotInZap,
                 {
-                  ...vaultsTokenAlsoInZap,
+                  ...vaultsTokenInZap,
                   supported: {
                     portalsZapIn: true,
                     portalsZapOut: false,
