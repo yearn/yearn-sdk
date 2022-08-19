@@ -50,6 +50,7 @@ export interface SubgraphConfiguration {
   mainnetSubgraphEndpoint?: string;
   fantomSubgraphEndpoint?: string;
   arbitrumSubgraphEndpoint?: string;
+  optimismSubgraphEndpoint?: string;
 }
 
 /**

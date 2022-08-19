@@ -43,6 +43,8 @@ export class AddressProvider<T extends ChainId> extends Service {
       case 1:
       case 1337:
         return "0xe11dC9f2Ab122dC5978EACA41483Da0D7D7e6128";
+      case 10:
+        return "0x8273217252254Ad7353f227aaEcd2b1C4A326Fa2";
       case 250:
         return "0xac5A9E4135A3A26497F3890bFb602b06Ee592B61";
       case 42161:
