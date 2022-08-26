@@ -64,6 +64,7 @@ export enum ContractAddressId {
   zapperZapOut = "ZAPPER_ZAP_OUT",
   pickleZapIn = "PICKLE_ZAP_IN",
   propertiesAggregator = "PROPERTIES_AGGREGATOR",
+  cowSwapRelayer = "COWSWAP_RELAYER", // 0xC92E8bdf79f0507f65a392b0ab4667716BFE0110
   unused = "UNUSED",
 }
 
