@@ -203,8 +203,8 @@ export class PortalsService extends Service {
     amount: Integer,
     account: Address,
     slippagePercentage: number,
-    validate = true
-    // partnerId: string,
+    validate = true,
+    signature?: string
   ): Promise<TransactionRequest> {
     const network = Chains[this.chainId];
     const endpoint = `${API}/v1/portal/${network}`;
@@ -217,6 +217,7 @@ export class PortalsService extends Service {
       slippagePercentage: slippagePercentage.toString(),
       partner: AFFILIATE_ADDRESS,
       validate: validate ? "true" : "false",
+      ...(signature && { signature }),
     });
     const { tx } = await fetch(`${endpoint}?${params}`)
       .then(handleHttpError)

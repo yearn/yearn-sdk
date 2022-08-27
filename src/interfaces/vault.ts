@@ -607,8 +607,8 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
       to: zapInParams.to,
       from: zapInParams.from,
       data: zapInParams.data,
-      value: zapInParams.value ? BigNumber.from(zapInParams.value).toString() : undefined,
-      gasLimit: zapInParams.gasLimit ? BigNumber.from(zapInParams.gasLimit).toString() : undefined,
+      value: zapInParams.value ? BigNumber.from(zapInParams.value) : undefined,
+      gasLimit: zapInParams.gasLimit ? BigNumber.from(zapInParams.gasLimit) : undefined,
     };
 
     return transactionRequest;
@@ -747,15 +747,16 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
       amount,
       account,
       options.slippage,
-      !options.skipGasEstimate ?? true
+      !options.skipGasEstimate ?? true,
+      options.signature
     );
 
     const transactionRequest: TransactionRequest = {
       to: zapOutParams.to,
       from: zapOutParams.from,
       data: zapOutParams.data,
-      value: zapOutParams.value ? BigNumber.from(zapOutParams.value).toString() : undefined,
-      gasLimit: zapOutParams.gasLimit ? BigNumber.from(zapOutParams.gasLimit).toString() : undefined,
+      value: zapOutParams.value ? BigNumber.from(zapOutParams.value) : undefined,
+      gasLimit: zapOutParams.gasLimit ? BigNumber.from(zapOutParams.gasLimit) : undefined,
     };
 
     return transactionRequest;
