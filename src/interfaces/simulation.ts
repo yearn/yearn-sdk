@@ -23,7 +23,7 @@ import {
   ZappableVault,
   ZapProtocol,
 } from "../types";
-import { toBN } from "../utils";
+import { toBN, toUnit } from "../utils";
 import { PickleJarContract, VaultContract, YearnVaultContract } from "../vault";
 import { getZapInDetails, ZapInWith } from "../zap";
 
@@ -212,12 +212,13 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     account: Address,
     simulationOutcome: SimulationResponse
   ): Promise<TransactionOutcome> {
+    const sourceTokenAddress = token === EthAddress ? WethAddress : token;
+    const sourceToken = await this.yearn.tokens.findByAddress(sourceTokenAddress);
     const [vaultData] = await this.yearn.vaults.get([vault]);
     const targetTokenAmount = await this.parseSimulationTargetTokenAmount(vault, account, simulationOutcome);
-    const sourceTokenAmountUsdc = await this.yearn.services.oracle.getNormalizedValueUsdc(
-      token === EthAddress ? WethAddress : token,
-      amount
-    );
+    const sourceTokenAmountUsdc = toBN(sourceToken?.priceUsdc)
+      .times(toUnit({ amount, decimals: Number(sourceToken?.decimals) }))
+      .toFixed(0);
     const targetTokenAmountUsdc = await this.yearn.services.oracle.getNormalizedValueUsdc(vault, targetTokenAmount);
     const targetUnderlyingTokenAmount = toBN(targetTokenAmount)
       .div(toBN(10).pow(vaultData.decimals))
@@ -236,7 +237,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
       targetUnderlyingTokenAddress: vault,
       targetUnderlyingTokenAmount,
       conversionRate,
-      slippage: 1 - conversionRate,
+      slippage: toBN(1).minus(conversionRate).toNumber(),
     };
   }
 
@@ -381,7 +382,9 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
       token === EthAddress ? WethAddress : token,
       targetTokenAmount
     );
-    const conversionRate = toBN(targetTokenAmountUsdc).div(sourceTokenAmountUsdc).toNumber();
+    const conversionRate = toBN(sourceTokenAmountUsdc).eq(0)
+      ? 0
+      : toBN(targetTokenAmountUsdc).div(sourceTokenAmountUsdc).toNumber();
 
     return {
       sourceTokenAddress: token,
@@ -392,7 +395,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
       targetUnderlyingTokenAddress: vault,
       targetUnderlyingTokenAmount: targetTokenAmount,
       conversionRate,
-      slippage: 1 - conversionRate,
+      slippage: toBN(1).minus(conversionRate).toNumber(),
     };
   }
 
