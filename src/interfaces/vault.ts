@@ -599,8 +599,8 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
       amount,
       account,
       options.slippage,
-      !options.skipGasEstimate ?? true
-      // this.yearn.services.partner?.partnerId,
+      !options.skipGasEstimate ?? true,
+      this.yearn.services.partner?.partnerId
     );
 
     const transactionRequest: TransactionRequest = {

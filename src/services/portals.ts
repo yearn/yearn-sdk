@@ -7,7 +7,7 @@ import { EthAddress, handleHttpError, SUPPORTED_ZAP_OUT_TOKEN_SYMBOLS, usdc, Zer
 import { Address, Balance, Integer, Token, TokenAllowance } from "../types";
 
 const API = "https://api.portals.fi";
-const AFFILIATE_ADDRESS = "0xFEB4acf3df3cDEA7399794D0869ef76A6EfAff52";
+const YEARN_PARTNER_ADDRESS = "0xFEB4acf3df3cDEA7399794D0869ef76A6EfAff52";
 
 export class PortalsService extends Service {
   async supportedTokens(): Promise<Token[]> {
@@ -175,8 +175,8 @@ export class PortalsService extends Service {
     amount: Integer,
     account: Address,
     slippagePercentage: number,
-    validate = true
-    // partnerId?: string,
+    validate = true,
+    partnerId?: string
   ): Promise<TransactionRequest> {
     const network = Chains[this.chainId];
     const endpoint = `${API}/v1/portal/${network}`;
@@ -187,8 +187,9 @@ export class PortalsService extends Service {
       sellAmount: amount,
       buyToken: vault,
       slippagePercentage: slippagePercentage.toString(),
-      partner: AFFILIATE_ADDRESS,
+      partner: YEARN_PARTNER_ADDRESS,
       validate: validate ? "true" : "false",
+      ...(partnerId && { affiliate: partnerId }), // Used for PartnerTrackingContract
     });
     const { tx } = await fetch(`${endpoint}?${params}`)
       .then(handleHttpError)
@@ -215,7 +216,7 @@ export class PortalsService extends Service {
       sellAmount: amount,
       buyToken,
       slippagePercentage: slippagePercentage.toString(),
-      partner: AFFILIATE_ADDRESS,
+      partner: YEARN_PARTNER_ADDRESS,
       validate: validate ? "true" : "false",
       ...(signature && { signature }),
     });

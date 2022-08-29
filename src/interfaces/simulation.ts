@@ -533,10 +533,10 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
       throw new SdkError("slippage needs to be set", SdkError.NO_SLIPPAGE);
     }
 
+    const partnerId = this.yearn.services.partner?.partnerId;
     const zapProtocol = this.getZapProtocol({ vaultAddress: toVault });
-
     const zapInParams = await this.yearn.services.portals
-      .zapIn(toVault, zapToken, amount, from, options.slippage, skipGasEstimate)
+      .zapIn(toVault, zapToken, amount, from, options.slippage, !skipGasEstimate, partnerId)
       .catch(() => {
         throw new ZapError("zap in", ZapError.ZAP_IN);
       });
