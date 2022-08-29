@@ -868,7 +868,15 @@ describe("VaultInterface", () => {
         await vaultInterface.deposit(vault, token, amount, account, { slippage: 0.1 });
 
         expect(portalsZapInMock).toHaveBeenCalledTimes(1);
-        expect(portalsZapInMock).toHaveBeenCalledWith("0xVault", "0xToken", "1", "0xAccount", 0.1, true);
+        expect(portalsZapInMock).toHaveBeenCalledWith(
+          "0xVault",
+          "0xToken",
+          "1",
+          "0xAccount",
+          0.1,
+          true,
+          "0x000partner"
+        );
       });
     });
 
@@ -953,7 +961,15 @@ describe("VaultInterface", () => {
           await vaultInterface.deposit(vault, token, amount, account, { slippage: 0.1 });
 
           expect(portalsZapInMock).toHaveBeenCalledTimes(1);
-          expect(portalsZapInMock).toHaveBeenCalledWith("0xVault", "0xToken", "1", "0xAccount", 0.1, true);
+          expect(portalsZapInMock).toHaveBeenCalledWith(
+            "0xVault",
+            "0xToken",
+            "1",
+            "0xAccount",
+            0.1,
+            true,
+            "0x000partner"
+          );
         });
       });
     });
