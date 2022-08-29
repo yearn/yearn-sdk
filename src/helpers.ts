@@ -1,6 +1,7 @@
 import { BigNumber } from "@ethersproject/bignumber";
 
 import { Address, Integer, SdkError, Token, Usdc } from "./types";
+import { toBN } from "./utils";
 
 export const ZeroAddress = "0x0000000000000000000000000000000000000000";
 export const EthAddress = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";
@@ -14,6 +15,8 @@ export const SUPPORTED_ZAP_OUT_ADDRESSES_MAINNET = {
   USDT: "0xdAC17F958D2ee523a2206206994597C13D831ec7",
   WBTC: "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
 };
+
+export const SUPPORTED_ZAP_OUT_TOKEN_SYMBOLS = ["ETH", "DAI", "USDC", "USDT", "WBTC"];
 
 export const FANTOM_TOKEN: Token = {
   address: ZeroAddress,
@@ -67,8 +70,10 @@ export async function handleHttpError(response: Response): Promise<Response> {
 }
 
 // formally convert USD values to USDC values (* 1e6), using Usdc type alias.
-export function usdc(usd: unknown): Usdc {
-  return BigNumber.from(Math.floor(Number(usd) * 1e6)).toString();
+export function usdc(usd: Usdc): Usdc {
+  return toBN(usd)
+    .times(10 ** 6)
+    .toFixed(0);
 }
 
 // formally convert BigNumber to Integer type alias.
@@ -117,6 +122,10 @@ export function convertSecondsMillisOrMicrosToMillis(timestamp: string | number)
  * @returns combined arrays by address without duplicates
  */
 export function mergeByAddress<T extends { address: Address }>(a: T[], b: T[]): T[] {
+  if (!a || a.length === 0) return b;
+
+  if (!b || b.length === 0) return a;
+
   const filter = new Set(a.map(({ address }) => address));
 
   return [...a, ...b.filter(({ address }) => !filter.has(address))];

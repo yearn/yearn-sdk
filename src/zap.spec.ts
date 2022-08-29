@@ -39,15 +39,11 @@ describe("Zap", () => {
 
     describe("when is Ethereum", () => {
       it.each`
-        supported                                | zapInWith         | expectation
-        ${{ zapper: true, zapperZapIn: true }}   | ${"zapperZapIn"}  | ${{ isZapInSupported: true, zapInWith: "zapperZapIn" }}
-        ${{ zapper: false, zapperZapIn: false }} | ${"zapperZapIn"}  | ${{ isZapInSupported: false, zapInWith: null }}
-        ${{ zapper: true, zapperZapIn: false }}  | ${"zapperZapIn"}  | ${{ isZapInSupported: false, zapInWith: null }}
-        ${{ zapper: false, zapperZapIn: true }}  | ${"zapperZapIn"}  | ${{ isZapInSupported: false, zapInWith: null }}
-        ${{ zapper: true, zapperZapIn: true }}   | ${"invalidZapIn"} | ${{ isZapInSupported: false, zapInWith: null }}
-        ${{ zapper: false, zapperZapIn: false }} | ${"invalidZapIn"} | ${{ isZapInSupported: false, zapInWith: null }}
-        ${{ zapper: true, zapperZapIn: false }}  | ${"invalidZapIn"} | ${{ isZapInSupported: false, zapInWith: null }}
-        ${{ zapper: false, zapperZapIn: true }}  | ${"invalidZapIn"} | ${{ isZapInSupported: false, zapInWith: null }}
+        supported                 | zapInWith         | expectation
+        ${{ zapperZapIn: true }}  | ${"zapperZapIn"}  | ${{ isZapInSupported: true, zapInWith: "zapperZapIn" }}
+        ${{ zapperZapIn: false }} | ${"zapperZapIn"}  | ${{ isZapInSupported: false, zapInWith: null }}
+        ${{ zapperZapIn: true }}  | ${"invalidZapIn"} | ${{ isZapInSupported: false, zapInWith: null }}
+        ${{ zapperZapIn: false }} | ${"invalidZapIn"} | ${{ isZapInSupported: false, zapInWith: null }}
       `(
         `should return \`$expectation\` when token supports \`$supported\`, and vaultMetadata has \`$zapInWith\``,
         ({ supported, zapInWith, expectation }) => {
@@ -123,15 +119,11 @@ describe("Zap", () => {
 
     describe("when is Ethereum", () => {
       it.each`
-        supported                                 | zapOutWith         | expectation
-        ${{ zapper: true, zapperZapOut: true }}   | ${"zapperZapOut"}  | ${{ isZapOutSupported: true, zapOutWith: "zapperZapOut" }}
-        ${{ zapper: false, zapperZapOut: false }} | ${"zapperZapOut"}  | ${{ isZapOutSupported: false, zapOutWith: null }}
-        ${{ zapper: true, zapperZapOut: false }}  | ${"zapperZapOut"}  | ${{ isZapOutSupported: false, zapOutWith: null }}
-        ${{ zapper: false, zapperZapOut: true }}  | ${"zapperZapOut"}  | ${{ isZapOutSupported: false, zapOutWith: null }}
-        ${{ zapper: true, zapperZapOut: true }}   | ${"invalidZapOut"} | ${{ isZapOutSupported: false, zapOutWith: null }}
-        ${{ zapper: false, zapperZapOut: false }} | ${"invalidZapOut"} | ${{ isZapOutSupported: false, zapOutWith: null }}
-        ${{ zapper: true, zapperZapOut: false }}  | ${"invalidZapOut"} | ${{ isZapOutSupported: false, zapOutWith: null }}
-        ${{ zapper: false, zapperZapOut: true }}  | ${"invalidZapOut"} | ${{ isZapOutSupported: false, zapOutWith: null }}
+        supported                  | zapOutWith         | expectation
+        ${{ zapperZapOut: true }}  | ${"zapperZapOut"}  | ${{ isZapOutSupported: true, zapOutWith: "zapperZapOut" }}
+        ${{ zapperZapOut: false }} | ${"zapperZapOut"}  | ${{ isZapOutSupported: false, zapOutWith: null }}
+        ${{ zapperZapOut: true }}  | ${"invalidZapOut"} | ${{ isZapOutSupported: false, zapOutWith: null }}
+        ${{ zapperZapOut: false }} | ${"invalidZapOut"} | ${{ isZapOutSupported: false, zapOutWith: null }}
       `(
         `should return \`$expectation\` when token supports \`$supported\`, and vaultMetadata has \`$zapOutWith\``,
         ({ supported, zapOutWith, expectation }) => {

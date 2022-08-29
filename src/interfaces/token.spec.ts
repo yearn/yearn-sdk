@@ -16,13 +16,13 @@ import { Yearn } from "../yearn";
 
 const getPriceUsdcMock = jest.fn();
 const getPriceFromRouterMock = jest.fn(() => Promise.resolve(1));
-const zapperBalancesMock = jest.fn();
-const zapperGasMock = jest.fn();
-const zapperSupportedTokensMock = jest.fn();
-const zapperZapInApprovalStateMock = jest.fn();
-const zapperZapInApprovalTransactionMock = jest.fn();
-const zapperZapOutApprovalStateMock = jest.fn();
-const zapperZapOutApprovalTransactionMock = jest.fn();
+const zapBalancesMock = jest.fn();
+const zapGasMock = jest.fn();
+const zapSupportedTokensMock = jest.fn();
+const zapZapInApprovalStateMock = jest.fn();
+const zapZapInApprovalTransactionMock = jest.fn();
+const zapZapOutApprovalStateMock = jest.fn();
+const zapZapOutApprovalTransactionMock = jest.fn();
 const assetIconMock = jest.fn();
 const assetReadyThenMock = jest.fn();
 const metaTokensMock = jest.fn();
@@ -65,13 +65,22 @@ jest.mock("../yearn", () => ({
         getPriceUsdc: getPriceUsdcMock,
       },
       zapper: {
-        balances: zapperBalancesMock,
-        gas: zapperGasMock,
-        supportedTokens: zapperSupportedTokensMock,
-        zapInApprovalState: zapperZapInApprovalStateMock,
-        zapInApprovalTransaction: zapperZapInApprovalTransactionMock,
-        zapOutApprovalState: zapperZapOutApprovalStateMock,
-        zapOutApprovalTransaction: zapperZapOutApprovalTransactionMock,
+        balances: zapBalancesMock,
+        gas: zapGasMock,
+        supportedTokens: zapSupportedTokensMock,
+        zapInApprovalState: zapZapInApprovalStateMock,
+        zapInApprovalTransaction: zapZapInApprovalTransactionMock,
+        zapOutApprovalState: zapZapOutApprovalStateMock,
+        zapOutApprovalTransaction: zapZapOutApprovalTransactionMock,
+      },
+      portals: {
+        balances: zapBalancesMock,
+        gas: zapGasMock,
+        supportedTokens: zapSupportedTokensMock,
+        zapInApprovalState: zapZapInApprovalStateMock,
+        zapInApprovalTransaction: zapZapInApprovalTransactionMock,
+        zapOutApprovalState: zapZapOutApprovalStateMock,
+        zapOutApprovalTransaction: zapZapOutApprovalTransactionMock,
       },
       transaction: {
         sendTransaction: sendTransactionMock,
@@ -96,6 +105,7 @@ jest.mock("../context", () => ({
         getBalance: jest.fn().mockResolvedValue(BigNumber.from("42000000000000000000")), // 42
       },
     },
+    cache: { useCache: false },
   })),
 }));
 
@@ -178,10 +188,10 @@ describe("TokenInterface", () => {
       name: "vaultToken without balance",
       dataSource: "vaults",
     });
-    const zapperToken = createMockToken({
+    const zapToken = createMockToken({
       address: "0x003",
-      name: "zapperToken",
-      dataSource: "zapper",
+      name: "zapToken",
+      dataSource: "portals",
     });
     const vaultTokenWithBalance = createMockBalance({
       address: "0x001",
@@ -196,10 +206,10 @@ describe("TokenInterface", () => {
         name: "vaultTokenWithoutBalance",
       }),
     });
-    const zapperTokenWithBalance = createMockBalance({
+    const zapTokenWithBalance = createMockBalance({
       address: "0x003",
       token: createMockToken({
-        name: "zapperTokenWithBalance",
+        name: "zapTokenWithBalance",
       }),
     });
 
@@ -207,12 +217,12 @@ describe("TokenInterface", () => {
       describe(`when chainId is ${chainId}`, () => {
         beforeEach(() => {
           tokenInterface = new TokenInterface(mockedYearn, chainId, new Context({}));
-          tokenInterface.supported = jest.fn().mockResolvedValue([vaultToken, vaultTokenNoBalance, zapperToken]);
+          tokenInterface.supported = jest.fn().mockResolvedValue([vaultToken, vaultTokenNoBalance, zapToken]);
         });
 
         it("should return balances for all supported tokens", async () => {
           vaultsBalancesMock.mockResolvedValue([vaultTokenWithBalance, vaultTokenWithoutBalance]);
-          zapperBalancesMock.mockResolvedValue([zapperTokenWithBalance]);
+          zapBalancesMock.mockResolvedValue([zapTokenWithBalance]);
 
           const actualBalances = await tokenInterface.balances("0xAccount");
 
@@ -220,7 +230,7 @@ describe("TokenInterface", () => {
           expect(actualBalances).toEqual(
             expect.arrayContaining([
               vaultTokenWithBalance,
-              zapperTokenWithBalance,
+              zapTokenWithBalance,
               {
                 address: EthAddress,
                 token: ETH_TOKEN,
@@ -230,13 +240,13 @@ describe("TokenInterface", () => {
               },
             ])
           );
-          expect(zapperBalancesMock).toHaveBeenCalledWith("0xAccount");
+          expect(zapBalancesMock).toHaveBeenCalledWith("0xAccount");
           expect(vaultsBalancesMock).toHaveBeenCalledWith("0xAccount");
         });
 
         it("should filter supported tokens when address list is given", async () => {
           vaultsBalancesMock.mockResolvedValue([vaultTokenWithBalance, vaultTokenWithoutBalance]);
-          zapperBalancesMock.mockResolvedValue([zapperTokenWithBalance]);
+          zapBalancesMock.mockResolvedValue([zapTokenWithBalance]);
 
           const actualBalances = await tokenInterface.balances("0xAccount", [vaultToken.address]);
 
@@ -253,13 +263,13 @@ describe("TokenInterface", () => {
               },
             ])
           );
-          expect(zapperBalancesMock).toHaveBeenCalledWith("0xAccount");
+          expect(zapBalancesMock).toHaveBeenCalledWith("0xAccount");
           expect(vaultsBalancesMock).toHaveBeenCalledWith("0xAccount");
         });
 
-        it("should log error message when zapper fails but return other balances", async () => {
-          zapperBalancesMock.mockImplementation(() => {
-            throw new Error("zapper balances failed!");
+        it("should log error message when zap fails but return other balances", async () => {
+          zapBalancesMock.mockImplementation(() => {
+            throw new Error("zap balances failed!");
           });
           vaultsBalancesMock.mockResolvedValue([vaultTokenWithBalance, vaultTokenWithoutBalance]);
 
@@ -304,7 +314,7 @@ describe("TokenInterface", () => {
             },
           ])
         );
-        expect(zapperBalancesMock).not.toHaveBeenCalled();
+        expect(zapBalancesMock).not.toHaveBeenCalled();
         expect(vaultsBalancesMock).toHaveBeenCalledWith("0xAccount");
       });
 
@@ -334,7 +344,7 @@ describe("TokenInterface", () => {
             },
           ])
         );
-        expect(zapperBalancesMock).not.toHaveBeenCalled();
+        expect(zapBalancesMock).not.toHaveBeenCalled();
         expect(vaultsBalancesMock).toHaveBeenCalledWith("0xAccount");
       });
     });
@@ -352,7 +362,7 @@ describe("TokenInterface", () => {
 
         expect(actualBalances.length).toEqual(1);
         expect(actualBalances).toEqual(expect.arrayContaining([vaultTokenWithBalance]));
-        expect(zapperBalancesMock).not.toHaveBeenCalled();
+        expect(zapBalancesMock).not.toHaveBeenCalled();
         expect(vaultsBalancesMock).toHaveBeenCalledWith("0xAccount");
       });
 
@@ -363,7 +373,7 @@ describe("TokenInterface", () => {
 
         expect(actualBalances.length).toEqual(1);
         expect(actualBalances).toEqual(expect.arrayContaining([vaultTokenWithBalance]));
-        expect(zapperBalancesMock).not.toHaveBeenCalled();
+        expect(zapBalancesMock).not.toHaveBeenCalled();
         expect(vaultsBalancesMock).toHaveBeenCalledWith("0xAccount");
       });
     });
@@ -371,7 +381,7 @@ describe("TokenInterface", () => {
     describe("when chainId is not supported", () => {
       beforeEach(() => {
         tokenInterface = new TokenInterface(mockedYearn, 42 as ChainId, new Context({}));
-        zapperBalancesMock.mockResolvedValue([zapperTokenWithBalance]);
+        zapBalancesMock.mockResolvedValue([zapTokenWithBalance]);
         vaultsBalancesMock.mockResolvedValue([vaultTokenWithBalance, vaultTokenWithoutBalance]);
       });
 
@@ -380,7 +390,7 @@ describe("TokenInterface", () => {
 
         expect(actualBalances).toEqual([]);
         expect(console.error).toHaveBeenCalledWith("the chain 42 hasn't been implemented yet");
-        expect(zapperBalancesMock).not.toHaveBeenCalled();
+        expect(zapBalancesMock).not.toHaveBeenCalled();
         expect(vaultsBalancesMock).not.toHaveBeenCalled();
       });
     });
@@ -420,17 +430,17 @@ describe("TokenInterface", () => {
             vaultsTokensMock.mockResolvedValue([vaultsToken]);
           });
 
-          it("should fetch all the tokens from Zapper and Vaults", async () => {
-            const supportedZapperTokenWithIcon = createMockToken({ address: "0x003" });
-            const supportedZapperTokenWithoutIcon = createMockToken({ address: "0x004" });
-            const supportedZapperTokenWithZapOut = createMockToken({
+          it("should fetch all the tokens from Zap and Vaults", async () => {
+            const supportedZapTokenWithIcon = createMockToken({ address: "0x003" });
+            const supportedZapTokenWithoutIcon = createMockToken({ address: "0x004" });
+            const supportedZapTokenWithZapOut = createMockToken({
               address: SUPPORTED_ZAP_OUT_ADDRESSES_MAINNET.USDC,
             });
 
-            zapperSupportedTokensMock.mockResolvedValue([
-              supportedZapperTokenWithIcon,
-              supportedZapperTokenWithoutIcon,
-              supportedZapperTokenWithZapOut,
+            zapSupportedTokensMock.mockResolvedValue([
+              supportedZapTokenWithIcon,
+              supportedZapTokenWithoutIcon,
+              supportedZapTokenWithZapOut,
             ]);
             assetReadyThenMock.mockResolvedValue({ "0x003": "image.png" });
 
@@ -440,35 +450,35 @@ describe("TokenInterface", () => {
             expect(actualSupportedTokens).toEqual(
               expect.arrayContaining([
                 {
-                  ...supportedZapperTokenWithIcon,
+                  ...supportedZapTokenWithIcon,
                   icon: "image.png",
-                  supported: { zapper: true, zapperZapIn: true, zapperZapOut: false },
+                  supported: { portalsZapIn: true, portalsZapOut: false },
                 },
                 {
-                  ...supportedZapperTokenWithoutIcon,
-                  supported: { zapper: true, zapperZapIn: true, zapperZapOut: false },
+                  ...supportedZapTokenWithoutIcon,
+                  supported: { portalsZapIn: true, portalsZapOut: false },
                 },
                 {
-                  ...supportedZapperTokenWithZapOut,
-                  supported: { zapper: true, zapperZapIn: true, zapperZapOut: true },
+                  ...supportedZapTokenWithZapOut,
+                  supported: { portalsZapIn: true, portalsZapOut: true },
                 },
                 vaultsToken,
               ])
             );
-            expect(zapperSupportedTokensMock).toHaveBeenCalledTimes(1);
+            expect(zapSupportedTokensMock).toHaveBeenCalledTimes(1);
             expect(vaultsTokensMock).toHaveBeenCalledTimes(1);
             expect(assetReadyThenMock).toHaveBeenCalledTimes(1);
           });
 
-          it("should overwrite zapper tokens' data with our own in case of duplicates", async () => {
-            const vaultsTokenAlsoInZapper = createMockToken({
+          it("should overwrite zap tokens' data with our own in case of duplicates", async () => {
+            const vaultsTokenInZap = createMockToken({
               address: "0x002",
               symbol: "VAULT",
-              name: "Vault Token in Zapper",
+              name: "Vault Token in Zap",
               icon: "vaults.svg",
               priceUsdc: "20",
             });
-            const vaultsTokenNotInZapper = createMockToken({
+            const vaultsTokenNotInZap = createMockToken({
               address: "0x004",
               symbol: "VAULT2",
               name: "Vault Token 2",
@@ -476,14 +486,12 @@ describe("TokenInterface", () => {
               priceUsdc: "22",
             });
 
-            vaultsTokensMock.mockResolvedValue([vaultsTokenNotInZapper, vaultsTokenAlsoInZapper]);
-            zapperSupportedTokensMock.mockResolvedValue([
+            vaultsTokensMock.mockResolvedValue([vaultsTokenNotInZap, vaultsTokenInZap]);
+            zapSupportedTokensMock.mockResolvedValue([
               {
-                ...vaultsTokenAlsoInZapper,
+                ...vaultsTokenInZap,
                 priceUsdc: "2",
-                supported: {
-                  zapper: true,
-                },
+                supported: {},
               },
             ]);
             assetReadyThenMock.mockResolvedValue({ "0x002": "zapper-vaults.svg" });
@@ -493,32 +501,31 @@ describe("TokenInterface", () => {
             expect(actualSupportedTokens.length).toEqual(2);
             expect(actualSupportedTokens).toEqual(
               expect.arrayContaining([
-                vaultsTokenNotInZapper,
+                vaultsTokenNotInZap,
                 {
-                  ...vaultsTokenAlsoInZapper,
+                  ...vaultsTokenInZap,
                   supported: {
-                    zapper: true,
-                    zapperZapIn: true,
-                    zapperZapOut: false,
+                    portalsZapIn: true,
+                    portalsZapOut: false,
                   },
                 },
               ])
             );
-            expect(zapperSupportedTokensMock).toHaveBeenCalledTimes(1);
+            expect(zapSupportedTokensMock).toHaveBeenCalledTimes(1);
             expect(vaultsTokensMock).toHaveBeenCalledTimes(1);
             expect(assetReadyThenMock).toHaveBeenCalledTimes(1);
           });
 
-          it("should return internal tokens when zapper fails", async () => {
-            zapperSupportedTokensMock.mockImplementation(() => {
-              throw new Error("zapper balances failed!");
+          it("should return internal tokens when zap service fails", async () => {
+            zapSupportedTokensMock.mockImplementation(() => {
+              throw new Error("zap balances failed!");
             });
 
             const actualSupportedTokens = await tokenInterface.supported();
 
             expect(actualSupportedTokens.length).toEqual(1);
             expect(actualSupportedTokens).toEqual([vaultsToken]);
-            expect(zapperSupportedTokensMock).toHaveBeenCalledTimes(1);
+            expect(zapSupportedTokensMock).toHaveBeenCalledTimes(1);
             expect(vaultsTokensMock).toHaveBeenCalledTimes(1);
             expect(assetReadyThenMock).not.toHaveBeenCalled();
             expect(console.error).toHaveBeenCalled();
@@ -551,12 +558,12 @@ describe("TokenInterface", () => {
           vaultsTokensMock.mockResolvedValue([vaultsToken]);
         });
 
-        it("should fetch all the tokens only from Vaults (not Zapper)", async () => {
+        it("should fetch all the tokens only from Vaults (not Zap)", async () => {
           const actualSupportedTokens = await tokenInterface.supported();
 
           expect(actualSupportedTokens.length).toEqual(2);
           expect(actualSupportedTokens).toEqual(expect.arrayContaining([vaultsToken, fantomToken]));
-          expect(zapperSupportedTokensMock).not.toHaveBeenCalled();
+          expect(zapSupportedTokensMock).not.toHaveBeenCalled();
           expect(assetReadyThenMock).not.toHaveBeenCalled();
           expect(vaultsTokensMock).toHaveBeenCalledTimes(1);
         });
@@ -580,7 +587,7 @@ describe("TokenInterface", () => {
 
           expect(actualSupportedTokens.length).toEqual(1);
           expect(actualSupportedTokens).toEqual(expect.arrayContaining([vaultsToken]));
-          expect(zapperSupportedTokensMock).not.toHaveBeenCalled();
+          expect(zapSupportedTokensMock).not.toHaveBeenCalled();
           expect(assetReadyThenMock).not.toHaveBeenCalled();
           expect(vaultsTokensMock).toHaveBeenCalledTimes(1);
         });
@@ -593,7 +600,7 @@ describe("TokenInterface", () => {
           const actualSupportedTokens = await tokenInterface.supported();
 
           expect(actualSupportedTokens).toEqual([]);
-          expect(zapperSupportedTokensMock).not.toHaveBeenCalled();
+          expect(zapSupportedTokensMock).not.toHaveBeenCalled();
           expect(assetReadyThenMock).not.toHaveBeenCalled();
         })
       );

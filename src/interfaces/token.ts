@@ -60,9 +60,19 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
       throw new SdkError(`the chain ${this.chainId} hasn't been implemented yet`);
     }
 
+    const supportedTokens = await this.supported();
+    const supportedTokensMap = supportedTokens?.reduce((obj, token) => {
+      obj[token.address] = token;
+      return obj;
+    }, {} as Record<Address, Token>);
+
     if (Array.isArray(tokens)) {
       const entries = await Promise.all(
         tokens.map(async (token) => {
+          if (supportedTokensMap && supportedTokensMap[token]?.dataSource === "portals") {
+            const price = supportedTokensMap[token].priceUsdc;
+            if (price) return [token, price];
+          }
           const price = await this.yearn.services.oracle.getPriceUsdc(token, overrides);
           return [token, price];
         })
@@ -94,6 +104,7 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
       },
       {
         zapper: new Set<Address>(),
+        portals: new Set<Address>(),
         vaults: new Set<Address>(),
         labs: new Set<Address>(),
         sdk: new Set<Address>(),
@@ -102,6 +113,7 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
 
     const balances: SourceBalances = {
       zapper: [],
+      portals: [],
       vaults: [],
       labs: [],
       sdk: [],
@@ -109,8 +121,8 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
 
     if (isEthereum(this.chainId)) {
       try {
-        const zapperBalances = await this.yearn.services.zapper.balances(account);
-        balances.zapper = zapperBalances.filter(({ address }) => addresses.zapper.has(address));
+        const zapBalances = await this.yearn.services.portals.balances(account);
+        balances.portals = zapBalances.filter(({ address }) => addresses.portals.has(address));
       } catch (error) {
         console.error(error);
       }
@@ -158,7 +170,7 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
         ({ address, balance }) => balance !== "0" && addresses.vaults.has(address)
       );
 
-      return [...balances.vaults, ...balances.zapper, ...balances.sdk];
+      return [...balances.vaults, ...balances.zapper, ...balances.portals, ...balances.sdk];
     }
 
     console.error(`the chain ${this.chainId} hasn't been implemented yet`);
@@ -182,11 +194,11 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
       return cached;
     }
 
-    // Zapper only supported in Ethereum
-    let zapperTokens: Token[] = [];
+    // zaps only supported in Ethereum
+    let zapTokens: Token[] = [];
     if (isEthereum(this.chainId)) {
       try {
-        zapperTokens = await this.getZapperTokensWithIcons();
+        zapTokens = await this.getZapTokensWithIcons();
       } catch (error) {
         console.error(error);
       }
@@ -199,25 +211,24 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
       vaultsTokens.push({ ...FANTOM_TOKEN, priceUsdc });
     }
 
-    if (!zapperTokens.length) {
+    if (!zapTokens.length) {
       return vaultsTokens;
     }
 
-    const allSupportedTokens = mergeByAddress(vaultsTokens, zapperTokens);
+    const allSupportedTokens = mergeByAddress(vaultsTokens, zapTokens);
 
-    const zapperTokensUniqueAddresses = new Set(zapperTokens.map(({ address }) => address));
+    const zapTokensUniqueAddresses = new Set(zapTokens.map(({ address }) => address));
 
     return allSupportedTokens.map((token) => {
-      const isZapperToken = zapperTokensUniqueAddresses.has(token.address);
+      const isZapToken = zapTokensUniqueAddresses.has(token.address);
 
       return {
         ...token,
-        ...(isZapperToken && {
+        ...(isZapToken && {
           supported: {
             ...token.supported,
-            zapper: true,
-            zapperZapIn: true,
-            zapperZapOut: Object.values(SUPPORTED_ZAP_OUT_ADDRESSES_MAINNET).includes(token.address),
+            portalsZapIn: true,
+            portalsZapOut: Object.values(SUPPORTED_ZAP_OUT_ADDRESSES_MAINNET).includes(token.address),
           },
         }),
       };
@@ -305,24 +316,24 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
   }
 
   /**
-   * Fetches supported zapper tokens and sets their icon
-   * @returns zapper tokens with icons
+   * Fetches supported zap tokens and sets their icon
+   * @returns zap tokens with icons
    */
-  private async getZapperTokensWithIcons(): Promise<Token[]> {
-    const zapperTokens = await this.yearn.services.zapper.supportedTokens();
+  private async getZapTokensWithIcons(): Promise<Token[]> {
+    const zapTokens = await this.yearn.services.portals.supportedTokens();
 
-    const zapperTokensAddresses = zapperTokens.map(({ address }) => address);
+    const zapTokensAddresses = zapTokens.map(({ address }) => address);
 
-    const zapperTokensIcons = await this.yearn.services.asset.ready.then(() =>
-      this.yearn.services.asset.icon(zapperTokensAddresses)
+    const zapTokensIcons = await this.yearn.services.asset.ready.then(() =>
+      this.yearn.services.asset.icon(zapTokensAddresses)
     );
 
     const setIcon = (token: Token): Token => {
-      const icon = zapperTokensIcons[token.address];
+      const icon = zapTokensIcons[token.address];
       return icon ? { ...token, icon } : token;
     };
 
-    return zapperTokens.map(setIcon);
+    return zapTokens.map(setIcon);
   }
 
   /**

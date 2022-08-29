@@ -155,12 +155,12 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
         });
 
     if (isEthereum(this.chainId)) {
-      const vaultTokenMarketData = await this.yearn.services.zapper.supportedVaultAddresses();
+      const vaultTokenMarketData = await this.yearn.services.portals.supportedVaultAddresses();
       metadataOverrides = mergeZapPropsWithAddressables({
         addressables: metadataOverrides,
         supportedVaultAddresses: vaultTokenMarketData,
-        zapInType: "zapperZapIn",
-        zapOutType: "zapperZapOut",
+        zapInType: "portalsZapIn",
+        zapOutType: "portalsZapOut",
       });
     }
 
@@ -468,14 +468,14 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
       return vaultAddress;
     }
 
-    return await this.yearn.addressProvider.addressById(ContractAddressId.zapperZapIn);
+    return await this.yearn.addressProvider.addressById(ContractAddressId.portalsZapIn);
   }
 
   private async getWithdrawContractAddress(vaultAddress: Address, tokenAddress: Address): Promise<Address> {
     const willWithdrawToUnderlyingToken = await this.isUnderlyingToken(vaultAddress, tokenAddress);
     if (willWithdrawToUnderlyingToken) return vaultAddress;
 
-    return await this.yearn.addressProvider.addressById(ContractAddressId.zapperZapOut);
+    return await this.yearn.addressProvider.addressById(ContractAddressId.portalsZapOut);
   }
 
   async isUnderlyingToken(vaultAddress: Address, tokenAddress: Address): Promise<boolean> {
@@ -588,20 +588,18 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
     amount: Integer,
     account: Address,
     options: DepositOptions = {},
-    zapProtocol: ZapProtocol = ZapProtocol.YEARN,
-    overrides: CallOverrides = {}
+    _zapProtocol: ZapProtocol = ZapProtocol.YEARN,
+    _overrides: CallOverrides = {}
   ): Promise<TransactionRequest> {
     if (options.slippage === undefined) throw new SdkError("zap operations should have a slippage set");
 
-    const zapInParams = await this.yearn.services.zapper.zapIn(
-      account,
+    const zapInParams = await this.yearn.services.portals.zapIn(
+      vault,
       token,
       amount,
-      vault,
-      "0",
+      account,
       options.slippage,
-      options.skipGasEstimate ?? false,
-      zapProtocol,
+      !options.skipGasEstimate ?? true,
       this.yearn.services.partner?.partnerId
     );
 
@@ -609,13 +607,11 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
       to: zapInParams.to,
       from: zapInParams.from,
       data: zapInParams.data,
-      value: BigNumber.from(zapInParams.value),
-      gasLimit: BigNumber.from(zapInParams.gas),
+      value: zapInParams.value ? BigNumber.from(zapInParams.value) : undefined,
+      gasLimit: zapInParams.gasLimit ? BigNumber.from(zapInParams.gasLimit) : undefined,
     };
 
-    const combinedParams = { ...transactionRequest, ...overrides };
-    const signer = this.ctx.provider.write.getSigner(account);
-    return await signer.populateTransaction(combinedParams);
+    return transactionRequest;
   }
 
   private fillTokenMetadataOverrides(token: Token, overrides: TokenMetadata): void {
@@ -745,15 +741,13 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
 
     if (options.slippage === undefined) throw new SdkError("zap operations should have a slippage set");
 
-    const zapOutParams = await this.yearn.services.zapper.zapOut(
-      account,
+    const zapOutParams = await this.yearn.services.portals.zapOut(
+      vault,
       token,
       amount,
-      vault,
-      "0",
+      account,
       options.slippage,
-      options.skipGasEstimate ?? false,
-      undefined,
+      !options.skipGasEstimate ?? true,
       options.signature
     );
 
@@ -761,12 +755,11 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
       to: zapOutParams.to,
       from: zapOutParams.from,
       data: zapOutParams.data,
-      value: BigNumber.from(zapOutParams.value),
-      gasLimit: BigNumber.from(zapOutParams.gas),
+      value: zapOutParams.value ? BigNumber.from(zapOutParams.value) : undefined,
+      gasLimit: zapOutParams.gasLimit ? BigNumber.from(zapOutParams.gasLimit) : undefined,
     };
 
-    const combinedParams = { ...transactionRequest, ...overrides };
-    return await signer.populateTransaction(combinedParams);
+    return transactionRequest;
   }
 
   private isZappingIntoPickleJar({ vault }: { vault: string }) {
