@@ -2,7 +2,7 @@ import { Service } from "../common";
 import { Address, SdkError, StrategiesMetadata, TokenMetadata, VaultMetadataOverrides } from "../types";
 import { getLocalizedString } from "../utils/localization";
 
-const META_URL = "https://meta.yearn.network";
+const META_URL = "https://ydaemon.yearn.finance/api";
 
 /**
  * [[MetaService]] fetches meta data about things such as vaults and tokens
