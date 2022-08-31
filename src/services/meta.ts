@@ -2,7 +2,7 @@ import { Service } from "../common";
 import { Address, SdkError, StrategiesMetadata, TokenMetadata, VaultMetadataOverrides } from "../types";
 import { getLocalizedString } from "../utils/localization";
 
-const META_URL = "https://meta.yearn.network";
+const META_URL = "https://ydaemon.yearn.finance/api";
 
 /**
  * [[MetaService]] fetches meta data about things such as vaults and tokens
@@ -10,7 +10,7 @@ const META_URL = "https://meta.yearn.network";
  */
 export class MetaService extends Service {
   async tokens(addresses?: Address[]): Promise<TokenMetadata[]> {
-    const tokensMetadata: TokenMetadata[] = await fetch(`${META_URL}/tokens/${this.chainId}/all`).then((res) =>
+    const tokensMetadata: TokenMetadata[] = await fetch(`${META_URL}/${this.chainId}/tokens/all`).then((res) =>
       res.json()
     );
 
@@ -41,7 +41,7 @@ export class MetaService extends Service {
 
   async token(address: Address): Promise<TokenMetadata | null> {
     try {
-      const response = await fetch(`${META_URL}/tokens/${this.chainId}/${address}`);
+      const response = await fetch(`${META_URL}/${this.chainId}/tokens/${address}`);
 
       if (!response.ok) {
         throw new SdkError(`Failed to fetch token with address "${address}". HTTP error: ${response.status}`);
@@ -65,11 +65,11 @@ export class MetaService extends Service {
   }
 
   async strategies(): Promise<StrategiesMetadata[]> {
-    return fetch(`${META_URL}/strategies/${this.chainId}/all`).then((res) => res.json());
+    return fetch(`${META_URL}/${this.chainId}/strategies/all`).then((res) => res.json());
   }
 
   async vaults(addresses?: Address[]): Promise<VaultMetadataOverrides[]> {
-    const vaultsMetadata = await fetch(`${META_URL}/vaults/${this.chainId}/all`).then((res) => res.json());
+    const vaultsMetadata = await fetch(`${META_URL}/${this.chainId}/vaults/all`).then((res) => res.json());
 
     if (!addresses) {
       return vaultsMetadata;
@@ -80,7 +80,7 @@ export class MetaService extends Service {
 
   async vault(address: Address): Promise<VaultMetadataOverrides | null> {
     try {
-      const response = await fetch(`${META_URL}/vaults/${this.chainId}/${address}`);
+      const response = await fetch(`${META_URL}/${this.chainId}/vaults/${address}`);
 
       if (!response.ok) {
         throw new SdkError(`Failed to fetch token with address "${address}". HTTP error: ${response.status}`);
