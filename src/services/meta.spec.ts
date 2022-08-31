@@ -3,6 +3,8 @@ import { Context } from "../context";
 import { createMockTokenMetadata, createMockVaultMetadata } from "../test-utils/factories";
 import { MetaService } from "./meta";
 
+const META_URL = "https://ydaemon.yearn.finance/api";
+
 describe("MetaService", () => {
   let meta: MetaService;
 
@@ -29,7 +31,7 @@ describe("MetaService", () => {
     it("should fetch all tokens metadata when no addresses are given", async () => {
       await meta.tokens();
 
-      expect(global.fetch).toHaveBeenCalledWith("https://meta.yearn.network/tokens/1/all");
+      expect(global.fetch).toHaveBeenCalledWith(`${META_URL}/tokens/1/all`);
     });
 
     it("should fetch all tokens metadata from the addresses given", async () => {
@@ -44,7 +46,7 @@ describe("MetaService", () => {
       const actual = await meta.tokens(["0x001", "0x003"]);
 
       expect(global.fetch).toHaveBeenCalledTimes(1);
-      expect(global.fetch).toHaveBeenCalledWith("https://meta.yearn.network/tokens/1/all");
+      expect(global.fetch).toHaveBeenCalledWith(`${META_URL}/tokens/1/all`);
       expect(actual).toEqual(expect.arrayContaining([tokenMetadata1, tokenMetadata2]));
       expect(actual).not.toEqual(
         expect.arrayContaining([
@@ -75,7 +77,7 @@ describe("MetaService", () => {
       const actual = await meta.tokens(["0x001", "0x003"]);
 
       expect(global.fetch).toHaveBeenCalledTimes(1);
-      expect(global.fetch).toHaveBeenCalledWith("https://meta.yearn.network/tokens/1/all");
+      expect(global.fetch).toHaveBeenCalledWith(`${META_URL}/tokens/1/all`);
       expect(actual).toEqual(
         expect.arrayContaining([
           {
@@ -102,7 +104,7 @@ describe("MetaService", () => {
     it("should fetch a single token metadata from the address given", async () => {
       await meta.token("0x00");
 
-      expect(global.fetch).toHaveBeenCalledWith("https://meta.yearn.network/tokens/1/0x00");
+      expect(global.fetch).toHaveBeenCalledWith(`${META_URL}/tokens/1/0x00`);
     });
 
     it("should throw when it fails to fetch a single token metadata from the address given", async () => {
@@ -113,7 +115,7 @@ describe("MetaService", () => {
 
       const actual = await meta.token("0x00");
 
-      expect(global.fetch).toHaveBeenCalledWith("https://meta.yearn.network/tokens/1/0x00");
+      expect(global.fetch).toHaveBeenCalledWith(`${META_URL}/tokens/1/0x00`);
       expect(actual).toBe(null);
       expect(console.error).toHaveBeenCalledWith(
         new Error(`Failed to fetch token with address "0x00". HTTP error: 404`)
@@ -125,7 +127,7 @@ describe("MetaService", () => {
     it("should fetch the strategies metadata", async () => {
       await meta.token("0x00");
 
-      expect(global.fetch).toHaveBeenCalledWith("https://meta.yearn.network/tokens/1/0x00");
+      expect(global.fetch).toHaveBeenCalledWith(`${META_URL}/tokens/1/0x00`);
     });
   });
 
@@ -133,7 +135,7 @@ describe("MetaService", () => {
     it("should fetch all vaults metadata when no addresses are given", async () => {
       await meta.vaults();
 
-      expect(global.fetch).toHaveBeenCalledWith("https://meta.yearn.network/vaults/1/all");
+      expect(global.fetch).toHaveBeenCalledWith(`${META_URL}/vaults/1/all`);
     });
 
     it("should fetch all vaults metadata from the addresses given", async () => {
@@ -148,7 +150,7 @@ describe("MetaService", () => {
       const actual = await meta.vaults(["0x001", "0x002"]);
 
       expect(global.fetch).toHaveBeenCalledTimes(1);
-      expect(global.fetch).toHaveBeenCalledWith("https://meta.yearn.network/vaults/1/all");
+      expect(global.fetch).toHaveBeenCalledWith(`${META_URL}/vaults/1/all`);
       expect(actual).toEqual(expect.arrayContaining([vaultMetadata1, vaultMetadata2]));
       expect(actual).not.toEqual(
         expect.arrayContaining([
@@ -164,7 +166,7 @@ describe("MetaService", () => {
     it("should fetch a single vault metadata from the address given", async () => {
       await meta.vault("0x00");
 
-      expect(global.fetch).toHaveBeenCalledWith("https://meta.yearn.network/vaults/1/0x00");
+      expect(global.fetch).toHaveBeenCalledWith(`${META_URL}/vaults/1/0x00`);
     });
 
     it("should throw when it fails to fetch a single vault metadata from the address given", async () => {
@@ -175,7 +177,7 @@ describe("MetaService", () => {
 
       const actual = await meta.vault("0x00");
 
-      expect(global.fetch).toHaveBeenCalledWith("https://meta.yearn.network/vaults/1/0x00");
+      expect(global.fetch).toHaveBeenCalledWith(`${META_URL}/vaults/1/0x00`);
       expect(actual).toBe(null);
       expect(console.error).toHaveBeenCalledWith(
         new Error(`Failed to fetch token with address "0x00". HTTP error: 404`)
