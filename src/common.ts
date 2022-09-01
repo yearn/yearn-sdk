@@ -62,6 +62,8 @@ export enum ContractAddressId {
   partner = "PARTNER_TRACKER",
   zapperZapIn = "ZAPPER_ZAP_IN",
   zapperZapOut = "ZAPPER_ZAP_OUT",
+  portalsZapIn = "PORTALS_ZAP_IN",
+  portalsZapOut = "PORTALS_ZAP_OUT",
   pickleZapIn = "PICKLE_ZAP_IN",
   propertiesAggregator = "PROPERTIES_AGGREGATOR",
   cowSwapRelayer = "COWSWAP_RELAYER", // 0xC92E8bdf79f0507f65a392b0ab4667716BFE0110

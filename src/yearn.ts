@@ -16,6 +16,7 @@ import { MetaService } from "./services/meta";
 import { OracleService } from "./services/oracle";
 import { PartnerService } from "./services/partner";
 import { PickleService } from "./services/partners/pickle";
+import { PortalsService } from "./services/portals";
 import { PropertiesAggregatorService } from "./services/propertiesAggregator";
 import { SubgraphService } from "./services/subgraph";
 import { TelegramService } from "./services/telegram";
@@ -35,6 +36,7 @@ type ServicesType<T extends ChainId> = {
   lens: LensService<T>;
   oracle: OracleService<T>;
   zapper: ZapperService;
+  portals: PortalsService;
   asset: AssetService;
   vision: VisionService;
   subgraph: SubgraphService;
@@ -149,6 +151,7 @@ export class Yearn<T extends ChainId> {
       lens: new LensService(chainId, ctx, addressProvider),
       oracle: new OracleService(chainId, ctx, addressProvider),
       zapper: new ZapperService(chainId, ctx),
+      portals: new PortalsService(chainId, ctx),
       asset: new AssetService(chainId, ctx, assetServiceState),
       vision: new VisionService(chainId, ctx),
       subgraph: new SubgraphService(chainId, ctx),

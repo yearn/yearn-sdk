@@ -46,6 +46,15 @@ const zapperZapInMock = jest.fn().mockResolvedValue({
   gas: "100",
   gasPrice: "100",
 });
+const portalsZapOutMock = jest.fn();
+const portalsZapInMock = jest.fn().mockResolvedValue({
+  to: "to",
+  from: "from",
+  data: "data",
+  value: "100",
+  gasLimit: "100",
+  gasPrice: "100",
+});
 const supportedVaultAddressesMock = jest.fn();
 const helperTokenBalancesMock = jest.fn();
 const helperTokensMock: jest.Mock<Promise<ERC20[]>> = jest.fn();
@@ -117,6 +126,11 @@ jest.mock("../yearn", () => ({
       zapper: {
         zapOut: zapperZapOutMock,
         zapIn: zapperZapInMock,
+        supportedVaultAddresses: supportedVaultAddressesMock,
+      },
+      portals: {
+        zapOut: portalsZapOutMock,
+        zapIn: portalsZapInMock,
         supportedVaultAddresses: supportedVaultAddressesMock,
       },
       transaction: {
@@ -853,16 +867,14 @@ describe("VaultInterface", () => {
 
         await vaultInterface.deposit(vault, token, amount, account, { slippage: 0.1 });
 
-        expect(zapperZapInMock).toHaveBeenCalledTimes(1);
-        expect(zapperZapInMock).toHaveBeenCalledWith(
-          "0xAccount",
+        expect(portalsZapInMock).toHaveBeenCalledTimes(1);
+        expect(portalsZapInMock).toHaveBeenCalledWith(
+          "0xVault",
           "0xToken",
           "1",
-          "0xVault",
-          "0",
+          "0xAccount",
           0.1,
-          false,
-          "pickle",
+          true,
           "0x000partner"
         );
       });
@@ -948,16 +960,14 @@ describe("VaultInterface", () => {
 
           await vaultInterface.deposit(vault, token, amount, account, { slippage: 0.1 });
 
-          expect(zapperZapInMock).toHaveBeenCalledTimes(1);
-          expect(zapperZapInMock).toHaveBeenCalledWith(
-            "0xAccount",
+          expect(portalsZapInMock).toHaveBeenCalledTimes(1);
+          expect(portalsZapInMock).toHaveBeenCalledWith(
+            "0xVault",
             "0xToken",
             "1",
-            "0xVault",
-            "0",
+            "0xAccount",
             0.1,
-            false,
-            "yearn",
+            true,
             "0x000partner"
           );
         });

@@ -32,6 +32,7 @@ export type BalancesMap<T extends Address> = TypedMap<T, Balance[]>;
 
 export interface SourceAddresses {
   zapper: Set<Address>;
+  portals: Set<Address>;
   vaults: Set<Address>;
   labs: Set<Address>;
   sdk: Set<Address>;
@@ -39,6 +40,7 @@ export interface SourceAddresses {
 
 export interface SourceBalances {
   zapper: Balance[];
+  portals: Balance[];
   vaults: Balance[];
   labs: Balance[];
   sdk: Balance[];

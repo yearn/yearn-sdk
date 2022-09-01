@@ -1,4 +1,5 @@
 import { getAddress } from "@ethersproject/address";
+import { BytesLike } from "@ethersproject/bytes";
 import { JsonRpcProvider, JsonRpcSigner, TransactionRequest } from "@ethersproject/providers";
 import BigNumber from "bignumber.js";
 
@@ -85,11 +86,15 @@ export class SimulationExecutor {
   async simulateVaultInteraction(
     from: Address,
     to: Address,
-    data: string,
+    data: BytesLike,
     targetToken: Address,
     options: SimulationOptions,
     value: Integer = "0"
   ): Promise<Integer> {
+    if (!this.isString(data)) {
+      throw new SimulationError("Data is of an invalid type", SimulationError.INVALID_TYPE);
+    }
+
     const response: SimulationResponse = await this.makeSimulationRequest(from, to, data, options, value);
 
     const getAddressFromTopic = (topic: string): Address => {
@@ -125,10 +130,14 @@ export class SimulationExecutor {
   async makeSimulationRequest(
     from: Address,
     to: Address,
-    data: string,
+    data: BytesLike,
     options: SimulationOptions,
     value: Integer = "0"
   ): Promise<SimulationResponse> {
+    if (!this.isString(data)) {
+      throw new SimulationError("Data is of an invalid type", SimulationError.INVALID_TYPE);
+    }
+
     const constructedPath = options?.forkId ? `${baseUrl}/fork/${options.forkId}/simulate` : `${baseUrl}/simulate`;
 
     const transactionRequest = await this.getPopulatedTransactionRequest(from, to, data, options, value);
@@ -336,5 +345,9 @@ export class SimulationExecutor {
     const message = ["Simulation error", errorMessage, transactionUrl].map((item) => item).join("\n\n");
 
     this.telegram.sendMessage(message);
+  }
+
+  private isString(data: BytesLike): data is string {
+    return typeof data === "string";
   }
 }
