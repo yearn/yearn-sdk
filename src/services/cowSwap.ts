@@ -18,26 +18,30 @@ export class CowSwapService extends Service {
   async deposit({
     vault,
     token,
-    targetAmount,
+    minTargetAmount,
     account,
   }: {
     vault: Address;
     token: Address;
-    targetAmount: Integer;
+    minTargetAmount: Integer;
     account: Address;
-  }) {
-    const validTo = 2524608000;
+  }): Promise<string> {
+    const ONE_HOUR = 1000 * 60 * 60;
+    const validTo = Math.floor(new Date(Date.now() + ONE_HOUR).getTime() / 1000);
     const kind = OrderKind.BUY;
+
     const quoteResponse = await this.cowSdk.cowApi.getQuote({
       kind,
       sellToken: token,
       buyToken: vault,
-      buyAmountAfterFee: targetAmount,
+      buyAmountAfterFee: minTargetAmount,
       from: account,
       validTo,
       partiallyFillable: false,
       appData: APP_DATA,
     });
+
+    console.log(quoteResponse);
 
     const { sellToken, buyToken, buyAmount, sellAmount, feeAmount, partiallyFillable, appData } = quoteResponse.quote;
     const order = {
@@ -55,7 +59,9 @@ export class CowSwapService extends Service {
 
     const { signature, signingScheme } = await this.cowSdk.signOrder(order);
 
-    if (!signature) throw new SdkError("Order signature failed");
+    if (!signature) throw new SdkError("Failed signing order");
+
+    console.log(signature, signingScheme);
 
     const orderId = await this.cowSdk.cowApi.sendOrder({
       order: { ...order, signature, signingScheme },
@@ -63,5 +69,65 @@ export class CowSwapService extends Service {
     });
 
     console.log(`https://explorer.cow.fi/orders/${orderId}`);
+
+    return orderId;
+  }
+
+  async withdraw({
+    vault,
+    token,
+    minTargetAmount,
+    account,
+  }: {
+    vault: Address;
+    token: Address;
+    minTargetAmount: Integer;
+    account: Address;
+  }): Promise<string> {
+    const ONE_HOUR = 1000 * 60 * 60;
+    const validTo = Math.floor(new Date(Date.now() + ONE_HOUR).getTime() / 1000);
+    const kind = OrderKind.BUY;
+
+    const quoteResponse = await this.cowSdk.cowApi.getQuote({
+      kind,
+      sellToken: vault,
+      buyToken: token,
+      buyAmountAfterFee: minTargetAmount,
+      from: account,
+      validTo,
+      partiallyFillable: false,
+      appData: APP_DATA,
+    });
+
+    console.log(quoteResponse);
+
+    const { sellToken, buyToken, buyAmount, sellAmount, feeAmount, partiallyFillable, appData } = quoteResponse.quote;
+    const order = {
+      kind,
+      sellToken,
+      buyToken,
+      buyAmount,
+      sellAmount,
+      feeAmount,
+      receiver: account,
+      validTo,
+      partiallyFillable,
+      appData,
+    };
+
+    const { signature, signingScheme } = await this.cowSdk.signOrder(order);
+
+    if (!signature) throw new SdkError("Failed signing order");
+
+    console.log(signature, signingScheme);
+
+    const orderId = await this.cowSdk.cowApi.sendOrder({
+      order: { ...order, signature, signingScheme },
+      owner: account,
+    });
+
+    console.log(`https://explorer.cow.fi/orders/${orderId}`);
+
+    return orderId;
   }
 }

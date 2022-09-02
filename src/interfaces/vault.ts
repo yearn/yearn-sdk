@@ -512,6 +512,29 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
   }
 
   /**
+   * Gasless Deposit into a yearn vault
+   * @param vault
+   * @param token
+   * @param amount
+   * @param account
+   * @param overrides
+   * @returns orderId
+   */
+  async gaslessDeposit({
+    vault,
+    token,
+    minTargetAmount,
+    account,
+  }: {
+    vault: Address;
+    token: Address;
+    minTargetAmount: Integer;
+    account: Address;
+  }): Promise<string> {
+    return await this.yearn.services.cowSwap.deposit({ vault, token, minTargetAmount, account });
+  }
+
+  /**
    * Withdraw from a yearn vault.
    * @param vault
    * @param token
@@ -537,6 +560,29 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
       overrides,
     });
     return this.yearn.services.transaction.sendTransaction(populatedTransaction);
+  }
+
+  /**
+   * Gasless Withdraw into a yearn vault
+   * @param vault
+   * @param token
+   * @param amount
+   * @param account
+   * @param overrides
+   * @returns orderId
+   */
+  async gaslessWithdraw({
+    vault,
+    token,
+    minTargetAmount,
+    account,
+  }: {
+    vault: Address;
+    token: Address;
+    minTargetAmount: Integer;
+    account: Address;
+  }): Promise<string> {
+    return await this.yearn.services.cowSwap.withdraw({ vault, token, minTargetAmount, account });
   }
 
   /**

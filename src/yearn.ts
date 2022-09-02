@@ -10,6 +10,7 @@ import { RegistryAdapter, RegistryV2Adapter } from "./services/adapters/registry
 import { AddressProvider } from "./services/addressProvider";
 import { AllowListService } from "./services/allowlist";
 import { AssetService } from "./services/assets";
+import { CowSwapService } from "./services/cowSwap";
 import { HelperService } from "./services/helper";
 import { LensService } from "./services/lens";
 import { MetaService } from "./services/meta";
@@ -37,6 +38,7 @@ type ServicesType<T extends ChainId> = {
   oracle: OracleService<T>;
   zapper: ZapperService;
   portals: PortalsService;
+  cowSwap: CowSwapService;
   asset: AssetService;
   vision: VisionService;
   subgraph: SubgraphService;
@@ -152,6 +154,7 @@ export class Yearn<T extends ChainId> {
       oracle: new OracleService(chainId, ctx, addressProvider),
       zapper: new ZapperService(chainId, ctx),
       portals: new PortalsService(chainId, ctx),
+      cowSwap: new CowSwapService(1, ctx), // TODO: Instantiate on mainnet only
       asset: new AssetService(chainId, ctx, assetServiceState),
       vision: new VisionService(chainId, ctx),
       subgraph: new SubgraphService(chainId, ctx),
