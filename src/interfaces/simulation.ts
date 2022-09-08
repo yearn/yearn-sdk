@@ -161,6 +161,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
         vault,
         token,
         amount,
+        false,
         overrides
       );
       if (!from || !to || !data) throw Error("Error populating approve transaction");
@@ -325,6 +326,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
         vault,
         token,
         amount,
+        false,
         overrides
       );
       if (!from || !to || !data) throw Error("Error populating approve transaction");
