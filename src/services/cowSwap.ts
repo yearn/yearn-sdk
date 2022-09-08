@@ -16,15 +16,15 @@ export class CowSwapService extends Service {
   }
 
   async deposit({
-    vault,
-    token,
+    vaultAddress,
+    tokenAddress,
     minTargetAmount,
-    account,
+    accountAddress,
   }: {
-    vault: Address;
-    token: Address;
+    vaultAddress: Address;
+    tokenAddress: Address;
     minTargetAmount: Integer;
-    account: Address;
+    accountAddress: Address;
   }): Promise<string> {
     const ONE_HOUR = 1000 * 60 * 60;
     const validTo = Math.floor(new Date(Date.now() + ONE_HOUR).getTime() / 1000);
@@ -32,10 +32,10 @@ export class CowSwapService extends Service {
 
     const quoteResponse = await this.cowSdk.cowApi.getQuote({
       kind,
-      sellToken: token,
-      buyToken: vault,
+      sellToken: tokenAddress,
+      buyToken: vaultAddress,
       buyAmountAfterFee: minTargetAmount,
-      from: account,
+      from: accountAddress,
       validTo,
       partiallyFillable: false,
       appData: APP_DATA,
@@ -51,7 +51,7 @@ export class CowSwapService extends Service {
       buyAmount,
       sellAmount,
       feeAmount,
-      receiver: account,
+      receiver: accountAddress,
       validTo,
       partiallyFillable,
       appData,
@@ -65,7 +65,7 @@ export class CowSwapService extends Service {
 
     const orderId = await this.cowSdk.cowApi.sendOrder({
       order: { ...order, signature, signingScheme },
-      owner: account,
+      owner: accountAddress,
     });
 
     console.log(`https://explorer.cow.fi/orders/${orderId}`);
@@ -74,15 +74,15 @@ export class CowSwapService extends Service {
   }
 
   async withdraw({
-    vault,
-    token,
+    vaultAddress,
+    tokenAddress,
     minTargetAmount,
-    account,
+    accountAddress,
   }: {
-    vault: Address;
-    token: Address;
+    vaultAddress: Address;
+    tokenAddress: Address;
     minTargetAmount: Integer;
-    account: Address;
+    accountAddress: Address;
   }): Promise<string> {
     const ONE_HOUR = 1000 * 60 * 60;
     const validTo = Math.floor(new Date(Date.now() + ONE_HOUR).getTime() / 1000);
@@ -90,10 +90,10 @@ export class CowSwapService extends Service {
 
     const quoteResponse = await this.cowSdk.cowApi.getQuote({
       kind,
-      sellToken: vault,
-      buyToken: token,
+      sellToken: vaultAddress,
+      buyToken: tokenAddress,
       buyAmountAfterFee: minTargetAmount,
-      from: account,
+      from: accountAddress,
       validTo,
       partiallyFillable: false,
       appData: APP_DATA,
@@ -109,7 +109,7 @@ export class CowSwapService extends Service {
       buyAmount,
       sellAmount,
       feeAmount,
-      receiver: account,
+      receiver: accountAddress,
       validTo,
       partiallyFillable,
       appData,
@@ -123,7 +123,7 @@ export class CowSwapService extends Service {
 
     const orderId = await this.cowSdk.cowApi.sendOrder({
       order: { ...order, signature, signingScheme },
-      owner: account,
+      owner: accountAddress,
     });
 
     console.log(`https://explorer.cow.fi/orders/${orderId}`);
