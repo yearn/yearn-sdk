@@ -29,11 +29,11 @@ const WEEK = DAY * 7;
 
 const VotingEscrowAbi = [
   "function locked(address arg0) public view returns (tuple(uint256 amount, uint256 end))",
-  "function modify_lock(uint256 amount, uint256 unlock_time) public returns (tuple(uint256 amount, uint256 end))",
+  "function modify_lock(uint256 amount, uint256 unlock_time, address user) public returns (tuple(uint256 amount, uint256 end))",
   "function withdraw() public returns (tuple(uint256 amount, uint256 penalty))",
 ];
 
-const VotingEscrowRewardsAbi = ["function claim() public returns (uint256)"];
+const VotingEscrowRewardsAbi = ["function claim(address user, bool relock) public returns (uint256)"];
 
 const GaugeRegistryAbi = ["function veToken() public view returns (address)"];
 
@@ -211,7 +211,7 @@ export class VotingEscrowInterface<T extends ChainId> extends ServiceInterface<T
         VotingEscrowRewardsAbi,
         this.ctx.provider.read
       );
-      const claimable = await votingEscrowRewardsContract.callStatic.claim();
+      const claimable = await votingEscrowRewardsContract.callStatic.claim(accountAddress, false);
       const rewardBalance = (claimable as BigNumber).toString();
       const yieldPosition: Position = {
         assetAddress: address,
@@ -259,7 +259,9 @@ export class VotingEscrowInterface<T extends ChainId> extends ServiceInterface<T
       if (hasLockTimeLeft) {
         unlockDate = lockedEndDate;
         const toWithdraw = await votingEscrowContract.callStatic.withdraw();
-        earlyExitPenaltyRatio = toBN(toWithdraw.penalty).div(toWithdraw.amount).toNumber();
+        earlyExitPenaltyRatio = toBN(toWithdraw.penalty)
+          .div(toBN(toWithdraw.penalty).plus(toWithdraw.amount))
+          .toNumber();
       }
 
       return {
@@ -330,7 +332,6 @@ export class VotingEscrowInterface<T extends ChainId> extends ServiceInterface<T
     amount?: Integer;
     time?: number;
   }): Promise<TransactionOutcome> {
-    console.log(accountAddress, votingEscrowTransactionType, tokenAddress, votingEscrowAddress, amount, time);
     const signer = this.ctx.provider.write.getSigner(accountAddress);
     const votingEscrowContract = new Contract(votingEscrowAddress, VotingEscrowAbi, signer);
     let targetTokenAmount = "0";
@@ -340,7 +341,7 @@ export class VotingEscrowInterface<T extends ChainId> extends ServiceInterface<T
         if ((!amount || !time) && votingEscrowTransactionType === "LOCK")
           throw new Error("'amount' or 'time' argument missing");
         if (!time && votingEscrowTransactionType === "EXTEND") throw new Error("'time' argument missing");
-        const locked = await votingEscrowContract.callStatic.modify_lock(amount ?? "0", time);
+        const locked = await votingEscrowContract.callStatic.modify_lock(amount ?? "0", time, accountAddress);
         targetTokenAmount = (locked.amount as BigNumber).toString();
         break;
       default:
@@ -468,7 +469,12 @@ export class VotingEscrowInterface<T extends ChainId> extends ServiceInterface<T
     const unlockTime = toBN(block.timestamp).plus(lockTime).toFixed(0);
     const signer = this.ctx.provider.write.getSigner(accountAddress);
     const votingEscrowContract = new Contract(votingEscrowAddress, VotingEscrowAbi, signer);
-    const tx = await votingEscrowContract.populateTransaction.modify_lock(amount, unlockTime, overrides);
+    const tx = await votingEscrowContract.populateTransaction.modify_lock(
+      amount,
+      unlockTime,
+      accountAddress,
+      overrides
+    );
 
     if (populate) return tx;
 
@@ -495,7 +501,7 @@ export class VotingEscrowInterface<T extends ChainId> extends ServiceInterface<T
   }: IncreaseLockAMountProps): Promise<TransactionResponse | PopulatedTransaction> {
     const signer = this.ctx.provider.write.getSigner(accountAddress);
     const votingEscrowContract = new Contract(votingEscrowAddress, VotingEscrowAbi, signer);
-    const tx = await votingEscrowContract.populateTransaction.modify_lock(amount, "0", overrides);
+    const tx = await votingEscrowContract.populateTransaction.modify_lock(amount, "0", accountAddress, overrides);
 
     if (populate) return tx;
 
@@ -526,7 +532,7 @@ export class VotingEscrowInterface<T extends ChainId> extends ServiceInterface<T
     const unlockTime = toBN(block.timestamp).plus(lockTime).toFixed(0);
     const signer = this.ctx.provider.write.getSigner(accountAddress);
     const votingEscrowContract = new Contract(votingEscrowAddress, VotingEscrowAbi, signer);
-    const tx = await votingEscrowContract.populateTransaction.modify_lock("0", unlockTime, overrides);
+    const tx = await votingEscrowContract.populateTransaction.modify_lock("0", unlockTime, accountAddress, overrides);
 
     if (populate) return tx;
 
@@ -599,7 +605,7 @@ export class VotingEscrowInterface<T extends ChainId> extends ServiceInterface<T
     const [votingEscrow] = await this.get({ addresses: [votingEscrowAddress] });
     const signer = this.ctx.provider.write.getSigner(accountAddress);
     const votingEscrowRewardsContract = new Contract(votingEscrow.metadata.rewardPool, VotingEscrowRewardsAbi, signer);
-    const tx = await votingEscrowRewardsContract.populateTransaction.claim(overrides);
+    const tx = await votingEscrowRewardsContract.populateTransaction.claim(accountAddress, false, overrides);
 
     if (populate) return tx;
 
