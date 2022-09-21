@@ -1,4 +1,4 @@
-import { ChainId, isEthereum, isFantom } from "./chain";
+import { ChainId, NETWORK_SETTINGS } from "./chain";
 import { Token, ZappableVault } from "./types";
 
 export type ZapInWith = keyof Token["supported"];
@@ -26,20 +26,14 @@ export function getZapInDetails({ chainId, token, vault }: ZapInArgs): ZapInDeta
     return { isZapInSupported: false, zapInWith: null };
   }
 
-  if (isEthereum(chainId)) {
+  const networkSettings = NETWORK_SETTINGS[chainId];
+  if (networkSettings?.zapsEnabled) {
     const { zapInWith } = vault.metadata;
 
     if (zapInWith && isValidZap(zapInWith, token.supported)) {
       const isZapInSupported = Boolean(token.supported[zapInWith]);
       return { isZapInSupported, zapInWith: isZapInSupported ? zapInWith : null };
     }
-  }
-
-  if (isFantom(chainId)) {
-    const zapInWith = "ftmApeZap"; // Hardcoded for now
-
-    const isZapInSupported = Boolean(token.supported[zapInWith]);
-    return { isZapInSupported, zapInWith: isZapInSupported ? zapInWith : null };
   }
 
   return { isZapInSupported: false, zapInWith: null };
@@ -50,20 +44,14 @@ export function getZapOutDetails({ chainId, token, vault }: ZapOutArgs): ZapOutD
     return { isZapOutSupported: false, zapOutWith: null };
   }
 
-  if (isEthereum(chainId)) {
+  const networkSettings = NETWORK_SETTINGS[chainId];
+  if (networkSettings?.zapsEnabled) {
     const { zapOutWith } = vault.metadata;
 
     if (zapOutWith && isValidZap(zapOutWith, token.supported)) {
       const isZapOutSupported = Boolean(token.supported[zapOutWith]);
       return { isZapOutSupported, zapOutWith: isZapOutSupported ? zapOutWith : null };
     }
-  }
-
-  if (isFantom(chainId)) {
-    const zapOutWith = "ftmApeZap"; // Hardcoded for now
-
-    const isZapOutSupported = Boolean(token.supported[zapOutWith]);
-    return { isZapOutSupported, zapOutWith: isZapOutSupported ? zapOutWith : null };
   }
 
   return { isZapOutSupported: false, zapOutWith: null };

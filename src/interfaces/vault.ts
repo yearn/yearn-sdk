@@ -5,9 +5,9 @@ import { CallOverrides, Contract, PopulatedTransaction } from "@ethersproject/co
 import { TransactionRequest, TransactionResponse } from "@ethersproject/providers";
 
 import { CachedFetcher } from "../cache";
-import { ChainId, isEthereum, isFantom } from "../chain";
+import { ChainId, NETWORK_SETTINGS } from "../chain";
 import { ContractAddressId, ServiceInterface } from "../common";
-import { chunkArray, EthAddress, FANTOM_TOKEN, isNativeToken, WethAddress } from "../helpers";
+import { chunkArray, EthAddress, isNativeToken, WethAddress } from "../helpers";
 import { PickleJars } from "../services/partners/pickle";
 import {
   Address,
@@ -154,23 +154,14 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
           return Promise.resolve([]);
         });
 
-    if (isEthereum(this.chainId)) {
+    const networkSettings = NETWORK_SETTINGS[this.chainId];
+    if (networkSettings?.zapsEnabled) {
       const vaultTokenMarketData = await this.yearn.services.portals.supportedVaultAddresses();
       metadataOverrides = mergeZapPropsWithAddressables({
         addressables: metadataOverrides,
         supportedVaultAddresses: vaultTokenMarketData,
         zapInType: "portalsZapIn",
         zapOutType: "portalsZapOut",
-      });
-    }
-
-    if (isFantom(this.chainId)) {
-      const ftmApeZappableVault = [FANTOM_TOKEN.address]; // hardcoded for now
-      metadataOverrides = mergeZapPropsWithAddressables({
-        addressables: metadataOverrides,
-        supportedVaultAddresses: ftmApeZappableVault,
-        zapInType: "ftmApeZap",
-        zapOutType: "ftmApeZap",
       });
     }
 

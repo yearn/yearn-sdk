@@ -5,7 +5,7 @@ import { Contract } from "@ethersproject/contracts";
 import { Address, ChainId, Integer, SdkError, Token, TokenInterface, TokenMetadata } from "..";
 import { CachedFetcher } from "../cache";
 import { Context } from "../context";
-import { EthAddress, SUPPORTED_ZAP_OUT_ADDRESSES_MAINNET, ZeroAddress } from "../helpers";
+import { EthAddress, ZeroAddress } from "../helpers";
 import {
   createMockBalance,
   createMockPopulatedTransaction,
@@ -438,7 +438,7 @@ describe("TokenInterface", () => {
             const supportedZapTokenWithIcon = createMockToken({ address: "0x003" });
             const supportedZapTokenWithoutIcon = createMockToken({ address: "0x004" });
             const supportedZapTokenWithZapOut = createMockToken({
-              address: SUPPORTED_ZAP_OUT_ADDRESSES_MAINNET.USDC,
+              symbol: "USDC",
             });
 
             zapSupportedTokensMock.mockResolvedValue([
@@ -539,7 +539,6 @@ describe("TokenInterface", () => {
 
       describe("when chainId is 250 (fantom)", () => {
         let vaultsToken: Token;
-        let fantomToken: Token;
 
         beforeEach(() => {
           tokenInterface = new TokenInterface(mockedYearn, 250, new Context({}));
@@ -548,26 +547,15 @@ describe("TokenInterface", () => {
             symbol: "VAULT",
             name: "Vault Token",
           });
-          fantomToken = {
-            address: ZeroAddress,
-            name: "Fantom",
-            dataSource: "sdk",
-            decimals: "18",
-            priceUsdc: "1000000", // $1
-            supported: {
-              ftmApeZap: true,
-            },
-            symbol: "FTM",
-          };
           vaultsTokensMock.mockResolvedValue([vaultsToken]);
         });
 
-        it("should fetch all the tokens only from Vaults (not Zap)", async () => {
+        it("should fetch all the tokens from Zap and Vaults", async () => {
           const actualSupportedTokens = await tokenInterface.supported();
 
-          expect(actualSupportedTokens.length).toEqual(2);
-          expect(actualSupportedTokens).toEqual(expect.arrayContaining([vaultsToken, fantomToken]));
-          expect(zapSupportedTokensMock).not.toHaveBeenCalled();
+          expect(actualSupportedTokens.length).toEqual(1);
+          expect(actualSupportedTokens).toEqual(expect.arrayContaining([vaultsToken]));
+          expect(zapSupportedTokensMock).toHaveBeenCalled();
           expect(assetReadyThenMock).not.toHaveBeenCalled();
           expect(vaultsTokensMock).toHaveBeenCalledTimes(1);
         });

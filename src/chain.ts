@@ -1,4 +1,3 @@
-import { EthAddress, NativeTokenAddress } from "./helpers";
 import { Address } from "./types";
 
 /**
@@ -34,6 +33,10 @@ export const isArbitrum = (chainId: ChainId): boolean => {
 
 export const allSupportedChains = Object.keys(Chains).map((key) => Number(key));
 
+const ETH_ADDRESS = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";
+const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
+const NATIVE_TOKEN_ADDRESS = ZERO_ADDRESS;
+
 export interface NetworkSettings {
   [chainId: number]: {
     id: Network;
@@ -44,7 +47,7 @@ export interface NetworkSettings {
       name: string;
       symbol: string;
       decimals: number;
-      address: Address;
+      address: string;
     };
     wrappedTokenAddress?: Address;
     simulationsEnabled?: boolean;
@@ -64,7 +67,7 @@ export const NETWORK_SETTINGS: NetworkSettings = {
       name: "Ethereum",
       symbol: "ETH",
       decimals: 18,
-      address: EthAddress,
+      address: ETH_ADDRESS,
     },
     wrappedTokenAddress: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
     simulationsEnabled: true,
@@ -81,7 +84,7 @@ export const NETWORK_SETTINGS: NetworkSettings = {
       name: "Ethereum",
       symbol: "ETH",
       decimals: 18,
-      address: NativeTokenAddress,
+      address: NATIVE_TOKEN_ADDRESS,
     },
     simulationsEnabled: false,
     zapsEnabled: false,
@@ -96,7 +99,7 @@ export const NETWORK_SETTINGS: NetworkSettings = {
       name: "Fantom",
       symbol: "FTM",
       decimals: 18,
-      address: NativeTokenAddress,
+      address: NATIVE_TOKEN_ADDRESS,
     },
     wrappedTokenAddress: "0x21be370D5312f44cB42ce377BC9b8a0cEF1A4C83",
     simulationsEnabled: false,
@@ -113,10 +116,12 @@ export const NETWORK_SETTINGS: NetworkSettings = {
       name: "Ethereum",
       symbol: "ETH",
       decimals: 18,
-      address: EthAddress,
+      address: ETH_ADDRESS,
     },
+    wrappedTokenAddress: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
     simulationsEnabled: false,
     zapsEnabled: true,
+    zapOutTokenSymbols: ["ETH", "DAI", "USDC", "USDT", "WBTC"],
   },
   42161: {
     id: "arbitrum",
@@ -127,7 +132,7 @@ export const NETWORK_SETTINGS: NetworkSettings = {
       name: "Ethereum",
       symbol: "ETH",
       decimals: 18,
-      address: NativeTokenAddress,
+      address: NATIVE_TOKEN_ADDRESS,
     },
     simulationsEnabled: false,
     zapsEnabled: false,

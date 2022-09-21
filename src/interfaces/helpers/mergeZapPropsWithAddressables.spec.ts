@@ -1,4 +1,3 @@
-import { FANTOM_TOKEN } from "../../helpers";
 import { createMockTokenMarketData, createMockVaultMetadata } from "../../test-utils/factories";
 import { mergeZapPropsWithAddressables } from "./mergeZapPropsWithAddressables";
 
@@ -47,46 +46,6 @@ describe("mergeZapPropsWithAddressables", () => {
           allowZapOut: true,
           zapInWith: "zapperZapIn",
           zapOutWith: "zapperZapOut",
-        },
-        {
-          ...vaultMetadataMock.notZappable,
-          allowZapIn: false,
-          allowZapOut: false,
-          zapInWith: undefined,
-          zapOutWith: undefined,
-        },
-      ])
-    );
-  });
-
-  it("should set the ftmApeZap properties on an addressable", async () => {
-    const vaultMetadataMock = {
-      ftm: createMockVaultMetadata({
-        displayName: "Zappable",
-        address: FANTOM_TOKEN.address,
-      }),
-      notZappable: createMockVaultMetadata({
-        displayName: "Not Zappable",
-        address: "0x6B175474E89094C44Da98b954EedeAC495271d0F",
-      }),
-    };
-
-    const actual = mergeZapPropsWithAddressables({
-      addressables: [vaultMetadataMock.ftm, vaultMetadataMock.notZappable],
-      supportedVaultAddresses: [FANTOM_TOKEN.address],
-      zapInType: "ftmApeZap",
-      zapOutType: "ftmApeZap",
-    });
-
-    expect(actual.length).toEqual(2);
-    expect(actual).toEqual(
-      expect.arrayContaining([
-        {
-          ...vaultMetadataMock.ftm,
-          allowZapIn: true,
-          allowZapOut: true,
-          zapInWith: "ftmApeZap",
-          zapOutWith: "ftmApeZap",
         },
         {
           ...vaultMetadataMock.notZappable,
