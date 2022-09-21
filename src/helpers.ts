@@ -5,6 +5,7 @@ import { toBN } from "./utils";
 
 export const ZeroAddress = "0x0000000000000000000000000000000000000000";
 export const EthAddress = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";
+export const NativeTokenAddress = ZeroAddress;
 export const WethAddress = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2";
 export const WrappedFantomAddress = "0x21be370D5312f44cB42ce377BC9b8a0cEF1A4C83";
 
@@ -16,10 +17,8 @@ export const SUPPORTED_ZAP_OUT_ADDRESSES_MAINNET = {
   WBTC: "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
 };
 
-export const SUPPORTED_ZAP_OUT_TOKEN_SYMBOLS = ["ETH", "DAI", "USDC", "USDT", "WBTC"];
-
 export const FANTOM_TOKEN: Token = {
-  address: ZeroAddress,
+  address: NativeTokenAddress,
   name: "Fantom",
   dataSource: "sdk",
   decimals: "18",
@@ -28,18 +27,6 @@ export const FANTOM_TOKEN: Token = {
     ftmApeZap: true,
   },
   symbol: "FTM",
-};
-
-export const ETH_TOKEN: Token = {
-  address: EthAddress,
-  name: "ETH",
-  dataSource: "sdk",
-  decimals: "18",
-  priceUsdc: "0",
-  supported: {
-    zapper: true,
-  },
-  symbol: "ETH",
 };
 
 export const WETH_TOKEN: Token = {
@@ -57,7 +44,7 @@ export const WETH_TOKEN: Token = {
 
 // Returns truthy if address is defined as a native token address of a network
 export function isNativeToken(address: Address): boolean {
-  return [EthAddress, ZeroAddress].includes(address);
+  return [EthAddress, NativeTokenAddress].includes(address);
 }
 
 // handle a non-200 `fetch` response.

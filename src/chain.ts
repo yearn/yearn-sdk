@@ -1,3 +1,6 @@
+import { EthAddress, NativeTokenAddress } from "./helpers";
+import { Address } from "./types";
+
 /**
  * Supported chains in the yearn ecosystem.
  */
@@ -9,11 +12,7 @@ export const Chains = {
   42161: "arbitrum",
 };
 
-export type EthMain = 1;
-export type OpMain = 10;
-export type FtmMain = 250;
-export type EthLocal = 1337;
-export type ArbitrumOne = 42161;
+export type Network = "ethereum" | "optimism" | "fantom" | "arbitrum";
 
 export type ChainId = keyof typeof Chains;
 
@@ -34,3 +33,104 @@ export const isArbitrum = (chainId: ChainId): boolean => {
 };
 
 export const allSupportedChains = Object.keys(Chains).map((key) => Number(key));
+
+export interface NetworkSettings {
+  [chainId: number]: {
+    id: Network;
+    name: string;
+    chainId: number;
+    rpcUrl: string;
+    nativeCurrency: {
+      name: string;
+      symbol: string;
+      decimals: number;
+      address: Address;
+    };
+    wrappedTokenAddress?: Address;
+    simulationsEnabled?: boolean;
+    zapsEnabled?: boolean;
+    zapOutTokenSymbols?: string[];
+    blockExplorerUrl?: string;
+  };
+}
+
+export const NETWORK_SETTINGS: NetworkSettings = {
+  1: {
+    id: "ethereum",
+    name: "Ethereum",
+    chainId: 1,
+    rpcUrl: "https://mainnet.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161",
+    nativeCurrency: {
+      name: "Ethereum",
+      symbol: "ETH",
+      decimals: 18,
+      address: EthAddress,
+    },
+    wrappedTokenAddress: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+    simulationsEnabled: true,
+    zapsEnabled: true,
+    zapOutTokenSymbols: ["ETH", "DAI", "USDC", "USDT", "WBTC"],
+    blockExplorerUrl: "https://etherscan.io",
+  },
+  10: {
+    id: "optimism",
+    name: "Optimism",
+    chainId: 10,
+    rpcUrl: "https://mainnet.optimism.io",
+    nativeCurrency: {
+      name: "Ethereum",
+      symbol: "ETH",
+      decimals: 18,
+      address: NativeTokenAddress,
+    },
+    simulationsEnabled: false,
+    zapsEnabled: false,
+    blockExplorerUrl: "https://optimistic.etherscan.io",
+  },
+  250: {
+    id: "fantom",
+    name: "Fantom",
+    chainId: 250,
+    rpcUrl: "https://rpc.ftm.tools",
+    nativeCurrency: {
+      name: "Fantom",
+      symbol: "FTM",
+      decimals: 18,
+      address: NativeTokenAddress,
+    },
+    wrappedTokenAddress: "0x21be370D5312f44cB42ce377BC9b8a0cEF1A4C83",
+    simulationsEnabled: false,
+    zapsEnabled: true,
+    zapOutTokenSymbols: ["FTM", "DAI", "USDC", "USDT"],
+    blockExplorerUrl: "https://ftmscan.com",
+  },
+  1337: {
+    id: "ethereum",
+    name: "Ethereum",
+    chainId: 1337,
+    rpcUrl: "http://localhost:8545",
+    nativeCurrency: {
+      name: "Ethereum",
+      symbol: "ETH",
+      decimals: 18,
+      address: EthAddress,
+    },
+    simulationsEnabled: false,
+    zapsEnabled: true,
+  },
+  42161: {
+    id: "arbitrum",
+    name: "Arbitrum",
+    chainId: 42161,
+    rpcUrl: "https://arb1.arbitrum.io/rpc",
+    nativeCurrency: {
+      name: "Ethereum",
+      symbol: "ETH",
+      decimals: 18,
+      address: NativeTokenAddress,
+    },
+    simulationsEnabled: false,
+    zapsEnabled: false,
+    blockExplorerUrl: "https://arbiscan.io",
+  },
+};

@@ -4,9 +4,9 @@ import { TransactionResponse } from "@ethersproject/providers";
 import BigNumber from "bignumber.js";
 
 import { CachedFetcher } from "../cache";
-import { allSupportedChains, ChainId, Chains, isEthereum, isFantom } from "../chain";
+import { allSupportedChains, ChainId, Chains, isEthereum, isFantom, NETWORK_SETTINGS } from "../chain";
 import { ServiceInterface } from "../common";
-import { ETH_TOKEN, EthAddress, isNativeToken } from "../helpers";
+import { isNativeToken } from "../helpers";
 import { FANTOM_TOKEN, mergeByAddress, SUPPORTED_ZAP_OUT_ADDRESSES_MAINNET, WrappedFantomAddress } from "../helpers";
 import {
   Address,
@@ -91,6 +91,7 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
    * @returns list of balances for the supported tokens
    */
   async balances(account: Address, tokenAddresses?: Address[]): Promise<Balance[]> {
+    const networkSettings = NETWORK_SETTINGS[this.chainId];
     let tokens = await this.supported();
 
     if (tokenAddresses) {
@@ -119,7 +120,7 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
       sdk: [],
     };
 
-    if (isEthereum(this.chainId)) {
+    if (networkSettings?.zapsEnabled) {
       try {
         const zapBalances = await this.yearn.services.portals.balances(account);
         balances.portals = zapBalances.filter(({ address }) => addresses.portals.has(address));
@@ -128,12 +129,18 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
       }
 
       try {
+        const { address, name, symbol, decimals } = networkSettings.nativeCurrency;
         const balance = await this.ctx.provider.read.getBalance(account);
-        const priceUsdc = await this.yearn.services.oracle.getPriceUsdc(EthAddress);
+        const priceUsdc = await this.yearn.services.oracle.getPriceUsdc(networkSettings.wrappedTokenAddress ?? address);
         balances.sdk = [
           {
-            address: EthAddress,
-            token: ETH_TOKEN,
+            address: account,
+            token: {
+              address,
+              name,
+              decimals: decimals.toString(),
+              symbol,
+            },
             balance: balance.toString(),
             balanceUsdc: new BigNumber(balance.toString())
               .div(10 ** 18)
@@ -145,23 +152,6 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
       } catch (error) {
         console.error(error);
       }
-    }
-
-    if (isFantom(this.chainId)) {
-      const balance = await this.ctx.provider.read.getBalance(account);
-      const priceUsdc = await this.yearn.services.oracle.getPriceUsdc(WrappedFantomAddress);
-      balances.sdk = [
-        {
-          address: account,
-          token: FANTOM_TOKEN,
-          balance: balance.toString(),
-          balanceUsdc: new BigNumber(balance.toString())
-            .div(10 ** 18)
-            .times(new BigNumber(priceUsdc))
-            .toString(),
-          priceUsdc,
-        },
-      ];
     }
 
     if (allSupportedChains.includes(this.chainId)) {

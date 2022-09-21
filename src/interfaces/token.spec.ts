@@ -5,7 +5,7 @@ import { Contract } from "@ethersproject/contracts";
 import { Address, ChainId, Integer, SdkError, Token, TokenInterface, TokenMetadata } from "..";
 import { CachedFetcher } from "../cache";
 import { Context } from "../context";
-import { ETH_TOKEN, EthAddress, SUPPORTED_ZAP_OUT_ADDRESSES_MAINNET, ZeroAddress } from "../helpers";
+import { EthAddress, SUPPORTED_ZAP_OUT_ADDRESSES_MAINNET, ZeroAddress } from "../helpers";
 import {
   createMockBalance,
   createMockPopulatedTransaction,
@@ -232,8 +232,13 @@ describe("TokenInterface", () => {
               vaultTokenWithBalance,
               zapTokenWithBalance,
               {
-                address: EthAddress,
-                token: ETH_TOKEN,
+                address: "0xAccount",
+                token: {
+                  address: EthAddress,
+                  name: "Ethereum",
+                  decimals: "18",
+                  symbol: "ETH",
+                },
                 balance: "42000000000000000000",
                 balanceUsdc: "42000000",
                 priceUsdc: "1000000",
@@ -255,8 +260,13 @@ describe("TokenInterface", () => {
             expect.arrayContaining([
               vaultTokenWithBalance,
               {
-                address: EthAddress,
-                token: ETH_TOKEN,
+                address: "0xAccount",
+                token: {
+                  address: EthAddress,
+                  name: "Ethereum",
+                  decimals: "18",
+                  symbol: "ETH",
+                },
                 balance: "42000000000000000000",
                 balanceUsdc: "42000000",
                 priceUsdc: "1000000",
@@ -303,18 +313,15 @@ describe("TokenInterface", () => {
               balanceUsdc: "42000000", // $42
               priceUsdc: "1000000", // $1
               token: {
-                address: "0x0000000000000000000000000000000000000000",
-                dataSource: "sdk",
+                address: ZeroAddress,
                 decimals: "18",
                 name: "Fantom",
-                priceUsdc: "0",
-                supported: { ftmApeZap: true },
                 symbol: "FTM",
               },
             },
           ])
         );
-        expect(zapBalancesMock).not.toHaveBeenCalled();
+        expect(zapBalancesMock).toHaveBeenCalled();
         expect(vaultsBalancesMock).toHaveBeenCalledWith("0xAccount");
       });
 
@@ -333,18 +340,15 @@ describe("TokenInterface", () => {
               balanceUsdc: "42000000", // $42
               priceUsdc: "1000000", // $1
               token: {
-                address: "0x0000000000000000000000000000000000000000",
-                dataSource: "sdk",
+                address: ZeroAddress,
                 decimals: "18",
                 name: "Fantom",
-                priceUsdc: "0",
-                supported: { ftmApeZap: true },
                 symbol: "FTM",
               },
             },
           ])
         );
-        expect(zapBalancesMock).not.toHaveBeenCalled();
+        expect(zapBalancesMock).toHaveBeenCalled();
         expect(vaultsBalancesMock).toHaveBeenCalledWith("0xAccount");
       });
     });
