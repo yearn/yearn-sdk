@@ -100,7 +100,7 @@ type ZapOutSimulationArgs = {
  * or how many underlying tokens the user will receive upon withdrawing share tokens.
  */
 export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> {
-  private simulationExecutor = new SimulationExecutor(this.yearn.services.telegram, this.ctx);
+  private simulationExecutor = new SimulationExecutor(this.yearn.services.telegram, this.chainId, this.ctx);
 
   async deposit(
     from: Address,
@@ -377,18 +377,18 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
   ): Promise<TransactionOutcome> {
     const targetTokenAmount = await this.parseSimulationTargetTokenAmount(token, account, simulationOutcome);
     const sourceTokenAmountUsdc = await this.yearn.services.oracle.getNormalizedValueUsdc(vault, amount);
-    const targetTokenAmountUsdc = await this.yearn.services.oracle.getNormalizedValueUsdc(
-      getWrapperIfNative(token, this.chainId),
-      targetTokenAmount
-    );
+    const targetToken = await this.yearn.tokens.findByAddress(getWrapperIfNative(token, this.chainId));
+    const targetTokenAmountUsdc = toBN(targetToken?.priceUsdc)
+      .times(toUnit({ amount: targetTokenAmount, decimals: Number(targetToken?.decimals) }))
+      .toFixed(0);
     const conversionRate = toBN(sourceTokenAmountUsdc).eq(0)
       ? 0
       : toBN(targetTokenAmountUsdc).div(sourceTokenAmountUsdc).toNumber();
 
     return {
-      sourceTokenAddress: token,
+      sourceTokenAddress: vault,
       sourceTokenAmount: amount,
-      targetTokenAddress: vault,
+      targetTokenAddress: token,
       targetTokenAmount,
       targetTokenAmountUsdc,
       targetUnderlyingTokenAddress: vault,
@@ -898,10 +898,6 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
       const { simulateFn, forkId } = await this.getZapInSimulationArgs({ depositArgs, vault });
 
       return this.simulationExecutor.executeSimulationWithReSimulationOnFailure(simulateFn, forkId);
-    }
-
-    if (zapInWith === "ftmApeZap") {
-      throw new SdkError("ftmApeZap not implemented yet!");
     }
 
     throw new SdkError(`zapInWith "${zapInWith}" not supported yet!`);

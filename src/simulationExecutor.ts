@@ -3,6 +3,7 @@ import { BytesLike } from "@ethersproject/bytes";
 import { JsonRpcProvider, JsonRpcSigner, TransactionRequest } from "@ethersproject/providers";
 import BigNumber from "bignumber.js";
 
+import { ChainId } from "./chain";
 import { Context } from "./context";
 import { TelegramService } from "./services/telegram";
 import { EthersError, SimulationError, SimulationOptions, TenderlyError } from "./types";
@@ -49,7 +50,7 @@ interface SimulationCallTrace {
  * 3. Simulate the zap in using the approval transaction as the root
  */
 export class SimulationExecutor {
-  constructor(private telegram: TelegramService, private ctx: Context) {}
+  constructor(private telegram: TelegramService, private chainId: ChainId, private ctx: Context) {}
 
   /**
    * Simulate a transaction
@@ -146,7 +147,7 @@ export class SimulationExecutor {
       from,
       to,
       input: data,
-      network_id: transactionRequest.chainId?.toString() || "1",
+      network_id: this.chainId.toString(),
       block_number: latestBlockKey,
       simulation_type: "quick",
       root: options?.root,
@@ -238,7 +239,7 @@ export class SimulationExecutor {
     const body = {
       alias: "",
       description: "",
-      network_id: "1",
+      network_id: this.chainId.toString(),
     };
 
     const response: Response = await await fetch(`${baseUrl}/fork`, {
