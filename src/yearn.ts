@@ -22,6 +22,7 @@ import { SubgraphService } from "./services/subgraph";
 import { TelegramService } from "./services/telegram";
 import { TransactionService } from "./services/transaction";
 import { VisionService } from "./services/vision";
+import { WidoService } from "./services/wido";
 import { ZapperService } from "./services/zapper";
 import { AssetServiceState } from "./types";
 
@@ -37,6 +38,7 @@ type ServicesType<T extends ChainId> = {
   oracle: OracleService<T>;
   zapper: ZapperService;
   portals: PortalsService;
+  wido: WidoService;
   asset: AssetService;
   vision: VisionService;
   subgraph: SubgraphService;
@@ -152,6 +154,7 @@ export class Yearn<T extends ChainId> {
       oracle: new OracleService(chainId, ctx, addressProvider),
       zapper: new ZapperService(chainId, ctx),
       portals: new PortalsService(chainId, ctx),
+      wido: new WidoService(chainId, ctx),
       asset: new AssetService(chainId, ctx, assetServiceState),
       vision: new VisionService(chainId, ctx),
       subgraph: new SubgraphService(chainId, ctx),

@@ -106,6 +106,7 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
       {
         zapper: new Set<Address>(),
         portals: new Set<Address>(),
+        wido: new Set<Address>(),
         vaults: new Set<Address>(),
         labs: new Set<Address>(),
         sdk: new Set<Address>(),
@@ -115,6 +116,7 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
     const balances: SourceBalances = {
       zapper: [],
       portals: [],
+      wido: [],
       vaults: [],
       labs: [],
       sdk: [],
@@ -124,6 +126,13 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
       try {
         const zapBalances = await this.yearn.services.portals.balances(account);
         balances.portals = zapBalances.filter(({ address }) => addresses.portals.has(address));
+      } catch (error) {
+        console.error(error);
+      }
+
+      try {
+        const zapBalances = await this.yearn.services.wido.balances(account);
+        balances.wido = zapBalances.filter(({ address }) => addresses.wido.has(address));
       } catch (error) {
         console.error(error);
       }
@@ -160,7 +169,7 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
         ({ address, balance }) => balance !== "0" && addresses.vaults.has(address)
       );
 
-      return [...balances.vaults, ...balances.zapper, ...balances.portals, ...balances.sdk];
+      return [...balances.vaults, ...balances.zapper, ...balances.portals, ...balances.wido, ...balances.sdk];
     }
 
     console.error(`the chain ${this.chainId} hasn't been implemented yet`);
@@ -180,15 +189,16 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
     }
 
     const cached = await this.cachedFetcherSupported.fetch();
-    if (cached) {
+    // TODO(wido)
+    if (cached && cached.length == -1) {
       return cached;
     }
 
     const networkSettings = NETWORK_SETTINGS[this.chainId];
-    let zapTokens: Token[] = [];
+    let zapTokensMap: Record<Address, Token> = {};
     if (networkSettings.zapsEnabled) {
       try {
-        zapTokens = await this.getZapTokensWithIcons();
+        zapTokensMap = await this.getZapTokensWithIcons();
       } catch (error) {
         console.error(error);
       }
@@ -196,24 +206,23 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
 
     const vaultsTokens = await this.yearn.vaults.tokens();
 
+    const zapTokens = Object.values(zapTokensMap);
     if (!zapTokens.length) {
       return vaultsTokens;
     }
 
     const allSupportedTokens = mergeByAddress(vaultsTokens, zapTokens);
 
-    const zapTokensUniqueAddresses = new Set(zapTokens.map(({ address }) => address));
-
     return allSupportedTokens.map((token) => {
-      const isZapToken = zapTokensUniqueAddresses.has(token.address);
+      const zapToken = zapTokensMap[token.address];
 
+      // If the token is a vault, we need to override the supported prop with info from zapTokens
       return {
         ...token,
-        ...(isZapToken && {
+        ...(zapToken && {
           supported: {
             ...token.supported,
-            portalsZapIn: true,
-            portalsZapOut: networkSettings.zapOutTokenSymbols?.includes(token.symbol.toUpperCase()),
+            ...zapToken.supported,
           },
         }),
       };
@@ -304,21 +313,41 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
    * Fetches supported zap tokens and sets their icon
    * @returns zap tokens with icons
    */
-  private async getZapTokensWithIcons(): Promise<Token[]> {
-    const zapTokens = await this.yearn.services.portals.supportedTokens();
+  private async getZapTokensWithIcons(): Promise<Record<Address, Token>> {
+    const zapTokensMap: Record<Address, Token> = {};
 
-    const zapTokensAddresses = zapTokens.map(({ address }) => address);
+    const [portalsTokens, widoTokens] = await Promise.all([
+      this.yearn.services.portals.supportedTokens(),
+      this.yearn.services.wido.supportedTokens(),
+      this.yearn.services.asset.ready,
+    ]);
 
-    const zapTokensIcons = await this.yearn.services.asset.ready.then(() =>
-      this.yearn.services.asset.icon(zapTokensAddresses)
-    );
-
-    const setIcon = (token: Token): Token => {
-      const icon = zapTokensIcons[token.address];
+    const tokenWithIcon = (token: Token): Token => {
+      const icon = this.yearn.services.asset.icon(token.address);
       return icon ? { ...token, icon } : token;
     };
 
-    return zapTokens.map(setIcon);
+    portalsTokens.forEach((token) => {
+      zapTokensMap[token.address] = tokenWithIcon(token);
+    });
+
+    widoTokens.forEach((token) => {
+      const existingToken = zapTokensMap[token.address];
+      if (existingToken) {
+        const mergedToken = {
+          ...existingToken,
+          supported: {
+            ...existingToken.supported,
+            ...token.supported,
+          },
+        };
+        zapTokensMap[token.address] = mergedToken;
+      } else {
+        zapTokensMap[token.address] = tokenWithIcon(token);
+      }
+    });
+
+    return zapTokensMap;
   }
 
   /**
