@@ -102,7 +102,7 @@ export const NETWORK_SETTINGS: NetworkSettings = {
       address: NATIVE_TOKEN_ADDRESS,
     },
     wrappedTokenAddress: "0x21be370D5312f44cB42ce377BC9b8a0cEF1A4C83",
-    simulationsEnabled: false,
+    simulationsEnabled: true,
     zapsEnabled: true,
     zapOutTokenSymbols: ["FTM", "DAI", "USDC", "USDT"],
     blockExplorerUrl: "https://ftmscan.com",
