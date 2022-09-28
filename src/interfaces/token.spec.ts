@@ -232,7 +232,7 @@ describe("TokenInterface", () => {
               vaultTokenWithBalance,
               zapTokenWithBalance,
               {
-                address: "0xAccount",
+                address: EthAddress,
                 token: {
                   address: EthAddress,
                   name: "Ethereum",
@@ -260,7 +260,7 @@ describe("TokenInterface", () => {
             expect.arrayContaining([
               vaultTokenWithBalance,
               {
-                address: "0xAccount",
+                address: EthAddress,
                 token: {
                   address: EthAddress,
                   name: "Ethereum",
@@ -308,7 +308,7 @@ describe("TokenInterface", () => {
           expect.arrayContaining([
             vaultTokenWithBalance,
             {
-              address: "0xAccount",
+              address: ZeroAddress,
               balance: "42000000000000000000", // 42 FTM
               balanceUsdc: "42000000", // $42
               priceUsdc: "1000000", // $1
@@ -335,7 +335,7 @@ describe("TokenInterface", () => {
           expect.arrayContaining([
             vaultTokenWithBalance,
             {
-              address: "0xAccount",
+              address: ZeroAddress,
               balance: "42000000000000000000", // 42 FTM
               balanceUsdc: "42000000", // $42
               priceUsdc: "1000000", // $1

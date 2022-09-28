@@ -134,7 +134,7 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
         const priceUsdc = await this.yearn.services.oracle.getPriceUsdc(getWrapperIfNative(address, this.chainId));
         balances.sdk = [
           {
-            address: account,
+            address,
             token: {
               address,
               name,
