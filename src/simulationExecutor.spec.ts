@@ -64,7 +64,7 @@ describe("Simulation executor", () => {
 
   beforeEach(() => {
     const mockedTelegramService = new MockedTelegramServiceClass();
-    simulationExecutor = new SimulationExecutor(mockedTelegramService, new Context({}));
+    simulationExecutor = new SimulationExecutor(mockedTelegramService, 1, new Context({}));
     jest.spyOn(console, "error").mockImplementation();
   });
 

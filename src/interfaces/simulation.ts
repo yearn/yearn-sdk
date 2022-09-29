@@ -5,7 +5,7 @@ import BigNumber from "bignumber.js";
 
 import { ChainId } from "../chain";
 import { ServiceInterface } from "../common";
-import { EthAddress, isNativeToken, WethAddress, ZeroAddress } from "../helpers";
+import { getWrapperIfNative, isNativeToken } from "../helpers";
 import { PickleJars } from "../services/partners/pickle";
 import { SimulationExecutor, SimulationResponse } from "../simulationExecutor";
 import {
@@ -100,7 +100,7 @@ type ZapOutSimulationArgs = {
  * or how many underlying tokens the user will receive upon withdrawing share tokens.
  */
 export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> {
-  private simulationExecutor = new SimulationExecutor(this.yearn.services.telegram, this.ctx);
+  private simulationExecutor = new SimulationExecutor(this.yearn.services.telegram, this.chainId, this.ctx);
 
   async deposit(
     from: Address,
@@ -212,8 +212,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     account: Address,
     simulationOutcome: SimulationResponse
   ): Promise<TransactionOutcome> {
-    const sourceTokenAddress = token === EthAddress ? WethAddress : token;
-    const sourceToken = await this.yearn.tokens.findByAddress(sourceTokenAddress);
+    const sourceToken = await this.yearn.tokens.findByAddress(getWrapperIfNative(token, this.chainId));
     const [vaultData] = await this.yearn.vaults.get([vault]);
     const targetTokenAmount = await this.parseSimulationTargetTokenAmount(vault, account, simulationOutcome);
     const sourceTokenAmountUsdc = toBN(sourceToken?.priceUsdc)
@@ -378,18 +377,18 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
   ): Promise<TransactionOutcome> {
     const targetTokenAmount = await this.parseSimulationTargetTokenAmount(token, account, simulationOutcome);
     const sourceTokenAmountUsdc = await this.yearn.services.oracle.getNormalizedValueUsdc(vault, amount);
-    const targetTokenAmountUsdc = await this.yearn.services.oracle.getNormalizedValueUsdc(
-      token === EthAddress ? WethAddress : token,
-      targetTokenAmount
-    );
+    const targetToken = await this.yearn.tokens.findByAddress(getWrapperIfNative(token, this.chainId));
+    const targetTokenAmountUsdc = toBN(targetToken?.priceUsdc)
+      .times(toUnit({ amount: targetTokenAmount, decimals: Number(targetToken?.decimals) }))
+      .toFixed(0);
     const conversionRate = toBN(sourceTokenAmountUsdc).eq(0)
       ? 0
       : toBN(targetTokenAmountUsdc).div(sourceTokenAmountUsdc).toNumber();
 
     return {
-      sourceTokenAddress: token,
+      sourceTokenAddress: vault,
       sourceTokenAmount: amount,
-      targetTokenAddress: vault,
+      targetTokenAddress: token,
       targetTokenAmount,
       targetTokenAmountUsdc,
       targetUnderlyingTokenAddress: vault,
@@ -530,8 +529,6 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     vault: ZappableVault;
     skipGasEstimate: boolean;
   }): Promise<TransactionOutcome> {
-    const zapToken = sellToken === EthAddress ? ZeroAddress : sellToken;
-
     if (!options.slippage) {
       throw new SdkError("slippage needs to be set", SdkError.NO_SLIPPAGE);
     }
@@ -539,7 +536,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     const partnerId = this.yearn.services.partner?.partnerId;
     const zapProtocol = this.getZapProtocol({ vaultAddress: toVault });
     const zapInParams = await this.yearn.services.portals
-      .zapIn(toVault, zapToken, amount, from, options.slippage, !skipGasEstimate, partnerId)
+      .zapIn(toVault, sellToken, amount, from, options.slippage, !skipGasEstimate, partnerId)
       .catch(() => {
         throw new ZapError("zap in", ZapError.ZAP_IN);
       });
@@ -605,11 +602,12 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
         break;
     }
 
-    const oracleToken = sellToken === EthAddress ? WethAddress : sellToken;
     const zapInAmountUsdc = toBN(
-      await this.yearn.services.oracle.getNormalizedValueUsdc(oracleToken, amount).catch(() => {
-        throw new PriceFetchingError("error fetching price", PriceFetchingError.FETCHING_PRICE_ORACLE);
-      })
+      await this.yearn.services.oracle
+        .getNormalizedValueUsdc(getWrapperIfNative(sellToken, this.chainId), amount)
+        .catch(() => {
+          throw new PriceFetchingError("error fetching price", PriceFetchingError.FETCHING_PRICE_ORACLE);
+        })
     );
 
     const conversionRate = amountReceivedUsdc.div(zapInAmountUsdc).toNumber();
@@ -713,9 +711,8 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
       throw new SdkError("slippage needs to be set", SdkError.NO_SLIPPAGE);
     }
 
-    const zapToken = toToken === EthAddress ? ZeroAddress : toToken;
     const zapOutParams = await this.yearn.services.portals
-      .zapOut(fromVault, zapToken, amount, from, options.slippage, skipGasEstimate)
+      .zapOut(fromVault, toToken, amount, from, options.slippage, skipGasEstimate)
       .catch(() => {
         throw new ZapError("error zapping out", ZapError.ZAP_OUT);
       });
@@ -727,7 +724,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     const tokensReceived = await (async (): Promise<string> => {
       if (!zapOutParams.from || !zapOutParams.to || !zapOutParams.data)
         throw new ZapError("error zapping out", ZapError.ZAP_OUT);
-      if (zapToken === ZeroAddress) {
+      if (isNativeToken(toToken)) {
         const response: SimulationResponse = await this.simulationExecutor.makeSimulationRequest(
           from,
           zapOutParams.to,
@@ -748,9 +745,8 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
       }
     })();
 
-    const oracleToken = toToken === EthAddress ? WethAddress : toToken;
     const zapOutAmountUsdc = await this.yearn.services.oracle
-      .getNormalizedValueUsdc(oracleToken, tokensReceived)
+      .getNormalizedValueUsdc(getWrapperIfNative(toToken, this.chainId), tokensReceived)
       .catch(() => {
         throw new PriceFetchingError("error fetching price", PriceFetchingError.FETCHING_PRICE_ORACLE);
       });
@@ -784,7 +780,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
     toVault,
     options,
   }: DepositArgs): Promise<{ needsApproving: boolean } & ApprovalData> {
-    if (sellToken === EthAddress) {
+    if (isNativeToken(sellToken)) {
       return { needsApproving: false };
     }
 
@@ -902,10 +898,6 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
       const { simulateFn, forkId } = await this.getZapInSimulationArgs({ depositArgs, vault });
 
       return this.simulationExecutor.executeSimulationWithReSimulationOnFailure(simulateFn, forkId);
-    }
-
-    if (zapInWith === "ftmApeZap") {
-      throw new SdkError("ftmApeZap not implemented yet!");
     }
 
     throw new SdkError(`zapInWith "${zapInWith}" not supported yet!`);
