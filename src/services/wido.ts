@@ -62,11 +62,12 @@ export class WidoService extends Service {
       throw new Error("Unsupported");
     }
     return [
-      "0xdCD90C7f6324cfa40d7169ef80b12031770B4325", // yvCurve-stETH
-      "0x3B27F92C0e212C671EA351827EDF93DB27cc0c65", // yvUSDT
-      "0x7Da96a3891Add058AdA2E826306D812C638D87a7", // yvUSDT (old vault) (withdraw only)
-      "0x27b7b1ad7288079A66d12350c828D3C00A6F07d7", // yvCurve-IronBank
-      "0xdb25cA703181E7484a155DD612b06f57E12Be5F0", // yvYFI
+      "0x1025b1641d1F23C289412Dd5E5701e9810103a93", // yvCurve-ibAUD-USDC
+      "0x5e69e8b51B71C8596817fD442849BD44219bb095", // yvCurve-ibBTC
+      "0x2e5c7e9B1Da0D9Cb2832eBb06241d18552A85400", // yvCurve-ibCHF-USDC
+      "0x6B5ce31AF687a671a804d8070Ddda99Cab926dfE", // yvCurve-ibGBP-USDC
+      "0x9A39f31DD5EDF5919A5C0c2433cE053fAD2E0336", // yvCurve-ibJPY-USDC
+      "0xF6B9DFE6bc42ed2eaB44D6B829017f7B78B29f88", // yvCurve-ibKRW-USDC
     ];
   }
 
