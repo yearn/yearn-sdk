@@ -47,8 +47,7 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
    */
   async get(addresses?: Address[], overrides?: CallOverrides): Promise<Vault[]> {
     const cached = await this.cachedFetcherGet.fetch();
-    // TODO(wido)
-    if (cached && cached.length == -1) {
+    if (cached) {
       if (addresses) {
         return cached.filter((vault) => addresses.includes(vault.address));
       } else {
