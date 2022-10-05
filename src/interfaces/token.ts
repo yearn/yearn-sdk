@@ -69,7 +69,7 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
     if (Array.isArray(tokens)) {
       const entries = await Promise.all(
         tokens.map(async (token) => {
-          if (supportedTokensMap && supportedTokensMap[token]?.dataSource === "portals") {
+          if (supportedTokensMap && ["portals", "wido"].includes(supportedTokensMap[token]?.dataSource)) {
             const price = supportedTokensMap[token].priceUsdc;
             if (price) return [token, price];
           }
@@ -318,11 +318,19 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
     const [portalsTokens, widoTokens] = await Promise.all([
       this.yearn.services.portals.supportedTokens(),
       this.yearn.services.wido.supportedTokens(),
-      this.yearn.services.asset.ready,
     ]);
 
+    const zapTokensAddresses = [
+      ...portalsTokens.map(({ address }) => address),
+      ...widoTokens.map(({ address }) => address),
+    ];
+
+    const zapTokensIcons = await this.yearn.services.asset.ready.then(() =>
+      this.yearn.services.asset.icon(zapTokensAddresses)
+    );
+
     const tokenWithIcon = (token: Token): Token => {
-      const icon = this.yearn.services.asset.icon(token.address);
+      const icon = zapTokensIcons[token.address];
       return icon ? { ...token, icon } : token;
     };
 

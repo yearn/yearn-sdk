@@ -75,7 +75,14 @@ jest.mock("../yearn", () => ({
       },
       portals: {
         balances: zapBalancesMock,
-        gas: zapGasMock,
+        supportedTokens: zapSupportedTokensMock,
+        zapInApprovalState: zapZapInApprovalStateMock,
+        zapInApprovalTransaction: zapZapInApprovalTransactionMock,
+        zapOutApprovalState: zapZapOutApprovalStateMock,
+        zapOutApprovalTransaction: zapZapOutApprovalTransactionMock,
+      },
+      wido: {
+        balances: zapBalancesMock,
         supportedTokens: zapSupportedTokensMock,
         zapInApprovalState: zapZapInApprovalStateMock,
         zapInApprovalTransaction: zapZapInApprovalTransactionMock,
@@ -149,6 +156,7 @@ describe("TokenInterface", () => {
     });
 
     it("should get the suggested Usdc exchange rate for list of tokens", async () => {
+      assetReadyThenMock.mockResolvedValue({});
       getPriceUsdcMock.mockResolvedValueOnce("1000000").mockResolvedValueOnce("2000000");
 
       const actualPriceUsdc = await tokenInterface.priceUsdc(["0x000", "0x001"]);
@@ -252,6 +260,7 @@ describe("TokenInterface", () => {
         it("should filter supported tokens when address list is given", async () => {
           vaultsBalancesMock.mockResolvedValue([vaultTokenWithBalance, vaultTokenWithoutBalance]);
           zapBalancesMock.mockResolvedValue([zapTokenWithBalance]);
+          getPriceUsdcMock.mockResolvedValue("1000000");
 
           const actualBalances = await tokenInterface.balances("0xAccount", [vaultToken.address]);
 
@@ -435,10 +444,17 @@ describe("TokenInterface", () => {
           });
 
           it("should fetch all the tokens from Zap and Vaults", async () => {
-            const supportedZapTokenWithIcon = createMockToken({ address: "0x003" });
-            const supportedZapTokenWithoutIcon = createMockToken({ address: "0x004" });
+            const supportedZapTokenWithIcon = createMockToken({
+              address: "0x003",
+              supported: { portalsZapIn: true, portalsZapOut: false },
+            });
+            const supportedZapTokenWithoutIcon = createMockToken({
+              address: "0x004",
+              supported: { portalsZapIn: true, portalsZapOut: false },
+            });
             const supportedZapTokenWithZapOut = createMockToken({
               symbol: "USDC",
+              supported: { portalsZapIn: true, portalsZapOut: true },
             });
 
             zapSupportedTokensMock.mockResolvedValue([
@@ -469,7 +485,7 @@ describe("TokenInterface", () => {
                 vaultsToken,
               ])
             );
-            expect(zapSupportedTokensMock).toHaveBeenCalledTimes(1);
+            expect(zapSupportedTokensMock).toHaveBeenCalledTimes(2);
             expect(vaultsTokensMock).toHaveBeenCalledTimes(1);
             expect(assetReadyThenMock).toHaveBeenCalledTimes(1);
           });
@@ -503,19 +519,8 @@ describe("TokenInterface", () => {
             const actualSupportedTokens = await tokenInterface.supported();
 
             expect(actualSupportedTokens.length).toEqual(2);
-            expect(actualSupportedTokens).toEqual(
-              expect.arrayContaining([
-                vaultsTokenNotInZap,
-                {
-                  ...vaultsTokenInZap,
-                  supported: {
-                    portalsZapIn: true,
-                    portalsZapOut: false,
-                  },
-                },
-              ])
-            );
-            expect(zapSupportedTokensMock).toHaveBeenCalledTimes(1);
+            expect(actualSupportedTokens).toEqual(expect.arrayContaining([vaultsTokenNotInZap, vaultsTokenInZap]));
+            expect(zapSupportedTokensMock).toHaveBeenCalledTimes(2);
             expect(vaultsTokensMock).toHaveBeenCalledTimes(1);
             expect(assetReadyThenMock).toHaveBeenCalledTimes(1);
           });
