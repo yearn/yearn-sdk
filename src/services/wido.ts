@@ -15,7 +15,12 @@ export class WidoService extends Service {
     }
     const networkSettings = NETWORK_SETTINGS[this.chainId];
     const network = Chains[this.chainId];
-    const tokenList = await getSupportedTokens(this.chainId, true, false);
+    const tokenList = await getSupportedTokens({
+      chainId: [this.chainId],
+      includeMetadata: true,
+      includePricing: true,
+      includeUnknown: false,
+    });
 
     return tokenList.map((token) => {
       return {
@@ -23,7 +28,7 @@ export class WidoService extends Service {
         decimals: String(token.decimals),
         icon: `https://assets.yearn.network/tokens/${network}/${token.address.toLowerCase()}.png`,
         name: token.symbol,
-        priceUsdc: usdc("0"), // TODO(wido)
+        priceUsdc: token.usdPrice,
         dataSource: "wido",
         supported: {
           widoZapIn: true,
@@ -52,7 +57,7 @@ export class WidoService extends Service {
         },
         balance: balance.balance,
         balanceUsdc: usdc(balance.balanceUsdValue),
-        priceUsdc: usdc(balance.tokenUsdPrice),
+        priceUsdc: usdc(balance.usdPrice),
       };
     });
   }
@@ -61,14 +66,13 @@ export class WidoService extends Service {
     if (this.chainId !== 1) {
       throw new Error("Unsupported");
     }
-    return [
-      "0x1025b1641d1F23C289412Dd5E5701e9810103a93", // yvCurve-ibAUD-USDC
-      "0x5e69e8b51B71C8596817fD442849BD44219bb095", // yvCurve-ibBTC
-      "0x2e5c7e9B1Da0D9Cb2832eBb06241d18552A85400", // yvCurve-ibCHF-USDC
-      "0x6B5ce31AF687a671a804d8070Ddda99Cab926dfE", // yvCurve-ibGBP-USDC
-      "0x9A39f31DD5EDF5919A5C0c2433cE053fAD2E0336", // yvCurve-ibJPY-USDC
-      "0xF6B9DFE6bc42ed2eaB44D6B829017f7B78B29f88", // yvCurve-ibKRW-USDC
-    ];
+
+    const vaultList = await getSupportedTokens({
+      chainId: [this.chainId],
+      protocol: ["yearn.finance"],
+    });
+
+    return vaultList.map((vault) => vault.address);
   }
 
   getContractAddress() {

@@ -145,6 +145,7 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
     overrides?: CallOverrides
   ): Promise<VaultDynamic[]> {
     const cached = await this.cachedFetcherGetDynamic.fetch();
+    // TODO(wido)
     if (cached && cached.length == -1) {
       return addresses ? cached.filter((vault) => addresses.includes(vault.address)) : cached;
     }
