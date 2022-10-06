@@ -1,6 +1,6 @@
 import { getAddress } from "@ethersproject/address";
 import { TransactionRequest } from "@ethersproject/providers";
-import { approveForZap, getBalances, getSupportedTokens, getTokenAllowance, getWidoContractAddress, quote } from "wido";
+import { approveForZap, getBalances, getSupportedTokens, getTokenAllowance, quote } from "wido";
 
 import { Chains, NETWORK_SETTINGS } from "../chain";
 import { Service } from "../common";
@@ -75,36 +75,22 @@ export class WidoService extends Service {
     return vaultList.map((vault) => vault.address);
   }
 
-  getContractAddress() {
-    // unsupported networks
-    if (this.chainId === 1337) {
-      throw new Error("Unsupported");
-    }
-
-    return getWidoContractAddress(this.chainId);
-  }
-
   async zapInApprovalState(token: Address, account: Address): Promise<TokenAllowance> {
     // unsupported networks
     if (this.chainId === 1337) {
       throw new Error("Unsupported");
     }
 
-    const widoContract = getWidoContractAddress(this.chainId);
-
-    const allowance = await getTokenAllowance(
-      {
-        accountAddress: account,
-        spenderAddress: widoContract,
-        tokenAddress: token,
-      },
-      this.ctx.provider.read
-    );
+    const { spender, allowance } = await getTokenAllowance({
+      chainId: this.chainId,
+      accountAddress: account,
+      tokenAddress: token,
+    });
 
     return {
       token,
       owner: account,
-      spender: widoContract,
+      spender,
       amount: allowance,
     };
   }
@@ -130,21 +116,16 @@ export class WidoService extends Service {
       throw new Error("Unsupported");
     }
 
-    const widoContract = getWidoContractAddress(this.chainId);
-
-    const allowance = await getTokenAllowance(
-      {
-        accountAddress: account,
-        spenderAddress: widoContract,
-        tokenAddress: vault,
-      },
-      this.ctx.provider.read
-    );
+    const { spender, allowance } = await getTokenAllowance({
+      chainId: this.chainId,
+      accountAddress: account,
+      tokenAddress: vault,
+    });
 
     return {
       token: vault,
       owner: account,
-      spender: widoContract,
+      spender,
       amount: allowance,
     };
   }
@@ -176,20 +157,17 @@ export class WidoService extends Service {
       throw new Error("Unsupported");
     }
 
-    const { data, to } = await quote(
-      {
-        fromChainId: this.chainId,
-        fromToken: token,
-        toChainId: this.chainId,
-        toToken: vault,
-        amount,
-        slippagePercentage,
-        user: account,
-      },
-      this.ctx.provider.read
-    );
+    const { data, to, from, value } = await quote({
+      fromChainId: this.chainId,
+      fromToken: token,
+      toChainId: this.chainId,
+      toToken: vault,
+      amount,
+      slippagePercentage,
+      user: account,
+    });
 
-    return { data, to, from: account };
+    return { data, to, from, value };
   }
 
   async zapOut(
@@ -204,19 +182,16 @@ export class WidoService extends Service {
       throw new Error("Unsupported");
     }
 
-    const { data, to } = await quote(
-      {
-        fromChainId: this.chainId,
-        fromToken: vault,
-        toChainId: this.chainId,
-        toToken: token,
-        amount,
-        slippagePercentage,
-        user: account,
-      },
-      this.ctx.provider.read
-    );
+    const { data, to, from, value } = await quote({
+      fromChainId: this.chainId,
+      fromToken: vault,
+      toChainId: this.chainId,
+      toToken: token,
+      amount,
+      slippagePercentage,
+      user: account,
+    });
 
-    return { data, to, from: account };
+    return { data, to, from, value };
   }
 }
