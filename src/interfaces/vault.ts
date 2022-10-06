@@ -2,12 +2,12 @@ import { ParamType } from "@ethersproject/abi";
 import { BigNumber } from "@ethersproject/bignumber";
 import { MaxUint256 } from "@ethersproject/constants";
 import { CallOverrides, Contract, PopulatedTransaction } from "@ethersproject/contracts";
-import { JsonRpcSigner, TransactionRequest, TransactionResponse } from "@ethersproject/providers";
+import { TransactionRequest, TransactionResponse } from "@ethersproject/providers";
 
 import { CachedFetcher } from "../cache";
-import { ChainId, isEthereum, isFantom } from "../chain";
+import { ChainId, NETWORK_SETTINGS } from "../chain";
 import { ContractAddressId, ServiceInterface } from "../common";
-import { chunkArray, EthAddress, FANTOM_TOKEN, isNativeToken, WethAddress } from "../helpers";
+import { chunkArray, EthAddress, isNativeToken, WethAddress } from "../helpers";
 import { PickleJars } from "../services/partners/pickle";
 import {
   Address,
@@ -154,23 +154,14 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
           return Promise.resolve([]);
         });
 
-    if (isEthereum(this.chainId)) {
-      const vaultTokenMarketData = await this.yearn.services.zapper.supportedVaultAddresses();
+    const networkSettings = NETWORK_SETTINGS[this.chainId];
+    if (networkSettings?.zapsEnabled) {
+      const vaultTokenMarketData = await this.yearn.services.portals.supportedVaultAddresses();
       metadataOverrides = mergeZapPropsWithAddressables({
         addressables: metadataOverrides,
         supportedVaultAddresses: vaultTokenMarketData,
-        zapInType: "zapperZapIn",
-        zapOutType: "zapperZapOut",
-      });
-    }
-
-    if (isFantom(this.chainId)) {
-      const ftmApeZappableVault = [FANTOM_TOKEN.address]; // hardcoded for now
-      metadataOverrides = mergeZapPropsWithAddressables({
-        addressables: metadataOverrides,
-        supportedVaultAddresses: ftmApeZappableVault,
-        zapInType: "ftmApeZap",
-        zapOutType: "ftmApeZap",
+        zapInType: "portalsZapIn",
+        zapOutType: "portalsZapOut",
       });
     }
 
@@ -361,6 +352,23 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
     return this.yearn.tokens.allowance(accountAddress, vaultAddress, spenderAddress);
   }
 
+  async populateApproveDeposit(
+    accountAddress: Address,
+    vaultAddress: Address,
+    tokenAddress: Address,
+    amount?: Integer,
+    overrides?: CallOverrides
+  ): Promise<PopulatedTransaction> {
+    const spenderAddress = await this.getDepositContractAddress(vaultAddress, tokenAddress);
+    return this.yearn.tokens.populateApprove(
+      accountAddress,
+      tokenAddress,
+      spenderAddress,
+      amount ?? MaxUint256.toString(),
+      overrides
+    );
+  }
+
   /**
    * Approve the token amount to allow to be used for deposits
    * @param accountAddress
@@ -381,6 +389,23 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
     return this.yearn.tokens.approve(
       accountAddress,
       tokenAddress,
+      spenderAddress,
+      amount ?? MaxUint256.toString(),
+      overrides
+    );
+  }
+
+  async populateApproveWithdraw(
+    accountAddress: Address,
+    vaultAddress: Address,
+    tokenAddress: Address,
+    amount?: Integer,
+    overrides?: CallOverrides
+  ): Promise<PopulatedTransaction> {
+    const spenderAddress = await this.getWithdrawContractAddress(vaultAddress, tokenAddress);
+    return this.yearn.tokens.populateApprove(
+      accountAddress,
+      vaultAddress,
       spenderAddress,
       amount ?? MaxUint256.toString(),
       overrides
@@ -417,10 +442,11 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
     if (isNativeToken(tokenAddress)) return vaultAddress;
 
     const willZapToPickleJar = this.isZappingIntoPickleJar({ vault: vaultAddress });
-    let willDepositUnderlyingToken = false;
-    if (!willZapToPickleJar) {
-      willDepositUnderlyingToken = await this.isUnderlyingToken(vaultAddress, tokenAddress);
+    if (willZapToPickleJar) {
+      return await this.yearn.addressProvider.addressById(ContractAddressId.pickleZapIn);
     }
+
+    const willDepositUnderlyingToken = await this.isUnderlyingToken(vaultAddress, tokenAddress);
     const shouldUsePartnerService = this.shouldUsePartnerService(vaultAddress);
 
     if (willDepositUnderlyingToken && shouldUsePartnerService) {
@@ -433,17 +459,14 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
       return vaultAddress;
     }
 
-    const zapContractId = willZapToPickleJar ? ContractAddressId.pickleZapIn : ContractAddressId.zapperZapIn;
-    const zapContractAddress = await this.yearn.addressProvider.addressById(zapContractId);
-    return zapContractAddress;
+    return await this.yearn.addressProvider.addressById(ContractAddressId.portalsZapIn);
   }
 
   private async getWithdrawContractAddress(vaultAddress: Address, tokenAddress: Address): Promise<Address> {
     const willWithdrawToUnderlyingToken = await this.isUnderlyingToken(vaultAddress, tokenAddress);
     if (willWithdrawToUnderlyingToken) return vaultAddress;
 
-    const zapContractAddress = await this.yearn.addressProvider.addressById(ContractAddressId.zapperZapOut);
-    return zapContractAddress;
+    return await this.yearn.addressProvider.addressById(ContractAddressId.portalsZapOut);
   }
 
   async isUnderlyingToken(vaultAddress: Address, tokenAddress: Address): Promise<boolean> {
@@ -468,26 +491,15 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
     options: DepositOptions = {},
     overrides: CallOverrides = {}
   ): Promise<TransactionResponse> {
-    const signer = this.ctx.provider.write.getSigner(account);
-
-    if (this.isZappingIntoPickleJar({ vault })) {
-      return this.zapIn(vault, token, amount, account, options, ZapProtocol.PICKLE, overrides);
-    }
-
-    const [vaultRef] = await this.getStatic([vault], overrides);
-    if (vaultRef.token !== token) {
-      return this.zapIn(vault, token, amount, account, options, ZapProtocol.YEARN, overrides);
-    }
-
-    return this.executeVaultContractTransaction(async (overrides: CallOverrides): Promise<TransactionResponse> => {
-      const populatedTransaction = await this.populateDepositTransaction({ vault, amount, overrides, signer });
-
-      if (!populatedTransaction) {
-        throw new SdkError("deposit transaction failed");
-      }
-
-      return this.yearn.services.transaction.sendTransaction(populatedTransaction);
-    }, overrides);
+    const populatedTransaction = await this.populateDepositTransaction({
+      vault,
+      token,
+      amount,
+      account,
+      options,
+      overrides,
+    });
+    return this.yearn.services.transaction.sendTransaction(populatedTransaction);
   }
 
   /**
@@ -507,43 +519,15 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
     options: WithdrawOptions = {},
     overrides: CallOverrides = {}
   ): Promise<TransactionResponse> {
-    const [vaultRef] = await this.getStatic([vault], overrides);
-    const signer = this.ctx.provider.write.getSigner(account);
-    if (vaultRef.token === token) {
-      const vaultContract = new Contract(vault, VaultAbi, signer);
-      const makeTransaction = async (overrides: CallOverrides): Promise<TransactionResponse> => {
-        const tx = await vaultContract.populateTransaction.withdraw(amount, overrides);
-        return this.yearn.services.transaction.sendTransaction(tx);
-      };
-      return this.executeVaultContractTransaction(makeTransaction, overrides);
-    } else {
-      if (options.slippage === undefined) {
-        throw new SdkError("zap operations should have a slippage set");
-      }
-
-      const zapOutParams = await this.yearn.services.zapper.zapOut(
-        account,
-        token,
-        amount,
-        vault,
-        "0",
-        options.slippage,
-        false,
-        undefined,
-        options.signature
-      );
-
-      const transactionRequest: TransactionRequest = {
-        to: zapOutParams.to,
-        from: zapOutParams.from,
-        gasPrice: BigNumber.from(zapOutParams.gasPrice),
-        gasLimit: BigNumber.from(zapOutParams.gas),
-        data: zapOutParams.data,
-        value: BigNumber.from(zapOutParams.value),
-      };
-
-      return this.executeZapperTransaction(transactionRequest, overrides, BigNumber.from(zapOutParams.gasPrice));
-    }
+    const populatedTransaction = await this.populateWithdrawTransaction({
+      vault,
+      token,
+      amount,
+      account,
+      options,
+      overrides,
+    });
+    return this.yearn.services.transaction.sendTransaction(populatedTransaction);
   }
 
   /**
@@ -595,22 +579,18 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
     amount: Integer,
     account: Address,
     options: DepositOptions = {},
-    zapProtocol: ZapProtocol = ZapProtocol.YEARN,
-    overrides: CallOverrides = {}
-  ): Promise<TransactionResponse> {
-    if (options.slippage === undefined) {
-      throw new SdkError("zap operations should have a slippage set");
-    }
+    _zapProtocol: ZapProtocol = ZapProtocol.YEARN,
+    _overrides: CallOverrides = {}
+  ): Promise<TransactionRequest> {
+    if (options.slippage === undefined) throw new SdkError("zap operations should have a slippage set");
 
-    const zapInParams = await this.yearn.services.zapper.zapIn(
-      account,
+    const zapInParams = await this.yearn.services.portals.zapIn(
+      vault,
       token,
       amount,
-      vault,
-      "0",
+      account,
       options.slippage,
-      false,
-      zapProtocol,
+      !options.skipGasEstimate ?? true,
       this.yearn.services.partner?.partnerId
     );
 
@@ -618,55 +598,11 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
       to: zapInParams.to,
       from: zapInParams.from,
       data: zapInParams.data,
-      value: BigNumber.from(zapInParams.value),
-      gasLimit: BigNumber.from(zapInParams.gas),
+      value: zapInParams.value ? BigNumber.from(zapInParams.value) : undefined,
+      gasLimit: zapInParams.gasLimit ? BigNumber.from(zapInParams.gasLimit) : undefined,
     };
 
-    return this.executeZapperTransaction(transactionRequest, overrides, BigNumber.from(zapInParams.gasPrice));
-  }
-
-  private async executeZapperTransaction(
-    transactionRequest: TransactionRequest,
-    overrides: CallOverrides,
-    fallbackGasPrice: BigNumber
-  ): Promise<TransactionResponse> {
-    try {
-      const combinedParams = { ...transactionRequest, ...overrides };
-      combinedParams.gasPrice = undefined;
-      return await this.yearn.services.transaction.sendTransaction(combinedParams);
-    } catch (error) {
-      if ((error as { code: number }).code === -32602) {
-        const combinedParams = { ...transactionRequest, ...overrides };
-        combinedParams.maxFeePerGas = undefined;
-        combinedParams.maxPriorityFeePerGas = undefined;
-        combinedParams.gasPrice = overrides.gasPrice || fallbackGasPrice;
-        return await this.yearn.services.transaction.sendTransaction(combinedParams);
-      }
-
-      throw error;
-    }
-  }
-
-  private async executeVaultContractTransaction(
-    makeTransaction: (overrides: CallOverrides) => Promise<TransactionResponse>,
-    overrides: CallOverrides
-  ): Promise<TransactionResponse> {
-    const originalGasPrice = overrides.gasPrice;
-    try {
-      overrides.gasPrice = undefined;
-      const tx = await makeTransaction(overrides);
-      return tx;
-    } catch (error) {
-      if ((error as { code: number }).code === -32602) {
-        overrides.maxFeePerGas = undefined;
-        overrides.maxPriorityFeePerGas = undefined;
-        overrides.gasPrice = originalGasPrice;
-        const tx = await makeTransaction(overrides);
-        return tx;
-      }
-
-      throw error;
-    }
+    return transactionRequest;
   }
 
   private fillTokenMetadataOverrides(token: Token, overrides: TokenMetadata): void {
@@ -739,21 +675,82 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
 
   async populateDepositTransaction({
     vault,
+    token,
     amount,
-    overrides,
-    signer,
+    account,
+    options = {},
+    overrides = {},
   }: {
     vault: Address;
+    token: Address;
     amount: Integer;
+    account: Address;
+    options: DepositOptions;
     overrides: CallOverrides;
-    signer: JsonRpcSigner;
-  }): Promise<PopulatedTransaction | undefined> {
-    if (this.shouldUsePartnerService(vault)) {
-      return this.yearn.services.partner?.populateDepositTransaction(vault, amount, overrides);
+  }): Promise<TransactionRequest> {
+    if (this.isZappingIntoPickleJar({ vault })) {
+      return this.zapIn(vault, token, amount, account, options, ZapProtocol.PICKLE, overrides);
     }
 
+    const isUnderlyingToken = await this.isUnderlyingToken(vault, token);
+    if (!isUnderlyingToken) {
+      return this.zapIn(vault, token, amount, account, options, ZapProtocol.YEARN, overrides);
+    }
+
+    if (this.shouldUsePartnerService(vault)) {
+      const populatedTransaction = this.yearn.services.partner?.populateDepositTransaction(vault, amount, overrides);
+      if (!populatedTransaction) throw new SdkError("deposit transaction failed");
+      return populatedTransaction;
+    }
+
+    const signer = this.ctx.provider.write.getSigner(account);
     const vaultContract = new Contract(vault, VaultAbi, signer);
     return vaultContract.populateTransaction.deposit(amount, overrides);
+  }
+
+  async populateWithdrawTransaction({
+    vault,
+    token,
+    amount,
+    account,
+    options = {},
+    overrides = {},
+  }: {
+    vault: Address;
+    token: Address;
+    amount: Integer;
+    account: Address;
+    options: WithdrawOptions;
+    overrides: CallOverrides;
+  }): Promise<TransactionRequest> {
+    const signer = this.ctx.provider.write.getSigner(account);
+    const isUnderlyingToken = await this.isUnderlyingToken(vault, token);
+    if (isUnderlyingToken) {
+      const vaultContract = new Contract(vault, VaultAbi, signer);
+      return await vaultContract.populateTransaction.withdraw(amount, overrides);
+    }
+
+    if (options.slippage === undefined) throw new SdkError("zap operations should have a slippage set");
+
+    const zapOutParams = await this.yearn.services.portals.zapOut(
+      vault,
+      token,
+      amount,
+      account,
+      options.slippage,
+      !options.skipGasEstimate ?? true,
+      options.signature
+    );
+
+    const transactionRequest: TransactionRequest = {
+      to: zapOutParams.to,
+      from: zapOutParams.from,
+      data: zapOutParams.data,
+      value: zapOutParams.value ? BigNumber.from(zapOutParams.value) : undefined,
+      gasLimit: zapOutParams.gasLimit ? BigNumber.from(zapOutParams.gasLimit) : undefined,
+    };
+
+    return transactionRequest;
   }
 
   private isZappingIntoPickleJar({ vault }: { vault: string }) {

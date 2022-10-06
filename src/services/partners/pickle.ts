@@ -27,7 +27,7 @@ export class PickleService extends Service {
     if (this.lastFetchedDate < oneHourAgo) {
       await this.fetchPickleJarPrices();
     }
-    return usdc(this.pickleJarUSDPrices.get(jar)?.toFixed(0)) || "0";
+    return usdc(this.pickleJarUSDPrices.get(jar)?.toFixed(0) || "0");
   }
 
   private async fetchPickleJarPrices(): Promise<void> {

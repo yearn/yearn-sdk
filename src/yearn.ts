@@ -3,13 +3,11 @@ import { Context, ContextValue } from "./context";
 import { EarningsInterface } from "./interfaces/earnings";
 import { FeesInterface } from "./interfaces/fees";
 import { GaugeInterface } from "./interfaces/gauge";
-import { IronBankInterface } from "./interfaces/ironbank";
 import { SimulationInterface } from "./interfaces/simulation";
 import { StrategyInterface } from "./interfaces/strategy";
 import { TokenInterface } from "./interfaces/token";
 import { VaultInterface } from "./interfaces/vault";
 import { VotingEscrowInterface } from "./interfaces/votingEscrow";
-import { IronBankAdapter } from "./services/adapters/ironbank";
 import { RegistryAdapter, RegistryV2Adapter } from "./services/adapters/registry";
 import { AddressProvider } from "./services/addressProvider";
 import { AllowListService } from "./services/allowlist";
@@ -20,6 +18,7 @@ import { MetaService } from "./services/meta";
 import { OracleService } from "./services/oracle";
 import { PartnerService } from "./services/partner";
 import { PickleService } from "./services/partners/pickle";
+import { PortalsService } from "./services/portals";
 import { PropertiesAggregatorService } from "./services/propertiesAggregator";
 import { SubgraphService } from "./services/subgraph";
 import { TelegramService } from "./services/telegram";
@@ -33,13 +32,13 @@ export type Adapters<T extends ChainId> = {
     v1: RegistryAdapter;
     v2: RegistryV2Adapter<T>;
   };
-  ironBank: IronBankAdapter<T>;
 };
 
 type ServicesType<T extends ChainId> = {
   lens: LensService<T>;
   oracle: OracleService<T>;
   zapper: ZapperService;
+  portals: PortalsService;
   asset: AssetService;
   vision: VisionService;
   subgraph: SubgraphService;
@@ -76,7 +75,6 @@ export class Yearn<T extends ChainId> {
   tokens: TokenInterface<T>;
   earnings: EarningsInterface<T>;
   fees: FeesInterface<T>;
-  ironBank: IronBankInterface<T>;
   simulation: SimulationInterface<T>;
   strategies: StrategyInterface<T>;
   votingEscrows: VotingEscrowInterface<T>;
@@ -123,7 +121,6 @@ export class Yearn<T extends ChainId> {
     this.tokens = new TokenInterface(this, chainId, this.context);
     this.earnings = new EarningsInterface(this, chainId, this.context);
     this.fees = new FeesInterface(this, chainId, this.context);
-    this.ironBank = new IronBankInterface(this, chainId, this.context);
     this.simulation = new SimulationInterface(this, chainId, this.context);
     this.strategies = new StrategyInterface(this, chainId, this.context);
     this.votingEscrows = new VotingEscrowInterface(this, chainId, this.context);
@@ -143,7 +140,6 @@ export class Yearn<T extends ChainId> {
     this.tokens = new TokenInterface(this, chainId, this.context);
     this.earnings = new EarningsInterface(this, chainId, this.context);
     this.fees = new FeesInterface(this, chainId, this.context);
-    this.ironBank = new IronBankInterface(this, chainId, this.context);
     this.simulation = new SimulationInterface(this, chainId, this.context);
     this.strategies = new StrategyInterface(this, chainId, this.context);
     this.votingEscrows = new VotingEscrowInterface(this, chainId, this.context);
@@ -163,6 +159,7 @@ export class Yearn<T extends ChainId> {
       lens: new LensService(chainId, ctx, addressProvider),
       oracle: new OracleService(chainId, ctx, addressProvider),
       zapper: new ZapperService(chainId, ctx),
+      portals: new PortalsService(chainId, ctx),
       asset: new AssetService(chainId, ctx, assetServiceState),
       vision: new VisionService(chainId, ctx),
       subgraph: new SubgraphService(chainId, ctx),
@@ -182,7 +179,6 @@ export class Yearn<T extends ChainId> {
       vaults: {
         v2: new RegistryV2Adapter(chainId, this.context, this.addressProvider),
       },
-      ironBank: new IronBankAdapter(chainId, this.context, this.addressProvider),
     } as Adapters<T>;
   }
 }

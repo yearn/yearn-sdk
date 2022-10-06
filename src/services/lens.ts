@@ -2,7 +2,6 @@ import { ChainId } from "../chain";
 import { Service } from "../common";
 import { Context } from "../context";
 import { Adapters } from "../yearn";
-import { IronBankAdapter } from "./adapters/ironbank";
 import { RegistryV2Adapter } from "./adapters/registry";
 import { AddressProvider } from "./addressProvider";
 
@@ -22,7 +21,6 @@ export class LensService<T extends ChainId> extends Service {
       vaults: {
         v2: new RegistryV2Adapter(this.chainId, this.ctx, this.addressProvider),
       },
-      ironBank: new IronBankAdapter(this.chainId, this.ctx, this.addressProvider),
     } as Adapters<T>;
   }
 }

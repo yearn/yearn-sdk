@@ -10,7 +10,6 @@ export interface AddressesOverride {
   oracle?: Address;
   adapters: {
     registryV2?: Address;
-    ironBank?: Address;
   };
   helper?: Address;
   allowList?: Address;
@@ -51,6 +50,7 @@ export interface SubgraphConfiguration {
   mainnetSubgraphEndpoint?: string;
   fantomSubgraphEndpoint?: string;
   arbitrumSubgraphEndpoint?: string;
+  optimismSubgraphEndpoint?: string;
 }
 
 /**

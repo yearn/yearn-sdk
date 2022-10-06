@@ -1,7 +1,9 @@
 import { getAddress } from "@ethersproject/address";
+import { BytesLike } from "@ethersproject/bytes";
 import { JsonRpcProvider, JsonRpcSigner, TransactionRequest } from "@ethersproject/providers";
 import BigNumber from "bignumber.js";
 
+import { ChainId } from "./chain";
 import { Context } from "./context";
 import { TelegramService } from "./services/telegram";
 import { EthersError, SimulationError, SimulationOptions, TenderlyError } from "./types";
@@ -48,7 +50,7 @@ interface SimulationCallTrace {
  * 3. Simulate the zap in using the approval transaction as the root
  */
 export class SimulationExecutor {
-  constructor(private telegram: TelegramService, private ctx: Context) {}
+  constructor(private telegram: TelegramService, private chainId: ChainId, private ctx: Context) {}
 
   /**
    * Simulate a transaction
@@ -85,11 +87,15 @@ export class SimulationExecutor {
   async simulateVaultInteraction(
     from: Address,
     to: Address,
-    data: string,
+    data: BytesLike,
     targetToken: Address,
     options: SimulationOptions,
     value: Integer = "0"
   ): Promise<Integer> {
+    if (!this.isString(data)) {
+      throw new SimulationError("Data is of an invalid type", SimulationError.INVALID_TYPE);
+    }
+
     const response: SimulationResponse = await this.makeSimulationRequest(from, to, data, options, value);
 
     const getAddressFromTopic = (topic: string): Address => {
@@ -125,10 +131,14 @@ export class SimulationExecutor {
   async makeSimulationRequest(
     from: Address,
     to: Address,
-    data: string,
+    data: BytesLike,
     options: SimulationOptions,
     value: Integer = "0"
   ): Promise<SimulationResponse> {
+    if (!this.isString(data)) {
+      throw new SimulationError("Data is of an invalid type", SimulationError.INVALID_TYPE);
+    }
+
     const constructedPath = options?.forkId ? `${baseUrl}/fork/${options.forkId}/simulate` : `${baseUrl}/simulate`;
 
     const transactionRequest = await this.getPopulatedTransactionRequest(from, to, data, options, value);
@@ -137,7 +147,7 @@ export class SimulationExecutor {
       from,
       to,
       input: data,
-      network_id: transactionRequest.chainId?.toString() || "1",
+      network_id: this.chainId.toString(),
       block_number: latestBlockKey,
       simulation_type: "quick",
       root: options?.root,
@@ -229,7 +239,7 @@ export class SimulationExecutor {
     const body = {
       alias: "",
       description: "",
-      network_id: "1",
+      network_id: this.chainId.toString(),
     };
 
     const response: Response = await await fetch(`${baseUrl}/fork`, {
@@ -315,7 +325,7 @@ export class SimulationExecutor {
    * @param forkId the fork to be deleted
    * @returns the deletion response
    */
-  private async deleteFork(forkId: string): Promise<Response> {
+  async deleteFork(forkId: string): Promise<Response> {
     return await fetch(`${baseUrl}/fork/${forkId}`, { method: "DELETE" });
   }
 
@@ -336,5 +346,9 @@ export class SimulationExecutor {
     const message = ["Simulation error", errorMessage, transactionUrl].map((item) => item).join("\n\n");
 
     this.telegram.sendMessage(message);
+  }
+
+  private isString(data: BytesLike): data is string {
+    return typeof data === "string";
   }
 }

@@ -15,10 +15,6 @@ export type Vault = VaultV1 | VaultV2;
 export type VaultStatic = VaultV1Static | VaultV2Static;
 export type VaultDynamic = VaultV1Dynamic | VaultV2Dynamic;
 
-export type IronBankMarket = Asset<"IRON_BANK_MARKET">;
-export type IronBankMarketStatic = AssetStatic<"IRON_BANK_MARKET">;
-export type IronBankMarketDynamic = AssetDynamic<"IRON_BANK_MARKET">;
-
 export type VotingEscrow = Asset<"VOTING_ESCROW">;
 export type VotingEscrowStatic = AssetStatic<"VOTING_ESCROW">;
 export type VotingEscrowDynamic = AssetDynamic<"VOTING_ESCROW">;

@@ -16,7 +16,7 @@ describe("Chain", () => {
 
   describe("allSupportedChains", () => {
     it("should return all supported chains", () => {
-      expect(allSupportedChains).toStrictEqual([1, 250, 1337, 42161]);
+      expect(allSupportedChains).toStrictEqual([1, 10, 250, 1337, 42161]);
     });
   });
 });

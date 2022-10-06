@@ -56,13 +56,14 @@ export class WrappedContract {
 
 export enum ContractAddressId {
   oracle = "ORACLE",
-  adapter_ironbank = "REGISTRY_ADAPTER_IRON_BANK",
   adapter_registry_v2 = "REGISTRY_ADAPTER_V2_VAULTS",
   helper = "HELPER",
   allowlist = "ALLOW_LIST_REGISTRY",
   partner = "PARTNER_TRACKER",
   zapperZapIn = "ZAPPER_ZAP_IN",
   zapperZapOut = "ZAPPER_ZAP_OUT",
+  portalsZapIn = "PORTALS_ZAP_IN",
+  portalsZapOut = "PORTALS_ZAP_OUT",
   pickleZapIn = "PICKLE_ZAP_IN",
   propertiesAggregator = "PROPERTIES_AGGREGATOR",
   gaugeRegistry = "GAUGE_REGISTRY",

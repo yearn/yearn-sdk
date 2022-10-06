@@ -8,7 +8,6 @@
  * ### Interfaces
  *
  * - [[VaultInterface]] asset aggregation for yearn's v1 & v2 vaults.
- * - [[IronBankInterface]] asset aggregation form iron bank products.
  * - [[TokenInterface]] utility function for ERC20 and balances.
  * - [[EarningsInterface]] historical earnings.
  * - [[FeesInterface]] historical fees collected by yearn.
@@ -20,7 +19,6 @@
  *
  * - [[LensService]]: provides access to yearn's assets and user position.
  * -→ [[RegistryV2Adapter]]: adapter of V2 vaults.
- * -→ [[IronBankAdapter]]: adapter of iron bank assets.
  * - [[OracleService]]: pricing engine used for calculations.
  * - [[ZapperService]]: interaction with zapper public API.
  * - [[VisionService]]: interaction with yearn's product stats aggregator.
@@ -44,13 +42,11 @@ export { Context, ContextValue } from "./context";
 export { EarningsInterface } from "./interfaces/earnings";
 export { FeesInterface } from "./interfaces/fees";
 export { GaugeInterface } from "./interfaces/gauge";
-export { IronBankInterface } from "./interfaces/ironbank";
 export { SimulationInterface } from "./interfaces/simulation";
 export { StrategyInterface } from "./interfaces/strategy";
 export { TokenInterface } from "./interfaces/token";
 export { VaultInterface } from "./interfaces/vault";
 export { VotingEscrowInterface } from "./interfaces/votingEscrow";
-export { IronBankAdapter } from "./services/adapters/ironbank";
 export { RegistryV2Adapter } from "./services/adapters/registry";
 export { AssetService } from "./services/assets";
 export { LensService } from "./services/lens";

@@ -46,7 +46,7 @@ export class ZapperService extends Service {
         // addresses in the icon url should always be lowercase to be fetched correctly
         icon: `https://assets.yearn.network/tokens/${network}/${zapperToken.address}.png`,
         name: zapperToken.symbol,
-        priceUsdc: usdc(zapperToken.price),
+        priceUsdc: usdc(String(zapperToken.price)),
         dataSource: "zapper",
         supported: { zapper: true },
         symbol: zapperToken.symbol,
