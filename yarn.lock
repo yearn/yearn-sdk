@@ -9639,10 +9639,10 @@ which@^2.0.1, which@^2.0.2:
   dependencies:
     isexe "^2.0.0"
 
-wido@^0.0.22:
-  version "0.0.22"
-  resolved "https://registry.yarnpkg.com/wido/-/wido-0.0.22.tgz#a0f6d29219bd48f13e280233bb67150da17c69ed"
-  integrity sha512-8CT+i0NotfIasN2AjOVDNlnn/Usc/eMrfByRCeY1euTg6NXTVgHlS09Bwpayk/EfBGDrBMF20nhNuJShYH4Q1A==
+wido@^0.0.24:
+  version "0.0.24"
+  resolved "https://registry.yarnpkg.com/wido/-/wido-0.0.24.tgz#0d081f41184965541a8f96668998325213bcba18"
+  integrity sha512-VspqM5Wfmp/L4KFE62y/LJEM7bbnqyYecrihy2CWpQTVxRJ2wun3eM3dggqDL5Oka/eZF4A8l716jOgcCMPGgw==
   dependencies:
     "@segment/analytics-next" "^1.42.3"
     ethers "^5.6.9"
