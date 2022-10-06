@@ -486,7 +486,7 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
     if (zapInWith === "portalsZapIn") {
       return await this.yearn.addressProvider.addressById(ContractAddressId.portalsZapIn);
     } else if (zapInWith === "widoZapIn") {
-      return this.yearn.services.wido.getContractAddress();
+      return await this.yearn.addressProvider.addressById(ContractAddressId.widoZapRouter);
     } else {
       throw new Error("zapInWith not supported");
     }
@@ -502,7 +502,7 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
     if (zapOutWith === "portalsZapOut") {
       return await this.yearn.addressProvider.addressById(ContractAddressId.portalsZapOut);
     } else if (zapOutWith === "widoZapOut") {
-      return this.yearn.services.wido.getContractAddress();
+      return await this.yearn.addressProvider.addressById(ContractAddressId.widoZapRouter);
     } else {
       throw new Error("zapOutWith not supported");
     }
