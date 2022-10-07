@@ -106,11 +106,11 @@ export class VotingEscrowInterface<T extends ChainId> extends ServiceInterface<T
    */
   async getStatic({ addresses }: { addresses?: Address[] }): Promise<VotingEscrowStatic[]> {
     const supportedAddresses = await this.getSupportedAddresses({ addresses });
-    const properties = ["address token", "string name", "string version", "string symbol", "uint256 decimals"].map(
-      (prop) => ParamType.from(prop)
+    const properties = ["address token", "string name", "string symbol", "uint256 decimals"].map((prop) =>
+      ParamType.from(prop)
     );
     const staticDataPromises = supportedAddresses.map(async (address) => {
-      const { token, name, version, symbol, decimals } = await this.yearn.services.propertiesAggregator.getProperties(
+      const { token, name, symbol, decimals } = await this.yearn.services.propertiesAggregator.getProperties(
         address,
         properties
       );
@@ -119,7 +119,7 @@ export class VotingEscrowInterface<T extends ChainId> extends ServiceInterface<T
         typeId: "VOTING_ESCROW",
         token: token as Address,
         name: name as string,
-        version: version as string,
+        version: "1",
         symbol: symbol as string,
         decimals: (decimals as BigNumber).toString(),
       };
