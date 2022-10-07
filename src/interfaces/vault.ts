@@ -1,5 +1,4 @@
 import { ParamType } from "@ethersproject/abi";
-import { getAddress } from "@ethersproject/address";
 import { BigNumber } from "@ethersproject/bignumber";
 import { MaxUint256 } from "@ethersproject/constants";
 import { CallOverrides, Contract, PopulatedTransaction } from "@ethersproject/contracts";
@@ -30,7 +29,7 @@ import {
   ZapProtocol,
 } from "../types";
 import { Position, Vault } from "../types";
-import { mergeZapPropsWithAddressables } from "./helpers";
+import { mergeZapInPropsWithZappables, mergeZapOutPropsWithZappables } from "./helpers";
 
 const VaultAbi = ["function deposit(uint256 amount) public", "function withdraw(uint256 amount) public"];
 
@@ -143,7 +142,10 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
     vaultMetadataOverrides?: VaultMetadataOverrides[],
     overrides?: CallOverrides
   ): Promise<VaultDynamic[]> {
-    const cached = await this.cachedFetcherGetDynamic.fetch();
+    let cached;
+    if (this.ctx.isZapsDefault) {
+      cached = await this.cachedFetcherGetDynamic.fetch();
+    }
     if (cached) {
       return addresses ? cached.filter((vault) => addresses.includes(vault.address)) : cached;
     }
@@ -158,31 +160,32 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
     const networkSettings = NETWORK_SETTINGS[this.chainId];
     if (networkSettings?.zapsEnabled) {
       const widoSupportedVaults = await this.yearn.services.wido.supportedVaultAddresses();
-      metadataOverrides = mergeZapPropsWithAddressables({
-        addressables: metadataOverrides,
-        supportedVaultAddresses: widoSupportedVaults,
-        zapInType: "widoZapIn",
-        zapOutType: "widoZapOut",
-      });
-      const portalsSupportedVaults = new Set(await this.yearn.services.portals.supportedVaultAddresses());
-      // patch vaults that are not supported by wido to allow zaps from portals
-      metadataOverrides = metadataOverrides.map((vaultMetadata: VaultMetadataOverrides) => {
-        if (vaultMetadata.allowZapIn) return vaultMetadata;
-
-        try {
-          const address = getAddress(vaultMetadata.address);
-          const isZappable = portalsSupportedVaults.has(address);
-
-          return {
-            ...vaultMetadata,
-            allowZapIn: isZappable,
-            allowZapOut: isZappable,
-            zapInWith: isZappable ? "portalsZapIn" : undefined,
-            zapOutWith: isZappable ? "portalsZapOut" : undefined,
-          };
-        } catch (error) {
-          return vaultMetadata;
+      const portalsSupportedVaults = await this.yearn.services.portals.supportedVaultAddresses();
+      this.ctx.zaps?.zapInWith.forEach((zapInWith) => {
+        let supportedVaultAddresses;
+        if (zapInWith === "widoZapIn") {
+          supportedVaultAddresses = widoSupportedVaults;
+        } else {
+          supportedVaultAddresses = portalsSupportedVaults;
         }
+        metadataOverrides = mergeZapInPropsWithZappables({
+          zappables: metadataOverrides,
+          supportedVaultAddresses,
+          zapInType: zapInWith,
+        });
+      });
+      this.ctx.zaps?.zapOutWith.forEach((zapOutWith) => {
+        let supportedVaultAddresses;
+        if (zapOutWith === "widoZapOut") {
+          supportedVaultAddresses = widoSupportedVaults;
+        } else {
+          supportedVaultAddresses = portalsSupportedVaults;
+        }
+        metadataOverrides = mergeZapOutPropsWithZappables({
+          zappables: metadataOverrides,
+          supportedVaultAddresses,
+          zapOutType: zapOutWith,
+        });
       });
     }
 

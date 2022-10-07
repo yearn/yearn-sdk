@@ -180,6 +180,7 @@ jest.mock("../context", () => ({
         })),
       },
     },
+    isZapsDefault: true,
   })),
 }));
 

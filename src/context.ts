@@ -1,9 +1,11 @@
 import { JsonRpcProvider } from "@ethersproject/providers";
 import EventEmitter from "events";
+import isEqual from "lodash.isequal";
 import { PartialDeep } from "type-fest";
 
 import { Address, Locale, SdkError } from "./types";
 import { encode } from "./utils";
+import { ZapInWith, ZapOutWith } from "./zap";
 
 export interface AddressesOverride {
   lens?: Address;
@@ -53,6 +55,11 @@ export interface SubgraphConfiguration {
   optimismSubgraphEndpoint?: string;
 }
 
+export interface ZapsConfiguration {
+  zapInWith: ZapInWith[];
+  zapOutWith: ZapOutWith[];
+}
+
 /**
  * Context options that are used to access all the data sources queried by the
  * SDK.
@@ -67,6 +74,7 @@ export interface ContextValue {
   subgraph?: SubgraphConfiguration;
   partnerId?: string;
   locale?: Locale;
+  zaps?: ZapsConfiguration;
 }
 
 const DefaultContext: ContextValue = {
@@ -76,6 +84,10 @@ const DefaultContext: ContextValue = {
   // The default tenderly dashboard for Yearn
   simulation: { dashboardUrl: "https://dashboard.tenderly.co/yearn/yearn-web" },
   cache: { useCache: true, url: "https://cache.yearn.finance" },
+  zaps: {
+    zapInWith: ["widoZapIn", "portalsZapIn"],
+    zapOutWith: ["widoZapOut", "portalsZapOut"],
+  },
 };
 
 /**
@@ -159,5 +171,13 @@ export class Context implements ContextValue {
 
   get locale(): Locale {
     return this.ctx.locale || "en";
+  }
+
+  get zaps(): ZapsConfiguration {
+    return this.ctx.zaps || (DefaultContext.zaps as ZapsConfiguration);
+  }
+
+  get isZapsDefault(): boolean {
+    return isEqual(this.ctx.zaps, DefaultContext.zaps);
   }
 }
