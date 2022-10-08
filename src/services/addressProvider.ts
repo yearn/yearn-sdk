@@ -41,6 +41,8 @@ export class AddressProvider<T extends ChainId> extends Service {
   static addressByChain(chainId: ChainId): string {
     switch (chainId) {
       case 1:
+      case 5:
+        return "";
       case 1337:
         return "0xe11dC9f2Ab122dC5978EACA41483Da0D7D7e6128";
       case 10:
