@@ -32,9 +32,10 @@ describe("AddressProvider", () => {
   });
 
   describe("addressByChain", () => {
-    it.each`
+     it.each`
       chainId  | address
       ${1}     | ${"0xe11dC9f2Ab122dC5978EACA41483Da0D7D7e6128"}
+      ${5}     | ${""}
       ${250}   | ${"0xac5A9E4135A3A26497F3890bFb602b06Ee592B61"}
       ${1337}  | ${"0xe11dC9f2Ab122dC5978EACA41483Da0D7D7e6128"}
       ${42161} | ${"0xcAd10033C86B0C1ED6bfcCAa2FF6779938558E9f"}
