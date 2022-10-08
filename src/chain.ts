@@ -5,18 +5,23 @@ import { Address } from "./types";
  */
 export const Chains = {
   1: "ethereum",
+  5: "goerli",
   10: "optimism",
   250: "fantom",
   1337: "ethereum",
   42161: "arbitrum",
 };
 
-export type Network = "ethereum" | "optimism" | "fantom" | "arbitrum";
+export type Network = "ethereum" | "optimism" | "fantom" | "arbitrum" | "goerli;
 
 export type ChainId = keyof typeof Chains;
 
 export const isEthereum = (chainId: ChainId): boolean => {
   return chainId === 1 || chainId === 1337;
+};
+
+export const isGoerli = (chainId: ChainId): boolean => {
+  return chainId === 5;
 };
 
 export const isOptimism = (chainId: ChainId): boolean => {
