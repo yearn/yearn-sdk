@@ -150,7 +150,8 @@ export class WidoService extends Service {
     token: Address,
     amount: Integer,
     account: Address,
-    slippagePercentage: number
+    slippagePercentage: number,
+    partnerId?: string
   ): Promise<TransactionRequest> {
     // unsupported networks
     if (this.chainId === 1337) {
@@ -165,6 +166,9 @@ export class WidoService extends Service {
       amount,
       slippagePercentage,
       user: account,
+      varsOverride: {
+        $yearn_partner_id: partnerId,
+      },
     });
 
     return { data, to, from, value };

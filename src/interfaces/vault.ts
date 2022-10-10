@@ -653,7 +653,14 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
         this.yearn.services.partner?.partnerId
       );
     } else if (zapInWith === "widoZapIn") {
-      zapInPromise = this.yearn.services.wido.zapIn(vaultAddr, token, amount, account, options.slippage);
+      zapInPromise = this.yearn.services.wido.zapIn(
+        vaultAddr,
+        token,
+        amount,
+        account,
+        options.slippage,
+        this.yearn.services.partner?.partnerId
+      );
     } else {
       throw new Error("zapInWith not supported");
     }

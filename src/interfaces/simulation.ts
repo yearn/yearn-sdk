@@ -551,7 +551,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
         partnerId
       );
     } else if (zapInWith === "widoZapIn") {
-      zapInPromise = this.yearn.services.wido.zapIn(toVault, sellToken, amount, from, options.slippage);
+      zapInPromise = this.yearn.services.wido.zapIn(toVault, sellToken, amount, from, options.slippage, partnerId);
     } else {
       throw new Error("zapInWith not supported");
     }

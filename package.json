@@ -67,7 +67,7 @@
     "dotenv": "10.0.0",
     "emittery": "0.8.1",
     "type-fest": "1.2.1",
-    "wido": "^0.0.24"
+    "wido": "^0.0.25"
   },
   "size-limit": [
     {
