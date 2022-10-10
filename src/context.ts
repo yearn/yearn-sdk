@@ -1,6 +1,5 @@
 import { JsonRpcProvider } from "@ethersproject/providers";
 import EventEmitter from "events";
-import isEqual from "lodash.isequal";
 import { PartialDeep } from "type-fest";
 
 import { Address, Locale, SdkError } from "./types";
@@ -178,6 +177,9 @@ export class Context implements ContextValue {
   }
 
   get isZapsDefault(): boolean {
-    return isEqual(this.ctx.zaps, DefaultContext.zaps);
+    return (
+      this.ctx.zaps?.zapInWith === DefaultContext.zaps?.zapInWith &&
+      this.ctx.zaps?.zapOutWith === DefaultContext.zaps?.zapOutWith
+    );
   }
 }

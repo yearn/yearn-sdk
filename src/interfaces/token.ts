@@ -316,14 +316,18 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
     const zapTokensMap: Record<Address, Token> = {};
 
     const [portalsTokens, widoTokens] = await Promise.all([
-      this.yearn.services.portals.supportedTokens(),
-      this.yearn.services.wido.supportedTokens(),
+      this.yearn.services.portals.supportedTokens().catch((error) => {
+        console.error(error);
+        return Promise.resolve([] as Token[]);
+      }),
+      this.yearn.services.wido.supportedTokens().catch((error) => {
+        console.error(error);
+        return Promise.resolve([] as Token[]);
+      }),
     ]);
 
-    const zapTokensAddresses = [
-      ...portalsTokens.map(({ address }) => address),
-      ...widoTokens.map(({ address }) => address),
-    ];
+    const zapTokens = [...new Set([...portalsTokens, ...widoTokens])];
+    const zapTokensAddresses = zapTokens.map(({ address }) => address);
 
     const zapTokensIcons = await this.yearn.services.asset.ready.then(() =>
       this.yearn.services.asset.icon(zapTokensAddresses)
@@ -334,11 +338,7 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
       return icon ? { ...token, icon } : token;
     };
 
-    portalsTokens.forEach((token) => {
-      zapTokensMap[token.address] = tokenWithIcon(token);
-    });
-
-    widoTokens.forEach((token) => {
+    zapTokens.forEach((token) => {
       const existingToken = zapTokensMap[token.address];
       if (existingToken) {
         const mergedToken = {

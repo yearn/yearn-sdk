@@ -159,8 +159,14 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
 
     const networkSettings = NETWORK_SETTINGS[this.chainId];
     if (networkSettings?.zapsEnabled) {
-      const widoSupportedVaults = await this.yearn.services.wido.supportedVaultAddresses();
-      const portalsSupportedVaults = await this.yearn.services.portals.supportedVaultAddresses();
+      const widoSupportedVaults = await this.yearn.services.wido.supportedVaultAddresses().catch((error) => {
+        console.error(error);
+        return Promise.resolve([] as string[]);
+      });
+      const portalsSupportedVaults = await this.yearn.services.portals.supportedVaultAddresses().catch((error) => {
+        console.error(error);
+        return Promise.resolve([] as string[]);
+      });
       this.ctx.zaps?.zapInWith.forEach((zapInWith) => {
         let supportedVaultAddresses;
         if (zapInWith === "widoZapIn") {

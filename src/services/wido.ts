@@ -50,7 +50,7 @@ export class WidoService extends Service {
       return {
         address: getAddress(balance.address),
         token: {
-          address,
+          address: getAddress(balance.address),
           name: balance.symbol,
           symbol: balance.symbol,
           decimals: String(balance.decimals),
