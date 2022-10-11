@@ -19,6 +19,7 @@ import {
   Token,
   TokenAllowance,
   TokenMetadata,
+  TransactionOutcome,
   VaultDynamic,
   VaultInfo,
   VaultMetadataOverrides,
@@ -29,6 +30,7 @@ import {
   ZapProtocol,
 } from "../types";
 import { Position, Vault } from "../types";
+import { toBN } from "../utils";
 import { mergeZapPropsWithAddressables } from "./helpers";
 
 const VaultAbi = ["function deposit(uint256 amount) public", "function withdraw(uint256 amount) public"];
@@ -502,6 +504,98 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
   async isUnderlyingToken(vaultAddress: Address, tokenAddress: Address): Promise<boolean> {
     const [vault] = await this.getStatic([vaultAddress]);
     return vault.token === tokenAddress;
+  }
+
+  /**
+   * Get the expected outcome of a transaction
+   * @param transactionType
+   * @param sourceTokenAddress
+   * @param targetTokenAddress
+   * @param amount
+   * @param accountAddress
+   * @param slippageTolerance
+   * @param gasless
+   * @returns TransactionOutcome
+   */
+  async getExpectedTransactionOutcome({
+    transactionType,
+    sourceTokenAddress,
+    targetTokenAddress,
+    sourceTokenAmount,
+    accountAddress,
+    slippageTolerance,
+    gasless,
+  }: {
+    transactionType: "DEPOSIT" | "WITHDRAW";
+    sourceTokenAddress: Address;
+    targetTokenAddress: Address;
+    sourceTokenAmount: Integer;
+    accountAddress: Address;
+    slippageTolerance?: number;
+    gasless?: boolean;
+  }): Promise<TransactionOutcome> {
+    if (!gasless && transactionType === "DEPOSIT") {
+      return await this.yearn.simulation._deposit(
+        targetTokenAddress,
+        sourceTokenAddress,
+        sourceTokenAmount,
+        accountAddress,
+        {
+          slippage: slippageTolerance,
+        }
+      );
+    }
+    if (!gasless && transactionType === "WITHDRAW") {
+      return await this.yearn.simulation._withdraw(
+        sourceTokenAddress,
+        targetTokenAddress,
+        sourceTokenAmount,
+        accountAddress,
+        {
+          slippage: slippageTolerance,
+        }
+      );
+    }
+
+    const { targetTokenAmount, sourceTokenAmountFee } = await this.yearn.services.cowSwap.getExpectedTransactionOutcome(
+      {
+        sourceTokenAddress,
+        targetTokenAddress,
+        sourceTokenAmount,
+        accountAddress,
+      }
+    );
+
+    const sourceTokenAmountUsdc = await this.yearn.services.oracle.getNormalizedValueUsdc(
+      sourceTokenAddress,
+      sourceTokenAmount
+    );
+    const targetTokenAmountUsdc = await this.yearn.services.oracle.getNormalizedValueUsdc(
+      targetTokenAddress,
+      targetTokenAmount
+    );
+    const [vault] = await this.get([targetTokenAmountUsdc]);
+    const targetTokenIsVault = !!vault;
+    const targetUnderlyingTokenAddress = targetTokenIsVault ? vault.token : targetTokenAddress;
+    const targetUnderlyingTokenAmount = targetTokenIsVault
+      ? toBN(targetTokenAmount).div(toBN(10).pow(vault.decimals)).multipliedBy(vault.metadata.pricePerShare).toFixed(0)
+      : targetTokenAmount;
+    const conversionRate = toBN(sourceTokenAmountUsdc).eq(0)
+      ? 0
+      : toBN(targetTokenAmountUsdc).div(sourceTokenAmountUsdc).toNumber();
+
+    return {
+      sourceTokenAddress,
+      sourceTokenAmount,
+      targetTokenAddress,
+      targetTokenAmount,
+      targetTokenAmountUsdc,
+      targetUnderlyingTokenAddress,
+      targetUnderlyingTokenAmount,
+      conversionRate,
+      slippage: toBN(1).minus(conversionRate).toNumber(),
+      sourceTokenAmountFee,
+    };
   }
 
   /**
