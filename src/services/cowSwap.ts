@@ -3,7 +3,7 @@ import { CowSdk, OrderKind } from "@cowprotocol/cow-sdk";
 import { ChainId } from "../chain";
 import { Service } from "../common";
 import { Context } from "../context";
-import { Address, Integer, SdkError } from "../types";
+import { Address, Integer, SdkError, SimpleTransactionOutcome } from "../types";
 
 const APP_DATA = "0x0000000000000000000000000000000000000000000000000000000000000000";
 
@@ -12,49 +12,78 @@ export class CowSwapService extends Service {
 
   constructor(chainId: ChainId, ctx: Context) {
     super(chainId, ctx);
-    this.cowSdk = new CowSdk(chainId);
+    this.cowSdk = new CowSdk(chainId, { env: "staging" });
   }
 
-  async deposit({
-    vaultAddress,
-    tokenAddress,
-    minTargetAmount,
+  async getExpectedTransactionOutcome({
+    sourceTokenAddress,
+    targetTokenAddress,
+    sourceTokenAmount,
     accountAddress,
   }: {
-    vaultAddress: Address;
-    tokenAddress: Address;
-    minTargetAmount: Integer;
+    sourceTokenAddress: Address;
+    targetTokenAddress: Address;
+    sourceTokenAmount: Integer;
     accountAddress: Address;
-  }): Promise<string> {
-    const ONE_HOUR = 1000 * 60 * 60;
-    const validTo = Math.floor(new Date(Date.now() + ONE_HOUR).getTime() / 1000);
-    const kind = OrderKind.BUY;
+  }): Promise<SimpleTransactionOutcome> {
+    const validTo = Math.floor(this.timeOneHourFromNow() / 1000);
+    const kind = OrderKind.SELL;
 
     const quoteResponse = await this.cowSdk.cowApi.getQuote({
       kind,
-      sellToken: tokenAddress,
-      buyToken: vaultAddress,
-      buyAmountAfterFee: minTargetAmount,
+      sellToken: sourceTokenAddress,
+      buyToken: targetTokenAddress,
+      sellAmountBeforeFee: sourceTokenAmount,
       from: accountAddress,
       validTo,
       partiallyFillable: false,
       appData: APP_DATA,
     });
 
-    console.log(quoteResponse);
+    const { buyAmount, feeAmount } = quoteResponse.quote;
+    return {
+      sourceTokenAddress,
+      sourceTokenAmount,
+      targetTokenAddress,
+      targetTokenAmount: buyAmount,
+      sourceTokenAmountFee: feeAmount,
+    };
+  }
 
-    const { sellToken, buyToken, buyAmount, sellAmount, feeAmount, partiallyFillable, appData } = quoteResponse.quote;
+  async sendOrder({
+    sourceTokenAddress,
+    targetTokenAddress,
+    sourceTokenAmount,
+    targetTokenAmount,
+    sourceTokenAmountFee,
+    accountAddress,
+  }: {
+    sourceTokenAddress: Address;
+    targetTokenAddress: Address;
+    sourceTokenAmount: Integer;
+    targetTokenAmount: Integer;
+    sourceTokenAmountFee: Integer;
+    accountAddress: Address;
+  }): Promise<string> {
+    const validTo = Math.floor(this.timeOneHourFromNow() / 1000);
+    const kind = OrderKind.SELL;
+    const cowContext = {
+      env: "staging",
+      signer: this.ctx.provider.write.getSigner(),
+    };
+    this.cowSdk.updateContext(cowContext as any);
+
     const order = {
       kind,
-      sellToken,
-      buyToken,
-      buyAmount,
-      sellAmount,
-      feeAmount,
+      sellToken: sourceTokenAddress,
+      buyToken: targetTokenAddress,
+      sellAmount: sourceTokenAmount,
+      buyAmount: targetTokenAmount,
+      feeAmount: sourceTokenAmountFee,
       receiver: accountAddress,
       validTo,
-      partiallyFillable,
-      appData,
+      partiallyFillable: false,
+      appData: APP_DATA,
     };
 
     const { signature, signingScheme } = await this.cowSdk.signOrder(order);
@@ -73,61 +102,8 @@ export class CowSwapService extends Service {
     return orderId;
   }
 
-  async withdraw({
-    vaultAddress,
-    tokenAddress,
-    minTargetAmount,
-    accountAddress,
-  }: {
-    vaultAddress: Address;
-    tokenAddress: Address;
-    minTargetAmount: Integer;
-    accountAddress: Address;
-  }): Promise<string> {
+  private timeOneHourFromNow(): number {
     const ONE_HOUR = 1000 * 60 * 60;
-    const validTo = Math.floor(new Date(Date.now() + ONE_HOUR).getTime() / 1000);
-    const kind = OrderKind.BUY;
-
-    const quoteResponse = await this.cowSdk.cowApi.getQuote({
-      kind,
-      sellToken: vaultAddress,
-      buyToken: tokenAddress,
-      buyAmountAfterFee: minTargetAmount,
-      from: accountAddress,
-      validTo,
-      partiallyFillable: false,
-      appData: APP_DATA,
-    });
-
-    console.log(quoteResponse);
-
-    const { sellToken, buyToken, buyAmount, sellAmount, feeAmount, partiallyFillable, appData } = quoteResponse.quote;
-    const order = {
-      kind,
-      sellToken,
-      buyToken,
-      buyAmount,
-      sellAmount,
-      feeAmount,
-      receiver: accountAddress,
-      validTo,
-      partiallyFillable,
-      appData,
-    };
-
-    const { signature, signingScheme } = await this.cowSdk.signOrder(order);
-
-    if (!signature) throw new SdkError("Failed signing order");
-
-    console.log(signature, signingScheme);
-
-    const orderId = await this.cowSdk.cowApi.sendOrder({
-      order: { ...order, signature, signingScheme },
-      owner: accountAddress,
-    });
-
-    console.log(`https://explorer.cow.fi/orders/${orderId}`);
-
-    return orderId;
+    return new Date(Date.now() + ONE_HOUR).getTime();
   }
 }
