@@ -630,22 +630,35 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
    * Gasless Deposit into a yearn vault
    * @param vaultAddress
    * @param tokenAddress
-   * @param minTargetAmount
+   * @param tokenAmount
+   * @param vaultAmount
+   * @param feeAmount
    * @param accountAddress
    * @returns orderId
    */
   async gaslessDeposit({
     vaultAddress,
     tokenAddress,
-    minTargetAmount,
+    tokenAmount,
+    vaultAmount,
+    feeAmount,
     accountAddress,
   }: {
     vaultAddress: Address;
     tokenAddress: Address;
-    minTargetAmount: Integer;
+    tokenAmount: Integer;
+    vaultAmount: Integer;
+    feeAmount: Integer;
     accountAddress: Address;
   }): Promise<string> {
-    return await this.yearn.services.cowSwap.deposit({ vaultAddress, tokenAddress, minTargetAmount, accountAddress });
+    return await this.yearn.services.cowSwap.sendOrder({
+      sourceTokenAddress: tokenAddress,
+      targetTokenAddress: vaultAddress,
+      sourceTokenAmount: tokenAmount,
+      targetTokenAmount: vaultAmount,
+      sourceTokenAmountFee: feeAmount,
+      accountAddress,
+    });
   }
 
   /**
@@ -680,22 +693,35 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
    * Gasless Withdraw into a yearn vault
    * @param vaultAddress
    * @param tokenAddress
-   * @param minTargetAmount
+   * @param vaultAmount
+   * @param tokenAmount
+   * @param feeAmount
    * @param accountAddress
    * @returns orderId
    */
   async gaslessWithdraw({
     vaultAddress,
     tokenAddress,
-    minTargetAmount,
+    vaultAmount,
+    tokenAmount,
+    feeAmount,
     accountAddress,
   }: {
     vaultAddress: Address;
     tokenAddress: Address;
-    minTargetAmount: Integer;
+    vaultAmount: Integer;
+    tokenAmount: Integer;
+    feeAmount: Integer;
     accountAddress: Address;
   }): Promise<string> {
-    return await this.yearn.services.cowSwap.withdraw({ vaultAddress, tokenAddress, minTargetAmount, accountAddress });
+    return await this.yearn.services.cowSwap.sendOrder({
+      sourceTokenAddress: vaultAddress,
+      targetTokenAddress: tokenAddress,
+      sourceTokenAmount: vaultAmount,
+      targetTokenAmount: tokenAmount,
+      sourceTokenAmountFee: feeAmount,
+      accountAddress,
+    });
   }
 
   /**
