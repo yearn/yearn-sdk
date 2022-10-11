@@ -71,7 +71,7 @@ export class CowSwapService extends Service {
       env: "staging",
       signer: this.ctx.provider.write.getSigner(accountAddress),
     };
-    this.cowSdk.updateContext(cowContext as any);
+    await this.cowSdk.updateContext(cowContext as any);
 
     const order = {
       kind,
