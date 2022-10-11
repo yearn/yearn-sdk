@@ -235,7 +235,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
       targetTokenAddress: vault,
       targetTokenAmount,
       targetTokenAmountUsdc,
-      targetUnderlyingTokenAddress: vault,
+      targetUnderlyingTokenAddress: vaultData.token,
       targetUnderlyingTokenAmount,
       conversionRate,
       slippage: toBN(1).minus(conversionRate).toNumber(),
