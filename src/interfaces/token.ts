@@ -326,7 +326,7 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
       }),
     ]);
 
-    const zapTokens = [...new Set([...portalsTokens, ...widoTokens])];
+    const zapTokens = Array.from(new Set([...portalsTokens, ...widoTokens]));
     const zapTokensAddresses = zapTokens.map(({ address }) => address);
 
     const zapTokensIcons = await this.yearn.services.asset.ready.then(() =>
