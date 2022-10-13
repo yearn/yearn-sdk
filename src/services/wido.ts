@@ -28,7 +28,7 @@ export class WidoService extends Service {
         decimals: String(token.decimals),
         icon: `https://assets.yearn.network/tokens/${network}/${token.address.toLowerCase()}.png`,
         name: token.symbol,
-        priceUsdc: token.usdPrice,
+        priceUsdc: usdc(token.usdPrice),
         dataSource: "wido",
         supported: {
           widoZapIn: true,
