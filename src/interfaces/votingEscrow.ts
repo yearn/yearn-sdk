@@ -11,6 +11,7 @@ import {
   Balance,
   Integer,
   Position,
+  Seconds,
   Token,
   TokenAllowance,
   TransactionOutcome,
@@ -22,10 +23,9 @@ import {
   WriteTransactionProps,
   WriteTransactionResult,
 } from "../types";
-import { keyBy, toBN, toUnit, USDC_DECIMALS } from "../utils";
+import { getTimeFromNow, keyBy, roundToWeek, toBN, toSeconds, toUnit, USDC_DECIMALS, WEEK, YEAR } from "../utils";
 
-const DAY = 86400; // in seconds
-const WEEK = DAY * 7;
+const MAX_LOCK: Seconds = roundToWeek(YEAR * 4);
 
 const VotingEscrowAbi = [
   "function locked(address arg0) public view returns (tuple(uint256 amount, uint256 end))",
@@ -205,7 +205,6 @@ export class VotingEscrowInterface<T extends ChainId> extends ServiceInterface<T
         assetAllowances: [],
         tokenAllowances: [],
       };
-      // TODO: check if callable through properties aggregator contract
       const votingEscrowRewardsContract = new Contract(
         metadata.rewardPool,
         VotingEscrowRewardsAbi,
@@ -341,8 +340,15 @@ export class VotingEscrowInterface<T extends ChainId> extends ServiceInterface<T
         if ((!amount || !time) && votingEscrowTransactionType === "LOCK")
           throw new Error("'amount' or 'time' argument missing");
         if (!time && votingEscrowTransactionType === "EXTEND") throw new Error("'time' argument missing");
-        const locked = await votingEscrowContract.callStatic.modify_lock(amount ?? "0", time, accountAddress);
-        targetTokenAmount = (locked.amount as BigNumber).toString();
+        const locked = await votingEscrowContract.callStatic.modify_lock(
+          amount ?? "0",
+          getTimeFromNow(time ?? 0).toString(),
+          accountAddress
+        );
+        targetTokenAmount = this.getVotingPower(
+          (locked.amount as BigNumber).toString(),
+          (locked.end as BigNumber).toNumber()
+        );
         break;
       default:
         throw new Error(`${votingEscrowTransactionType} not supported`);
@@ -621,5 +627,12 @@ export class VotingEscrowInterface<T extends ChainId> extends ServiceInterface<T
       ? addresses.filter((address) => votingEscrowAddresses.includes(address))
       : votingEscrowAddresses;
     return supportedAddresses;
+  }
+
+  private getVotingPower(lockAmount: Integer, unlockTime: Seconds): Integer {
+    const duration = roundToWeek(unlockTime) - toSeconds(Date.now());
+    if (duration <= 0) return "0";
+    if (duration >= MAX_LOCK) return lockAmount;
+    return toBN(lockAmount).div(MAX_LOCK).decimalPlaces(0, 1).times(duration).toString();
   }
 }
