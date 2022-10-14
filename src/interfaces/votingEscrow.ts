@@ -23,7 +23,18 @@ import {
   WriteTransactionProps,
   WriteTransactionResult,
 } from "../types";
-import { getTimeFromNow, keyBy, roundToWeek, toBN, toSeconds, toUnit, USDC_DECIMALS, WEEK, YEAR } from "../utils";
+import {
+  getTimeFromNow,
+  keyBy,
+  roundToWeek,
+  toBN,
+  toMilliseconds,
+  toSeconds,
+  toUnit,
+  USDC_DECIMALS,
+  WEEK,
+  YEAR,
+} from "../utils";
 
 const MAX_LOCK: Seconds = roundToWeek(YEAR * 4);
 
@@ -250,13 +261,13 @@ export class VotingEscrowInterface<T extends ChainId> extends ServiceInterface<T
       const signer = this.ctx.provider.write.getSigner(accountAddress);
       const votingEscrowContract = new Contract(address, VotingEscrowAbi, signer);
       const locked = await votingEscrowContract.locked(accountAddress);
-      const lockedEndDate = new Date((locked.end as BigNumber).toString());
+      const lockedEnd = toMilliseconds((locked.end as BigNumber).toNumber());
 
       let unlockDate;
       let earlyExitPenaltyRatio;
-      const hasLockTimeLeft = lockedEndDate >= new Date();
+      const hasLockTimeLeft = lockedEnd >= Date.now();
       if (hasLockTimeLeft) {
-        unlockDate = lockedEndDate;
+        unlockDate = lockedEnd;
         const toWithdraw = await votingEscrowContract.callStatic.withdraw();
         earlyExitPenaltyRatio = toBN(toWithdraw.penalty)
           .div(toBN(toWithdraw.penalty).plus(toWithdraw.amount))
