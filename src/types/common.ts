@@ -27,6 +27,13 @@ export class SdkError extends CustomError {
 }
 
 /**
+ * Time aliases
+ */
+export type Seconds = number;
+export type Milliseconds = number;
+export type Weeks = number;
+
+/**
  * Type alias for an address type.
  */
 export type Address = string;
