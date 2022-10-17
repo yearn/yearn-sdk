@@ -269,8 +269,8 @@ export class VotingEscrowInterface<T extends ChainId> extends ServiceInterface<T
       if (hasLockTimeLeft) {
         unlockDate = lockedEnd;
         const toWithdraw = await votingEscrowContract.callStatic.withdraw();
-        earlyExitPenaltyRatio = toBN(toWithdraw.penalty)
-          .div(toBN(toWithdraw.penalty).plus(toWithdraw.amount))
+        earlyExitPenaltyRatio = toBN(toWithdraw.penalty.toString())
+          .div(toBN(toWithdraw.penalty.toString()).plus(toWithdraw.amount.toString()))
           .toNumber();
       }
 
