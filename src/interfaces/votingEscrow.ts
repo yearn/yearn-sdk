@@ -584,6 +584,8 @@ export class VotingEscrowInterface<T extends ChainId> extends ServiceInterface<T
   }: WithdrawUnlockedProps): Promise<TransactionResponse | PopulatedTransaction> {
     const signer = this.ctx.provider.write.getSigner(accountAddress);
     const votingEscrowContract = new Contract(votingEscrowAddress, VotingEscrowAbi, signer);
+    const { penalty } = await votingEscrowContract.callStatic.withdraw();
+    if (toBN(penalty.toString()).gt(0)) throw new Error("Tokens are not yet unlocked");
     const tx = await votingEscrowContract.populateTransaction.withdraw(overrides);
 
     if (populate) return tx;
