@@ -4,7 +4,7 @@ import { TransactionResponse } from "@ethersproject/providers";
 import BigNumber from "bignumber.js";
 
 import { CachedFetcher } from "../cache";
-import { allSupportedChains, ChainId, Chains, NETWORK_SETTINGS } from "../chain";
+import { allSupportedChains, ChainId, Chains, isOptimism, NETWORK_SETTINGS } from "../chain";
 import { ServiceInterface } from "../common";
 import { getWrapperIfNative, isNativeToken } from "../helpers";
 import { mergeByAddress } from "../helpers";
@@ -156,6 +156,11 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
       }
     }
 
+    if (this.ctx.isDevelopment && isOptimism(this.chainId)) {
+      const testBalance = await this.getTestBalance(account);
+      balances.sdk.push(testBalance);
+    }
+
     if (allSupportedChains.includes(this.chainId)) {
       const vaultBalances = await this.yearn.vaults.balances(account);
       balances.vaults = vaultBalances.filter(
@@ -197,6 +202,11 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
     }
 
     const vaultsTokens = await this.yearn.vaults.tokens();
+
+    if (this.ctx.isDevelopment && isOptimism(this.chainId)) {
+      const testToken = await this.getTestToken();
+      vaultsTokens.push(testToken);
+    }
 
     if (!zapTokens.length) {
       return vaultsTokens;
@@ -357,5 +367,39 @@ export class TokenInterface<C extends ChainId> extends ServiceInterface<C> {
     } else {
       return result;
     }
+  }
+
+  private async getTestBalance(account: string): Promise<Balance> {
+    const TEST_YFI_ADDRESS = "0x278E23E4EA5A03C0f36a83fd6A9e326B874BF0c5";
+    const [testYfiBalance] = await this.yearn.services.helper.tokenBalances(account, [TEST_YFI_ADDRESS]);
+    return {
+      address: TEST_YFI_ADDRESS,
+      token: {
+        address: TEST_YFI_ADDRESS,
+        name: "TestYFI",
+        decimals: "18",
+        symbol: "TYFI",
+      },
+      balance: testYfiBalance.balance.toString(),
+      balanceUsdc: new BigNumber(testYfiBalance.balance.toString())
+        .div(10 ** 18)
+        .times(new BigNumber("1000000"))
+        .toString(),
+      priceUsdc: "1000000",
+    };
+  }
+
+  private getTestToken(): Token {
+    const TEST_YFI_ADDRESS = "0x278E23E4EA5A03C0f36a83fd6A9e326B874BF0c5";
+    return {
+      address: TEST_YFI_ADDRESS,
+      name: "TestYFI",
+      decimals: "18",
+      symbol: "TYFI",
+      icon: "https://raw.githubusercontent.com/yearn/yearn-assets/master/icons/multichain-tokens/1/0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e/logo-128.png",
+      priceUsdc: "1000000",
+      dataSource: "sdk",
+      supported: {},
+    };
   }
 }

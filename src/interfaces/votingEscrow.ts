@@ -643,9 +643,14 @@ export class VotingEscrowInterface<T extends ChainId> extends ServiceInterface<T
   }
 
   private async getSupportedAddresses({ addresses }: { addresses?: Address[] }): Promise<Address[]> {
-    const gaugeRegistryAddress = await this.yearn.addressProvider.addressById(ContractAddressId.gaugeRegistry);
-    const gaugeRegistryContract = new Contract(gaugeRegistryAddress, GaugeRegistryAbi, this.ctx.provider.read);
-    const veTokenAddress = await gaugeRegistryContract.veToken();
+    let veTokenAddress;
+    if (this.ctx.isDevelopment) {
+      veTokenAddress = "0xfc82d83144403b107BF1D95818d01E2dbc47F82a";
+    } else {
+      const gaugeRegistryAddress = await this.yearn.addressProvider.addressById(ContractAddressId.gaugeRegistry);
+      const gaugeRegistryContract = new Contract(gaugeRegistryAddress, GaugeRegistryAbi, this.ctx.provider.read);
+      veTokenAddress = await gaugeRegistryContract.veToken();
+    }
     const votingEscrowAddresses = [veTokenAddress];
     const supportedAddresses = addresses
       ? addresses.filter((address) => votingEscrowAddresses.includes(address))
