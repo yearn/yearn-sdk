@@ -1,6 +1,6 @@
 import { Address, Milliseconds } from "../common";
 
-export type VotingEscrowTransactionType = "LOCK" | "EXTEND";
+export type VotingEscrowTransactionType = "LOCK" | "ADD" | "EXTEND";
 
 export interface VotingEscrowUserMetadata {
   assetAddress: Address;

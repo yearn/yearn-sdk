@@ -345,25 +345,36 @@ export class VotingEscrowInterface<T extends ChainId> extends ServiceInterface<T
     const signer = this.ctx.provider.write.getSigner(accountAddress);
     const votingEscrowContract = new Contract(votingEscrowAddress, VotingEscrowAbi, signer);
     let targetTokenAmount = "0";
+    let locked;
     switch (votingEscrowTransactionType) {
       case "LOCK":
-      case "EXTEND":
-        if ((!amount || !time) && votingEscrowTransactionType === "LOCK")
-          throw new Error("'amount' or 'time' argument missing");
-        if (!time && votingEscrowTransactionType === "EXTEND") throw new Error("'time' argument missing");
-        const locked = await votingEscrowContract.callStatic.modify_lock(
-          amount ?? "0",
-          getTimeFromNow(time ?? 0).toString(),
+        if (!amount) throw new Error("'amount' argument missing");
+        if (!time) throw new Error("'time' argument missing");
+        locked = await votingEscrowContract.callStatic.modify_lock(
+          amount,
+          getTimeFromNow(time).toString(),
           accountAddress
         );
-        targetTokenAmount = this.getVotingPower(
-          (locked.amount as BigNumber).toString(),
-          (locked.end as BigNumber).toNumber()
+        break;
+      case "ADD":
+        if (!amount) throw new Error("'amount' argument missing");
+        locked = await votingEscrowContract.callStatic.modify_lock(amount, "0", accountAddress);
+        break;
+      case "EXTEND":
+        if (!time) throw new Error("'time' argument missing");
+        locked = await votingEscrowContract.callStatic.modify_lock(
+          "0",
+          getTimeFromNow(time).toString(),
+          accountAddress
         );
         break;
       default:
         throw new Error(`${votingEscrowTransactionType} not supported`);
     }
+    targetTokenAmount = this.getVotingPower(
+      (locked.amount as BigNumber).toString(),
+      (locked.end as BigNumber).toNumber()
+    );
     const token = await this.yearn.tokens.findByAddress(tokenAddress);
     const amountUsdc = toBN(amount)
       .times(toUnit({ amount: token?.priceUsdc ?? "0", decimals: USDC_DECIMALS }))
