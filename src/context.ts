@@ -67,6 +67,7 @@ export interface ContextValue {
   subgraph?: SubgraphConfiguration;
   partnerId?: string;
   locale?: Locale;
+  env?: "production" | "development";
 }
 
 const DefaultContext: ContextValue = {
@@ -76,6 +77,7 @@ const DefaultContext: ContextValue = {
   // The default tenderly dashboard for Yearn
   simulation: { dashboardUrl: "https://dashboard.tenderly.co/yearn/yearn-web" },
   cache: { useCache: true, url: "https://cache.yearn.finance" },
+  env: "production",
 };
 
 /**
@@ -159,5 +161,9 @@ export class Context implements ContextValue {
 
   get locale(): Locale {
     return this.ctx.locale || "en";
+  }
+
+  get isDevelopment(): boolean {
+    return this.ctx.env !== "production";
   }
 }

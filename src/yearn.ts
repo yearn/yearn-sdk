@@ -2,10 +2,12 @@ import { ChainId } from "./chain";
 import { Context, ContextValue } from "./context";
 import { EarningsInterface } from "./interfaces/earnings";
 import { FeesInterface } from "./interfaces/fees";
+import { GaugeInterface } from "./interfaces/gauge";
 import { SimulationInterface } from "./interfaces/simulation";
 import { StrategyInterface } from "./interfaces/strategy";
 import { TokenInterface } from "./interfaces/token";
 import { VaultInterface } from "./interfaces/vault";
+import { VotingEscrowInterface } from "./interfaces/votingEscrow";
 import { RegistryAdapter, RegistryV2Adapter } from "./services/adapters/registry";
 import { AddressProvider } from "./services/addressProvider";
 import { AllowListService } from "./services/allowlist";
@@ -75,6 +77,8 @@ export class Yearn<T extends ChainId> {
   fees: FeesInterface<T>;
   simulation: SimulationInterface<T>;
   strategies: StrategyInterface<T>;
+  votingEscrows: VotingEscrowInterface<T>;
+  gauges: GaugeInterface<T>;
 
   context: Context;
 
@@ -119,6 +123,8 @@ export class Yearn<T extends ChainId> {
     this.fees = new FeesInterface(this, chainId, this.context);
     this.simulation = new SimulationInterface(this, chainId, this.context);
     this.strategies = new StrategyInterface(this, chainId, this.context);
+    this.votingEscrows = new VotingEscrowInterface(this, chainId, this.context);
+    this.gauges = new GaugeInterface(this, chainId, this.context);
 
     this.ready = Promise.all([this.services.asset.ready]);
   }
@@ -136,6 +142,8 @@ export class Yearn<T extends ChainId> {
     this.fees = new FeesInterface(this, chainId, this.context);
     this.simulation = new SimulationInterface(this, chainId, this.context);
     this.strategies = new StrategyInterface(this, chainId, this.context);
+    this.votingEscrows = new VotingEscrowInterface(this, chainId, this.context);
+    this.gauges = new GaugeInterface(this, chainId, this.context);
 
     this.ready = Promise.all([this.services.asset.ready]);
   }

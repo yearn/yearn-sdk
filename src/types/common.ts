@@ -1,3 +1,6 @@
+import { CallOverrides, PopulatedTransaction } from "@ethersproject/contracts";
+import { TransactionResponse } from "@ethersproject/providers";
+
 export class CustomError extends Error {
   error_type: string;
 
@@ -22,6 +25,13 @@ export class SdkError extends CustomError {
     this.error_code = error_code;
   }
 }
+
+/**
+ * Time aliases
+ */
+export type Seconds = number;
+export type Milliseconds = number;
+export type Weeks = number;
 
 /**
  * Type alias for an address type.
@@ -60,3 +70,45 @@ export type TypedMap<K extends string | number | symbol, V> = { [key in K]: V };
  * Accepted locales.
  */
 export type Locale = "de" | "el" | "en" | "es" | "fr" | "hi" | "id" | "ja" | "pt" | "ru" | "tr" | "vi" | "zh";
+
+/**
+ * Interface to implement support for call overrides
+ */
+export interface Overridable {
+  overrides?: CallOverrides;
+}
+
+/**
+ * Props to use on transactions with write contract functionality
+ */
+export interface WriteTransactionProps extends Overridable {
+  populate?: boolean;
+}
+
+/**
+ * Interface to indicate if a write transaction will result in a populated transaction rather than execute
+ */
+export interface WillPopulate extends WriteTransactionProps {
+  populate: true;
+}
+
+/**
+ * Result to use on transactions with write contract functionality
+ */
+export type WriteTransactionResult<P> = Promise<P extends WillPopulate ? PopulatedTransaction : TransactionResponse>;
+
+/**
+ * Expected transaction outcome
+ */
+export interface TransactionOutcome {
+  sourceTokenAddress: Address;
+  sourceTokenAmount: Integer;
+  sourceTokenAmountUsdc?: Usdc;
+  targetTokenAddress: Address;
+  targetTokenAmount: Integer;
+  targetTokenAmountUsdc: Usdc;
+  targetUnderlyingTokenAddress?: Address;
+  targetUnderlyingTokenAmount?: Integer;
+  conversionRate?: number;
+  slippage?: number;
+}

@@ -36,12 +36,36 @@ export interface VaultMetadata {
 }
 
 /**
+ * Lens-defined metadata for a Voting Escrow
+ */
+export interface VotingEscrowMetadata {
+  apy?: Apy;
+  rewardPool: Address;
+}
+
+/**
+ * Lens-defined metadata for a Gauge
+ */
+export interface GaugeMetadata {
+  apy: number;
+  displayIcon: string;
+  displayName: string;
+  vaultApy?: Apy;
+  vaultPricePerShare: Integer;
+  vaultUnderlyingToken: Address;
+  rewardToken: Address;
+  votingEscrowToken: Address;
+}
+
+/**
  * Key Value representation of metadata names and types.
  * Used mainly to provide correct type-guards for asset types.
  */
 export type Metadata = {
   VAULT_V2: VaultMetadata;
   VAULT_V1: VaultMetadata;
+  VOTING_ESCROW: VotingEscrowMetadata;
+  GAUGE: GaugeMetadata;
 };
 
 /**
