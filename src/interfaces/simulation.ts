@@ -163,10 +163,9 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
         amount,
         overrides
       );
-      if (!from || !to || !data) throw Error("Error populating approve transaction");
-
+      if (!to || !data) throw Error("Error populating approve transaction");
       const { simulation } = await this.simulationExecutor.makeSimulationRequest(
-        from,
+        from ?? account,
         to,
         data,
         {
@@ -186,10 +185,10 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
       options: { ...options, skipGasEstimate: needsApprove },
       overrides,
     });
-    if (!from || !to || !data) throw Error("Error populating deposit transaction");
+    if (!to || !data) throw Error("Error populating deposit transaction");
 
     const simulationOutcome = await this.simulationExecutor.makeSimulationRequest(
-      from,
+      from ?? account,
       to,
       data,
       {
@@ -326,10 +325,10 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
         amount,
         overrides
       );
-      if (!from || !to || !data) throw Error("Error populating approve transaction");
+      if (!to || !data) throw Error("Error populating approve transaction");
 
       const { simulation } = await this.simulationExecutor.makeSimulationRequest(
-        from,
+        from ?? account,
         to,
         data,
         {
@@ -349,10 +348,10 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
       options: { ...options, skipGasEstimate: needsApprove },
       overrides,
     });
-    if (!from || !to || !data) throw Error("Error populating withdraw transaction");
+    if (!to || !data) throw Error("Error populating withdraw transaction");
 
     const simulationOutcome = await this.simulationExecutor.makeSimulationRequest(
-      from,
+      from ?? account,
       to,
       data,
       {
