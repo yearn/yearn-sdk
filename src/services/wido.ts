@@ -7,6 +7,8 @@ import { Service } from "../common";
 import { usdc } from "../helpers";
 import { Address, Balance, Integer, Token, TokenAllowance } from "../types";
 
+const YEARN_PARTNER_ADDRESS = "0xFEB4acf3df3cDEA7399794D0869ef76A6EfAff52";
+
 export class WidoService extends Service {
   async supportedTokens(): Promise<Token[]> {
     // unsupported networks
@@ -166,6 +168,7 @@ export class WidoService extends Service {
       amount,
       slippagePercentage,
       user: account,
+      partner: YEARN_PARTNER_ADDRESS,
       varsOverride: {
         $yearn_partner_id: partnerId,
       },
@@ -194,6 +197,7 @@ export class WidoService extends Service {
       amount,
       slippagePercentage,
       user: account,
+      partner: YEARN_PARTNER_ADDRESS,
     });
 
     return { data, to, from, value };
