@@ -57,7 +57,7 @@ export class VisionService extends Service {
   async apy(address: Address): Promise<Apy | undefined>;
 
   async apy<T extends Address>(addresses?: T | T[]): Promise<ApyMap<T> | Apy | undefined> {
-    const url = `https://d28fcsszptni1s.cloudfront.net/v1/chains/${this.chainId}/vaults/all`;
+    const url = `https://api.yearn.finance/v1/chains/${this.chainId}/vaults/all`;
     let vaults: ApiVault[] = await fetch(url)
       .then(handleHttpError)
       .then((res) => res.json());

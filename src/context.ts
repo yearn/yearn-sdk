@@ -74,6 +74,7 @@ export interface ContextValue {
   partnerId?: string;
   locale?: Locale;
   zaps?: ZapsConfiguration;
+  env?: "production" | "development";
 }
 
 const DefaultContext: ContextValue = {
@@ -87,6 +88,7 @@ const DefaultContext: ContextValue = {
     zapInWith: ["widoZapIn", "portalsZapIn"],
     zapOutWith: ["widoZapOut", "portalsZapOut"],
   },
+  env: "production",
 };
 
 /**
@@ -181,5 +183,9 @@ export class Context implements ContextValue {
       this.ctx.zaps?.zapInWith === DefaultContext.zaps?.zapInWith &&
       this.ctx.zaps?.zapOutWith === DefaultContext.zaps?.zapOutWith
     );
+  }
+
+  get isDevelopment(): boolean {
+    return this.ctx.env !== "production";
   }
 }

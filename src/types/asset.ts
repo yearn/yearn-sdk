@@ -34,6 +34,8 @@ export interface Token extends ERC20 {
     ftmApeZap?: boolean;
     vaults?: boolean;
     labs?: boolean;
+    votingEscrows?: boolean;
+    gauges?: boolean;
   };
   metadata?: TokenMetadata;
 }
@@ -97,6 +99,6 @@ export type Asset<T extends TypeId> = AssetStatic<T> & AssetDynamic<T> & { typeI
 /**
  * Possible assets that lens can return.
  */
-export type GenericAsset = Asset<"VAULT_V1"> | Asset<"VAULT_V2">;
+export type GenericAsset = Asset<"VAULT_V1"> | Asset<"VAULT_V2"> | Asset<"VOTING_ESCROW"> | Asset<"GAUGE">;
 
-export type TokenDataSource = "vaults" | "zapper" | "portals" | "labs" | "sdk" | "wido";
+export type TokenDataSource = "vaults" | "zapper" | "portals" | "labs" | "sdk" | "wido" | "votingEscrows" | "gauges";
