@@ -1,12 +1,11 @@
 import { getAddress } from "@ethersproject/address";
 import { BytesLike } from "@ethersproject/bytes";
-import { JsonRpcProvider, JsonRpcSigner, TransactionRequest } from "@ethersproject/providers";
 import BigNumber from "bignumber.js";
 
 import { ChainId } from "./chain";
 import { Context } from "./context";
 import { TelegramService } from "./services/telegram";
-import { EthersError, SimulationError, SimulationOptions, TenderlyError } from "./types";
+import { SimulationError, SimulationOptions, TenderlyError } from "./types";
 import { Address, Integer } from "./types/common";
 
 const baseUrl = "https://simulate.yearn.network";
@@ -140,9 +139,6 @@ export class SimulationExecutor {
     }
 
     const constructedPath = options?.forkId ? `${baseUrl}/fork/${options.forkId}/simulate` : `${baseUrl}/simulate`;
-
-    const transactionRequest = await this.getPopulatedTransactionRequest(from, to, data, options, value);
-
     const body = {
       from,
       to,
@@ -151,11 +147,8 @@ export class SimulationExecutor {
       block_number: latestBlockKey,
       simulation_type: "quick",
       root: options?.root,
-      value: transactionRequest.value?.toString() || "0",
-      gas: parseInt(transactionRequest.gasLimit?.toString() || "0"),
-      gas_price: transactionRequest.gasPrice?.toString() || 0,
+      value: value,
       save: options.save || true,
-      nonce: transactionRequest.nonce,
     };
 
     const simulationResponse = await fetch(constructedPath, {
@@ -269,54 +262,6 @@ export class SimulationExecutor {
       const res = this.getAllSimulationCalls(calls);
       result = result.concat(res);
     }
-    return result;
-  }
-
-  /**
-   * Creates a transaction object and populates it to fill in parameters such as gas price,
-   * gas limit and nonce for a more accurate simulations
-   * @param from
-   * @param to
-   * @param data
-   * @param value
-   * @param options
-   * @returns A populated TransactionRequest object
-   */
-  private async getPopulatedTransactionRequest(
-    from: Address,
-    to: Address,
-    data: string,
-    options: SimulationOptions,
-    value: Integer = "0"
-  ): Promise<TransactionRequest> {
-    let signer: JsonRpcSigner;
-    if (options?.forkId) {
-      const provider = new JsonRpcProvider(`https://rpc.tenderly.co/fork/${options.forkId}`);
-      signer = provider.getSigner(from);
-    } else {
-      signer = this.ctx.provider.write.getSigner(from);
-    }
-
-    if (options.maxFeePerGas && options.maxPriorityFeePerGas) {
-      delete options.gasPrice;
-    }
-
-    const transactionRequest: TransactionRequest = {
-      from,
-      to,
-      data,
-      value,
-      gasLimit: options.gasLimit,
-      gasPrice: options.gasPrice,
-      maxFeePerGas: options.maxFeePerGas,
-      maxPriorityFeePerGas: options.maxPriorityFeePerGas,
-      type: options.gasPrice ? 0 : undefined,
-    };
-
-    const result = await signer.populateTransaction(transactionRequest).catch(() => {
-      throw new EthersError("error populating transaction", EthersError.POPULATING_TRANSACTION);
-    });
-
     return result;
   }
 
