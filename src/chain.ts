@@ -86,8 +86,10 @@ export const NETWORK_SETTINGS: NetworkSettings = {
       decimals: 18,
       address: NATIVE_TOKEN_ADDRESS,
     },
-    simulationsEnabled: false,
-    zapsEnabled: false,
+    wrappedTokenAddress: "0x4200000000000000000000000000000000000006",
+    simulationsEnabled: true,
+    zapsEnabled: true,
+    zapOutTokenSymbols: ["ETH", "DAI", "USDC", "USDT", "WBTC"],
     blockExplorerUrl: "https://optimistic.etherscan.io",
   },
   250: {
