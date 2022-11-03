@@ -1,7 +1,7 @@
 import { getAddress } from "@ethersproject/address";
 import { TransactionRequest } from "@ethersproject/providers";
 
-import { Chains, isEthereum, NETWORK_SETTINGS } from "../chain";
+import { Chains, isEthereum, isOptimism, NETWORK_SETTINGS } from "../chain";
 import { Service } from "../common";
 import { EthAddress, handleHttpError, usdc, ZeroAddress } from "../helpers";
 import { Address, Balance, Integer, Token, TokenAllowance } from "../types";
@@ -15,7 +15,9 @@ export class PortalsService extends Service {
     const network = Chains[this.chainId];
     const endpoint = `${API}/v1/tokens/${network}`;
     const params = new URLSearchParams();
-    ["native", "basic"].forEach((platform) => params.append("platforms[]", platform));
+    const platforms = ["native", "basic"];
+    if (isOptimism(this.chainId)) platforms.push("beefy");
+    platforms.forEach((platform) => params.append("platforms[]", platform));
     const { tokens } = await fetch(`${endpoint}?${params}`)
       .then(handleHttpError)
       .then((res) => res.json());
