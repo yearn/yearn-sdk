@@ -5,9 +5,9 @@ import { CallOverrides, Contract, PopulatedTransaction } from "@ethersproject/co
 import { TransactionRequest, TransactionResponse } from "@ethersproject/providers";
 
 import { CachedFetcher } from "../cache";
-import { ChainId, NETWORK_SETTINGS } from "../chain";
+import { ChainId, isEthereum, NETWORK_SETTINGS } from "../chain";
 import { ContractAddressId, ServiceInterface } from "../common";
-import { chunkArray, EthAddress, isNativeToken, WethAddress } from "../helpers";
+import { chunkArray, EthAddress, isNativeToken, isWethVault, WethAddress } from "../helpers";
 import { PickleJars } from "../services/partners/pickle";
 import {
   Address,
@@ -459,12 +459,20 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
       return vaultAddress;
     }
 
+    if (isEthereum(this.chainId) && isNativeToken(tokenAddress) && isWethVault(vaultAddress)) {
+      return await this.yearn.addressProvider.addressById(ContractAddressId.yearnZapEth);
+    }
+
     return await this.yearn.addressProvider.addressById(ContractAddressId.portalsZapIn);
   }
 
   private async getWithdrawContractAddress(vaultAddress: Address, tokenAddress: Address): Promise<Address> {
     const willWithdrawToUnderlyingToken = await this.isUnderlyingToken(vaultAddress, tokenAddress);
     if (willWithdrawToUnderlyingToken) return vaultAddress;
+
+    if (isEthereum(this.chainId) && isNativeToken(tokenAddress) && isWethVault(vaultAddress)) {
+      return await this.yearn.addressProvider.addressById(ContractAddressId.yearnZapEth);
+    }
 
     return await this.yearn.addressProvider.addressById(ContractAddressId.portalsZapOut);
   }
@@ -583,6 +591,10 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
     _overrides: CallOverrides = {}
   ): Promise<TransactionRequest> {
     if (options.slippage === undefined) throw new SdkError("zap operations should have a slippage set");
+
+    if (isEthereum(this.chainId) && isNativeToken(token) && isWethVault(vault)) {
+      return await this.yearn.services.zapEth.zapIn(vault, token, amount, account);
+    }
 
     const zapInParams = await this.yearn.services.portals.zapIn(
       vault,
@@ -731,6 +743,10 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
     }
 
     if (options.slippage === undefined) throw new SdkError("zap operations should have a slippage set");
+
+    if (isEthereum(this.chainId) && isNativeToken(token) && isWethVault(vault)) {
+      return await this.yearn.services.zapEth.zapOut(vault, token, amount, account);
+    }
 
     const zapOutParams = await this.yearn.services.portals.zapOut(
       vault,

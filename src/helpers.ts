@@ -7,11 +7,16 @@ import { toBN } from "./utils";
 export const ZeroAddress = "0x0000000000000000000000000000000000000000";
 export const EthAddress = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";
 export const WethAddress = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2";
+export const YvWethAddress = "0xa258C4606Ca8206D8aA700cE2143D7db854D168c";
 export const NativeTokenAddress = ZeroAddress;
 
 // Returns truthy if address is defined as a native token address of a network
 export function isNativeToken(address: Address): boolean {
   return [EthAddress, NativeTokenAddress].includes(address);
+}
+
+export function isWethVault(address: Address): boolean {
+  return address === YvWethAddress;
 }
 
 // Returns wrapper token address if it exists and its the native token address of a network
