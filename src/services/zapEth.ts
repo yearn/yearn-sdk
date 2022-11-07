@@ -13,8 +13,8 @@ const zapEthAbi = ["function deposit() public", "function withdraw(uint256 amoun
 
 export class ZapEthService<T extends ChainId> extends ContractService<T> {
   async zapIn(vault: Address, token: Address, amount: Integer, account: Address): Promise<TransactionRequest> {
-    if (isNativeToken(token)) throw new SdkError(`Only "ETH" token address is supported by zapEth contract`);
-    if (isWethVault(vault)) throw new SdkError(`Only "yvWETH" vault address is supported by zapEth contract`);
+    if (!isNativeToken(token)) throw new SdkError(`Only "ETH" token address is supported by zapEth contract`);
+    if (!isWethVault(vault)) throw new SdkError(`Only "yvWETH" vault address is supported by zapEth contract`);
 
     const zapEthContract = await this.getContract(account);
     const tx = await zapEthContract.populateTransaction.deposit({ value: amount });
@@ -23,8 +23,8 @@ export class ZapEthService<T extends ChainId> extends ContractService<T> {
   }
 
   async zapOut(vault: Address, token: Address, amount: Integer, account: Address): Promise<TransactionRequest> {
-    if (isNativeToken(token)) throw new SdkError(`Only "ETH" token address is supported by zapEth contract`);
-    if (isWethVault(vault)) throw new SdkError(`Only "yvWETH" vault address is supported by zapEth contract`);
+    if (!isNativeToken(token)) throw new SdkError(`Only "ETH" token address is supported by zapEth contract`);
+    if (!isWethVault(vault)) throw new SdkError(`Only "yvWETH" vault address is supported by zapEth contract`);
 
     const zapEthContract = await this.getContract(account);
     const tx = await zapEthContract.populateTransaction.withdraw(amount);
