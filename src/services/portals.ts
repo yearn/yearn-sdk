@@ -1,13 +1,14 @@
 import { getAddress } from "@ethersproject/address";
 import { TransactionRequest } from "@ethersproject/providers";
 
-import { Chains, isEthereum, NETWORK_SETTINGS } from "../chain";
+import { Chains, isEthereum, isOptimism, NETWORK_SETTINGS } from "../chain";
 import { Service } from "../common";
 import { EthAddress, handleHttpError, usdc, ZeroAddress } from "../helpers";
 import { Address, Balance, Integer, Token, TokenAllowance } from "../types";
 
 const API = "https://api.portals.fi";
 const YEARN_PARTNER_ADDRESS = "0xFEB4acf3df3cDEA7399794D0869ef76A6EfAff52";
+const DEFAULT_PLATFORMS = ["native", "basic"];
 
 export class PortalsService extends Service {
   async supportedTokens(): Promise<Token[]> {
@@ -15,7 +16,9 @@ export class PortalsService extends Service {
     const network = Chains[this.chainId];
     const endpoint = `${API}/v1/tokens/${network}`;
     const params = new URLSearchParams();
-    ["native", "basic"].forEach((platform) => params.append("platforms[]", platform));
+    const platforms = [...DEFAULT_PLATFORMS];
+    if (isOptimism(this.chainId)) platforms.push("beefy");
+    platforms.forEach((platform) => params.append("platforms[]", platform));
     const { tokens } = await fetch(`${endpoint}?${params}`)
       .then(handleHttpError)
       .then((res) => res.json());
@@ -23,10 +26,12 @@ export class PortalsService extends Service {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return tokens.map((token: any): Token => {
       const address = this.deserializeAddress(token.address);
+      let icon = `https://assets.yearn.network/tokens/${network}/${token.address.toLowerCase()}.png`;
+      if (!DEFAULT_PLATFORMS.includes(token.platform)) icon = token.image ?? token.images[0] ?? icon;
       return {
         address,
         decimals: String(token.decimals),
-        icon: `https://assets.yearn.network/tokens/${network}/${token.address.toLowerCase()}.png`,
+        icon,
         name: token.symbol,
         priceUsdc: usdc(token.price),
         dataSource: "portals",
