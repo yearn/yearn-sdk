@@ -240,7 +240,11 @@ export class VotingEscrowInterface<T extends ChainId> extends ServiceInterface<T
       return [depositPosition, yieldPosition];
     });
     const positions = await Promise.all(positionsPromises);
-    return positions.flat().filter(({ balance }) => toBN(balance).gt(0));
+    return positions
+      .flat()
+      .filter(
+        ({ balance, underlyingTokenBalance }) => toBN(balance).gt(0) || toBN(underlyingTokenBalance.amount).gt(0)
+      );
   }
 
   /**
