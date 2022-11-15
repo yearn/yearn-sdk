@@ -9,7 +9,10 @@ import { ContractAddressId, ContractService } from "../common";
 import { isNativeToken, isWethVault } from "../helpers";
 import { Address, Integer, SdkError } from "../types";
 
-const zapEthAbi = ["function deposit() payable", "function withdraw(uint256 amount) public"];
+const zapEthAbi = [
+  "function deposit() payable returns (uint256)",
+  "function withdraw(uint256 amount) public returns (uint256)",
+];
 
 export class ZapEthService<T extends ChainId> extends ContractService<T> {
   async zapIn(vault: Address, token: Address, amount: Integer, account: Address): Promise<TransactionRequest> {
