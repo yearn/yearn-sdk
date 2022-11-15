@@ -136,8 +136,10 @@ export const NETWORK_SETTINGS: NetworkSettings = {
       decimals: 18,
       address: NATIVE_TOKEN_ADDRESS,
     },
-    simulationsEnabled: false,
-    zapsEnabled: false,
+    wrappedTokenAddress: "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+    simulationsEnabled: true,
+    zapsEnabled: true,
+    zapOutTokenSymbols: ["ETH", "DAI", "USDC", "USDT", "WBTC"],
     blockExplorerUrl: "https://arbiscan.io",
   },
 };

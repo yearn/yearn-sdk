@@ -364,9 +364,9 @@ describe("TokenInterface", () => {
 
         const actualBalances = await tokenInterface.balances("0xAccount");
 
-        expect(actualBalances.length).toEqual(1);
+        expect(actualBalances.length).toEqual(2);
         expect(actualBalances).toEqual(expect.arrayContaining([vaultTokenWithBalance]));
-        expect(zapBalancesMock).not.toHaveBeenCalled();
+        expect(zapBalancesMock).toHaveBeenCalled();
         expect(vaultsBalancesMock).toHaveBeenCalledWith("0xAccount");
       });
 
@@ -375,9 +375,9 @@ describe("TokenInterface", () => {
 
         const actualBalances = await tokenInterface.balances("0xAccount", [vaultToken.address]);
 
-        expect(actualBalances.length).toEqual(1);
+        expect(actualBalances.length).toEqual(2);
         expect(actualBalances).toEqual(expect.arrayContaining([vaultTokenWithBalance]));
-        expect(zapBalancesMock).not.toHaveBeenCalled();
+        expect(zapBalancesMock).toHaveBeenCalled();
         expect(vaultsBalancesMock).toHaveBeenCalledWith("0xAccount");
       });
     });
@@ -574,12 +574,12 @@ describe("TokenInterface", () => {
           vaultsTokensMock.mockResolvedValue([vaultsToken]);
         });
 
-        it("should fetch all the tokens only from Vaults (not Zapper)", async () => {
+        it("should fetch all the tokens from Vaults and zaps", async () => {
           const actualSupportedTokens = await tokenInterface.supported();
 
           expect(actualSupportedTokens.length).toEqual(1);
           expect(actualSupportedTokens).toEqual(expect.arrayContaining([vaultsToken]));
-          expect(zapSupportedTokensMock).not.toHaveBeenCalled();
+          expect(zapSupportedTokensMock).toHaveBeenCalled();
           expect(assetReadyThenMock).not.toHaveBeenCalled();
           expect(vaultsTokensMock).toHaveBeenCalledTimes(1);
         });
