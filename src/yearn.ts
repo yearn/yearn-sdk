@@ -24,6 +24,7 @@ import { SubgraphService } from "./services/subgraph";
 import { TelegramService } from "./services/telegram";
 import { TransactionService } from "./services/transaction";
 import { VisionService } from "./services/vision";
+import { ZapEthService } from "./services/zapEth";
 import { ZapperService } from "./services/zapper";
 import { AssetServiceState } from "./types";
 
@@ -37,6 +38,7 @@ export type Adapters<T extends ChainId> = {
 type ServicesType<T extends ChainId> = {
   lens: LensService<T>;
   oracle: OracleService<T>;
+  zapEth: ZapEthService<T>;
   zapper: ZapperService;
   portals: PortalsService;
   asset: AssetService;
@@ -158,6 +160,7 @@ export class Yearn<T extends ChainId> {
     return {
       lens: new LensService(chainId, ctx, addressProvider),
       oracle: new OracleService(chainId, ctx, addressProvider),
+      zapEth: new ZapEthService(chainId, ctx, addressProvider),
       zapper: new ZapperService(chainId, ctx),
       portals: new PortalsService(chainId, ctx),
       asset: new AssetService(chainId, ctx, assetServiceState),
