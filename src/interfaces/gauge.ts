@@ -33,7 +33,7 @@ const GaugeAbi = [
   "function getReward() external returns (bool)",
 ];
 
-const GaugeRegistryAbi = [
+const VeYfiRegistryAbi = [
   "function getVaults() public view returns (address[] memory)",
   "function gauges(address _addr) public view returns (address)",
 ];
@@ -567,11 +567,11 @@ export class GaugeInterface<T extends ChainId> extends ServiceInterface<T> {
   }
 
   private async getSupportedAddresses({ addresses }: { addresses?: Address[] }): Promise<Address[]> {
-    const gaugeRegistryAddress = await this.yearn.addressProvider.addressById(ContractAddressId.gaugeRegistry);
-    const gaugeRegistryContract = new Contract(gaugeRegistryAddress, GaugeRegistryAbi, this.ctx.provider.read);
-    const vaultAddresses: Address[] = await gaugeRegistryContract.getVaults();
+    const veYfiRegistryAddress = await this.yearn.addressProvider.addressById(ContractAddressId.veYfiRegistry);
+    const veYfiRegistryContract = new Contract(veYfiRegistryAddress, VeYfiRegistryAbi, this.ctx.provider.read);
+    const vaultAddresses: Address[] = await veYfiRegistryContract.getVaults();
     const gaugesAddressesPromises = vaultAddresses.map(async (address) => {
-      const gaugeAddress: Address = await gaugeRegistryContract.gauges(address);
+      const gaugeAddress: Address = await veYfiRegistryContract.gauges(address);
       return gaugeAddress;
     });
     const gaugeAddresses = await Promise.all(gaugesAddressesPromises);

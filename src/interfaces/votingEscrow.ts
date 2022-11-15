@@ -46,7 +46,7 @@ const VotingEscrowAbi = [
 
 const VotingEscrowRewardsAbi = ["function claim(address user, bool relock) public returns (uint256)"];
 
-const GaugeRegistryAbi = ["function veToken() public view returns (address)"];
+// const VeYfiRegistryAbi = ["function veToken() public view returns (address)"];
 
 interface ApproveLockProps extends WriteTransactionProps {
   accountAddress: Address;
@@ -647,14 +647,11 @@ export class VotingEscrowInterface<T extends ChainId> extends ServiceInterface<T
   }
 
   private async getSupportedAddresses({ addresses }: { addresses?: Address[] }): Promise<Address[]> {
-    let veTokenAddress;
-    if (this.ctx.isDevelopment) {
-      veTokenAddress = "0xfc82d83144403b107BF1D95818d01E2dbc47F82a";
-    } else {
-      const gaugeRegistryAddress = await this.yearn.addressProvider.addressById(ContractAddressId.gaugeRegistry);
-      const gaugeRegistryContract = new Contract(gaugeRegistryAddress, GaugeRegistryAbi, this.ctx.provider.read);
-      veTokenAddress = await gaugeRegistryContract.veToken();
-    }
+    // TODO: use veYfiRegistry when deployed
+    // const veYfiRegistryAddress = await this.yearn.addressProvider.addressById(ContractAddressId.veYfiRegistry);
+    // const veYfiRegistryContract = new Contract(veYfiRegistryAddress, VeYfiRegistryAbi, this.ctx.provider.read);
+    // const veTokenAddress = await veYfiRegistryContract.veToken();
+    const veTokenAddress = await this.yearn.addressProvider.addressById(ContractAddressId.veYfi);
     const votingEscrowAddresses = [veTokenAddress];
     const supportedAddresses = addresses
       ? addresses.filter((address) => votingEscrowAddresses.includes(address))

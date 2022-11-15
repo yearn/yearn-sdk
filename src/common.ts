@@ -67,7 +67,8 @@ export enum ContractAddressId {
   pickleZapIn = "PICKLE_ZAP_IN",
   yearnZapEth = "YEARN_ZAP_ETH",
   propertiesAggregator = "PROPERTIES_AGGREGATOR",
-  gaugeRegistry = "GAUGE_REGISTRY",
+  veYfiRegistry = "VEYFI_REGISTRY",
+  veYfi = "VEYFI",
   claimRewardsZap = "CLAIM_REWARDS_ZAP",
   unused = "UNUSED",
 }
