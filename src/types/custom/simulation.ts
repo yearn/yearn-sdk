@@ -1,4 +1,4 @@
-import { Address, CustomError, Integer, Usdc } from "../common";
+import { CustomError, Integer } from "../common";
 
 export class SimulationError extends CustomError {
   error_code: string;
@@ -58,27 +58,6 @@ export class PriceFetchingError extends CustomError {
     super(message, "price_fetching");
     this.error_code = error_code;
   }
-}
-
-export interface TransactionOutcome {
-  sourceTokenAddress: Address;
-  sourceTokenAmount: Integer;
-  targetTokenAddress: Address;
-  targetTokenAmount: Integer;
-  targetTokenAmountUsdc: Usdc;
-  targetUnderlyingTokenAddress: Address;
-  targetUnderlyingTokenAmount: Integer;
-  conversionRate: number;
-  slippage: number;
-  sourceTokenAmountFee?: Integer;
-}
-
-export interface SimpleTransactionOutcome {
-  sourceTokenAddress: Address;
-  sourceTokenAmount: Integer;
-  targetTokenAddress: Address;
-  targetTokenAmount: Integer;
-  sourceTokenAmountFee?: Integer;
 }
 
 export interface SimulationOptions {
