@@ -1,37 +1,43 @@
 import { getAddress } from "@ethersproject/address";
 import { TransactionRequest } from "@ethersproject/providers";
 
-import { Chains } from "../chain";
+import { Chains, isEthereum, isOptimism, NETWORK_SETTINGS } from "../chain";
 import { Service } from "../common";
-import { EthAddress, handleHttpError, SUPPORTED_ZAP_OUT_TOKEN_SYMBOLS, usdc, ZeroAddress } from "../helpers";
+import { EthAddress, handleHttpError, usdc, ZeroAddress } from "../helpers";
 import { Address, Balance, Integer, Token, TokenAllowance } from "../types";
 
 const API = "https://api.portals.fi";
 const YEARN_PARTNER_ADDRESS = "0xFEB4acf3df3cDEA7399794D0869ef76A6EfAff52";
+const DEFAULT_PLATFORMS = ["native", "basic"];
 
 export class PortalsService extends Service {
   async supportedTokens(): Promise<Token[]> {
+    const networkSettings = NETWORK_SETTINGS[this.chainId];
     const network = Chains[this.chainId];
     const endpoint = `${API}/v1/tokens/${network}`;
     const params = new URLSearchParams();
-    ["native", "basic"].forEach((platform) => params.append("platforms[]", platform));
+    const platforms = [...DEFAULT_PLATFORMS];
+    if (isOptimism(this.chainId)) platforms.push("beefy");
+    platforms.forEach((platform) => params.append("platforms[]", platform));
     const { tokens } = await fetch(`${endpoint}?${params}`)
       .then(handleHttpError)
       .then((res) => res.json());
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return tokens.map((token: any): Token => {
-      const address = token.address === ZeroAddress ? EthAddress : getAddress(token.address);
+      const address = this.deserializeAddress(token.address);
+      let icon = `https://assets.yearn.network/tokens/${network}/${token.address.toLowerCase()}.png`;
+      if (!DEFAULT_PLATFORMS.includes(token.platform)) icon = token.image ?? token.images[0] ?? icon;
       return {
         address,
         decimals: String(token.decimals),
-        icon: `https://assets.yearn.network/tokens/${network}/${token.address.toLowerCase()}.png`,
+        icon,
         name: token.symbol,
         priceUsdc: usdc(token.price),
         dataSource: "portals",
         supported: {
           portalsZapIn: true,
-          portalsZapOut: SUPPORTED_ZAP_OUT_TOKEN_SYMBOLS.includes(token.symbol.toUpperCase()), // TODO: add native token for multichain zaps
+          portalsZapOut: networkSettings.zapOutTokenSymbols?.includes(token.symbol.toUpperCase()),
         },
         symbol: token.symbol,
       };
@@ -51,7 +57,7 @@ export class PortalsService extends Service {
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return balances.map((balance: any) => {
-      const address = balance.address === ZeroAddress ? EthAddress : getAddress(String(balance.address));
+      const address = this.deserializeAddress(balance.address);
       return {
         address,
         token: {
@@ -83,9 +89,10 @@ export class PortalsService extends Service {
   async zapInApprovalState(vault: Address, token: Address, amount: Integer, account: Address): Promise<TokenAllowance> {
     const network = Chains[this.chainId];
     const endpoint = `${API}/v1/approval/${network}`;
+    const sellToken = this.serializeAddress(token);
     const params = new URLSearchParams({
       takerAddress: account,
-      sellToken: token,
+      sellToken,
       sellAmount: amount,
       buyToken: vault,
     });
@@ -109,9 +116,10 @@ export class PortalsService extends Service {
   ): Promise<TransactionRequest> {
     const network = Chains[this.chainId];
     const endpoint = `${API}/v1/approval/${network}`;
+    const sellToken = this.serializeAddress(token);
     const params = new URLSearchParams({
       takerAddress: account,
-      sellToken: token,
+      sellToken,
       sellAmount: amount,
       buyToken: vault,
     });
@@ -130,11 +138,12 @@ export class PortalsService extends Service {
   ): Promise<TokenAllowance> {
     const network = Chains[this.chainId];
     const endpoint = `${API}/v1/approval/${network}`;
+    const buyToken = this.serializeAddress(token);
     const params = new URLSearchParams({
       takerAddress: account,
       sellToken: vault,
       sellAmount: amount,
-      buyToken: token,
+      buyToken,
     });
     const { context } = await fetch(`${endpoint}?${params}`)
       .then(handleHttpError)
@@ -156,11 +165,12 @@ export class PortalsService extends Service {
   ): Promise<TransactionRequest> {
     const network = Chains[this.chainId];
     const endpoint = `${API}/v1/approval/${network}`;
+    const buyToken = this.serializeAddress(token);
     const params = new URLSearchParams({
       takerAddress: account,
       sellToken: vault,
       sellAmount: amount,
-      buyToken: token,
+      buyToken,
     });
     const { tx } = await fetch(`${endpoint}?${params}`)
       .then(handleHttpError)
@@ -180,7 +190,7 @@ export class PortalsService extends Service {
   ): Promise<TransactionRequest> {
     const network = Chains[this.chainId];
     const endpoint = `${API}/v1/portal/${network}`;
-    const sellToken = token === EthAddress ? ZeroAddress : token;
+    const sellToken = this.serializeAddress(token);
     const params = new URLSearchParams({
       takerAddress: account,
       sellToken,
@@ -209,7 +219,7 @@ export class PortalsService extends Service {
   ): Promise<TransactionRequest> {
     const network = Chains[this.chainId];
     const endpoint = `${API}/v1/portal/${network}`;
-    const buyToken = token === EthAddress ? ZeroAddress : token;
+    const buyToken = this.serializeAddress(token);
     const params = new URLSearchParams({
       takerAddress: account,
       sellToken: vault,
@@ -225,5 +235,13 @@ export class PortalsService extends Service {
       .then((res) => res.json());
 
     return tx;
+  }
+
+  private serializeAddress(address: Address): Address {
+    return address === EthAddress && isEthereum(this.chainId) ? ZeroAddress : getAddress(address);
+  }
+
+  private deserializeAddress(address: Address): Address {
+    return address === ZeroAddress && isEthereum(this.chainId) ? EthAddress : getAddress(address);
   }
 }

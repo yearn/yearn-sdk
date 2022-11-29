@@ -4,7 +4,7 @@ import { JsonRpcSigner } from "@ethersproject/providers";
 import { TelegramService } from ".";
 import { Context } from "./context";
 import { SimulationExecutor } from "./simulationExecutor";
-import { EthersError, SimulationError, TenderlyError } from "./types";
+import { SimulationError, TenderlyError } from "./types";
 
 global.fetch = jest.fn(() =>
   Promise.resolve({
@@ -21,8 +21,6 @@ global.fetch = jest.fn(() =>
   })
 ) as jest.Mock;
 
-const populateTransactionMock = jest.fn().mockReturnValue(Promise.resolve(true));
-
 jest.mock("@ethersproject/providers");
 jest.mock("@ethersproject/contracts");
 
@@ -37,7 +35,6 @@ const buildSignerMock = (balance = 1, transactionCount = 1): any => {
   signer.getBalance = getBalanceMock;
   signer.getTransactionCount = getTransactionCountMock;
   signer.getSigner = (): any => signer;
-  signer.populateTransaction = populateTransactionMock;
   return signer;
 };
 
@@ -64,7 +61,7 @@ describe("Simulation executor", () => {
 
   beforeEach(() => {
     const mockedTelegramService = new MockedTelegramServiceClass();
-    simulationExecutor = new SimulationExecutor(mockedTelegramService, new Context({}));
+    simulationExecutor = new SimulationExecutor(mockedTelegramService, 1, new Context({}));
     jest.spyOn(console, "error").mockImplementation();
   });
 
@@ -122,17 +119,6 @@ describe("Simulation executor", () => {
   });
 
   describe("makeSimulationRequest", () => {
-    it("should fail with EthersError populating transaction", async () => {
-      expect.assertions(2);
-      populateTransactionMock.mockReturnValueOnce(Promise.reject(new Error("something bad happened")));
-      try {
-        await simulationExecutor.makeSimulationRequest("0x000", "0x000", "1", {});
-      } catch (error) {
-        expect(error).toBeInstanceOf(EthersError);
-        expect(error).toHaveProperty("error_code", EthersError.POPULATING_TRANSACTION);
-      }
-    });
-
     it("should fail with TenderlyError simulation call", async () => {
       expect.assertions(2);
       (global.fetch as jest.Mock).mockReturnValueOnce(Promise.reject(new Error("something bad happened")));

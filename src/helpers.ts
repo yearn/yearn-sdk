@@ -1,63 +1,28 @@
 import { BigNumber } from "@ethersproject/bignumber";
 
-import { Address, Integer, SdkError, Token, Usdc } from "./types";
+import { ChainId, NETWORK_SETTINGS } from "./chain";
+import { Address, Integer, SdkError, Usdc } from "./types";
 import { toBN } from "./utils";
 
 export const ZeroAddress = "0x0000000000000000000000000000000000000000";
 export const EthAddress = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";
 export const WethAddress = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2";
-export const WrappedFantomAddress = "0x21be370D5312f44cB42ce377BC9b8a0cEF1A4C83";
-
-export const SUPPORTED_ZAP_OUT_ADDRESSES_MAINNET = {
-  ETH: "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE",
-  DAI: "0x6B175474E89094C44Da98b954EedeAC495271d0F",
-  USDC: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
-  USDT: "0xdAC17F958D2ee523a2206206994597C13D831ec7",
-  WBTC: "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
-};
-
-export const SUPPORTED_ZAP_OUT_TOKEN_SYMBOLS = ["ETH", "DAI", "USDC", "USDT", "WBTC"];
-
-export const FANTOM_TOKEN: Token = {
-  address: ZeroAddress,
-  name: "Fantom",
-  dataSource: "sdk",
-  decimals: "18",
-  priceUsdc: "0",
-  supported: {
-    ftmApeZap: true,
-  },
-  symbol: "FTM",
-};
-
-export const ETH_TOKEN: Token = {
-  address: EthAddress,
-  name: "ETH",
-  dataSource: "sdk",
-  decimals: "18",
-  priceUsdc: "0",
-  supported: {
-    zapper: true,
-  },
-  symbol: "ETH",
-};
-
-export const WETH_TOKEN: Token = {
-  address: WethAddress,
-  name: "WETH",
-  dataSource: "sdk",
-  decimals: "18",
-  priceUsdc: "0",
-  supported: {
-    zapper: true,
-    vaults: true,
-  },
-  symbol: "WETH",
-};
+export const YvWethAddress = "0xa258C4606Ca8206D8aA700cE2143D7db854D168c";
+export const NativeTokenAddress = ZeroAddress;
 
 // Returns truthy if address is defined as a native token address of a network
 export function isNativeToken(address: Address): boolean {
-  return [EthAddress, ZeroAddress].includes(address);
+  return [EthAddress, NativeTokenAddress].includes(address);
+}
+
+export function isWethVault(address: Address): boolean {
+  return address === YvWethAddress;
+}
+
+// Returns wrapper token address if it exists and its the native token address of a network
+export function getWrapperIfNative(address: Address, chainId: ChainId): Address {
+  const networkSettings = NETWORK_SETTINGS[chainId];
+  return isNativeToken(address) ? networkSettings.wrappedTokenAddress ?? address : address;
 }
 
 // handle a non-200 `fetch` response.

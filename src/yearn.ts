@@ -2,10 +2,12 @@ import { ChainId } from "./chain";
 import { Context, ContextValue } from "./context";
 import { EarningsInterface } from "./interfaces/earnings";
 import { FeesInterface } from "./interfaces/fees";
+import { GaugeInterface } from "./interfaces/gauge";
 import { SimulationInterface } from "./interfaces/simulation";
 import { StrategyInterface } from "./interfaces/strategy";
 import { TokenInterface } from "./interfaces/token";
 import { VaultInterface } from "./interfaces/vault";
+import { VotingEscrowInterface } from "./interfaces/votingEscrow";
 import { RegistryAdapter, RegistryV2Adapter } from "./services/adapters/registry";
 import { AddressProvider } from "./services/addressProvider";
 import { AllowListService } from "./services/allowlist";
@@ -23,6 +25,7 @@ import { SubgraphService } from "./services/subgraph";
 import { TelegramService } from "./services/telegram";
 import { TransactionService } from "./services/transaction";
 import { VisionService } from "./services/vision";
+import { ZapEthService } from "./services/zapEth";
 import { ZapperService } from "./services/zapper";
 import { AssetServiceState } from "./types";
 
@@ -36,6 +39,7 @@ export type Adapters<T extends ChainId> = {
 type ServicesType<T extends ChainId> = {
   lens: LensService<T>;
   oracle: OracleService<T>;
+  zapEth: ZapEthService<T>;
   zapper: ZapperService;
   portals: PortalsService;
   cowSwap: CowSwapService;
@@ -77,6 +81,8 @@ export class Yearn<T extends ChainId> {
   fees: FeesInterface<T>;
   simulation: SimulationInterface<T>;
   strategies: StrategyInterface<T>;
+  votingEscrows: VotingEscrowInterface<T>;
+  gauges: GaugeInterface<T>;
 
   context: Context;
 
@@ -121,6 +127,8 @@ export class Yearn<T extends ChainId> {
     this.fees = new FeesInterface(this, chainId, this.context);
     this.simulation = new SimulationInterface(this, chainId, this.context);
     this.strategies = new StrategyInterface(this, chainId, this.context);
+    this.votingEscrows = new VotingEscrowInterface(this, chainId, this.context);
+    this.gauges = new GaugeInterface(this, chainId, this.context);
 
     this.ready = Promise.all([this.services.asset.ready]);
   }
@@ -138,6 +146,8 @@ export class Yearn<T extends ChainId> {
     this.fees = new FeesInterface(this, chainId, this.context);
     this.simulation = new SimulationInterface(this, chainId, this.context);
     this.strategies = new StrategyInterface(this, chainId, this.context);
+    this.votingEscrows = new VotingEscrowInterface(this, chainId, this.context);
+    this.gauges = new GaugeInterface(this, chainId, this.context);
 
     this.ready = Promise.all([this.services.asset.ready]);
   }
@@ -152,6 +162,7 @@ export class Yearn<T extends ChainId> {
     return {
       lens: new LensService(chainId, ctx, addressProvider),
       oracle: new OracleService(chainId, ctx, addressProvider),
+      zapEth: new ZapEthService(chainId, ctx, addressProvider),
       zapper: new ZapperService(chainId, ctx),
       portals: new PortalsService(chainId, ctx),
       cowSwap: new CowSwapService(1, ctx), // TODO: Instantiate on mainnet only

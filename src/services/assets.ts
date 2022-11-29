@@ -1,6 +1,6 @@
 import fetch from "cross-fetch";
 
-import { ChainId } from "../chain";
+import { ChainId, isEthereum } from "../chain";
 import { Service } from "../common";
 import { Context } from "../context";
 import { handleHttpError, WethAddress } from "../helpers";
@@ -57,7 +57,7 @@ export class AssetService extends Service {
   }
 
   private async initialize(): Promise<void> {
-    if (this.chainId === 1 || this.chainId === 1337) {
+    if (isEthereum(this.chainId)) {
       const aliases: Alias[] = await fetch(YearnAliases)
         .then(handleHttpError)
         .then((res) => res.json())

@@ -65,8 +65,12 @@ export enum ContractAddressId {
   portalsZapIn = "PORTALS_ZAP_IN",
   portalsZapOut = "PORTALS_ZAP_OUT",
   pickleZapIn = "PICKLE_ZAP_IN",
+  yearnZapEth = "YEARN_ZAP_ETH",
   propertiesAggregator = "PROPERTIES_AGGREGATOR",
   cowSwapRelayer = "COWSWAP_RELAYER", // 0xC92E8bdf79f0507f65a392b0ab4667716BFE0110
+  veYfiRegistry = "VEYFI_REGISTRY",
+  veYfi = "VEYFI",
+  claimRewardsZap = "CLAIM_REWARDS_ZAP",
   unused = "UNUSED",
 }
 
