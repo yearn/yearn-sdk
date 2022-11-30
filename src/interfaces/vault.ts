@@ -455,7 +455,7 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
     tokenAddress: Address,
     gasless?: boolean
   ): Promise<Address> {
-    if (gasless) return await this.yearn.addressProvider.addressById(ContractAddressId.cowSwapRelayer);
+    if (gasless) return await this.yearn.addressProvider.addressById(ContractAddressId.cowProtocolRelayer);
     if (isNativeToken(tokenAddress)) return vaultAddress;
 
     const willZapToPickleJar = this.isZappingIntoPickleJar({ vault: vaultAddress });
@@ -488,7 +488,7 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
     tokenAddress: Address,
     gasless?: boolean
   ): Promise<Address> {
-    if (gasless) return await this.yearn.addressProvider.addressById(ContractAddressId.cowSwapRelayer);
+    if (gasless) return await this.yearn.addressProvider.addressById(ContractAddressId.cowProtocolRelayer);
 
     const willWithdrawToUnderlyingToken = await this.isUnderlyingToken(vaultAddress, tokenAddress);
     if (willWithdrawToUnderlyingToken) return vaultAddress;
