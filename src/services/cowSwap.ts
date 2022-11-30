@@ -1,9 +1,10 @@
-import { CowSdk, OrderKind } from "@cowprotocol/cow-sdk";
+import { CowSdk, OrderKind, OrderMetaData } from "@cowprotocol/cow-sdk";
 
 import { ChainId } from "../chain";
 import { Service } from "../common";
 import { Context } from "../context";
 import { Address, Integer, SdkError, SimpleTransactionOutcome } from "../types";
+import { poll, toBN } from "../utils";
 
 const APP_DATA = "0x0000000000000000000000000000000000000000000000000000000000000000";
 
@@ -12,7 +13,7 @@ export class CowSwapService extends Service {
 
   constructor(chainId: ChainId, ctx: Context) {
     super(chainId, ctx);
-    this.cowSdk = new CowSdk(chainId, { env: "staging" });
+    this.cowSdk = new CowSdk(chainId);
   }
 
   async getExpectedTransactionOutcome({
@@ -68,16 +69,17 @@ export class CowSwapService extends Service {
     const validTo = Math.floor(this.timeOneHourFromNow() / 1000);
     const kind = OrderKind.SELL;
     const cowContext = {
-      env: "staging",
       signer: this.ctx.provider.write.getSigner(accountAddress),
     };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await this.cowSdk.updateContext(cowContext as any);
 
+    const sellAmount = toBN(sourceTokenAmount).minus(sourceTokenAmountFee).toFixed(0);
     const order = {
       kind,
       sellToken: sourceTokenAddress,
       buyToken: targetTokenAddress,
-      sellAmount: sourceTokenAmount,
+      sellAmount,
       buyAmount: targetTokenAmount,
       feeAmount: sourceTokenAmountFee,
       receiver: accountAddress,
@@ -90,8 +92,6 @@ export class CowSwapService extends Service {
 
     if (!signature) throw new SdkError("Failed signing order");
 
-    console.log(signature, signingScheme);
-
     const orderId = await this.cowSdk.cowApi.sendOrder({
       order: { ...order, signature, signingScheme },
       owner: accountAddress,
@@ -100,6 +100,23 @@ export class CowSwapService extends Service {
     console.log(`https://explorer.cow.fi/orders/${orderId}`);
 
     return orderId;
+  }
+
+  async waitForOrderToFill({ orderId }: { orderId: string }) {
+    const POLL_INTERVAL = 5000;
+    const getOrderMetaData = async () => {
+      const orderMetaData = await this.cowSdk.cowApi.getOrder(orderId);
+      if (!orderMetaData) throw new Error("Order not found");
+      return orderMetaData;
+    };
+    const isWaitingToFill = ({ status }: OrderMetaData) => {
+      if (status === "fulfilled") return false;
+      if (status === "open" || status === "presignaturePending") return true;
+
+      throw new Error("Order failed");
+    };
+
+    return await poll(getOrderMetaData, isWaitingToFill, POLL_INTERVAL);
   }
 
   private timeOneHourFromNow(): number {
