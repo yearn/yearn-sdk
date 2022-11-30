@@ -573,7 +573,7 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
       targetTokenAddress,
       targetTokenAmount
     );
-    const [vault] = await this.get([targetTokenAmountUsdc]);
+    const [vault] = await this.get([targetTokenAddress]);
     const targetTokenIsVault = !!vault;
     const targetUnderlyingTokenAddress = targetTokenIsVault ? vault.token : targetTokenAddress;
     const targetUnderlyingTokenAmount = targetTokenIsVault
