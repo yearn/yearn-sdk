@@ -7,6 +7,7 @@ import { Address, Integer, SdkError, SimpleTransactionOutcome } from "../types";
 import { poll, toBN } from "../utils";
 
 const APP_DATA = "0x0000000000000000000000000000000000000000000000000000000000000000";
+const TEN_MINUTES = 1000 * 60 * 10;
 
 export class CowSwapService extends Service {
   private cowSdk: CowSdk;
@@ -27,7 +28,7 @@ export class CowSwapService extends Service {
     sourceTokenAmount: Integer;
     accountAddress: Address;
   }): Promise<SimpleTransactionOutcome> {
-    const validTo = Math.floor(this.timeOneHourFromNow() / 1000);
+    const validTo = Math.floor(this.timeFromNow(TEN_MINUTES) / 1000);
     const kind = OrderKind.SELL;
 
     const quoteResponse = await this.cowSdk.cowApi.getQuote({
@@ -66,7 +67,7 @@ export class CowSwapService extends Service {
     sourceTokenAmountFee: Integer;
     accountAddress: Address;
   }): Promise<string> {
-    const validTo = Math.floor(this.timeOneHourFromNow() / 1000);
+    const validTo = Math.floor(this.timeFromNow(TEN_MINUTES) / 1000);
     const kind = OrderKind.SELL;
     const cowContext = {
       signer: this.ctx.provider.write.getSigner(accountAddress),
@@ -119,8 +120,7 @@ export class CowSwapService extends Service {
     return await poll(getOrderMetaData, isWaitingToFill, POLL_INTERVAL);
   }
 
-  private timeOneHourFromNow(): number {
-    const ONE_HOUR = 1000 * 60 * 60;
-    return new Date(Date.now() + ONE_HOUR).getTime();
+  private timeFromNow(delta: number): number {
+    return new Date(Date.now() + delta).getTime();
   }
 }
