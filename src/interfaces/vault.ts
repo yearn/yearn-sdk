@@ -19,6 +19,7 @@ import {
   Token,
   TokenAllowance,
   TokenMetadata,
+  TransactionOutcome,
   VaultDynamic,
   VaultInfo,
   VaultMetadataOverrides,
@@ -29,6 +30,7 @@ import {
   ZapProtocol,
 } from "../types";
 import { Position, Vault } from "../types";
+import { toBN } from "../utils";
 import { mergeZapPropsWithAddressables } from "./helpers";
 
 const VaultAbi = ["function deposit(uint256 amount) public", "function withdraw(uint256 amount) public"];
@@ -325,14 +327,16 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
    * @param accountAddress
    * @param vaultAddress
    * @param tokenAddress
+   * @param gasless
    * @returns TokenAllowance
    */
   async getDepositAllowance(
     accountAddress: Address,
     vaultAddress: Address,
-    tokenAddress: Address
+    tokenAddress: Address,
+    gasless?: boolean
   ): Promise<TokenAllowance> {
-    const spenderAddress = await this.getDepositContractAddress(vaultAddress, tokenAddress);
+    const spenderAddress = await this.getDepositContractAddress(vaultAddress, tokenAddress, gasless);
     return this.yearn.tokens.allowance(accountAddress, tokenAddress, spenderAddress);
   }
 
@@ -341,14 +345,16 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
    * @param accountAddress
    * @param vaultAddress
    * @param tokenAddress
+   * @param gasless
    * @returns TokenAllowance
    */
   async getWithdrawAllowance(
     accountAddress: Address,
     vaultAddress: Address,
-    tokenAddress: Address
+    tokenAddress: Address,
+    gasless?: boolean
   ): Promise<TokenAllowance> {
-    const spenderAddress = await this.getWithdrawContractAddress(vaultAddress, tokenAddress);
+    const spenderAddress = await this.getWithdrawContractAddress(vaultAddress, tokenAddress, gasless);
     return this.yearn.tokens.allowance(accountAddress, vaultAddress, spenderAddress);
   }
 
@@ -357,9 +363,10 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
     vaultAddress: Address,
     tokenAddress: Address,
     amount?: Integer,
+    gasless?: boolean,
     overrides?: CallOverrides
   ): Promise<PopulatedTransaction> {
-    const spenderAddress = await this.getDepositContractAddress(vaultAddress, tokenAddress);
+    const spenderAddress = await this.getDepositContractAddress(vaultAddress, tokenAddress, gasless);
     return this.yearn.tokens.populateApprove(
       accountAddress,
       tokenAddress,
@@ -375,6 +382,7 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
    * @param vaultAddress
    * @param tokenAddress
    * @param amount
+   * @param gasless
    * @param overrides
    * @returns TransactionResponse
    */
@@ -383,9 +391,10 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
     vaultAddress: Address,
     tokenAddress: Address,
     amount?: Integer,
+    gasless?: boolean,
     overrides?: CallOverrides
   ): Promise<TransactionResponse> {
-    const spenderAddress = await this.getDepositContractAddress(vaultAddress, tokenAddress);
+    const spenderAddress = await this.getDepositContractAddress(vaultAddress, tokenAddress, gasless);
     return this.yearn.tokens.approve(
       accountAddress,
       tokenAddress,
@@ -400,9 +409,10 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
     vaultAddress: Address,
     tokenAddress: Address,
     amount?: Integer,
+    gasless?: boolean,
     overrides?: CallOverrides
   ): Promise<PopulatedTransaction> {
-    const spenderAddress = await this.getWithdrawContractAddress(vaultAddress, tokenAddress);
+    const spenderAddress = await this.getWithdrawContractAddress(vaultAddress, tokenAddress, gasless);
     return this.yearn.tokens.populateApprove(
       accountAddress,
       vaultAddress,
@@ -418,6 +428,7 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
    * @param vaultAddress
    * @param tokenAddress
    * @param amount
+   * @param gasless
    * @param overrides
    * @returns TransactionResponse
    */
@@ -426,9 +437,10 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
     vaultAddress: Address,
     tokenAddress: Address,
     amount?: Integer,
+    gasless?: boolean,
     overrides?: CallOverrides
   ): Promise<TransactionResponse> {
-    const spenderAddress = await this.getWithdrawContractAddress(vaultAddress, tokenAddress);
+    const spenderAddress = await this.getWithdrawContractAddress(vaultAddress, tokenAddress, gasless);
     return this.yearn.tokens.approve(
       accountAddress,
       vaultAddress,
@@ -438,7 +450,12 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
     );
   }
 
-  private async getDepositContractAddress(vaultAddress: Address, tokenAddress: Address): Promise<Address> {
+  private async getDepositContractAddress(
+    vaultAddress: Address,
+    tokenAddress: Address,
+    gasless?: boolean
+  ): Promise<Address> {
+    if (gasless) return await this.yearn.addressProvider.addressById(ContractAddressId.cowProtocolRelayer);
     if (isNativeToken(tokenAddress)) return vaultAddress;
 
     const willZapToPickleJar = this.isZappingIntoPickleJar({ vault: vaultAddress });
@@ -466,7 +483,13 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
     return await this.yearn.addressProvider.addressById(ContractAddressId.portalsZapIn);
   }
 
-  private async getWithdrawContractAddress(vaultAddress: Address, tokenAddress: Address): Promise<Address> {
+  private async getWithdrawContractAddress(
+    vaultAddress: Address,
+    tokenAddress: Address,
+    gasless?: boolean
+  ): Promise<Address> {
+    if (gasless) return await this.yearn.addressProvider.addressById(ContractAddressId.cowProtocolRelayer);
+
     const willWithdrawToUnderlyingToken = await this.isUnderlyingToken(vaultAddress, tokenAddress);
     if (willWithdrawToUnderlyingToken) return vaultAddress;
 
@@ -480,6 +503,98 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
   async isUnderlyingToken(vaultAddress: Address, tokenAddress: Address): Promise<boolean> {
     const [vault] = await this.getStatic([vaultAddress]);
     return vault.token === tokenAddress;
+  }
+
+  /**
+   * Get the expected outcome of a transaction
+   * @param transactionType
+   * @param sourceTokenAddress
+   * @param targetTokenAddress
+   * @param amount
+   * @param accountAddress
+   * @param slippageTolerance
+   * @param gasless
+   * @returns TransactionOutcome
+   */
+  async getExpectedTransactionOutcome({
+    transactionType,
+    sourceTokenAddress,
+    targetTokenAddress,
+    sourceTokenAmount,
+    accountAddress,
+    slippageTolerance,
+    gasless,
+  }: {
+    transactionType: "DEPOSIT" | "WITHDRAW";
+    sourceTokenAddress: Address;
+    targetTokenAddress: Address;
+    sourceTokenAmount: Integer;
+    accountAddress: Address;
+    slippageTolerance?: number;
+    gasless?: boolean;
+  }): Promise<TransactionOutcome> {
+    if (!gasless && transactionType === "DEPOSIT") {
+      return await this.yearn.simulation._deposit(
+        targetTokenAddress,
+        sourceTokenAddress,
+        sourceTokenAmount,
+        accountAddress,
+        {
+          slippage: slippageTolerance,
+        }
+      );
+    }
+    if (!gasless && transactionType === "WITHDRAW") {
+      return await this.yearn.simulation._withdraw(
+        sourceTokenAddress,
+        targetTokenAddress,
+        sourceTokenAmount,
+        accountAddress,
+        {
+          slippage: slippageTolerance,
+        }
+      );
+    }
+
+    const { targetTokenAmount, sourceTokenAmountFee } = await this.yearn.services.cowSwap.getExpectedTransactionOutcome(
+      {
+        sourceTokenAddress,
+        targetTokenAddress,
+        sourceTokenAmount,
+        accountAddress,
+      }
+    );
+
+    const sourceTokenAmountUsdc = await this.yearn.services.oracle.getNormalizedValueUsdc(
+      sourceTokenAddress,
+      sourceTokenAmount
+    );
+    const targetTokenAmountUsdc = await this.yearn.services.oracle.getNormalizedValueUsdc(
+      targetTokenAddress,
+      targetTokenAmount
+    );
+    const [vault] = await this.get([targetTokenAddress]);
+    const targetTokenIsVault = !!vault;
+    const targetUnderlyingTokenAddress = targetTokenIsVault ? vault.token : targetTokenAddress;
+    const targetUnderlyingTokenAmount = targetTokenIsVault
+      ? toBN(targetTokenAmount).div(toBN(10).pow(vault.decimals)).multipliedBy(vault.metadata.pricePerShare).toFixed(0)
+      : targetTokenAmount;
+    const conversionRate = toBN(sourceTokenAmountUsdc).eq(0)
+      ? 0
+      : toBN(targetTokenAmountUsdc).div(sourceTokenAmountUsdc).toNumber();
+
+    return {
+      sourceTokenAddress,
+      sourceTokenAmount,
+      targetTokenAddress,
+      targetTokenAmount,
+      targetTokenAmountUsdc,
+      targetUnderlyingTokenAddress,
+      targetUnderlyingTokenAmount,
+      conversionRate,
+      slippage: toBN(1).minus(conversionRate).toNumber(),
+      sourceTokenAmountFee,
+    };
   }
 
   /**
@@ -511,6 +626,41 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
   }
 
   /**
+   * Gasless Deposit into a yearn vault
+   * @param vaultAddress
+   * @param tokenAddress
+   * @param tokenAmount
+   * @param vaultAmount
+   * @param feeAmount
+   * @param accountAddress
+   * @returns orderId
+   */
+  async gaslessDeposit({
+    vaultAddress,
+    tokenAddress,
+    tokenAmount,
+    vaultAmount,
+    feeAmount,
+    accountAddress,
+  }: {
+    vaultAddress: Address;
+    tokenAddress: Address;
+    tokenAmount: Integer;
+    vaultAmount: Integer;
+    feeAmount: Integer;
+    accountAddress: Address;
+  }): Promise<string> {
+    return await this.yearn.services.cowSwap.sendOrder({
+      sourceTokenAddress: tokenAddress,
+      targetTokenAddress: vaultAddress,
+      sourceTokenAmount: tokenAmount,
+      targetTokenAmount: vaultAmount,
+      sourceTokenAmountFee: feeAmount,
+      accountAddress,
+    });
+  }
+
+  /**
    * Withdraw from a yearn vault.
    * @param vault
    * @param token
@@ -536,6 +686,41 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
       overrides,
     });
     return this.yearn.services.transaction.sendTransaction(populatedTransaction);
+  }
+
+  /**
+   * Gasless Withdraw into a yearn vault
+   * @param vaultAddress
+   * @param tokenAddress
+   * @param vaultAmount
+   * @param tokenAmount
+   * @param feeAmount
+   * @param accountAddress
+   * @returns orderId
+   */
+  async gaslessWithdraw({
+    vaultAddress,
+    tokenAddress,
+    vaultAmount,
+    tokenAmount,
+    feeAmount,
+    accountAddress,
+  }: {
+    vaultAddress: Address;
+    tokenAddress: Address;
+    vaultAmount: Integer;
+    tokenAmount: Integer;
+    feeAmount: Integer;
+    accountAddress: Address;
+  }): Promise<string> {
+    return await this.yearn.services.cowSwap.sendOrder({
+      sourceTokenAddress: vaultAddress,
+      targetTokenAddress: tokenAddress,
+      sourceTokenAmount: vaultAmount,
+      targetTokenAmount: tokenAmount,
+      sourceTokenAmountFee: feeAmount,
+      accountAddress,
+    });
   }
 
   /**
