@@ -968,7 +968,7 @@
   resolved "https://registry.yarnpkg.com/@cowprotocol/contracts/-/contracts-1.3.1.tgz#a812b27bdd0c046ab730eb24911ef7c641ed0df8"
   integrity sha512-p93xODog3XG5eSDU5od1ERvYf7YIyXd7USknKcsWnka5VN5mDDjqjCKTLw8EoZdrCIEpf6fGd8At2nv+MsvNqA==
 
-"@cowprotocol/cow-sdk@^1.0.0-RC.5":
+"@cowprotocol/cow-sdk@1.0.0-RC.5":
   version "1.0.0-RC.5"
   resolved "https://registry.yarnpkg.com/@cowprotocol/cow-sdk/-/cow-sdk-1.0.0-RC.5.tgz#2ab136f47d1ce8b36aac28b775150c11bbd26444"
   integrity sha512-UQZLNc+FBT/XTFkKqmHagttDi0o62bVc2woycL/gxjmoi99iLmvYGi1TVF/V+CvxwE8evRR1Kgm1q2NdnGNmqg==
