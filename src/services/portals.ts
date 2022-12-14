@@ -17,9 +17,11 @@ export class PortalsService extends Service {
     const endpoint = `${API}/v1/tokens/${network}`;
     const params = new URLSearchParams();
     const platforms = [...DEFAULT_PLATFORMS];
+    platforms.push("yearn");
     platforms.push("curve");
     platforms.push("beefy");
     if (isEthereum(this.chainId)) platforms.push("convex");
+    if (isEthereum(this.chainId)) platforms.push("compound");
     platforms.forEach((platform) => params.append("platforms[]", platform));
     const { tokens } = await fetch(`${endpoint}?${params}`)
       .then(handleHttpError)
