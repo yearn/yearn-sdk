@@ -18,7 +18,7 @@
     "test:coverage": "tsdx test --coverage",
     "lint": "run-p lint:*",
     "lint:eslint": "eslint src",
-    "lint:typescript": "tsc --noEmit",
+    "lint:typescript": "tsc --noEmit --skipLibCheck",
     "docs": "typedoc --out docs src/index.ts",
     "size": "size-limit",
     "analyze": "size-limit --why",
