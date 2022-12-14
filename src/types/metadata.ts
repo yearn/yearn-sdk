@@ -10,6 +10,7 @@ export interface VaultMetadata {
   allowZapIn?: boolean;
   allowZapOut?: boolean;
   apy?: Apy;
+  classification?: Classification;
   controller: Address;
   defaultDisplayToken: Address;
   depositLimit: Integer;
@@ -108,12 +109,35 @@ export interface StrategiesMetadata {
   protocols: string[];
 }
 
+export interface Classification {
+  isPool?: boolean;
+  poolProvider?: "Curve" | "Balancer" | "Yearn";
+  stability?: "Stable" | "Unstable" | "Correlated" | "Volatile";
+  stableBaseAsset?:
+    | "USD"
+    | "EUR"
+    | "AUD"
+    | "CHF"
+    | "KRW"
+    | "GBP"
+    | "JPY"
+    | "CRV"
+    | "FTM"
+    | "Avax"
+    | "Ether"
+    | "Bitcoin"
+    | "Aave"
+    | "Link";
+  isAutomated?: boolean;
+}
+
 export interface VaultMetadataOverrides {
   address: Address;
   allowZapIn?: boolean;
   allowZapOut?: boolean;
   apyOverride?: number;
   apyTypeOverride?: string;
+  classification?: Classification;
   comment?: string;
   depositsDisabled?: boolean;
   displayName?: string;
