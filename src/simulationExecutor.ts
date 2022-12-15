@@ -8,7 +8,6 @@ import { TelegramService } from "./services/telegram";
 import { SimulationError, SimulationOptions, TenderlyError } from "./types";
 import { Address, Integer } from "./types/common";
 
-const baseUrl = "https://simulate.yearn.network";
 const latestBlockKey = -1;
 
 export interface SimulationResponse {
@@ -49,7 +48,13 @@ interface SimulationCallTrace {
  * 3. Simulate the zap in using the approval transaction as the root
  */
 export class SimulationExecutor {
-  constructor(private telegram: TelegramService, private chainId: ChainId, private ctx: Context) {}
+  private baseUrl: string;
+  private apiKey?: string;
+
+  constructor(private telegram: TelegramService, private chainId: ChainId, private ctx: Context) {
+    this.baseUrl = ctx.simulation.apiUrl;
+    this.apiKey = ctx.simulation.apiKey;
+  }
 
   /**
    * Simulate a transaction
@@ -138,7 +143,9 @@ export class SimulationExecutor {
       throw new SimulationError("Data is of an invalid type", SimulationError.INVALID_TYPE);
     }
 
-    const constructedPath = options?.forkId ? `${baseUrl}/fork/${options.forkId}/simulate` : `${baseUrl}/simulate`;
+    const constructedPath = options?.forkId
+      ? `${this.baseUrl}/fork/${options.forkId}/simulate`
+      : `${this.baseUrl}/simulate`;
     const body = {
       from,
       to,
@@ -155,11 +162,13 @@ export class SimulationExecutor {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        ...(this.apiKey && { "X-Access-Key": this.apiKey }),
       },
       body: JSON.stringify(body),
     })
       .then((res) => res.json())
-      .catch(() => {
+      .catch((error) => {
+        console.error(error);
         throw new TenderlyError("simulation call to Tenderly failed", TenderlyError.SIMULATION_CALL);
       });
 
@@ -235,15 +244,17 @@ export class SimulationExecutor {
       network_id: this.chainId.toString(),
     };
 
-    const response: Response = await await fetch(`${baseUrl}/fork`, {
+    const response: Response = await await fetch(`${this.baseUrl}/fork`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        ...(this.apiKey && { "X-Access-Key": this.apiKey }),
       },
       body: JSON.stringify(body),
     })
       .then((res) => res.json())
-      .catch(() => {
+      .catch((error) => {
+        console.error(error);
         throw new TenderlyError("failed to create fork", TenderlyError.CREATE_FORK);
       });
 
@@ -271,7 +282,13 @@ export class SimulationExecutor {
    * @returns the deletion response
    */
   async deleteFork(forkId: string): Promise<Response> {
-    return await fetch(`${baseUrl}/fork/${forkId}`, { method: "DELETE" });
+    return await fetch(`${this.baseUrl}/fork/${forkId}`, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        ...(this.apiKey && { "X-Access-Key": this.apiKey }),
+      },
+    });
   }
 
   /**

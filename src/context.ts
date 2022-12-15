@@ -30,6 +30,8 @@ export interface ReadWriteProvider {
  */
 export interface SimulationConfiguration extends TelegramConfiguration {
   dashboardUrl?: string;
+  apiUrl: string;
+  apiKey?: string;
 }
 
 /**
@@ -75,7 +77,10 @@ const DefaultContext: ContextValue = {
   // see https://docs.zapper.fi/zapper-api/endpoints
   zapper: "96e0cc51-a62e-42ca-acee-910ea7d2a241",
   // The default tenderly dashboard for Yearn
-  simulation: { dashboardUrl: "https://dashboard.tenderly.co/yearn/yearn-web" },
+  simulation: {
+    dashboardUrl: "https://dashboard.tenderly.co/yearn/yearn-web",
+    apiUrl: "https://simulate.yearn.network",
+  },
   cache: { useCache: true, url: "https://cache.yearn.finance" },
   env: "production",
 };
