@@ -67,7 +67,8 @@
     "cross-fetch": "3.1.5",
     "dotenv": "10.0.0",
     "emittery": "0.8.1",
-    "type-fest": "1.2.1"
+    "type-fest": "1.2.1",
+    "wido": "^0.1.0"
   },
   "size-limit": [
     {

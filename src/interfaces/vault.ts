@@ -31,7 +31,7 @@ import {
 } from "../types";
 import { Position, Vault } from "../types";
 import { toBN } from "../utils";
-import { mergeZapPropsWithAddressables } from "./helpers";
+import { mergeZapInPropsWithZappables, mergeZapOutPropsWithZappables } from "./helpers";
 
 const VaultAbi = ["function deposit(uint256 amount) public", "function withdraw(uint256 amount) public"];
 
@@ -144,7 +144,10 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
     vaultMetadataOverrides?: VaultMetadataOverrides[],
     overrides?: CallOverrides
   ): Promise<VaultDynamic[]> {
-    const cached = await this.cachedFetcherGetDynamic.fetch();
+    let cached;
+    if (this.ctx.isZapsDefault) {
+      cached = await this.cachedFetcherGetDynamic.fetch();
+    }
     if (cached) {
       return addresses ? cached.filter((vault) => addresses.includes(vault.address)) : cached;
     }
@@ -158,12 +161,39 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
 
     const networkSettings = NETWORK_SETTINGS[this.chainId];
     if (networkSettings?.zapsEnabled) {
-      const vaultTokenMarketData = await this.yearn.services.portals.supportedVaultAddresses();
-      metadataOverrides = mergeZapPropsWithAddressables({
-        addressables: metadataOverrides,
-        supportedVaultAddresses: vaultTokenMarketData,
-        zapInType: "portalsZapIn",
-        zapOutType: "portalsZapOut",
+      const widoSupportedVaults = await this.yearn.services.wido.supportedVaultAddresses().catch((error) => {
+        console.error(error);
+        return Promise.resolve([] as string[]);
+      });
+      const portalsSupportedVaults = await this.yearn.services.portals.supportedVaultAddresses().catch((error) => {
+        console.error(error);
+        return Promise.resolve([] as string[]);
+      });
+      this.ctx.zaps?.zapInWith.forEach((zapInWith) => {
+        let supportedVaultAddresses;
+        if (zapInWith === "widoZapIn") {
+          supportedVaultAddresses = widoSupportedVaults;
+        } else {
+          supportedVaultAddresses = portalsSupportedVaults;
+        }
+        metadataOverrides = mergeZapInPropsWithZappables({
+          zappables: metadataOverrides,
+          supportedVaultAddresses,
+          zapInType: zapInWith,
+        });
+      });
+      this.ctx.zaps?.zapOutWith.forEach((zapOutWith) => {
+        let supportedVaultAddresses;
+        if (zapOutWith === "widoZapOut") {
+          supportedVaultAddresses = widoSupportedVaults;
+        } else {
+          supportedVaultAddresses = portalsSupportedVaults;
+        }
+        metadataOverrides = mergeZapOutPropsWithZappables({
+          zappables: metadataOverrides,
+          supportedVaultAddresses,
+          zapOutType: zapOutWith,
+        });
       });
     }
 
@@ -480,7 +510,16 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
       return await this.yearn.addressProvider.addressById(ContractAddressId.yearnZapEth);
     }
 
-    return await this.yearn.addressProvider.addressById(ContractAddressId.portalsZapIn);
+    const [vault] = await this.get([vaultAddress]);
+    const { zapInWith } = vault.metadata;
+
+    if (zapInWith === "portalsZapIn") {
+      return await this.yearn.addressProvider.addressById(ContractAddressId.portalsZapIn);
+    } else if (zapInWith === "widoZapIn") {
+      return await this.yearn.addressProvider.addressById(ContractAddressId.widoZapTokenManager);
+    } else {
+      throw new Error("zapInWith not supported");
+    }
   }
 
   private async getWithdrawContractAddress(
@@ -497,7 +536,16 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
       return await this.yearn.addressProvider.addressById(ContractAddressId.yearnZapEth);
     }
 
-    return await this.yearn.addressProvider.addressById(ContractAddressId.portalsZapOut);
+    const [vault] = await this.get([vaultAddress]);
+    const { zapOutWith } = vault.metadata;
+
+    if (zapOutWith === "portalsZapOut") {
+      return await this.yearn.addressProvider.addressById(ContractAddressId.portalsZapOut);
+    } else if (zapOutWith === "widoZapOut") {
+      return await this.yearn.addressProvider.addressById(ContractAddressId.widoZapTokenManager);
+    } else {
+      throw new Error("zapOutWith not supported");
+    }
   }
 
   async isUnderlyingToken(vaultAddress: Address, tokenAddress: Address): Promise<boolean> {
@@ -767,7 +815,7 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
   }
 
   private async zapIn(
-    vault: Address,
+    vaultAddr: Address,
     token: Address,
     amount: Integer,
     account: Address,
@@ -777,19 +825,44 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
   ): Promise<TransactionRequest> {
     if (options.slippage === undefined) throw new SdkError("zap operations should have a slippage set");
 
-    if (isEthereum(this.chainId) && isNativeToken(token) && isWethVault(vault)) {
-      return await this.yearn.services.zapEth.zapIn(vault, token, amount, account);
+    if (isEthereum(this.chainId) && isNativeToken(token) && isWethVault(vaultAddr)) {
+      return await this.yearn.services.zapEth.zapIn(vaultAddr, token, amount, account);
     }
 
-    const zapInParams = await this.yearn.services.portals.zapIn(
-      vault,
-      token,
-      amount,
-      account,
-      options.slippage,
-      !options.skipGasEstimate ?? true,
-      this.yearn.services.partner?.partnerId
-    );
+    const [vault] = await this.get([vaultAddr]);
+
+    if (!vault) {
+      throw new SdkError(`Could not get vault: ${vaultAddr}`);
+    }
+
+    const { zapInWith } = vault.metadata;
+
+    let zapInPromise;
+
+    if (zapInWith === "portalsZapIn") {
+      zapInPromise = this.yearn.services.portals.zapIn(
+        vaultAddr,
+        token,
+        amount,
+        account,
+        options.slippage,
+        !options.skipGasEstimate ?? true,
+        this.yearn.services.partner?.partnerId
+      );
+    } else if (zapInWith === "widoZapIn") {
+      zapInPromise = this.yearn.services.wido.zapIn(
+        vaultAddr,
+        token,
+        amount,
+        account,
+        options.slippage,
+        this.yearn.services.partner?.partnerId
+      );
+    } else {
+      throw new Error("zapInWith not supported");
+    }
+
+    const zapInParams = await zapInPromise;
 
     const transactionRequest: TransactionRequest = {
       to: zapInParams.to,
@@ -907,7 +980,7 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
   }
 
   async populateWithdrawTransaction({
-    vault,
+    vault: vaultAddr,
     token,
     amount,
     account,
@@ -922,27 +995,44 @@ export class VaultInterface<T extends ChainId> extends ServiceInterface<T> {
     overrides: CallOverrides;
   }): Promise<TransactionRequest> {
     const signer = this.ctx.provider.write.getSigner(account);
-    const isUnderlyingToken = await this.isUnderlyingToken(vault, token);
+    const isUnderlyingToken = await this.isUnderlyingToken(vaultAddr, token);
     if (isUnderlyingToken) {
-      const vaultContract = new Contract(vault, VaultAbi, signer);
+      const vaultContract = new Contract(vaultAddr, VaultAbi, signer);
       return await vaultContract.populateTransaction.withdraw(amount, overrides);
     }
 
     if (options.slippage === undefined) throw new SdkError("zap operations should have a slippage set");
 
-    if (isEthereum(this.chainId) && isNativeToken(token) && isWethVault(vault)) {
-      return await this.yearn.services.zapEth.zapOut(vault, token, amount, account);
+    if (isEthereum(this.chainId) && isNativeToken(token) && isWethVault(vaultAddr)) {
+      return await this.yearn.services.zapEth.zapOut(vaultAddr, token, amount, account);
     }
 
-    const zapOutParams = await this.yearn.services.portals.zapOut(
-      vault,
-      token,
-      amount,
-      account,
-      options.slippage,
-      !options.skipGasEstimate ?? true,
-      options.signature
-    );
+    const [vault] = await this.get([vaultAddr]);
+
+    if (!vault) {
+      throw new SdkError(`Could not get vault: ${vaultAddr}`);
+    }
+
+    const { zapOutWith } = vault.metadata;
+
+    let zapOutPromise;
+    if (zapOutWith === "portalsZapOut") {
+      zapOutPromise = this.yearn.services.portals.zapOut(
+        vaultAddr,
+        token,
+        amount,
+        account,
+        options.slippage,
+        !options.skipGasEstimate ?? true,
+        options.signature
+      );
+    } else if (zapOutWith === "widoZapOut") {
+      zapOutPromise = this.yearn.services.wido.zapOut(vaultAddr, token, amount, account, options.slippage);
+    } else {
+      throw new Error("zapOutWith not supported");
+    }
+
+    const zapOutParams = await zapOutPromise;
 
     const transactionRequest: TransactionRequest = {
       to: zapOutParams.to,

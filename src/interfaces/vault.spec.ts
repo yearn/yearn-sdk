@@ -55,6 +55,12 @@ const portalsZapInMock = jest.fn().mockResolvedValue({
   gasLimit: "100",
   gasPrice: "100",
 });
+const widoZapOutMock = jest.fn();
+const widoZapInMock = jest.fn().mockResolvedValue({
+  to: "to",
+  from: "from",
+  data: "data",
+});
 const supportedVaultAddressesMock = jest.fn();
 const helperTokenBalancesMock = jest.fn();
 const helperTokensMock: jest.Mock<Promise<ERC20[]>> = jest.fn();
@@ -133,6 +139,11 @@ jest.mock("../yearn", () => ({
         zapIn: portalsZapInMock,
         supportedVaultAddresses: supportedVaultAddressesMock,
       },
+      wido: {
+        zapOut: widoZapOutMock,
+        zapIn: widoZapInMock,
+        supportedVaultAddresses: supportedVaultAddressesMock,
+      },
       transaction: {
         sendTransaction: sendTransactionUsingServiceMock,
         populateTransaction: populateTransactionUsingMockService,
@@ -169,6 +180,7 @@ jest.mock("../context", () => ({
         })),
       },
     },
+    isZapsDefault: true,
   })),
 }));
 
@@ -417,7 +429,7 @@ describe("VaultInterface", () => {
             await vaultInterface.getDynamic([]);
 
             expect(metaVaultsMock).toHaveBeenCalledTimes(1);
-            expect(supportedVaultAddressesMock).toHaveBeenCalledTimes(1);
+            expect(supportedVaultAddressesMock).toHaveBeenCalledTimes(2);
           });
         });
       });
@@ -862,6 +874,11 @@ describe("VaultInterface", () => {
         mockedYearn.services.partner = new (PartnerService as unknown as jest.Mock<PartnerService<ChainId>>)();
         vaultInterface = new VaultInterface(mockedYearn, 1, new Context({}));
         (vaultInterface as any).isZappingIntoPickleJar = jest.fn().mockReturnValueOnce(true);
+        const assetStaticVaultV2 = createMockAssetStaticVaultV2({ token: "0xRandom" });
+        vaultInterface.getStatic = jest.fn().mockResolvedValue([assetStaticVaultV2]);
+        const vaultMetadata = createMockVaultMetadata({ address: "0x001" });
+        vaultMetadata.zapInWith = "portalsZapIn";
+        metaVaultsMock.mockResolvedValue([vaultMetadata]);
 
         const [vault, token, amount, account] = ["0xVault", "0xToken", "1", "0xAccount"];
 
@@ -955,6 +972,9 @@ describe("VaultInterface", () => {
           vaultInterface = new VaultInterface(mockedYearn, 1, new Context({}));
           const assetStaticVaultV2 = createMockAssetStaticVaultV2({ token: "0xRandom" });
           vaultInterface.getStatic = jest.fn().mockResolvedValue([assetStaticVaultV2]);
+          const vaultMetadata = createMockVaultMetadata({ address: "0x001" });
+          vaultMetadata.zapInWith = "portalsZapIn";
+          metaVaultsMock.mockResolvedValue([vaultMetadata]);
 
           const [vault, token, amount, account] = ["0xVault", "0xToken", "1", "0xAccount"];
 

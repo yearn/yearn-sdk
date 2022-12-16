@@ -1,1 +1,1 @@
-export * from "./mergeZapPropsWithAddressables";
+export * from "./mergeZapPropsWithZappables";

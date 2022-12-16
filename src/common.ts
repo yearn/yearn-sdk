@@ -65,6 +65,7 @@ export enum ContractAddressId {
   portalsZapIn = "PORTALS_ZAP_IN",
   portalsZapOut = "PORTALS_ZAP_OUT",
   pickleZapIn = "PICKLE_ZAP_IN",
+  widoZapTokenManager = "WIDO_ZAP_TOKEN_MANAGER",
   yearnZapEth = "YEARN_ZAP_ETH",
   propertiesAggregator = "PROPERTIES_AGGREGATOR",
   cowProtocolRelayer = "COW_PROTOCOL_RELAYER",

@@ -29,6 +29,8 @@ export interface Token extends ERC20 {
     zapperZapOut?: boolean;
     portalsZapIn?: boolean;
     portalsZapOut?: boolean;
+    widoZapIn?: boolean;
+    widoZapOut?: boolean;
     ftmApeZap?: boolean;
     vaults?: boolean;
     labs?: boolean;
@@ -99,4 +101,4 @@ export type Asset<T extends TypeId> = AssetStatic<T> & AssetDynamic<T> & { typeI
  */
 export type GenericAsset = Asset<"VAULT_V1"> | Asset<"VAULT_V2"> | Asset<"VOTING_ESCROW"> | Asset<"GAUGE">;
 
-export type TokenDataSource = "vaults" | "zapper" | "portals" | "labs" | "sdk" | "votingEscrows" | "gauges";
+export type TokenDataSource = "vaults" | "zapper" | "portals" | "labs" | "sdk" | "wido" | "votingEscrows" | "gauges";

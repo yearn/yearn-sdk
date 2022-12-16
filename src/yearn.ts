@@ -25,6 +25,7 @@ import { SubgraphService } from "./services/subgraph";
 import { TelegramService } from "./services/telegram";
 import { TransactionService } from "./services/transaction";
 import { VisionService } from "./services/vision";
+import { WidoService } from "./services/wido";
 import { ZapEthService } from "./services/zapEth";
 import { ZapperService } from "./services/zapper";
 import { AssetServiceState } from "./types";
@@ -43,6 +44,7 @@ type ServicesType<T extends ChainId> = {
   zapper: ZapperService;
   portals: PortalsService;
   cowSwap: CowSwapService;
+  wido: WidoService;
   asset: AssetService;
   vision: VisionService;
   subgraph: SubgraphService;
@@ -165,6 +167,7 @@ export class Yearn<T extends ChainId> {
       zapEth: new ZapEthService(chainId, ctx, addressProvider),
       zapper: new ZapperService(chainId, ctx),
       portals: new PortalsService(chainId, ctx),
+      wido: new WidoService(chainId, ctx),
       cowSwap: new CowSwapService(1, ctx), // TODO: Instantiate on mainnet only
       asset: new AssetService(chainId, ctx, assetServiceState),
       vision: new VisionService(chainId, ctx),

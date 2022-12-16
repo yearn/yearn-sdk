@@ -4,6 +4,7 @@ import { PartialDeep } from "type-fest";
 
 import { Address, Locale, SdkError } from "./types";
 import { encode } from "./utils";
+import { ZapInWith, ZapOutWith } from "./zap";
 
 export interface AddressesOverride {
   lens?: Address;
@@ -55,6 +56,11 @@ export interface SubgraphConfiguration {
   optimismSubgraphEndpoint?: string;
 }
 
+export interface ZapsConfiguration {
+  zapInWith: ZapInWith[];
+  zapOutWith: ZapOutWith[];
+}
+
 /**
  * Context options that are used to access all the data sources queried by the
  * SDK.
@@ -69,6 +75,7 @@ export interface ContextValue {
   subgraph?: SubgraphConfiguration;
   partnerId?: string;
   locale?: Locale;
+  zaps?: ZapsConfiguration;
   env?: "production" | "development";
 }
 
@@ -82,6 +89,10 @@ const DefaultContext: ContextValue = {
     apiUrl: "https://simulate.yearn.network",
   },
   cache: { useCache: true, url: "https://cache.yearn.finance" },
+  zaps: {
+    zapInWith: ["widoZapIn", "portalsZapIn"],
+    zapOutWith: ["widoZapOut", "portalsZapOut"],
+  },
   env: "production",
 };
 
@@ -166,6 +177,17 @@ export class Context implements ContextValue {
 
   get locale(): Locale {
     return this.ctx.locale || "en";
+  }
+
+  get zaps(): ZapsConfiguration {
+    return this.ctx.zaps || (DefaultContext.zaps as ZapsConfiguration);
+  }
+
+  get isZapsDefault(): boolean {
+    return (
+      this.ctx.zaps?.zapInWith === DefaultContext.zaps?.zapInWith &&
+      this.ctx.zaps?.zapOutWith === DefaultContext.zaps?.zapOutWith
+    );
   }
 
   get isDevelopment(): boolean {
