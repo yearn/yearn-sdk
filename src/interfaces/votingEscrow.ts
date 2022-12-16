@@ -23,18 +23,7 @@ import {
   WriteTransactionProps,
   WriteTransactionResult,
 } from "../types";
-import {
-  getTimeFromNow,
-  keyBy,
-  roundToWeek,
-  toBN,
-  toMilliseconds,
-  toSeconds,
-  toUnit,
-  USDC_DECIMALS,
-  WEEK,
-  YEAR,
-} from "../utils";
+import { keyBy, roundToWeek, toBN, toMilliseconds, toSeconds, toUnit, USDC_DECIMALS, YEAR } from "../utils";
 
 const MAX_LOCK: Seconds = roundToWeek(YEAR * 4);
 
@@ -328,7 +317,7 @@ export class VotingEscrowInterface<T extends ChainId> extends ServiceInterface<T
    * @param tokenAddress
    * @param votingEscrowAddress
    * @param amount
-   * @param time In Weeks
+   * @param time In seconds
    * @returns ExpectedOutcome
    */
   async getExpectedTransactionOutcome({
@@ -354,11 +343,7 @@ export class VotingEscrowInterface<T extends ChainId> extends ServiceInterface<T
       case "LOCK":
         if (!amount) throw new Error("'amount' argument missing");
         if (!time) throw new Error("'time' argument missing");
-        locked = await votingEscrowContract.callStatic.modify_lock(
-          amount,
-          getTimeFromNow(time).toString(),
-          accountAddress
-        );
+        locked = await votingEscrowContract.callStatic.modify_lock(amount, time, accountAddress);
         break;
       case "ADD":
         if (!amount) throw new Error("'amount' argument missing");
@@ -366,11 +351,7 @@ export class VotingEscrowInterface<T extends ChainId> extends ServiceInterface<T
         break;
       case "EXTEND":
         if (!time) throw new Error("'time' argument missing");
-        locked = await votingEscrowContract.callStatic.modify_lock(
-          "0",
-          getTimeFromNow(time).toString(),
-          accountAddress
-        );
+        locked = await votingEscrowContract.callStatic.modify_lock("0", time, accountAddress);
         break;
       default:
         throw new Error(`${votingEscrowTransactionType} not supported`);
@@ -480,7 +461,7 @@ export class VotingEscrowInterface<T extends ChainId> extends ServiceInterface<T
    * @param tokenAddress
    * @param votingEscrowAddress
    * @param amount
-   * @param time In weeks
+   * @param time In seconds
    * @param populate return populated transaction payload when truthy
    * @param overrides
    * @returns TransactionResponse | PopulatedTransaction
@@ -494,19 +475,9 @@ export class VotingEscrowInterface<T extends ChainId> extends ServiceInterface<T
     populate,
     overrides = {},
   }: LockProps): Promise<TransactionResponse | PopulatedTransaction> {
-    const provider = this.ctx.provider.read;
-    const blockNumber = await provider.getBlockNumber();
-    const block = await provider.getBlock(blockNumber);
-    const lockTime = time * WEEK;
-    const unlockTime = toBN(block.timestamp).plus(lockTime).toFixed(0);
     const signer = this.ctx.provider.write.getSigner(accountAddress);
     const votingEscrowContract = new Contract(votingEscrowAddress, VotingEscrowAbi, signer);
-    const tx = await votingEscrowContract.populateTransaction.modify_lock(
-      amount,
-      unlockTime,
-      accountAddress,
-      overrides
-    );
+    const tx = await votingEscrowContract.populateTransaction.modify_lock(amount, time, accountAddress, overrides);
 
     if (populate) return tx;
 
@@ -518,7 +489,6 @@ export class VotingEscrowInterface<T extends ChainId> extends ServiceInterface<T
    * @param accountAddress
    * @param votingEscrowAddress
    * @param amount
-   * @param time In weeks
    * @param populate return populated transaction payload when truthy
    * @param overrides
    * @returns TransactionResponse | PopulatedTransaction
@@ -544,7 +514,7 @@ export class VotingEscrowInterface<T extends ChainId> extends ServiceInterface<T
    * Extend the time to lock the tokens on the Voting Escrow
    * @param accountAddress
    * @param votingEscrowAddress
-   * @param time New period in weeks
+   * @param time New period in seconds
    * @param populate return populated transaction payload when truthy
    * @param overrides
    * @returns TransactionResponse | PopulatedTransaction
@@ -557,14 +527,9 @@ export class VotingEscrowInterface<T extends ChainId> extends ServiceInterface<T
     populate,
     overrides = {},
   }: ExtendLockTimeProps): Promise<TransactionResponse | PopulatedTransaction> {
-    const provider = this.ctx.provider.read;
-    const blockNumber = await provider.getBlockNumber();
-    const block = await provider.getBlock(blockNumber);
-    const lockTime = time * WEEK;
-    const unlockTime = toBN(block.timestamp).plus(lockTime).toFixed(0);
     const signer = this.ctx.provider.write.getSigner(accountAddress);
     const votingEscrowContract = new Contract(votingEscrowAddress, VotingEscrowAbi, signer);
-    const tx = await votingEscrowContract.populateTransaction.modify_lock("0", unlockTime, accountAddress, overrides);
+    const tx = await votingEscrowContract.populateTransaction.modify_lock("0", time, accountAddress, overrides);
 
     if (populate) return tx;
 
