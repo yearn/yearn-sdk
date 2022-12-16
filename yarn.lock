@@ -11149,10 +11149,10 @@ which@^2.0.1, which@^2.0.2:
   dependencies:
     isexe "^2.0.0"
 
-wido@^0.0.31:
-  version "0.0.31"
-  resolved "https://registry.yarnpkg.com/wido/-/wido-0.0.31.tgz#8dc005a855dd1d1de3ac52983f7468f587473d70"
-  integrity sha512-DUWvzX6s3nkXVunDoVF4BP22QctzEZzV7FxGRqnAhPOek1LrSzLKRif+sNbeB5K5P7ijvMZUOFk47UZeDHk/qw==
+wido@^0.1.0:
+  version "0.1.0"
+  resolved "https://registry.yarnpkg.com/wido/-/wido-0.1.0.tgz#98104f85166a8cb49531e20cd7f44513abf74ea7"
+  integrity sha512-vlqyZ2huc+X/5svwOyAkBOWyPZimp5Q3nHcY5ZgQhc2KLOPbJ5CvkcPLoNJXCdiil0OUeuqgdT+0AJ7UVdr0wA==
 
 word-wrap@^1.2.3, word-wrap@~1.2.3:
   version "1.2.3"

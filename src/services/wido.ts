@@ -1,6 +1,6 @@
 import { getAddress } from "@ethersproject/address";
 import { TransactionRequest } from "@ethersproject/providers";
-import { approveForZap, getBalances, getSupportedTokens, getTokenAllowance, quote } from "wido";
+import { approve, getBalances, getSupportedTokens, getTokenAllowance, quote } from "wido";
 
 import { Chains, NETWORK_SETTINGS } from "../chain";
 import { Service } from "../common";
@@ -19,9 +19,7 @@ export class WidoService extends Service {
     const network = Chains[this.chainId];
     const tokenList = await getSupportedTokens({
       chainId: [this.chainId],
-      includeMetadata: true,
       includePricing: true,
-      includeUnknown: false,
     });
 
     return tokenList.map((token) => {
@@ -103,7 +101,7 @@ export class WidoService extends Service {
       throw new Error("Unsupported");
     }
 
-    const { data, to } = await approveForZap({
+    const { data, to } = await approve({
       chainId: this.chainId,
       tokenAddress: token,
       amount,
@@ -138,7 +136,7 @@ export class WidoService extends Service {
       throw new Error("Unsupported");
     }
 
-    const { data, to } = await approveForZap({
+    const { data, to } = await approve({
       chainId: this.chainId,
       tokenAddress: vault,
       amount,
