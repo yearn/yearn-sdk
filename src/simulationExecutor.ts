@@ -1,15 +1,13 @@
 import { getAddress } from "@ethersproject/address";
 import { BytesLike } from "@ethersproject/bytes";
-import { JsonRpcProvider, JsonRpcSigner, TransactionRequest } from "@ethersproject/providers";
 import BigNumber from "bignumber.js";
 
 import { ChainId } from "./chain";
 import { Context } from "./context";
 import { TelegramService } from "./services/telegram";
-import { EthersError, SimulationError, SimulationOptions, TenderlyError } from "./types";
+import { SimulationError, SimulationOptions, TenderlyError } from "./types";
 import { Address, Integer } from "./types/common";
 
-const baseUrl = "https://simulate.yearn.network";
 const latestBlockKey = -1;
 
 export interface SimulationResponse {
@@ -50,7 +48,13 @@ interface SimulationCallTrace {
  * 3. Simulate the zap in using the approval transaction as the root
  */
 export class SimulationExecutor {
-  constructor(private telegram: TelegramService, private chainId: ChainId, private ctx: Context) {}
+  private baseUrl: string;
+  private apiKey?: string;
+
+  constructor(private telegram: TelegramService, private chainId: ChainId, private ctx: Context) {
+    this.baseUrl = ctx.simulation.apiUrl;
+    this.apiKey = ctx.simulation.apiKey;
+  }
 
   /**
    * Simulate a transaction
@@ -139,10 +143,9 @@ export class SimulationExecutor {
       throw new SimulationError("Data is of an invalid type", SimulationError.INVALID_TYPE);
     }
 
-    const constructedPath = options?.forkId ? `${baseUrl}/fork/${options.forkId}/simulate` : `${baseUrl}/simulate`;
-
-    const transactionRequest = await this.getPopulatedTransactionRequest(from, to, data, options, value);
-
+    const constructedPath = options?.forkId
+      ? `${this.baseUrl}/fork/${options.forkId}/simulate`
+      : `${this.baseUrl}/simulate`;
     const body = {
       from,
       to,
@@ -151,22 +154,21 @@ export class SimulationExecutor {
       block_number: latestBlockKey,
       simulation_type: "quick",
       root: options?.root,
-      value: transactionRequest.value?.toString() || "0",
-      gas: parseInt(transactionRequest.gasLimit?.toString() || "0"),
-      gas_price: transactionRequest.gasPrice?.toString() || 0,
+      value: value,
       save: options.save || true,
-      nonce: transactionRequest.nonce,
     };
 
     const simulationResponse = await fetch(constructedPath, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        ...(this.apiKey && { "X-Access-Key": this.apiKey }),
       },
       body: JSON.stringify(body),
     })
       .then((res) => res.json())
-      .catch(() => {
+      .catch((error) => {
+        console.error(error);
         throw new TenderlyError("simulation call to Tenderly failed", TenderlyError.SIMULATION_CALL);
       });
 
@@ -242,15 +244,17 @@ export class SimulationExecutor {
       network_id: this.chainId.toString(),
     };
 
-    const response: Response = await await fetch(`${baseUrl}/fork`, {
+    const response: Response = await await fetch(`${this.baseUrl}/fork`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        ...(this.apiKey && { "X-Access-Key": this.apiKey }),
       },
       body: JSON.stringify(body),
     })
       .then((res) => res.json())
-      .catch(() => {
+      .catch((error) => {
+        console.error(error);
         throw new TenderlyError("failed to create fork", TenderlyError.CREATE_FORK);
       });
 
@@ -273,60 +277,18 @@ export class SimulationExecutor {
   }
 
   /**
-   * Creates a transaction object and populates it to fill in parameters such as gas price,
-   * gas limit and nonce for a more accurate simulations
-   * @param from
-   * @param to
-   * @param data
-   * @param value
-   * @param options
-   * @returns A populated TransactionRequest object
-   */
-  private async getPopulatedTransactionRequest(
-    from: Address,
-    to: Address,
-    data: string,
-    options: SimulationOptions,
-    value: Integer = "0"
-  ): Promise<TransactionRequest> {
-    let signer: JsonRpcSigner;
-    if (options?.forkId) {
-      const provider = new JsonRpcProvider(`https://rpc.tenderly.co/fork/${options.forkId}`);
-      signer = provider.getSigner(from);
-    } else {
-      signer = this.ctx.provider.write.getSigner(from);
-    }
-
-    if (options.maxFeePerGas && options.maxPriorityFeePerGas) {
-      delete options.gasPrice;
-    }
-
-    const transactionRequest: TransactionRequest = {
-      from,
-      to,
-      data,
-      value,
-      gasLimit: options.gasLimit,
-      gasPrice: options.gasPrice,
-      maxFeePerGas: options.maxFeePerGas,
-      maxPriorityFeePerGas: options.maxPriorityFeePerGas,
-      type: options.gasPrice ? 0 : undefined,
-    };
-
-    const result = await signer.populateTransaction(transactionRequest).catch(() => {
-      throw new EthersError("error populating transaction", EthersError.POPULATING_TRANSACTION);
-    });
-
-    return result;
-  }
-
-  /**
    * Deletes a fork. This should be done after its successful use in order to avoid clutter.
    * @param forkId the fork to be deleted
    * @returns the deletion response
    */
   async deleteFork(forkId: string): Promise<Response> {
-    return await fetch(`${baseUrl}/fork/${forkId}`, { method: "DELETE" });
+    return await fetch(`${this.baseUrl}/fork/${forkId}`, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        ...(this.apiKey && { "X-Access-Key": this.apiKey }),
+      },
+    });
   }
 
   /**

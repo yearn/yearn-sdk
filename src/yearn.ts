@@ -12,6 +12,7 @@ import { RegistryAdapter, RegistryV2Adapter } from "./services/adapters/registry
 import { AddressProvider } from "./services/addressProvider";
 import { AllowListService } from "./services/allowlist";
 import { AssetService } from "./services/assets";
+import { CowSwapService } from "./services/cowSwap";
 import { HelperService } from "./services/helper";
 import { LensService } from "./services/lens";
 import { MetaService } from "./services/meta";
@@ -25,6 +26,7 @@ import { TelegramService } from "./services/telegram";
 import { TransactionService } from "./services/transaction";
 import { VisionService } from "./services/vision";
 import { WidoService } from "./services/wido";
+import { ZapEthService } from "./services/zapEth";
 import { ZapperService } from "./services/zapper";
 import { AssetServiceState } from "./types";
 
@@ -38,8 +40,10 @@ export type Adapters<T extends ChainId> = {
 type ServicesType<T extends ChainId> = {
   lens: LensService<T>;
   oracle: OracleService<T>;
+  zapEth: ZapEthService<T>;
   zapper: ZapperService;
   portals: PortalsService;
+  cowSwap: CowSwapService;
   wido: WidoService;
   asset: AssetService;
   vision: VisionService;
@@ -160,9 +164,11 @@ export class Yearn<T extends ChainId> {
     return {
       lens: new LensService(chainId, ctx, addressProvider),
       oracle: new OracleService(chainId, ctx, addressProvider),
+      zapEth: new ZapEthService(chainId, ctx, addressProvider),
       zapper: new ZapperService(chainId, ctx),
       portals: new PortalsService(chainId, ctx),
       wido: new WidoService(chainId, ctx),
+      cowSwap: new CowSwapService(1, ctx), // TODO: Instantiate on mainnet only
       asset: new AssetService(chainId, ctx, assetServiceState),
       vision: new VisionService(chainId, ctx),
       subgraph: new SubgraphService(chainId, ctx),

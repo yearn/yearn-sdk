@@ -161,6 +161,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
         vault,
         token,
         amount,
+        false,
         overrides
       );
       if (!to || !data) throw Error("Error populating approve transaction");
@@ -232,7 +233,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
       targetTokenAddress: vault,
       targetTokenAmount,
       targetTokenAmountUsdc,
-      targetUnderlyingTokenAddress: vault,
+      targetUnderlyingTokenAddress: vaultData.token,
       targetUnderlyingTokenAmount,
       conversionRate,
       slippage: toBN(1).minus(conversionRate).toNumber(),
@@ -323,6 +324,7 @@ export class SimulationInterface<T extends ChainId> extends ServiceInterface<T> 
         vault,
         token,
         amount,
+        false,
         overrides
       );
       if (!to || !data) throw Error("Error populating approve transaction");

@@ -23,18 +23,7 @@ import {
   WriteTransactionProps,
   WriteTransactionResult,
 } from "../types";
-import {
-  getTimeFromNow,
-  keyBy,
-  roundToWeek,
-  toBN,
-  toMilliseconds,
-  toSeconds,
-  toUnit,
-  USDC_DECIMALS,
-  WEEK,
-  YEAR,
-} from "../utils";
+import { keyBy, roundToWeek, toBN, toMilliseconds, toSeconds, toUnit, USDC_DECIMALS, YEAR } from "../utils";
 
 const MAX_LOCK: Seconds = roundToWeek(YEAR * 4);
 
@@ -46,7 +35,7 @@ const VotingEscrowAbi = [
 
 const VotingEscrowRewardsAbi = ["function claim(address user, bool relock) public returns (uint256)"];
 
-const GaugeRegistryAbi = ["function veToken() public view returns (address)"];
+// const VeYfiRegistryAbi = ["function veToken() public view returns (address)"];
 
 interface ApproveLockProps extends WriteTransactionProps {
   accountAddress: Address;
@@ -240,7 +229,11 @@ export class VotingEscrowInterface<T extends ChainId> extends ServiceInterface<T
       return [depositPosition, yieldPosition];
     });
     const positions = await Promise.all(positionsPromises);
-    return positions.flat().filter(({ balance }) => toBN(balance).gt(0));
+    return positions
+      .flat()
+      .filter(
+        ({ balance, underlyingTokenBalance }) => toBN(balance).gt(0) || toBN(underlyingTokenBalance.amount).gt(0)
+      );
   }
 
   /**
@@ -324,7 +317,7 @@ export class VotingEscrowInterface<T extends ChainId> extends ServiceInterface<T
    * @param tokenAddress
    * @param votingEscrowAddress
    * @param amount
-   * @param time In Weeks
+   * @param time In seconds
    * @returns ExpectedOutcome
    */
   async getExpectedTransactionOutcome({
@@ -350,11 +343,7 @@ export class VotingEscrowInterface<T extends ChainId> extends ServiceInterface<T
       case "LOCK":
         if (!amount) throw new Error("'amount' argument missing");
         if (!time) throw new Error("'time' argument missing");
-        locked = await votingEscrowContract.callStatic.modify_lock(
-          amount,
-          getTimeFromNow(time).toString(),
-          accountAddress
-        );
+        locked = await votingEscrowContract.callStatic.modify_lock(amount, time, accountAddress);
         break;
       case "ADD":
         if (!amount) throw new Error("'amount' argument missing");
@@ -362,11 +351,7 @@ export class VotingEscrowInterface<T extends ChainId> extends ServiceInterface<T
         break;
       case "EXTEND":
         if (!time) throw new Error("'time' argument missing");
-        locked = await votingEscrowContract.callStatic.modify_lock(
-          "0",
-          getTimeFromNow(time).toString(),
-          accountAddress
-        );
+        locked = await votingEscrowContract.callStatic.modify_lock("0", time, accountAddress);
         break;
       default:
         throw new Error(`${votingEscrowTransactionType} not supported`);
@@ -476,7 +461,7 @@ export class VotingEscrowInterface<T extends ChainId> extends ServiceInterface<T
    * @param tokenAddress
    * @param votingEscrowAddress
    * @param amount
-   * @param time In weeks
+   * @param time In seconds
    * @param populate return populated transaction payload when truthy
    * @param overrides
    * @returns TransactionResponse | PopulatedTransaction
@@ -490,19 +475,9 @@ export class VotingEscrowInterface<T extends ChainId> extends ServiceInterface<T
     populate,
     overrides = {},
   }: LockProps): Promise<TransactionResponse | PopulatedTransaction> {
-    const provider = this.ctx.provider.read;
-    const blockNumber = await provider.getBlockNumber();
-    const block = await provider.getBlock(blockNumber);
-    const lockTime = time * WEEK;
-    const unlockTime = toBN(block.timestamp).plus(lockTime).toFixed(0);
     const signer = this.ctx.provider.write.getSigner(accountAddress);
     const votingEscrowContract = new Contract(votingEscrowAddress, VotingEscrowAbi, signer);
-    const tx = await votingEscrowContract.populateTransaction.modify_lock(
-      amount,
-      unlockTime,
-      accountAddress,
-      overrides
-    );
+    const tx = await votingEscrowContract.populateTransaction.modify_lock(amount, time, accountAddress, overrides);
 
     if (populate) return tx;
 
@@ -514,7 +489,6 @@ export class VotingEscrowInterface<T extends ChainId> extends ServiceInterface<T
    * @param accountAddress
    * @param votingEscrowAddress
    * @param amount
-   * @param time In weeks
    * @param populate return populated transaction payload when truthy
    * @param overrides
    * @returns TransactionResponse | PopulatedTransaction
@@ -540,7 +514,7 @@ export class VotingEscrowInterface<T extends ChainId> extends ServiceInterface<T
    * Extend the time to lock the tokens on the Voting Escrow
    * @param accountAddress
    * @param votingEscrowAddress
-   * @param time New period in weeks
+   * @param time New period in seconds
    * @param populate return populated transaction payload when truthy
    * @param overrides
    * @returns TransactionResponse | PopulatedTransaction
@@ -553,14 +527,9 @@ export class VotingEscrowInterface<T extends ChainId> extends ServiceInterface<T
     populate,
     overrides = {},
   }: ExtendLockTimeProps): Promise<TransactionResponse | PopulatedTransaction> {
-    const provider = this.ctx.provider.read;
-    const blockNumber = await provider.getBlockNumber();
-    const block = await provider.getBlock(blockNumber);
-    const lockTime = time * WEEK;
-    const unlockTime = toBN(block.timestamp).plus(lockTime).toFixed(0);
     const signer = this.ctx.provider.write.getSigner(accountAddress);
     const votingEscrowContract = new Contract(votingEscrowAddress, VotingEscrowAbi, signer);
-    const tx = await votingEscrowContract.populateTransaction.modify_lock("0", unlockTime, accountAddress, overrides);
+    const tx = await votingEscrowContract.populateTransaction.modify_lock("0", time, accountAddress, overrides);
 
     if (populate) return tx;
 
@@ -643,14 +612,11 @@ export class VotingEscrowInterface<T extends ChainId> extends ServiceInterface<T
   }
 
   private async getSupportedAddresses({ addresses }: { addresses?: Address[] }): Promise<Address[]> {
-    let veTokenAddress;
-    if (this.ctx.isDevelopment) {
-      veTokenAddress = "0xfc82d83144403b107BF1D95818d01E2dbc47F82a";
-    } else {
-      const gaugeRegistryAddress = await this.yearn.addressProvider.addressById(ContractAddressId.gaugeRegistry);
-      const gaugeRegistryContract = new Contract(gaugeRegistryAddress, GaugeRegistryAbi, this.ctx.provider.read);
-      veTokenAddress = await gaugeRegistryContract.veToken();
-    }
+    // TODO: use veYfiRegistry when deployed
+    // const veYfiRegistryAddress = await this.yearn.addressProvider.addressById(ContractAddressId.veYfiRegistry);
+    // const veYfiRegistryContract = new Contract(veYfiRegistryAddress, VeYfiRegistryAbi, this.ctx.provider.read);
+    // const veTokenAddress = await veYfiRegistryContract.veToken();
+    const veTokenAddress = await this.yearn.addressProvider.addressById(ContractAddressId.veYfi);
     const votingEscrowAddresses = [veTokenAddress];
     const supportedAddresses = addresses
       ? addresses.filter((address) => votingEscrowAddresses.includes(address))

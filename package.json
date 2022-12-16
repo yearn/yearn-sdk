@@ -1,6 +1,6 @@
 {
   "name": "@yfi/sdk",
-  "version": "3.0.0-alpha.5",
+  "version": "3.0.0-alpha.11",
   "description": "Interaction framework for the yearn protocol",
   "author": "nymmrx <nymmrx@protonmail.com>",
   "license": "MIT",
@@ -18,7 +18,7 @@
     "test:coverage": "tsdx test --coverage",
     "lint": "run-p lint:*",
     "lint:eslint": "eslint src",
-    "lint:typescript": "tsc --noEmit",
+    "lint:typescript": "tsc --noEmit --skipLibCheck",
     "docs": "typedoc --out docs src/index.ts",
     "size": "size-limit",
     "analyze": "size-limit --why",
@@ -62,6 +62,7 @@
     "typescript": "^4.6.3"
   },
   "dependencies": {
+    "@cowprotocol/cow-sdk": "1.0.0-RC.5",
     "bignumber.js": "9.0.1",
     "cross-fetch": "3.1.5",
     "dotenv": "10.0.0",

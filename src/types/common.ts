@@ -111,4 +111,13 @@ export interface TransactionOutcome {
   targetUnderlyingTokenAmount?: Integer;
   conversionRate?: number;
   slippage?: number;
+  sourceTokenAmountFee?: Integer;
+}
+
+export interface SimpleTransactionOutcome {
+  sourceTokenAddress: Address;
+  sourceTokenAmount: Integer;
+  targetTokenAddress: Address;
+  targetTokenAmount: Integer;
+  sourceTokenAmountFee?: Integer;
 }

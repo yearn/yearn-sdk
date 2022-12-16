@@ -760,7 +760,7 @@ describe("VaultInterface", () => {
       await vaultInterface.getDepositAllowance(accountAddress, vaultAddress, tokenAddress);
 
       expect(getDepositContractAddressMock).toHaveBeenCalledTimes(1);
-      expect(getDepositContractAddressMock).toHaveBeenCalledWith(vaultAddress, tokenAddress);
+      expect(getDepositContractAddressMock).toHaveBeenCalledWith(vaultAddress, tokenAddress, undefined);
       expect(tokenAllowanceMock).toHaveBeenCalledTimes(1);
       expect(tokenAllowanceMock).toHaveBeenCalledWith(accountAddress, tokenAddress, spenderAddress);
     });
@@ -774,7 +774,7 @@ describe("VaultInterface", () => {
       await vaultInterface.getWithdrawAllowance(accountAddress, vaultAddress, tokenAddress);
 
       expect(getWithdrawContractAddressMock).toHaveBeenCalledTimes(1);
-      expect(getWithdrawContractAddressMock).toHaveBeenCalledWith(vaultAddress, tokenAddress);
+      expect(getWithdrawContractAddressMock).toHaveBeenCalledWith(vaultAddress, tokenAddress, undefined);
       expect(tokenAllowanceMock).toHaveBeenCalledTimes(1);
       expect(tokenAllowanceMock).toHaveBeenCalledWith(accountAddress, vaultAddress, spenderAddress);
     });
@@ -789,7 +789,7 @@ describe("VaultInterface", () => {
         await vaultInterface.approveDeposit(accountAddress, vaultAddress, tokenAddress);
 
         expect(getDepositContractAddressMock).toHaveBeenCalledTimes(1);
-        expect(getDepositContractAddressMock).toHaveBeenCalledWith(vaultAddress, tokenAddress);
+        expect(getDepositContractAddressMock).toHaveBeenCalledWith(vaultAddress, tokenAddress, undefined);
         expect(tokenApproveMock).toHaveBeenCalledTimes(1);
         expect(tokenApproveMock).toHaveBeenCalledWith(
           accountAddress,
@@ -810,7 +810,7 @@ describe("VaultInterface", () => {
         await vaultInterface.approveDeposit(accountAddress, vaultAddress, tokenAddress, amount);
 
         expect(getDepositContractAddressMock).toHaveBeenCalledTimes(1);
-        expect(getDepositContractAddressMock).toHaveBeenCalledWith(vaultAddress, tokenAddress);
+        expect(getDepositContractAddressMock).toHaveBeenCalledWith(vaultAddress, tokenAddress, undefined);
         expect(tokenApproveMock).toHaveBeenCalledTimes(1);
         expect(tokenApproveMock).toHaveBeenCalledWith(accountAddress, tokenAddress, spenderAddress, amount, undefined);
       });
@@ -826,7 +826,7 @@ describe("VaultInterface", () => {
         await vaultInterface.approveWithdraw(accountAddress, vaultAddress, tokenAddress);
 
         expect(getWithdrawContractAddressMock).toHaveBeenCalledTimes(1);
-        expect(getWithdrawContractAddressMock).toHaveBeenCalledWith(vaultAddress, tokenAddress);
+        expect(getWithdrawContractAddressMock).toHaveBeenCalledWith(vaultAddress, tokenAddress, undefined);
         expect(tokenApproveMock).toHaveBeenCalledTimes(1);
         expect(tokenApproveMock).toHaveBeenCalledWith(
           accountAddress,
@@ -847,7 +847,7 @@ describe("VaultInterface", () => {
         await vaultInterface.approveWithdraw(accountAddress, vaultAddress, tokenAddress, amount);
 
         expect(getWithdrawContractAddressMock).toHaveBeenCalledTimes(1);
-        expect(getWithdrawContractAddressMock).toHaveBeenCalledWith(vaultAddress, tokenAddress);
+        expect(getWithdrawContractAddressMock).toHaveBeenCalledWith(vaultAddress, tokenAddress, undefined);
         expect(tokenApproveMock).toHaveBeenCalledTimes(1);
         expect(tokenApproveMock).toHaveBeenCalledWith(accountAddress, vaultAddress, spenderAddress, amount, undefined);
       });
